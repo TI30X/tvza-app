@@ -1,0 +1,438 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#A93B2E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
+  <link rel="stylesheet" href="../style.css" />
+  <title>Familienreisen — TVZA</title>
+</head>
+<body>
+  <div class="app">
+
+    <div class="offline-banner" id="offlineBanner">✈️ Offline – wird später synchronisiert</div>
+
+    <header class="header">
+      <div class="header-inner" style="position:relative;">
+        <a href="../index.html" class="back-btn" id="backBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
+          <span id="backLabel">Zurück</span>
+        </a>
+        <span class="page-title" id="pageTitle">Familienreisen</span>
+      </div>
+    </header>
+    <div class="accent-bar accent-bar--trip"></div>
+
+    <main class="main">
+
+      <!-- ═══ No family yet ═══ -->
+      <div id="noFamilyView" style="display:none">
+        <div class="empty-state" style="padding:24px 16px 12px">
+          <div class="empty-icon">👨‍👩‍👧‍👦</div>
+          <p class="empty-text">Du bist noch in keiner Familie.<br>Erstelle eine oder tritt einer bei.</p>
+        </div>
+
+        <div class="form-card">
+          <p class="form-title">Neue Familie gründen</p>
+          <div class="form-group">
+            <input class="form-input" id="newFamName" type="text" placeholder="Familienname, z.B. van Zanten" />
+          </div>
+          <button class="btn btn-primary btn-block" id="createFamBtn">Familie gründen (du wirst Familienchef/in)</button>
+        </div>
+
+        <div class="form-card">
+          <p class="form-title">Bestehender Familie beitreten</p>
+          <div class="form-group">
+            <input class="form-input" id="joinFamName" type="text" placeholder="Exakter Familienname" />
+          </div>
+          <button class="btn btn-primary btn-block" id="joinFamBtn">Beitritt anfragen</button>
+          <p style="font-size:12px;color:var(--ink-soft);margin-top:8px" id="joinStatus"></p>
+        </div>
+      </div>
+
+      <!-- ═══ Family + trips view ═══ -->
+      <div id="familyView" style="display:none">
+
+        <!-- Family info -->
+        <div class="form-card" style="border-left:4px solid var(--trip)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:16px;font-weight:700">👨‍👩‍👧‍👦 <span id="famName"></span></div>
+              <div style="font-size:12px;color:var(--ink-soft);margin-top:4px" id="famMembers"></div>
+            </div>
+          </div>
+          <!-- Pending requests (head only) -->
+          <div id="pendingWrap" style="margin-top:12px"></div>
+        </div>
+
+        <!-- New trip -->
+        <div class="form-card">
+          <p class="form-title">Neue Reise</p>
+          <div class="form-group">
+            <input class="form-input" id="tripName" type="text" placeholder="Reisename, z.B. Sommerferien 2026" />
+          </div>
+          <div class="form-group">
+            <input class="form-input" id="tripDest" type="text" placeholder="Ziel, z.B. Kroatien" />
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Von</label><input class="form-input" id="tripStart" type="date" /></div>
+            <div class="form-group"><label class="form-label">Bis</label><input class="form-input" id="tripEnd" type="date" /></div>
+          </div>
+          <div class="form-group">
+            <textarea class="form-textarea" id="tripNotes" rows="2" placeholder="Notizen..."></textarea>
+          </div>
+          <button class="btn btn-primary btn-block" id="addTripBtn">+ Reise erstellen</button>
+        </div>
+
+        <h2 class="section-title">Reisen der Familie</h2>
+        <div id="tripList"><div class="spinner">Lade…</div></div>
+
+      </div>
+
+      <!-- ═══ Trip detail ═══ -->
+      <div id="detailView" style="display:none">
+        <div id="tripInfoCard" class="form-card" style="border-left:4px solid var(--trip)"></div>
+
+        <div class="form-card">
+          <p class="form-title">Aktivität / Aufgabe</p>
+          <div class="form-row">
+            <div class="form-group">
+              <input class="form-input" id="actName" type="text" placeholder="z.B. Unterkunft buchen" />
+            </div>
+            <div class="form-group">
+              <input class="form-input" id="actDate" type="date" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="actWho">Zuständig (optional)</label>
+            <select class="form-select" id="actWho"><option value="">— niemand —</option></select>
+          </div>
+          <button class="btn btn-primary btn-block" id="addActBtn">+ Hinzufügen</button>
+        </div>
+
+        <h2 class="section-title">Aktivitäten</h2>
+        <div id="actList"><div class="spinner">Lade…</div></div>
+
+        <button class="btn btn-danger" id="deleteTripBtn" style="width:100%;padding:12px;margin-top:20px">🗑 Reise löschen</button>
+      </div>
+
+    </main>
+
+    <footer class="tvz-footer">
+      <img src="../icons/TvZ_Logo.svg" alt="TvZ" />
+    </footer>
+  </div>
+
+  <script type="module">
+    import { db, requireAuth, wireOfflineBanner, escHtml } from '../firebase-config.js';
+    import {
+      doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, addDoc,
+      onSnapshot, serverTimestamp, query, where, orderBy,
+      arrayUnion, arrayRemove
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    wireOfflineBanner();
+    const user = await requireAuth('../login.html');
+
+    /* ── Icon chrome (SVG) ── */
+    const ICON_CLOSE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
+    const ICON_MAP   = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>`;
+
+    const userRef = doc(db, 'users', user.uid);
+    let myProfile = {};
+    {
+      const s = await getDoc(userRef);
+      myProfile = s.exists() ? s.data() : {};
+    }
+
+    const famCol = collection(db, 'families');
+    let family = null;          // { id, ...data }
+    let memberNames = {};       // uid -> displayName
+    let currentTripId = null;
+    let unsubFam = null, unsubTrips = null, unsubActs = null;
+
+    /* ════ Determine family membership ═══════════ */
+    async function init() {
+      if (myProfile.familyId) {
+        const fs = await getDoc(doc(famCol, myProfile.familyId));
+        if (fs.exists() && (fs.data().members || []).includes(user.uid)) {
+          watchFamily(myProfile.familyId);
+          return;
+        }
+        // stale reference
+        await updateDoc(userRef, { familyId: null });
+        myProfile.familyId = null;
+      }
+      showNoFamily();
+    }
+
+    function showNoFamily() {
+      document.getElementById('noFamilyView').style.display = '';
+      document.getElementById('familyView').style.display = 'none';
+
+      // Show pending join status if any
+      checkPending();
+    }
+
+    async function checkPending() {
+      const qs = await getDocs(query(famCol, where('pendingRequests', 'array-contains', user.uid)));
+      if (!qs.empty) {
+        const f = qs.docs[0].data();
+        document.getElementById('joinStatus').textContent =
+          `⏳ Anfrage an "${f.name}" wartet auf Bestätigung durch den Familienchef.`;
+      }
+    }
+
+    /* ════ Create family ═════════════════════════ */
+    document.getElementById('createFamBtn').addEventListener('click', async () => {
+      const name = document.getElementById('newFamName').value.trim();
+      if (!name) { alert('Bitte einen Familiennamen eingeben.'); return; }
+
+      // Check name not taken
+      const existing = await getDocs(query(famCol, where('name', '==', name)));
+      if (!existing.empty) { alert('Eine Familie mit diesem Namen existiert bereits.'); return; }
+
+      const ref = await addDoc(famCol, {
+        name,
+        headUid: user.uid,
+        members: [user.uid],
+        pendingRequests: [],
+        createdAt: serverTimestamp()
+      });
+      await updateDoc(userRef, { familyId: ref.id, role: 'head' });
+      myProfile.familyId = ref.id;
+      document.getElementById('noFamilyView').style.display = 'none';
+      watchFamily(ref.id);
+    });
+
+    /* ════ Join request ══════════════════════════ */
+    document.getElementById('joinFamBtn').addEventListener('click', async () => {
+      const name = document.getElementById('joinFamName').value.trim();
+      if (!name) { alert('Bitte den Familiennamen eingeben.'); return; }
+      const qs = await getDocs(query(famCol, where('name', '==', name)));
+      if (qs.empty) { alert('Keine Familie mit diesem Namen gefunden.'); return; }
+      const famDoc = qs.docs[0];
+      const data = famDoc.data();
+      if ((data.members || []).includes(user.uid)) { alert('Du bist bereits Mitglied.'); return; }
+      if ((data.pendingRequests || []).includes(user.uid)) { alert('Anfrage läuft bereits.'); return; }
+      await updateDoc(doc(famCol, famDoc.id), { pendingRequests: arrayUnion(user.uid) });
+      document.getElementById('joinStatus').textContent =
+        `⏳ Anfrage an "${data.name}" gesendet — der Familienchef muss bestätigen.`;
+    });
+
+    /* ════ Watch family ══════════════════════════ */
+    function watchFamily(famId) {
+      document.getElementById('familyView').style.display = '';
+      if (unsubFam) unsubFam();
+
+      unsubFam = onSnapshot(doc(famCol, famId), async snap => {
+        if (!snap.exists()) { location.reload(); return; }
+        family = { id: snap.id, ...snap.data() };
+
+        // Kicked out?
+        if (!(family.members || []).includes(user.uid)) {
+          await updateDoc(userRef, { familyId: null });
+          location.reload(); return;
+        }
+
+        document.getElementById('famName').textContent = family.name;
+        await loadMemberNames();
+        renderMembers();
+        renderPending();
+        refreshWhoSelect();
+      });
+
+      watchTrips(famId);
+    }
+
+    async function loadMemberNames() {
+      const uids = [...new Set([...(family.members||[]), ...(family.pendingRequests||[])])];
+      for (const uid of uids) {
+        if (memberNames[uid]) continue;
+        try {
+          const s = await getDoc(doc(db, 'users', uid));
+          memberNames[uid] = s.exists() ? s.data().displayName : '?';
+        } catch { memberNames[uid] = '?'; }
+      }
+    }
+
+    function renderMembers() {
+      document.getElementById('famMembers').innerHTML =
+        (family.members || []).map(uid => {
+          const isHead = uid === family.headUid;
+          return `${isHead ? '👑 ' : ''}${escHtml(memberNames[uid] || '?')}`;
+        }).join(' · ');
+    }
+
+    function renderPending() {
+      const wrap = document.getElementById('pendingWrap');
+      const isHead = family.headUid === user.uid;
+      const pending = family.pendingRequests || [];
+      if (!isHead || !pending.length) { wrap.innerHTML = ''; return; }
+      wrap.innerHTML = `<div style="font-size:12px;font-weight:600;margin-bottom:6px">Beitrittsanfragen:</div>` +
+        pending.map(uid => `
+          <div class="pending-card">
+            <span style="flex:1">👤 ${escHtml(memberNames[uid] || '?')}</span>
+            <button class="btn btn-primary" data-approve="${uid}">✓</button>
+            <button class="btn btn-secondary" data-reject="${uid}">${ICON_CLOSE}</button>
+          </div>`).join('');
+
+      wrap.querySelectorAll('[data-approve]').forEach(b => b.addEventListener('click', async () => {
+        const uid = b.dataset.approve;
+        await updateDoc(doc(famCol, family.id), {
+          members: arrayUnion(uid),
+          pendingRequests: arrayRemove(uid)
+        });
+        await updateDoc(doc(db, 'users', uid), { familyId: family.id, role: 'member' });
+      }));
+      wrap.querySelectorAll('[data-reject]').forEach(b => b.addEventListener('click', () =>
+        updateDoc(doc(famCol, family.id), { pendingRequests: arrayRemove(b.dataset.reject) })));
+    }
+
+    /* ════ Trips ═════════════════════════════════ */
+    function watchTrips(famId) {
+      if (unsubTrips) unsubTrips();
+      unsubTrips = onSnapshot(
+        query(collection(db, 'trips'), where('familyId','==',famId), orderBy('createdAt','desc')),
+        snap => renderTrips(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    }
+
+    function renderTrips(trips) {
+      const wrap = document.getElementById('tripList');
+      if (!trips.length) {
+        wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">${ICON_MAP}</div><p class="empty-text">Noch keine Reisen geplant.</p></div>`;
+        return;
+      }
+      wrap.innerHTML = trips.map(t => `
+        <div class="trip-card" data-trip="${t.id}">
+          <div class="trip-name">${escHtml(t.name)}</div>
+          <div class="trip-meta">📍 ${escHtml(t.destination || '–')}${t.startDate ? ` · 📅 ${t.startDate}${t.endDate ? ' – ' + t.endDate : ''}` : ''}</div>
+          ${t.notes ? `<div class="trip-meta" style="margin-top:4px">📝 ${escHtml(t.notes)}</div>` : ''}
+        </div>`).join('');
+      wrap.querySelectorAll('[data-trip]').forEach(el =>
+        el.addEventListener('click', () => openTrip(el.dataset.trip)));
+    }
+
+    document.getElementById('addTripBtn').addEventListener('click', async () => {
+      const name = document.getElementById('tripName').value.trim();
+      if (!name) { alert('Bitte einen Reisennamen eingeben.'); return; }
+      await addDoc(collection(db, 'trips'), {
+        familyId: family.id,
+        name,
+        destination: document.getElementById('tripDest').value.trim(),
+        startDate: document.getElementById('tripStart').value,
+        endDate: document.getElementById('tripEnd').value,
+        notes: document.getElementById('tripNotes').value.trim(),
+        createdBy: user.uid,
+        createdAt: serverTimestamp()
+      });
+      ['tripName','tripDest','tripStart','tripEnd','tripNotes'].forEach(id => document.getElementById(id).value = '');
+    });
+
+    /* ════ Trip detail ═══════════════════════════ */
+    function refreshWhoSelect() {
+      const sel = document.getElementById('actWho');
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">— niemand —</option>' +
+        (family.members || []).map(uid =>
+          `<option value="${uid}">${escHtml(memberNames[uid] || '?')}</option>`).join('');
+      sel.value = cur;
+    }
+
+    async function openTrip(tripId) {
+      currentTripId = tripId;
+      document.getElementById('familyView').style.display = 'none';
+      document.getElementById('detailView').style.display = '';
+      document.getElementById('backLabel').textContent = 'Alle Reisen';
+      const back = document.getElementById('backBtn');
+      back.removeAttribute('href');
+      back.onclick = closeTrip;
+
+      const ts = await getDoc(doc(db, 'trips', tripId));
+      if (ts.exists()) {
+        const t = ts.data();
+        document.getElementById('pageTitle').textContent = t.name;
+        document.getElementById('tripInfoCard').innerHTML = `
+          <div style="font-size:18px;font-weight:700;margin-bottom:6px">${escHtml(t.name)}</div>
+          <div style="font-size:13px;color:var(--ink-soft)">📍 ${escHtml(t.destination||'–')}${t.startDate ? ` · 📅 ${t.startDate}${t.endDate ? ' – '+t.endDate : ''}` : ''}</div>
+          ${t.notes ? `<div style="font-size:13px;margin-top:8px;color:var(--ink-soft)">📝 ${escHtml(t.notes)}</div>` : ''}`;
+      }
+
+      if (unsubActs) unsubActs();
+      unsubActs = onSnapshot(
+        query(collection(db, 'activities'), where('tripId','==',tripId), orderBy('createdAt','asc')),
+        snap => renderActs(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    }
+
+    function closeTrip() {
+      if (unsubActs) { unsubActs(); unsubActs = null; }
+      currentTripId = null;
+      document.getElementById('detailView').style.display = 'none';
+      document.getElementById('familyView').style.display = '';
+      document.getElementById('pageTitle').textContent = 'Familienreisen';
+      document.getElementById('backLabel').textContent = 'Zurück';
+      const back = document.getElementById('backBtn');
+      back.onclick = null;
+      back.href = '../index.html';
+    }
+
+    function renderActs(acts) {
+      const wrap = document.getElementById('actList');
+      if (!acts.length) {
+        wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><p class="empty-text">Noch keine Aktivitäten.</p></div>`;
+        return;
+      }
+      wrap.innerHTML = '<div class="item-list">' + acts.map(a => `
+        <div class="item-card">
+          <div class="item-check ${a.done ? 'done':''}" data-toggle="${a.id}" data-done="${a.done}">${a.done?'✓':''}</div>
+          <div class="item-content">
+            <div class="item-title ${a.done?'done':''}">${escHtml(a.name)}</div>
+            <div class="item-sub">
+              ${a.date ? '📅 ' + a.date : ''}
+              ${a.assignedTo ? (a.date ? ' · ' : '') + '👤 ' + escHtml(memberNames[a.assignedTo] || '?') : ''}
+            </div>
+          </div>
+          <div class="item-actions"><button class="btn btn-danger" data-del="${a.id}">${ICON_CLOSE}</button></div>
+        </div>`).join('') + '</div>';
+
+      wrap.querySelectorAll('[data-toggle]').forEach(el => el.addEventListener('click', () =>
+        updateDoc(doc(db, 'activities', el.dataset.toggle), { done: el.dataset.done !== 'true' })));
+      wrap.querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => {
+        if (confirm('Aktivität löschen?')) deleteDoc(doc(db, 'activities', el.dataset.del));
+      }));
+    }
+
+    document.getElementById('addActBtn').addEventListener('click', async () => {
+      if (!currentTripId) return;
+      const name = document.getElementById('actName').value.trim();
+      if (!name) { alert('Bitte Aktivität eingeben.'); return; }
+      await addDoc(collection(db, 'activities'), {
+        tripId: currentTripId,
+        name,
+        date: document.getElementById('actDate').value,
+        assignedTo: document.getElementById('actWho').value || null,
+        done: false,
+        createdBy: user.uid,
+        createdAt: serverTimestamp()
+      });
+      document.getElementById('actName').value = '';
+      document.getElementById('actDate').value = '';
+      document.getElementById('actWho').value = '';
+    });
+
+    document.getElementById('deleteTripBtn').addEventListener('click', async () => {
+      if (!currentTripId) return;
+      if (!confirm('Reise und alle Aktivitäten löschen?')) return;
+      const acts = await getDocs(query(collection(db, 'activities'), where('tripId','==',currentTripId)));
+      for (const a of acts.docs) await deleteDoc(a.ref);
+      await deleteDoc(doc(db, 'trips', currentTripId));
+      closeTrip();
+    });
+
+    init();
+  </script>
+</body>
+</html>

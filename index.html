@@ -1,0 +1,328 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#A93B2E" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="TVZA" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>TVZA</title>
+</head>
+<body>
+  <div class="app">
+
+    <div class="offline-banner" id="offlineBanner">
+      ✈️ Offline – Daten werden synchronisiert, sobald du wieder online bist
+    </div>
+
+    <header class="header">
+      <div class="header-inner">
+        <a class="app-brand app-brand--formal" href="index.html" aria-label="TVZA Startseite">
+          <span class="tvz-wordmark">TvZ</span>
+          <span class="brand-divider"></span>
+          <span class="app-brand-text">
+            <span class="app-brand-title">TVZA</span>
+            <span class="app-brand-sub">Webprojekte · eine Webseite von TvZ</span>
+          </span>
+        </a>
+        <span class="user-chip" id="userChip" title="Abmelden">
+          <span id="userName"></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </span>
+      </div>
+    </header>
+
+    <main class="main">
+
+      <div class="greeting">
+        <h1 id="greetingText">Willkommen 👋</h1>
+        <p class="greeting-sub" id="greetingDate"></p>
+      </div>
+
+      <!-- Trackers -->
+      <section class="section">
+        <h2 class="section-title">Tracker</h2>
+        <div class="card-grid" id="trackerGrid">
+
+          <a href="pages/skitracker.html" class="card card--ski" id="cardSki" style="display:none">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg></div>
+            <div class="card-content"><h3>Ski Tracker</h3><p id="skiCardSub">Schliff &amp; Wachs</p></div>
+          </a>
+
+          <a href="pages/foodtracker.html" class="card card--food">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
+            <div class="card-content"><h3>Food Tracker</h3><p>Kalorien &amp; Nährstoffe</p></div>
+          </a>
+
+          <a href="pages/tripplanner.html" class="card card--trip">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
+            <div class="card-content"><h3>Familienreisen</h3><p>Gemeinsam planen</p></div>
+          </a>
+
+        </div>
+      </section>
+
+      <!-- Projects -->
+      <section class="section">
+        <h2 class="section-title" id="projTitle">Meine Projekte</h2>
+        <div class="link-list" id="projectList">
+          <div class="spinner">Lade…</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="addProjectBtn">+ Projekt hinzufügen</button>
+          <a class="btn btn-secondary" id="publicPageLink" href="public.html" target="_blank" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> Öffentliche Seite ansehen</a>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="tvz-footer">
+      <div class="tvz-footer-panel">
+        <div class="tvz-footer-logo">
+          <span class="tvz-wordmark">TvZ</span>
+          <span>Timothy van Zanten</span>
+        </div>
+        <div class="tvz-footer-copy">
+          <strong>TVZA · Webprojekte und persönliche Tracker</strong>
+          <span>Ski Tracker · Food Tracker · Familienreisen · Projektverwaltung</span>
+          <p>Eine private Web-App von TvZ für Alltag, Projekte und Lernen.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Project modal -->
+  <div class="modal-backdrop" id="projectModal">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle">Projekt hinzufügen</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="pEmoji">Emoji</label>
+          <input class="form-input" id="pEmoji" type="text" placeholder="🚀" maxlength="4" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="pName">Name</label>
+          <input class="form-input" id="pName" type="text" placeholder="Mein Projekt" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="pUrl">URL</label>
+        <input class="form-input" id="pUrl" type="url" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="pPassword">Optionales Veröffentlichungs-Passwort</label>
+        <input class="form-input" id="pPassword" type="text" placeholder="Leer lassen = ohne Passwort öffentlich" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modalCancel">Abbrechen</button>
+        <button class="btn btn-primary" id="modalSave">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db, requireAuth, wireOfflineBanner, escHtml } from './firebase-config.js';
+    import { signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import {
+      doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
+      deleteDoc, serverTimestamp, query, orderBy
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    wireOfflineBanner();
+
+    const user = await requireAuth();
+
+    // ── Icon chrome (SVG) ─────────────────────────
+    const svgIcon = paths => `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+    const ICON_LOCK   = svgIcon('<path d="M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z"/><path d="M7 11V7a5 5 0 0110 0v4"/>');
+    const ICON_GLOBE  = svgIcon('<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>');
+    const ICON_PENCIL = svgIcon('<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>');
+    const ICON_CLOSE  = svgIcon('<path d="M18 6L6 18M6 6l12 12"/>');
+
+    // ── Profile ───────────────────────────────────
+    let profile = { displayName: '', isTimo: false };
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists()) profile = snap.data();
+    } catch (e) { console.warn(e); }
+
+    const name = profile.displayName || 'du';
+    document.getElementById('userName').textContent = name;
+
+    const h = new Date().getHours();
+    const g = h>=5&&h<12 ? 'Guten Morgen' : h>=12&&h<18 ? 'Guten Tag' : h>=18 ? 'Guten Abend' : 'Gute Nacht';
+    document.getElementById('greetingText').textContent = `${g}, ${name}! 👋`;
+    document.getElementById('greetingDate').textContent =
+      new Date().toLocaleDateString('de-CH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    // ── Access control ────────────────────────────
+    if (profile.isTimo === true) {
+      document.getElementById('cardSki').style.display = '';
+      document.getElementById('projTitle').style.display = 'none';
+      document.getElementById('publicPageLink').style.display = '';
+    } else if (profile.isParent === true) {
+      document.getElementById('cardSki').style.display = '';
+      document.getElementById('skiCardSub').textContent = 'Timos Skis — Leseansicht';
+    }
+
+    // ── Logout ────────────────────────────────────
+    document.getElementById('userChip').addEventListener('click', async () => {
+      if (confirm('Abmelden?')) {
+        await signOut(auth);
+        window.location.href = 'login.html';
+      }
+    });
+
+    // ── Projects (per user) ───────────────────────
+    const projCol = collection(db, 'projects', user.uid, 'items');
+    let editingId = null;
+
+    onSnapshot(query(projCol, orderBy('createdAt', 'asc')), snap => {
+      renderProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    function renderProjects(items) {
+      const wrap = document.getElementById('projectList');
+      if (!items.length) {
+        wrap.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">📁</div><p class="empty-text">Noch keine Projekte. Füge dein erstes hinzu!</p></div>`;
+        return;
+      }
+      wrap.innerHTML = items.map(p => {
+        const isProtected = !!(p.publicPassword || '').trim();
+        return `
+        <div class="link-row project-row">
+          <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
+          <a class="link-title" href="${escHtml(p.url)}" target="_blank" rel="noopener">
+            <span>${escHtml(p.name)}</span>
+            <small>${p.isPublic ? (isProtected ? 'Öffentlich mit Passwort' : 'Öffentlich ohne Passwort') : 'Privat'}</small>
+          </a>
+          <div class="project-actions">
+            <button class="action-btn ${p.isPublic ? 'action-btn--public' : ''}" data-pub="${p.id}" data-ispub="${p.isPublic ? '1':''}" title="${p.isPublic ? 'Veröffentlichung beenden' : 'Projekt veröffentlichen'}">
+              <span>${p.isPublic ? (isProtected ? ICON_LOCK : ICON_GLOBE) : ICON_LOCK}</span>
+              <b>${p.isPublic ? 'Öffentlich' : 'Privat'}</b>
+            </button>
+            <button class="action-btn" data-edit="${p.id}" data-emoji="${escHtml(p.emoji||'')}" data-name="${escHtml(p.name)}" data-url="${escHtml(p.url)}" data-password="${escHtml(p.publicPassword || '')}" title="Projekt bearbeiten">
+              <span>${ICON_PENCIL}</span>
+              <b>Bearbeiten</b>
+            </button>
+            <button class="action-btn action-btn--danger" data-del="${p.id}" title="Projekt löschen">
+              <span>${ICON_CLOSE}</span>
+              <b>Löschen</b>
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+
+      syncPublishedProjects(items);
+
+      wrap.querySelectorAll('[data-del]').forEach(b =>
+        b.addEventListener('click', async () => {
+          if (confirm('Projekt löschen?')) {
+            await deleteDoc(doc(projCol, b.dataset.del)).catch(console.warn);
+            await deleteDoc(doc(db, 'publicProjects', user.uid, 'items', b.dataset.del)).catch(() => {});
+          }
+        }));
+
+      wrap.querySelectorAll('[data-edit]').forEach(b =>
+        b.addEventListener('click', () => openModal({
+          id: b.dataset.edit, emoji: b.dataset.emoji, name: b.dataset.name, url: b.dataset.url, publicPassword: b.dataset.password
+        })));
+
+      // Public/private toggle
+      wrap.querySelectorAll('[data-pub]').forEach(b =>
+        b.addEventListener('click', async () => {
+          const id = b.dataset.pub;
+          const p = items.find(x => x.id === id);
+          const makePublic = !b.dataset.ispub;
+          let publicPassword = (p.publicPassword || '').trim();
+          if (makePublic) publicPassword = prompt('Optionales Passwort für dieses öffentliche Projekt eingeben. Leer lassen = ohne Passwort veröffentlichen:', publicPassword)?.trim() || '';
+          await updateDoc(doc(projCol, id), { isPublic: makePublic, publicPassword });
+          if (makePublic) {
+            await setDoc(doc(db, 'publicProjects', user.uid, 'items', id), {
+              emoji: p.emoji || '🔗', name: p.name, url: p.url, publicPassword, updatedAt: serverTimestamp()
+            });
+          } else {
+            await deleteDoc(doc(db, 'publicProjects', user.uid, 'items', id)).catch(() => {});
+          }
+        }));
+    }
+
+    async function syncPublishedProjects(items) {
+      if (profile.isTimo !== true) return;
+      const published = items.filter(p => p.isPublic === true);
+      for (const p of published) {
+        await setDoc(doc(db, 'publicProjects', user.uid, 'items', p.id), {
+          emoji: p.emoji || '🔗',
+          name: p.name,
+          url: p.url,
+          publicPassword: (p.publicPassword || '').trim(),
+          updatedAt: serverTimestamp()
+        }).catch(console.warn);
+      }
+    }
+
+    // ── Modal ─────────────────────────────────────
+    const modal = document.getElementById('projectModal');
+
+    function openModal(p = null) {
+      editingId = p?.id || null;
+      document.getElementById('modalTitle').textContent = p ? 'Projekt bearbeiten' : 'Projekt hinzufügen';
+      document.getElementById('pEmoji').value = p?.emoji || '';
+      document.getElementById('pName').value  = p?.name  || '';
+      document.getElementById('pUrl').value   = p?.url   || '';
+      document.getElementById('pPassword').value = p?.publicPassword || '';
+      modal.classList.add('visible');
+    }
+
+    document.getElementById('addProjectBtn').addEventListener('click', () => openModal());
+    document.getElementById('modalCancel').addEventListener('click', () => modal.classList.remove('visible'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('visible'); });
+
+    document.getElementById('modalSave').addEventListener('click', async () => {
+      const emoji = document.getElementById('pEmoji').value.trim() || '🔗';
+      const name  = document.getElementById('pName').value.trim();
+      let   url   = document.getElementById('pUrl').value.trim();
+      const publicPassword = document.getElementById('pPassword').value.trim();
+      if (!name || !url) { alert('Bitte Name und URL eingeben.'); return; }
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+      if (editingId) {
+        await updateDoc(doc(projCol, editingId), { emoji, name, url, publicPassword });
+        // Keep public copy in sync if it exists
+        const pubRef = doc(db, 'publicProjects', user.uid, 'items', editingId);
+        const pubSnap = await getDoc(pubRef).catch(() => null);
+        if (pubSnap?.exists()) await setDoc(pubRef, { emoji, name, url, publicPassword, updatedAt: serverTimestamp() });
+      } else {
+        await addDoc(projCol, { emoji, name, url, publicPassword, isPublic: false, createdAt: serverTimestamp() });
+      }
+      modal.classList.remove('visible');
+    });
+
+    // ── Seed Timo's default projects (once) ───────
+    if (profile.isTimo === true && !profile.projectsSeeded) {
+      const seed = [
+        { emoji: '🏦', name: 'Banking App', url: 'https://example.com/REPLACE-banking' },
+        { emoji: '📚', name: 'Werbeposter', url: 'https://example.com/REPLACE-werbeposter' },
+      ];
+      for (const p of seed) await addDoc(projCol, { ...p, isPublic: false, createdAt: serverTimestamp() });
+      await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true });
+    }
+
+    // ── Register Timo's UID in config (for parent view & public page) ──
+    if (profile.isTimo === true) {
+      await setDoc(doc(db, 'config', 'tvza'), { timoUid: user.uid }, { merge: true }).catch(console.warn);
+    }
+
+    // ── Service worker ────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(console.warn);
+    }
+  </script>
+</body>
+</html>
