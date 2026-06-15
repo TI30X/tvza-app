@@ -10,9 +10,12 @@
   --surface-2: oklch(0.975 0.004 95);
   --ink:       oklch(0.22 0.01 250);
   --ink-soft:  oklch(0.45 0.01 250);
-  --accent:    oklch(0.55 0.20 262);
-  --accent-hover: oklch(0.49 0.19 262);
-  --accent-bg: oklch(0.96 0.03 262);
+  --accent:    oklch(0.43 0.16 264);
+  --accent-hover: oklch(0.38 0.14 264);
+  --accent-bg: oklch(0.95 0.03 264);
+  /* Danger / Löschen — eigenes Rot, passt sich pro Modus an */
+  --danger:    oklch(0.52 0.19 25);
+  --danger-bg: oklch(0.95 0.03 25);
   --border:    oklch(0.88 0.005 95);
 
   /* Tracker tints — muted, same lightness/chroma, differ only in hue */
@@ -70,10 +73,12 @@
   --surface-2: oklch(0.26 0.008 250);
   --ink:       oklch(0.94 0.006 95);
   --ink-soft:  oklch(0.72 0.01 95);
-  /* Akzent im Dark Mode = offizielles Blau (#2563EB), leicht aufgehellt für Kontrast */
-  --accent:    oklch(0.64 0.18 262);
-  --accent-hover: oklch(0.70 0.16 262);
-  --accent-bg: oklch(0.30 0.08 262);
+  /* Akzent im Dark Mode = tieferes, ruhigeres Vertrauens-Blau (weniger grell) */
+  --accent:    oklch(0.54 0.14 264);
+  --accent-hover: oklch(0.60 0.14 264);
+  --accent-bg: oklch(0.28 0.07 264);
+  --danger:    oklch(0.64 0.15 25);
+  --danger-bg: oklch(0.28 0.06 25);
   --border:    oklch(0.34 0.006 250);
   --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.28);
   --shadow-md: 0 4px 14px oklch(0 0 0 / 0.34);
@@ -383,8 +388,8 @@ button, input, select, textarea { font-family: inherit; }
 .action-btn svg { display: block; }
 .action-btn--public { background: var(--tint-food); border-color: var(--border); color: var(--food-deep); }
 .action-btn--public:hover { background: var(--tint-food); }
-.action-btn--danger { background: var(--accent-bg); border-color: var(--border); color: var(--accent); }
-.action-btn--danger:hover { background: var(--accent-bg); }
+.action-btn--danger { background: var(--danger-bg); border-color: var(--border); color: var(--danger); }
+.action-btn--danger:hover { background: var(--danger-bg); }
 
 /* ─── Form card ─── */
 .form-card {
