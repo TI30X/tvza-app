@@ -1,11 +1,12 @@
-/* TVZA Service Worker v11 — offline-first */
+/* TVZA Service Worker v12 — offline-first */
 
-const CACHE = 'tvza-v11';
+const CACHE = 'tvza-v12';
 const SHELL = [
   './',
   './index.html',
   './login.html',
   './style.css',
+  './theme.js',
   './manifest.json',
   './firebase-config.js',
   './foods.js',
