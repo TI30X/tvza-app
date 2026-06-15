@@ -135,7 +135,7 @@
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml } from '../firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail } from '../firebase-config.js';
     import {
       doc, getDoc, collection, addDoc, onSnapshot, updateDoc,
       deleteDoc, serverTimestamp, query, orderBy
@@ -150,35 +150,44 @@
     const ICON_SKI    = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg>`;
     const ICON_SKI_LG = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg>`;
 
-    // ── Access: Timo (edit) or Parent (read-only) ──
-    const profSnap = await getDoc(doc(db, 'users', user.uid));
-    const prof = profSnap.exists() ? profSnap.data() : {};
+    // ── Zugriff: eigene Daten, oder per Freigabe (?owner=…) ──
     let dataUid = user.uid;
     let readOnly = false;
+    let ownerLabel = '';
+    const ownerParam = new URLSearchParams(location.search).get('owner');
 
-    if (prof.isTimo === true) {
-      // full edit mode on own data
-    } else if (prof.isParent === true) {
-      const cfg = await getDoc(doc(db, 'config', 'tvza'));
-      if (!cfg.exists() || !cfg.data().timoUid) {
-        alert('Timos Konto ist noch nicht eingerichtet.');
-        window.location.href = '../index.html';
+    if (ownerParam && ownerParam !== user.uid) {
+      const shares = await sharesForEmail(user.email);
+      const s = shares.find(x => x.ownerUid === ownerParam && x.module === 'ski');
+      if (s) {
+        dataUid = ownerParam;
+        readOnly = s.role !== 'edit';
+        ownerLabel = s.ownerName || 'geteilt';
+      } else {
+        // Legacy: Elternansicht von Timos Skis
+        const profSnap = await getDoc(doc(db, 'users', user.uid));
+        const profData = profSnap.exists() ? profSnap.data() : {};
+        const cfg = await getDoc(doc(db, 'config', 'tvza'));
+        if (profData.isParent === true && cfg.exists() && cfg.data().timoUid === ownerParam) {
+          dataUid = ownerParam; readOnly = true; ownerLabel = 'Timo';
+        } else {
+          alert('Kein Zugriff auf diese Freigabe.');
+          window.location.href = '../index.html';
+        }
       }
-      dataUid = cfg.data().timoUid;
-      readOnly = true;
-    } else {
-      window.location.href = '../index.html';
     }
 
-    // Read-only UI adjustments
-    if (readOnly) {
-      document.querySelector('.page-title').textContent = 'Timos Skis';
+    // Read-only / shared UI adjustments
+    if (dataUid !== user.uid) {
+      document.querySelector('.page-title').textContent =
+        (ownerLabel ? ownerLabel + 's' : 'Geteilte') + ' Skis' + (readOnly ? '' : ' · Bearbeiten');
       const note = document.createElement('div');
       note.className = 'offline-banner visible';
       note.style.background = 'var(--ski)';
-      note.textContent = '👀 Leseansicht — Timos Daten';
+      note.textContent = readOnly ? `👀 Leseansicht — ${ownerLabel || 'geteilte'} Daten` : `✏️ Bearbeiten — ${ownerLabel || 'geteilte'} Daten`;
       document.querySelector('.accent-bar').after(note);
-      // Hide both forms
+    }
+    if (readOnly) {
       document.querySelectorAll('.form-card').forEach(el => el.style.display = 'none');
     }
 

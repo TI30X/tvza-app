@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -13,6 +13,21 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>TVZA</title>
+  <style>
+    .icon-btn { cursor:pointer; color:var(--ink-soft); min-width:40px; min-height:40px;
+      display:inline-flex; align-items:center; justify-content:center; }
+    .header-actions { display:flex; align-items:center; gap:6px; }
+    .share-list .link-row small { color:var(--ink-soft); }
+    .role-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;
+      background:var(--accent-bg); color:var(--accent); }
+    .settings-divider { border:0; border-top:1px solid var(--border); margin:18px 0; }
+    .radio-row { display:flex; gap:14px; align-items:center; font-size:14px; }
+    .radio-row label { display:flex; gap:6px; align-items:center; cursor:pointer; }
+    /* Passwort-Dialog */
+    .pw-input { width:100%; font-family:inherit; font-size:16px; padding:11px 12px;
+      border:1px solid var(--border); border-radius:var(--r1); background:var(--surface-2); color:var(--ink); }
+    .pw-input:focus { outline:none; border-color:var(--accent); }
+  </style>
 </head>
 <body>
   <div class="app">
@@ -31,10 +46,15 @@
             <span class="app-brand-sub">Webprojekte · eine Webseite von TvZ</span>
           </span>
         </a>
-        <span class="user-chip" id="userChip" title="Abmelden">
-          <span id="userName"></span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </span>
+        <div class="header-actions">
+          <span class="icon-btn" id="settingsBtn" title="Einstellungen & Module">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </span>
+          <span class="user-chip" id="userChip" title="Abmelden">
+            <span id="userName"></span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </span>
+        </div>
       </div>
     </header>
 
@@ -46,38 +66,53 @@
       </div>
 
       <!-- Trackers -->
-      <section class="section">
+      <section class="section" id="trackerSection">
         <h2 class="section-title">Tracker</h2>
         <div class="card-grid" id="trackerGrid">
 
           <a href="pages/skitracker.html" class="card card--ski" id="cardSki" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg></div>
-            <div class="card-content"><h3>Ski Tracker</h3><p id="skiCardSub">Schliff &amp; Wachs</p></div>
+            <div class="card-content"><h3>Ski Tracker</h3><p>Schliff &amp; Wachs</p></div>
           </a>
 
-          <a href="pages/foodtracker.html" class="card card--food">
+          <a href="pages/foodtracker.html" class="card card--food" id="cardFood" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
             <div class="card-content"><h3>Food Tracker</h3><p>Kalorien &amp; Nährstoffe</p></div>
           </a>
 
-          <a href="pages/tripplanner.html" class="card card--trip">
+          <a href="pages/tripplanner.html" class="card card--trip" id="cardTrip" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
             <div class="card-content"><h3>Familienreisen</h3><p>Gemeinsam planen</p></div>
           </a>
 
         </div>
+        <p id="noModulesHint" style="display:none;color:var(--ink-soft);font-size:14px">
+          Keine Module aktiviert. Öffne ⚙️ <a id="openSettingsLink" style="color:var(--accent);cursor:pointer">Einstellungen</a>, um Module zu aktivieren.
+        </p>
       </section>
 
-      <!-- Projects -->
+      <!-- Shared with me -->
+      <section class="section" id="sharedSection" style="display:none">
+        <h2 class="section-title">Mit mir geteilt</h2>
+        <div class="link-list share-list" id="sharedList"></div>
+      </section>
+
+      <!-- My projects -->
       <section class="section">
-        <h2 class="section-title" id="projTitle">Meine Projekte</h2>
+        <h2 class="section-title">Meine Projekte</h2>
         <div class="link-list" id="projectList">
           <div class="spinner">Lade…</div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           <button class="btn btn-primary" id="addProjectBtn">+ Projekt hinzufügen</button>
-          <a class="btn btn-secondary" id="publicPageLink" href="public.html" target="_blank" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> Öffentliche Seite ansehen</a>
+          <a class="btn btn-secondary" id="publicPageLink" href="public.html" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> Öffentliche Seite ansehen</a>
         </div>
+      </section>
+
+      <!-- Global public feed -->
+      <section class="section" id="publicFeedSection" style="display:none">
+        <h2 class="section-title">Öffentliche Projekte · von allen</h2>
+        <div class="link-list" id="publicFeedList"><div class="spinner">Lade…</div></div>
       </section>
 
     </main>
@@ -126,8 +161,64 @@
     </div>
   </div>
 
+  <!-- Settings modal -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+      <div class="modal-title">Einstellungen</div>
+
+      <p class="form-label" style="margin-bottom:8px">Module — wähle, was du sehen möchtest</p>
+      <div id="moduleToggles"></div>
+      <div class="modal-actions" style="margin-top:8px">
+        <button class="btn btn-secondary" id="settingsClose">Schliessen</button>
+        <button class="btn btn-primary" id="modulesSave">Module speichern</button>
+      </div>
+
+      <hr class="settings-divider" />
+
+      <p class="form-label" style="margin-bottom:8px">Modul teilen — mit Ansehen oder Bearbeiten</p>
+      <div class="form-group">
+        <label class="form-label" for="shareModule">Modul</label>
+        <select class="form-select" id="shareModule"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="shareEmail">E-Mail der Person</label>
+        <input class="form-input" id="shareEmail" type="email" placeholder="person@email.com" autocapitalize="off" autocorrect="off" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rechte</label>
+        <div class="radio-row">
+          <label><input type="radio" name="shareRole" value="view" checked /> Nur ansehen</label>
+          <label><input type="radio" name="shareRole" value="edit" /> Bearbeiten</label>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" id="shareCreate">Teilen</button>
+
+      <div id="myShares" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <!-- Password modal (for opening protected public projects) -->
+  <div class="modal-backdrop" id="pwModal">
+    <div class="modal">
+      <div class="modal-title">Passwort eingeben</div>
+      <div class="form-group">
+        <input class="pw-input" id="pwInput" type="text" inputmode="text"
+               autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
+               placeholder="Projektpasswort" />
+        <p id="pwErr" style="display:none;color:var(--accent);font-size:12px;margin-top:8px">Falsches Passwort.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="pwCancel">Abbrechen</button>
+        <button class="btn btn-primary" id="pwOk">Öffnen</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
-    import { auth, db, requireAuth, wireOfflineBanner, escHtml } from './firebase-config.js';
+    import {
+      auth, db, requireAuth, wireOfflineBanner, escHtml,
+      MODULES, DEFAULT_MODULES, enabledModules, getProfile, sharesForEmail, sharesByOwner
+    } from './firebase-config.js';
     import { signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
@@ -136,23 +227,19 @@
 
     wireOfflineBanner();
 
-    const user = await requireAuth();
+    // Nicht angemeldet → öffentliche Seite zuerst (Login erst danach).
+    const user = await requireAuth('public.html');
 
-    // ── Icon chrome (SVG) ─────────────────────────
     const svgIcon = paths => `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
     const ICON_LOCK   = svgIcon('<path d="M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z"/><path d="M7 11V7a5 5 0 0110 0v4"/>');
     const ICON_GLOBE  = svgIcon('<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>');
     const ICON_PENCIL = svgIcon('<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>');
     const ICON_CLOSE  = svgIcon('<path d="M18 6L6 18M6 6l12 12"/>');
 
-    // ── Profile ───────────────────────────────────
-    let profile = { displayName: '', isTimo: false };
-    try {
-      const snap = await getDoc(doc(db, 'users', user.uid));
-      if (snap.exists()) profile = snap.data();
-    } catch (e) { console.warn(e); }
-
+    // ── Profile & Module ──────────────────────────
+    let profile = await getProfile(user);
     const name = profile.displayName || 'du';
+    const ownerName = profile.displayName || '';
     document.getElementById('userName').textContent = name;
 
     const h = new Date().getHours();
@@ -161,26 +248,124 @@
     document.getElementById('greetingDate').textContent =
       new Date().toLocaleDateString('de-CH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
-    // ── Access control ────────────────────────────
-    if (profile.isTimo === true) {
-      document.getElementById('cardSki').style.display = '';
-      document.getElementById('projTitle').style.display = 'none';
-      document.getElementById('publicPageLink').style.display = '';
-    } else if (profile.isParent === true) {
-      document.getElementById('cardSki').style.display = '';
-      document.getElementById('skiCardSub').textContent = 'Timos Skis — Leseansicht';
+    function applyModules() {
+      const mods = enabledModules(profile);
+      document.getElementById('cardSki').style.display  = mods.ski  ? '' : 'none';
+      document.getElementById('cardFood').style.display = mods.food ? '' : 'none';
+      document.getElementById('cardTrip').style.display = mods.trip ? '' : 'none';
+      document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
+      const anyTracker = mods.ski || mods.food || mods.trip;
+      document.getElementById('noModulesHint').style.display = anyTracker ? 'none' : '';
     }
+    applyModules();
 
     // ── Logout ────────────────────────────────────
     document.getElementById('userChip').addEventListener('click', async () => {
-      if (confirm('Abmelden?')) {
-        await signOut(auth);
-        window.location.href = 'login.html';
-      }
+      if (confirm('Abmelden?')) { await signOut(auth); window.location.href = 'login.html'; }
     });
 
-    // ── Projects (per user) ───────────────────────
+    // ── Config: Timos UID (für Legacy-Elternansicht) ──
+    let timoUid = '';
+    try { const cfg = await getDoc(doc(db, 'config', 'tvza')); if (cfg.exists()) timoUid = cfg.data().timoUid || ''; } catch (e) {}
+    if (profile.isTimo === true) {
+      await setDoc(doc(db, 'config', 'tvza'), { timoUid: user.uid }, { merge: true }).catch(console.warn);
+      timoUid = user.uid;
+    }
+
+    /* ════ Einstellungen / Module ════════════════ */
+    const settingsModal = document.getElementById('settingsModal');
+    function openSettings() { renderModuleToggles(); renderShareModuleOptions(); renderMyShares(); settingsModal.classList.add('visible'); }
+    document.getElementById('settingsBtn').addEventListener('click', openSettings);
+    document.getElementById('openSettingsLink').addEventListener('click', openSettings);
+    document.getElementById('settingsClose').addEventListener('click', () => settingsModal.classList.remove('visible'));
+    settingsModal.addEventListener('click', e => { if (e.target === settingsModal) settingsModal.classList.remove('visible'); });
+
+    function renderModuleToggles() {
+      const mods = enabledModules(profile);
+      document.getElementById('moduleToggles').innerHTML = Object.values(MODULES).map(m => `
+        <label class="link-row" style="cursor:pointer;gap:12px">
+          <input type="checkbox" data-mod="${m.key}" ${mods[m.key] ? 'checked' : ''} style="width:18px;height:18px" />
+          <span class="link-icon">${m.emoji}</span>
+          <span class="link-title"><span>${escHtml(m.name)}</span><small>${escHtml(m.sub)}</small></span>
+        </label>`).join('');
+    }
+
+    document.getElementById('modulesSave').addEventListener('click', async () => {
+      const modules = {};
+      document.querySelectorAll('#moduleToggles [data-mod]').forEach(cb => modules[cb.dataset.mod] = cb.checked);
+      await updateDoc(doc(db, 'users', user.uid), { modules }).catch(async () => {
+        await setDoc(doc(db, 'users', user.uid), { modules }, { merge: true });
+      });
+      profile.modules = modules;
+      applyModules();
+      settingsModal.classList.remove('visible');
+    });
+
+    /* ════ Teilen ════════════════════════════════ */
+    function renderShareModuleOptions() {
+      const sel = document.getElementById('shareModule');
+      sel.innerHTML = Object.values(MODULES).filter(m => m.shareable)
+        .map(m => `<option value="${m.key}">${escHtml(m.emoji + ' ' + m.name)}</option>`).join('');
+    }
+
+    document.getElementById('shareCreate').addEventListener('click', async () => {
+      const moduleKey = document.getElementById('shareModule').value;
+      const email = document.getElementById('shareEmail').value.trim().toLowerCase();
+      const role = document.querySelector('input[name="shareRole"]:checked').value;
+      if (!email || !/.+@.+\..+/.test(email)) { alert('Bitte eine gültige E-Mail eingeben.'); return; }
+      if (email === (user.email || '').toLowerCase()) { alert('Du kannst nicht mit dir selbst teilen.'); return; }
+      await addDoc(collection(db, 'shares'), {
+        ownerUid: user.uid, ownerName, module: moduleKey, targetEmail: email, role,
+        createdAt: serverTimestamp()
+      });
+      document.getElementById('shareEmail').value = '';
+      renderMyShares();
+      alert('Geteilt! Die Person sieht das Modul nach dem Anmelden unter „Mit mir geteilt".');
+    });
+
+    async function renderMyShares() {
+      const wrap = document.getElementById('myShares');
+      const shares = await sharesByOwner(user.uid);
+      if (!shares.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch nichts geteilt.</p>'; return; }
+      wrap.innerHTML = '<p class="form-label" style="margin-bottom:8px">Von mir geteilt</p>' + shares.map(s => `
+        <div class="link-row">
+          <span class="link-icon">${MODULES[s.module]?.emoji || '🔗'}</span>
+          <span class="link-title"><span>${escHtml(MODULES[s.module]?.name || s.module)}</span><small>${escHtml(s.targetEmail)} · ${s.role === 'edit' ? 'Bearbeiten' : 'Nur ansehen'}</small></span>
+          <button class="action-btn action-btn--danger" data-unshare="${s.id}" title="Freigabe entfernen"><span>${ICON_CLOSE}</span><b>Entfernen</b></button>
+        </div>`).join('');
+      wrap.querySelectorAll('[data-unshare]').forEach(b => b.addEventListener('click', async () => {
+        await deleteDoc(doc(db, 'shares', b.dataset.unshare)).catch(console.warn);
+        renderMyShares();
+      }));
+    }
+
+    /* ════ Mit mir geteilt ═══════════════════════ */
+    (async function renderSharedWithMe() {
+      const shares = await sharesForEmail(user.email);
+      // Legacy: Elternansicht von Timos Skis (falls isParent gesetzt)
+      if (profile.isParent === true && timoUid && timoUid !== user.uid &&
+          !shares.some(s => s.ownerUid === timoUid && s.module === 'ski')) {
+        shares.push({ ownerUid: timoUid, module: 'ski', role: 'view', ownerName: 'Timo' });
+      }
+      const sec = document.getElementById('sharedSection');
+      if (!shares.length) { sec.style.display = 'none'; return; }
+      sec.style.display = '';
+      document.getElementById('sharedList').innerHTML = shares.map(s => {
+        const m = MODULES[s.module];
+        if (!m || !m.page) return '';
+        const href = `${m.page}?owner=${encodeURIComponent(s.ownerUid)}`;
+        return `
+        <a class="link-row" href="${href}">
+          <span class="link-icon">${m.emoji}</span>
+          <span class="link-title"><span>${escHtml(m.name)}${s.ownerName ? ' · ' + escHtml(s.ownerName) : ''}</span><small>Geteilt mit dir</small></span>
+          <span class="role-badge">${s.role === 'edit' ? 'Bearbeiten' : 'Ansehen'}</span>
+        </a>`;
+      }).join('');
+    })();
+
+    /* ════ Projekte (eigene) ═════════════════════ */
     const projCol = collection(db, 'projects', user.uid, 'items');
+    const pubDoc = id => doc(db, 'publicProjects', `${user.uid}__${id}`);
     let editingId = null;
 
     onSnapshot(query(projCol, orderBy('createdAt', 'asc')), snap => {
@@ -208,12 +393,10 @@
               <b>${p.isPublic ? 'Öffentlich' : 'Privat'}</b>
             </button>
             <button class="action-btn" data-edit="${p.id}" data-emoji="${escHtml(p.emoji||'')}" data-name="${escHtml(p.name)}" data-url="${escHtml(p.url)}" data-password="${escHtml(p.publicPassword || '')}" title="Projekt bearbeiten">
-              <span>${ICON_PENCIL}</span>
-              <b>Bearbeiten</b>
+              <span>${ICON_PENCIL}</span><b>Bearbeiten</b>
             </button>
             <button class="action-btn action-btn--danger" data-del="${p.id}" title="Projekt löschen">
-              <span>${ICON_CLOSE}</span>
-              <b>Löschen</b>
+              <span>${ICON_CLOSE}</span><b>Löschen</b>
             </button>
           </div>
         </div>`;
@@ -225,7 +408,7 @@
         b.addEventListener('click', async () => {
           if (confirm('Projekt löschen?')) {
             await deleteDoc(doc(projCol, b.dataset.del)).catch(console.warn);
-            await deleteDoc(doc(db, 'publicProjects', user.uid, 'items', b.dataset.del)).catch(() => {});
+            await deleteDoc(pubDoc(b.dataset.del)).catch(() => {});
           }
         }));
 
@@ -234,42 +417,37 @@
           id: b.dataset.edit, emoji: b.dataset.emoji, name: b.dataset.name, url: b.dataset.url, publicPassword: b.dataset.password
         })));
 
-      // Public/private toggle
       wrap.querySelectorAll('[data-pub]').forEach(b =>
         b.addEventListener('click', async () => {
           const id = b.dataset.pub;
           const p = items.find(x => x.id === id);
           const makePublic = !b.dataset.ispub;
           let publicPassword = (p.publicPassword || '').trim();
-          if (makePublic) publicPassword = prompt('Optionales Passwort für dieses öffentliche Projekt eingeben. Leer lassen = ohne Passwort veröffentlichen:', publicPassword)?.trim() || '';
+          if (makePublic) publicPassword = prompt('Optionales Passwort für dieses öffentliche Projekt. Leer lassen = ohne Passwort veröffentlichen:', publicPassword)?.trim() || '';
           await updateDoc(doc(projCol, id), { isPublic: makePublic, publicPassword });
           if (makePublic) {
-            await setDoc(doc(db, 'publicProjects', user.uid, 'items', id), {
-              emoji: p.emoji || '🔗', name: p.name, url: p.url, publicPassword, updatedAt: serverTimestamp()
+            await setDoc(pubDoc(id), {
+              ownerUid: user.uid, ownerName, emoji: p.emoji || '🔗', name: p.name, url: p.url, publicPassword, updatedAt: serverTimestamp()
             });
           } else {
-            await deleteDoc(doc(db, 'publicProjects', user.uid, 'items', id)).catch(() => {});
+            await deleteDoc(pubDoc(id)).catch(() => {});
           }
         }));
     }
 
+    // Hält den gemeinsamen Feed mit den eigenen veröffentlichten Projekten synchron.
     async function syncPublishedProjects(items) {
-      if (profile.isTimo !== true) return;
-      const published = items.filter(p => p.isPublic === true);
-      for (const p of published) {
-        await setDoc(doc(db, 'publicProjects', user.uid, 'items', p.id), {
-          emoji: p.emoji || '🔗',
-          name: p.name,
-          url: p.url,
-          publicPassword: (p.publicPassword || '').trim(),
+      for (const p of items.filter(x => x.isPublic === true)) {
+        await setDoc(pubDoc(p.id), {
+          ownerUid: user.uid, ownerName, emoji: p.emoji || '🔗',
+          name: p.name, url: p.url, publicPassword: (p.publicPassword || '').trim(),
           updatedAt: serverTimestamp()
         }).catch(console.warn);
       }
     }
 
-    // ── Modal ─────────────────────────────────────
+    // ── Project modal ─────────────────────────────
     const modal = document.getElementById('projectModal');
-
     function openModal(p = null) {
       editingId = p?.id || null;
       document.getElementById('modalTitle').textContent = p ? 'Projekt bearbeiten' : 'Projekt hinzufügen';
@@ -279,29 +457,74 @@
       document.getElementById('pPassword').value = p?.publicPassword || '';
       modal.classList.add('visible');
     }
-
     document.getElementById('addProjectBtn').addEventListener('click', () => openModal());
     document.getElementById('modalCancel').addEventListener('click', () => modal.classList.remove('visible'));
     modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('visible'); });
 
     document.getElementById('modalSave').addEventListener('click', async () => {
       const emoji = document.getElementById('pEmoji').value.trim() || '🔗';
-      const name  = document.getElementById('pName').value.trim();
+      const pname = document.getElementById('pName').value.trim();
       let   url   = document.getElementById('pUrl').value.trim();
       const publicPassword = document.getElementById('pPassword').value.trim();
-      if (!name || !url) { alert('Bitte Name und URL eingeben.'); return; }
+      if (!pname || !url) { alert('Bitte Name und URL eingeben.'); return; }
       if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
       if (editingId) {
-        await updateDoc(doc(projCol, editingId), { emoji, name, url, publicPassword });
-        // Keep public copy in sync if it exists
-        const pubRef = doc(db, 'publicProjects', user.uid, 'items', editingId);
-        const pubSnap = await getDoc(pubRef).catch(() => null);
-        if (pubSnap?.exists()) await setDoc(pubRef, { emoji, name, url, publicPassword, updatedAt: serverTimestamp() });
+        await updateDoc(doc(projCol, editingId), { emoji, name: pname, url, publicPassword });
+        const pubSnap = await getDoc(pubDoc(editingId)).catch(() => null);
+        if (pubSnap?.exists()) await setDoc(pubDoc(editingId), { ownerUid: user.uid, ownerName, emoji, name: pname, url, publicPassword, updatedAt: serverTimestamp() });
       } else {
-        await addDoc(projCol, { emoji, name, url, publicPassword, isPublic: false, createdAt: serverTimestamp() });
+        await addDoc(projCol, { emoji, name: pname, url, publicPassword, isPublic: false, createdAt: serverTimestamp() });
       }
       modal.classList.remove('visible');
+    });
+
+    /* ════ Globaler öffentlicher Feed ════════════ */
+    const pwModal = document.getElementById('pwModal');
+    const pwInput = document.getElementById('pwInput');
+    const pwErr   = document.getElementById('pwErr');
+    let pwResolve = null;
+    function askPassword() {
+      return new Promise(resolve => {
+        pwResolve = resolve; pwInput.value = ''; pwErr.style.display = 'none';
+        pwModal.classList.add('visible'); setTimeout(() => pwInput.focus(), 50);
+      });
+    }
+    function closePw(val) { pwModal.classList.remove('visible'); const r = pwResolve; pwResolve = null; r && r(val); }
+    document.getElementById('pwCancel').addEventListener('click', () => closePw(null));
+    document.getElementById('pwOk').addEventListener('click', () => closePw(pwInput.value));
+    pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') closePw(pwInput.value); });
+    pwModal.addEventListener('click', e => { if (e.target === pwModal) closePw(null); });
+    async function openProtected(p) {
+      while (true) {
+        const entered = await askPassword();
+        if (entered === null) return;
+        if (entered.trim() === String(p.publicPassword).trim()) { window.open(p.url, '_blank', 'noopener'); return; }
+        pwInput.value = ''; pwErr.style.display = ''; pwModal.classList.add('visible'); setTimeout(() => pwInput.focus(), 50);
+      }
+    }
+
+    onSnapshot(collection(db, 'publicProjects'), snap => {
+      if (!enabledModules(profile).publicProjects) return;
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
+      const wrap = document.getElementById('publicFeedList');
+      if (!items.length) { wrap.innerHTML = '<div class="empty-state" style="padding:24px"><p class="empty-text">Noch keine öffentlichen Projekte.</p></div>'; return; }
+      wrap.innerHTML = items.map(p => {
+        const isProtected = !!(p.publicPassword || '').trim();
+        return `
+        <button class="link-row" type="button" data-open="${escHtml(p.id)}" style="width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit">
+          <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
+          <span class="link-title"><span>${escHtml(p.name)}</span><small>${p.ownerName ? escHtml(p.ownerName) + ' · ' : ''}${isProtected ? 'Mit Passwort' : 'Öffentlich'}</small></span>
+          <span class="link-icon">${isProtected ? ICON_LOCK : '↗'}</span>
+        </button>`;
+      }).join('');
+      wrap.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
+        const p = items.find(x => x.id === b.dataset.open);
+        if (!p) return;
+        if (String(p.publicPassword || '').trim()) openProtected(p);
+        else window.open(p.url, '_blank', 'noopener');
+      }));
     });
 
     // ── Seed Timo's default projects (once) ───────
@@ -311,18 +534,11 @@
         { emoji: '📚', name: 'Werbeposter', url: 'https://example.com/REPLACE-werbeposter' },
       ];
       for (const p of seed) await addDoc(projCol, { ...p, isPublic: false, createdAt: serverTimestamp() });
-      await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true });
-    }
-
-    // ── Register Timo's UID in config (for parent view & public page) ──
-    if (profile.isTimo === true) {
-      await setDoc(doc(db, 'config', 'tvza'), { timoUid: user.uid }, { merge: true }).catch(console.warn);
+      await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true }).catch(() => {});
     }
 
     // ── Service worker ────────────────────────────
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(console.warn);
-    }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.warn);
   </script>
 </body>
 </html>

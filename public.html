@@ -108,6 +108,24 @@
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
     }
+    /* Passwort-Dialog (ersetzt natives prompt — behebt Tipp-Problem auf Mobil) */
+    .pw-backdrop { position: fixed; inset: 0; background: oklch(0 0 0 / 0.45); display: none;
+      align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+    .pw-backdrop.visible { display: flex; }
+    .pw-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2);
+      box-shadow: var(--shadow-md); padding: 22px; width: 100%; max-width: 360px; }
+    .pw-card h3 { font-size: 16px; margin-bottom: 4px; }
+    .pw-card p { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
+    .pw-input { width: 100%; font-family: inherit; font-size: 16px; padding: 11px 12px;
+      border: 1px solid var(--border); border-radius: var(--r1); background: var(--surface-2); color: var(--ink); }
+    .pw-input:focus { outline: none; border-color: var(--accent); }
+    .pw-err { color: var(--accent); font-size: 12px; margin-top: 8px; display: none; }
+    .pw-err.visible { display: block; }
+    .pw-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .pw-btn { flex: 1; font-family: inherit; font-size: 14px; font-weight: 700; padding: 10px;
+      border-radius: var(--r1); cursor: pointer; border: 1px solid var(--border); }
+    .pw-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .pw-btn-secondary { background: var(--surface-2); color: var(--ink); }
   </style>
 </head>
 <body>
@@ -124,6 +142,7 @@
         <h1>TVZA · Projekte</h1>
         <p>Webprojekte · eine Webseite von TvZ</p>
       </div>
+      <a id="authBtn" href="login.html" style="margin-left:auto;align-self:center;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:9px 16px;border-radius:var(--r1);white-space:nowrap">Anmelden</a>
     </div>
   </div>
 
@@ -146,11 +165,28 @@
     </div>
   </footer>
 
+  <!-- Passwort-Dialog -->
+  <div class="pw-backdrop" id="pwModal">
+    <div class="pw-card">
+      <h3 id="pwTitle">Passwort eingeben</h3>
+      <p id="pwSub">Dieses Projekt ist passwortgeschützt.</p>
+      <input class="pw-input" id="pwInput" type="text" inputmode="text"
+             autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
+             placeholder="Projektpasswort" />
+      <div class="pw-err" id="pwErr">Falsches Passwort.</div>
+      <div class="pw-actions">
+        <button class="pw-btn pw-btn-secondary" id="pwCancel">Abbrechen</button>
+        <button class="pw-btn pw-btn-primary" id="pwOk">Öffnen</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import {
       getFirestore, doc, getDoc, collection, getDocs
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     // Standalone init — no auth, no offline persistence needed here
     const app = initializeApp({
@@ -162,29 +198,64 @@
       appId: "1:214201333283:web:08adcd69499ef4046e2396"
     });
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
     const ICON_LOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`;
 
+    // Anmelden-Button: angemeldet → "Zur App", sonst → "Anmelden"
+    onAuthStateChanged(auth, u => {
+      const btn = document.getElementById('authBtn');
+      if (u) { btn.textContent = 'Zur App →'; btn.href = 'index.html'; }
+      else   { btn.textContent = 'Anmelden';  btn.href = 'login.html'; }
+    });
+
+    /* ── Eigener Passwort-Dialog (statt prompt) ──────────
+       Behebt das Problem, dass auf Mobil getippte Passwörter
+       durch Autokorrektur/Großschreibung nicht passten.      */
+    const pwModal = document.getElementById('pwModal');
+    const pwInput = document.getElementById('pwInput');
+    const pwErr   = document.getElementById('pwErr');
+    let pwResolve = null;
+
+    function askPassword() {
+      return new Promise(resolve => {
+        pwResolve = resolve;
+        pwInput.value = '';
+        pwErr.classList.remove('visible');
+        pwModal.classList.add('visible');
+        setTimeout(() => pwInput.focus(), 50);
+      });
+    }
+    function closePw(val) { pwModal.classList.remove('visible'); const r = pwResolve; pwResolve = null; r && r(val); }
+    document.getElementById('pwCancel').addEventListener('click', () => closePw(null));
+    document.getElementById('pwOk').addEventListener('click', () => closePw(pwInput.value));
+    pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') closePw(pwInput.value); });
+    pwModal.addEventListener('click', e => { if (e.target === pwModal) closePw(null); });
+
+    async function openProtected(project) {
+      // Wiederholt fragen, bis korrekt oder abgebrochen.
+      while (true) {
+        const entered = await askPassword();
+        if (entered === null) return;                 // abgebrochen
+        if (entered.trim() === String(project.publicPassword).trim()) {
+          window.open(project.url, '_blank', 'noopener');
+          return;
+        }
+        // falsch → Fehler zeigen und erneut fragen
+        pwInput.value = '';
+        pwErr.classList.add('visible');
+        pwModal.classList.add('visible');
+        setTimeout(() => pwInput.focus(), 50);
+      }
+    }
+
     async function load() {
       const list = document.getElementById('list');
       try {
-        // Find Timo's UID from public config. A uid query parameter is accepted as a fallback.
-        let uid = new URLSearchParams(window.location.search).get('uid') || '';
-        if (!uid) {
-          try {
-            const cfg = await getDoc(doc(db, 'config', 'tvza'));
-            uid = cfg.exists() ? (cfg.data().timoUid || '') : '';
-          } catch (cfgErr) {
-            console.warn('Config konnte nicht gelesen werden:', cfgErr);
-          }
-        }
-        if (!uid) {
-          list.innerHTML = '<div class="empty">Noch keine Projekte verfügbar.</div>';
-          return;
-        }
-        const snap = await getDocs(collection(db, 'publicProjects', uid, 'items'));
+        // Gemeinsamer Feed: alle öffentlichen Projekte ALLER Nutzer (flache Sammlung).
+        const snap = await getDocs(collection(db, 'publicProjects'));
         const items = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
           .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
@@ -196,21 +267,16 @@
         list.innerHTML = items.map(p => `
           <button class="proj" type="button" data-id="${esc(p.id)}">
             <span class="proj-emoji">${esc(p.emoji || '🔗')}</span>
-            <span class="proj-name">${esc(p.name)}<small class="proj-meta">${p.publicPassword ? 'Mit Passwort geschützt' : 'Ohne Passwort öffentlich'}</small></span>
+            <span class="proj-name">${esc(p.name)}<small class="proj-meta">${p.ownerName ? esc(p.ownerName) + ' · ' : ''}${p.publicPassword ? 'Mit Passwort geschützt' : 'Ohne Passwort öffentlich'}</small></span>
             <span class="proj-arrow">${p.publicPassword ? ICON_LOCK : '↗'}</span>
           </button>`).join('');
 
         list.querySelectorAll('[data-id]').forEach(btn => {
           btn.addEventListener('click', () => {
             const project = items.find(item => item.id === btn.dataset.id);
-            if (project?.publicPassword) {
-              const entered = prompt('Passwort fuer dieses Projekt eingeben:')?.trim() || '';
-              if (entered !== project.publicPassword) {
-                alert('Falsches Passwort.');
-                return;
-              }
-            }
-            window.open(project.url, '_blank', 'noopener');
+            if (!project) return;
+            if (String(project.publicPassword || '').trim()) openProtected(project);
+            else window.open(project.url, '_blank', 'noopener');
           });
         });
       } catch (err) {

@@ -131,7 +131,7 @@
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml } from '../firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail } from '../firebase-config.js';
     import { searchFoods, findFood } from '../foods.js';
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot,
@@ -141,8 +141,36 @@
     wireOfflineBanner();
     const user = await requireAuth('../login.html');
 
-    const entriesCol = collection(db, 'foodlog', user.uid, 'entries');
-    const profileRef = doc(db, 'foodlog', user.uid, 'meta', 'profile');
+    // ── Zugriff: eigene Daten, oder per Freigabe (?owner=…) ──
+    let dataUid = user.uid;
+    let readOnly = false;
+    let ownerLabel = '';
+    const ownerParam = new URLSearchParams(location.search).get('owner');
+    if (ownerParam && ownerParam !== user.uid) {
+      const shares = await sharesForEmail(user.email);
+      const s = shares.find(x => x.ownerUid === ownerParam && x.module === 'food');
+      if (s) { dataUid = ownerParam; readOnly = s.role !== 'edit'; ownerLabel = s.ownerName || 'geteilt'; }
+      else { alert('Kein Zugriff auf diese Freigabe.'); window.location.href = '../index.html'; }
+    }
+    if (dataUid !== user.uid) {
+      document.querySelector('.page-title').textContent =
+        (ownerLabel ? ownerLabel + 's' : 'Geteilter') + ' Food Tracker';
+      const note = document.createElement('div');
+      note.className = 'offline-banner visible';
+      note.style.background = 'var(--food)';
+      note.textContent = readOnly ? `👀 Leseansicht — ${ownerLabel || 'geteilte'} Daten` : `✏️ Bearbeiten — ${ownerLabel || 'geteilte'} Daten`;
+      document.querySelector('.accent-bar').after(note);
+    }
+
+    const entriesCol = collection(db, 'foodlog', dataUid, 'entries');
+    const profileRef = doc(db, 'foodlog', dataUid, 'meta', 'profile');
+
+    if (readOnly) {
+      const sb = document.getElementById('saveBtn');
+      if (sb) sb.closest('.form-card').style.display = 'none';
+      const pb = document.getElementById('profileBtn');
+      if (pb) pb.style.display = 'none';
+    }
 
     /* ── Icon chrome (SVG) ── */
     const ICON_CLOSE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
@@ -315,7 +343,9 @@
         fill.style.width = pct + '%';
         fill.classList.toggle('over', total > target);
       } else {
-        document.getElementById('kcalGoal').innerHTML = `<a style="color:var(--food);cursor:pointer" onclick="document.getElementById('profileBtn').click()">Profil einrichten →</a>`;
+        document.getElementById('kcalGoal').innerHTML = readOnly
+          ? 'Kein Richtwert hinterlegt'
+          : `<a style="color:var(--food);cursor:pointer" onclick="document.getElementById('profileBtn').click()">Profil einrichten →</a>`;
         document.getElementById('kcalFill').style.width = '0%';
       }
     }
@@ -339,7 +369,7 @@
               <div class="item-title">${e.ingredients.map(i => escHtml(i.name)).join(', ')}</div>
               <div class="item-sub">≈ ${Math.round(e.kcal)} kcal · P ${e.protein?.toFixed(0)}g · KH ${e.carbs?.toFixed(0)}g · F ${e.fat?.toFixed(0)}g</div>
             </div>
-            <div class="item-actions"><button class="btn btn-danger" data-del="${e.id}">${ICON_CLOSE}</button></div>
+            ${readOnly ? '' : `<div class="item-actions"><button class="btn btn-danger" data-del="${e.id}">${ICON_CLOSE}</button></div>`}
           </div>`).join('') + `</div>`).join('');
 
       wrap.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
