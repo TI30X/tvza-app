@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#1E40AF" />
+  <meta name="theme-color" content="#1A1A2E" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="TVZA" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%231a1a2e'/><stop offset='.55' stop-color='%2316213e'/><stop offset='1' stop-color='%230f3460'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><text x='16' y='22' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'>TvZ</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
   <script src="theme.js"></script>
   <link rel="stylesheet" href="style.css" />
@@ -92,6 +94,11 @@
             <div class="card-content"><h3>Maturaarbeit</h3><p>Status &amp; Fortschritt</p></div>
           </a>
 
+          <a href="pages/maturaarbeit-tracker.html" class="card card--matura" id="cardMaturaTracker" style="display:none">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+            <div class="card-content"><h3>Maturaarbeit-Tracker</h3><p>To-dos &amp; Countdown</p></div>
+          </a>
+
         </div>
         <p id="noModulesHint" style="display:none;color:var(--ink-soft);font-size:14px">
           Keine Module aktiviert. Öffne ⚙️ <a id="openSettingsLink" style="color:var(--accent);cursor:pointer">Einstellungen</a>, um Module zu aktivieren.
@@ -112,7 +119,7 @@
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           <button class="btn btn-primary" id="addProjectBtn">+ Projekt hinzufügen</button>
-          <a class="btn btn-secondary" id="publicPageLink" href="public.html" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> Öffentliche Seite ansehen</a>
+          <a class="btn btn-secondary" id="publicPageLink" href="public.html"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> Öffentliche Seite ansehen</a>
         </div>
       </section>
 
@@ -173,7 +180,7 @@
     <div class="modal">
       <div class="modal-title">Einstellungen</div>
 
-      <p class="form-label" style="margin-bottom:8px">Module — wähle, was du sehen möchtest</p>
+      <p class="form-label" style="margin-bottom:8px">Module</p>
       <div id="moduleToggles"></div>
       <div class="modal-actions" style="margin-top:8px">
         <button class="btn btn-secondary" id="settingsClose">Schliessen</button>
@@ -188,8 +195,9 @@
         <select class="form-select" id="shareModule"></select>
       </div>
       <div class="form-group">
-        <label class="form-label" for="shareEmail">E-Mail der Person</label>
-        <input class="form-input" id="shareEmail" type="email" placeholder="person@email.com" autocapitalize="off" autocorrect="off" />
+        <label class="form-label" for="shareUser">Person</label>
+        <input class="form-input" id="shareUser" list="appUserSuggestions" type="text" placeholder="Name oder E-Mail" autocapitalize="off" autocorrect="off" />
+        <datalist id="appUserSuggestions"></datalist>
       </div>
       <div class="form-group">
         <label class="form-label">Rechte</label>
@@ -201,6 +209,12 @@
       <button class="btn btn-primary btn-block" id="shareCreate">Teilen</button>
 
       <div id="myShares" style="margin-top:16px"></div>
+
+      <div id="adminSection" style="display:none">
+        <hr class="settings-divider" />
+        <p class="form-label" style="margin-bottom:8px">Admin · Benutzer verwalten</p>
+        <div id="adminUsers"><div class="spinner">Lade…</div></div>
+      </div>
     </div>
   </div>
 
@@ -224,12 +238,12 @@
   <script type="module">
     import {
       auth, db, requireAuth, wireOfflineBanner, escHtml,
-      MODULES, DEFAULT_MODULES, enabledModules, getProfile, sharesForEmail, sharesByOwner
+      MODULES, allowedModules, enabledModules, getProfile, sharesForEmail, sharesByOwner
     } from './firebase-config.js';
     import { signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
-      deleteDoc, serverTimestamp, query, orderBy
+      deleteDoc, serverTimestamp, query, orderBy, getDocs
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     wireOfflineBanner();
@@ -250,6 +264,8 @@
     const name = profile.displayName || 'du';
     const ownerName = profile.displayName || '';
     document.getElementById('userName').textContent = name;
+    let appUsers = [];
+    let appUsersLoaded = false;
 
     const h = new Date().getHours();
     const g = h>=5&&h<12 ? 'Guten Morgen' : h>=12&&h<18 ? 'Guten Tag' : h>=18 ? 'Guten Abend' : 'Gute Nacht';
@@ -263,6 +279,7 @@
       document.getElementById('cardFood').style.display = mods.food ? '' : 'none';
       document.getElementById('cardTrip').style.display = mods.trip ? '' : 'none';
       document.getElementById('cardMatura').style.display = mods.matura ? '' : 'none';
+      document.getElementById('cardMaturaTracker').style.display = mods.maturatracker ? '' : 'none';
       document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
       const anyTracker = mods.ski || mods.food || mods.trip || mods.matura;
       document.getElementById('noModulesHint').style.display = anyTracker ? 'none' : '';
@@ -276,23 +293,77 @@
 
     // ── Config: Timos UID (für Legacy-Elternansicht) ──
     let timoUid = '';
-    try { const cfg = await getDoc(doc(db, 'config', 'tvza')); if (cfg.exists()) timoUid = cfg.data().timoUid || ''; } catch (e) {}
     if (profile.isTimo === true) {
       await setDoc(doc(db, 'config', 'tvza'), { timoUid: user.uid }, { merge: true }).catch(console.warn);
       timoUid = user.uid;
+    } else if (profile.isParent === true) {
+      try { const cfg = await getDoc(doc(db, 'config', 'tvza')); if (cfg.exists()) timoUid = cfg.data().timoUid || ''; } catch (e) {}
     }
 
     /* ════ Einstellungen / Module ════════════════ */
     const settingsModal = document.getElementById('settingsModal');
-    function openSettings() { renderModuleToggles(); renderShareModuleOptions(); renderMyShares(); settingsModal.classList.add('visible'); }
+    function openSettings() {
+      renderModuleToggles();
+      renderShareModuleOptions();
+      renderMyShares();
+      document.getElementById('adminSection').style.display = profile.isTimo === true ? '' : 'none';
+      settingsModal.classList.add('visible');
+      loadAppUsers().then(() => {
+        renderUserSuggestions();
+        if (profile.isTimo === true) renderAdminUsers();
+      });
+    }
     document.getElementById('settingsBtn').addEventListener('click', openSettings);
     document.getElementById('openSettingsLink').addEventListener('click', openSettings);
     document.getElementById('settingsClose').addEventListener('click', () => settingsModal.classList.remove('visible'));
     settingsModal.addEventListener('click', e => { if (e.target === settingsModal) settingsModal.classList.remove('visible'); });
 
+    async function loadAppUsers(force = false) {
+      if (appUsersLoaded && !force) return appUsers;
+      try {
+        const qs = await getDocs(collection(db, 'users'));
+        appUsers = qs.docs.map(d => ({ uid: d.id, ...d.data() }))
+          .filter(u => u.email)
+          .sort((a, b) => String(a.displayName || a.email).localeCompare(String(b.displayName || b.email), 'de-CH'));
+        appUsersLoaded = true;
+      } catch (e) {
+        console.warn(e);
+        appUsers = [];
+      }
+      return appUsers;
+    }
+
+    function userOptionLabel(u) {
+      return `${u.displayName || u.email} <${u.email}>`;
+    }
+
+    function renderUserSuggestions() {
+      document.getElementById('appUserSuggestions').innerHTML = appUsers
+        .filter(u => u.uid !== user.uid)
+        .map(u => `<option value="${escHtml(userOptionLabel(u))}"></option>`)
+        .join('');
+    }
+
+    function resolveShareUser(raw) {
+      const val = raw.trim().toLowerCase();
+      if (!val) return null;
+      return appUsers.find(u => {
+        const email = String(u.email || '').toLowerCase();
+        const name = String(u.displayName || '').toLowerCase();
+        return email === val || name === val || userOptionLabel(u).toLowerCase() === val;
+      }) || null;
+    }
+
     function renderModuleToggles() {
+      const allowed = allowedModules(profile);
       const mods = enabledModules(profile);
-      document.getElementById('moduleToggles').innerHTML = Object.values(MODULES).map(m => `
+      const availableModules = Object.values(MODULES).filter(m => allowed[m.key]);
+      document.getElementById('modulesSave').style.display = availableModules.length ? '' : 'none';
+      if (!availableModules.length) {
+        document.getElementById('moduleToggles').innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch keine Module freigeschaltet.</p>';
+        return;
+      }
+      document.getElementById('moduleToggles').innerHTML = availableModules.map(m => `
         <label class="link-row" style="cursor:pointer;gap:12px">
           <input type="checkbox" data-mod="${m.key}" ${mods[m.key] ? 'checked' : ''} style="width:18px;height:18px" />
           <span class="link-icon">${m.emoji}</span>
@@ -308,27 +379,33 @@
       });
       profile.modules = modules;
       applyModules();
+      syncPublicFeed();
       settingsModal.classList.remove('visible');
     });
 
     /* ════ Teilen ════════════════════════════════ */
     function renderShareModuleOptions() {
       const sel = document.getElementById('shareModule');
-      sel.innerHTML = Object.values(MODULES).filter(m => m.shareable)
+      const allowed = allowedModules(profile);
+      sel.innerHTML = Object.values(MODULES).filter(m => m.shareable && allowed[m.key])
         .map(m => `<option value="${m.key}">${escHtml(m.emoji + ' ' + m.name)}</option>`).join('');
     }
 
     document.getElementById('shareCreate').addEventListener('click', async () => {
       const moduleKey = document.getElementById('shareModule').value;
-      const email = document.getElementById('shareEmail').value.trim().toLowerCase();
+      if (!moduleKey) { alert('Du hast kein teilbares Modul freigeschaltet.'); return; }
+      await loadAppUsers();
+      const target = resolveShareUser(document.getElementById('shareUser').value);
       const role = document.querySelector('input[name="shareRole"]:checked').value;
-      if (!email || !/.+@.+\..+/.test(email)) { alert('Bitte eine gültige E-Mail eingeben.'); return; }
-      if (email === (user.email || '').toLowerCase()) { alert('Du kannst nicht mit dir selbst teilen.'); return; }
+      if (!target) { alert('Bitte eine Person aus den Vorschlägen auswählen.'); return; }
+      if (target.uid === user.uid) { alert('Du kannst nicht mit dir selbst teilen.'); return; }
       await addDoc(collection(db, 'shares'), {
-        ownerUid: user.uid, ownerName, module: moduleKey, targetEmail: email, role,
+        ownerUid: user.uid, ownerName, module: moduleKey,
+        targetUid: target.uid, targetEmail: target.email.toLowerCase(), targetName: target.displayName || '',
+        role,
         createdAt: serverTimestamp()
       });
-      document.getElementById('shareEmail').value = '';
+      document.getElementById('shareUser').value = '';
       renderMyShares();
       alert('Geteilt! Die Person sieht das Modul nach dem Anmelden unter „Mit mir geteilt".');
     });
@@ -340,12 +417,66 @@
       wrap.innerHTML = '<p class="form-label" style="margin-bottom:8px">Von mir geteilt</p>' + shares.map(s => `
         <div class="link-row">
           <span class="link-icon">${MODULES[s.module]?.emoji || '🔗'}</span>
-          <span class="link-title"><span>${escHtml(MODULES[s.module]?.name || s.module)}</span><small>${escHtml(s.targetEmail)} · ${s.role === 'edit' ? 'Bearbeiten' : 'Nur ansehen'}</small></span>
+          <span class="link-title"><span>${escHtml(MODULES[s.module]?.name || s.module)}</span><small>${escHtml(s.targetName || s.targetEmail)} · ${s.role === 'edit' ? 'Bearbeiten' : 'Nur ansehen'}</small></span>
           <button class="action-btn action-btn--danger" data-unshare="${s.id}" title="Freigabe entfernen"><span>${ICON_CLOSE}</span><b>Entfernen</b></button>
         </div>`).join('');
       wrap.querySelectorAll('[data-unshare]').forEach(b => b.addEventListener('click', async () => {
         await deleteDoc(doc(db, 'shares', b.dataset.unshare)).catch(console.warn);
         renderMyShares();
+      }));
+    }
+
+    async function renderAdminUsers() {
+      if (profile.isTimo !== true) return;
+      const wrap = document.getElementById('adminUsers');
+      await loadAppUsers();
+      if (!appUsers.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Keine Benutzer gefunden.</p>'; return; }
+      wrap.innerHTML = appUsers.map(u => {
+        const allowed = allowedModules(u);
+        const enabledCount = Object.values(allowed).filter(Boolean).length;
+        return `
+        <details class="link-row" data-admin-user="${escHtml(u.uid)}" style="display:block;padding:0">
+          <summary style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;list-style:none">
+            <span class="link-icon">${u.isTimo ? '★' : '👤'}</span>
+            <span class="link-title" style="flex:1">
+              <span>${escHtml(u.displayName || 'Ohne Name')}</span>
+              <small>${escHtml(u.email || '')}</small>
+            </span>
+            <span class="role-badge">${u.isTimo ? 'Admin' : enabledCount + ' Module'}</span>
+          </summary>
+          <div style="padding:0 14px 14px 54px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:12px">
+              ${Object.values(MODULES).map(m => `
+                <label style="font-size:13px;display:flex;align-items:center;gap:8px">
+                  <input type="checkbox" data-admin-allowed="${m.key}" ${allowed[m.key] ? 'checked' : ''} />
+                  <span>${m.emoji} ${escHtml(m.name)}</span>
+                </label>`).join('')}
+              <label style="font-size:13px;display:flex;align-items:center;gap:8px;font-weight:700">
+                <input type="checkbox" data-admin-timo ${u.isTimo ? 'checked' : ''} />
+                <span>Admin</span>
+              </label>
+            </div>
+            <button class="btn btn-primary" data-admin-save="${escHtml(u.uid)}" style="padding:9px 12px">Speichern</button>
+          </div>
+        </details>`;
+      }).join('');
+
+      wrap.querySelectorAll('[data-admin-save]').forEach(btn => btn.addEventListener('click', async () => {
+        const uid = btn.dataset.adminSave;
+        const row = wrap.querySelector(`[data-admin-user="${CSS.escape(uid)}"]`);
+        const allowedModulesNext = {};
+        row.querySelectorAll('[data-admin-allowed]').forEach(cb => allowedModulesNext[cb.dataset.adminAllowed] = cb.checked);
+        const isTimo = row.querySelector('[data-admin-timo]').checked;
+        if (uid === user.uid && !isTimo) { alert('Du kannst dir selbst den Admin-Zugriff nicht entfernen.'); return; }
+        await updateDoc(doc(db, 'users', uid), { allowedModules: allowedModulesNext, isTimo }).catch(console.warn);
+        if (uid === user.uid) {
+          profile = { ...profile, allowedModules: allowedModulesNext, isTimo };
+          applyModules();
+          syncPublicFeed();
+        }
+        await loadAppUsers(true);
+        renderUserSuggestions();
+        renderAdminUsers();
       }));
     }
 
@@ -412,8 +543,6 @@
         </div>`;
       }).join('');
 
-      syncPublishedProjects(items);
-
       wrap.querySelectorAll('[data-del]').forEach(b =>
         b.addEventListener('click', async () => {
           if (confirm('Projekt löschen?')) {
@@ -443,17 +572,6 @@
             await deleteDoc(pubDoc(id)).catch(() => {});
           }
         }));
-    }
-
-    // Hält den gemeinsamen Feed mit den eigenen veröffentlichten Projekten synchron.
-    async function syncPublishedProjects(items) {
-      for (const p of items.filter(x => x.isPublic === true)) {
-        await setDoc(pubDoc(p.id), {
-          ownerUid: user.uid, ownerName, emoji: p.emoji || '🔗',
-          name: p.name, url: p.url, publicPassword: (p.publicPassword || '').trim(),
-          updatedAt: serverTimestamp()
-        }).catch(console.warn);
-      }
     }
 
     // ── Project modal ─────────────────────────────
@@ -514,28 +632,40 @@
       }
     }
 
-    onSnapshot(collection(db, 'publicProjects'), snap => {
-      if (!enabledModules(profile).publicProjects) return;
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
-      const wrap = document.getElementById('publicFeedList');
-      if (!items.length) { wrap.innerHTML = '<div class="empty-state" style="padding:24px"><p class="empty-text">Noch keine öffentlichen Projekte.</p></div>'; return; }
-      wrap.innerHTML = items.map(p => {
-        const isProtected = !!(p.publicPassword || '').trim();
-        return `
-        <button class="link-row" type="button" data-open="${escHtml(p.id)}" style="width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit">
-          <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
-          <span class="link-title"><span>${escHtml(p.name)}</span><small>${p.ownerName ? escHtml(p.ownerName) + ' · ' : ''}${isProtected ? 'Mit Passwort' : 'Öffentlich'}</small></span>
-          <span class="link-icon">${isProtected ? ICON_LOCK : '↗'}</span>
-        </button>`;
-      }).join('');
-      wrap.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
-        const p = items.find(x => x.id === b.dataset.open);
-        if (!p) return;
-        if (String(p.publicPassword || '').trim()) openProtected(p);
-        else window.open(p.url, '_blank', 'noopener');
-      }));
-    });
+    let unsubPublicFeed = null;
+    function watchPublicFeed() {
+      if (unsubPublicFeed || !enabledModules(profile).publicProjects) return;
+      unsubPublicFeed = onSnapshot(collection(db, 'publicProjects'), snap => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
+        const wrap = document.getElementById('publicFeedList');
+        if (!items.length) { wrap.innerHTML = '<div class="empty-state" style="padding:24px"><p class="empty-text">Noch keine öffentlichen Projekte.</p></div>'; return; }
+        wrap.innerHTML = items.map(p => {
+          const isProtected = !!(p.publicPassword || '').trim();
+          return `
+          <button class="link-row" type="button" data-open="${escHtml(p.id)}" style="width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit">
+            <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
+            <span class="link-title"><span>${escHtml(p.name)}</span><small>${p.ownerName ? escHtml(p.ownerName) + ' · ' : ''}${isProtected ? 'Mit Passwort' : 'Öffentlich'}</small></span>
+            <span class="link-icon">${isProtected ? ICON_LOCK : '↗'}</span>
+          </button>`;
+        }).join('');
+        wrap.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
+          const p = items.find(x => x.id === b.dataset.open);
+          if (!p) return;
+          if (String(p.publicPassword || '').trim()) openProtected(p);
+          else window.open(p.url, '_blank', 'noopener');
+        }));
+      });
+    }
+    function syncPublicFeed() {
+      if (enabledModules(profile).publicProjects) {
+        watchPublicFeed();
+      } else if (unsubPublicFeed) {
+        unsubPublicFeed();
+        unsubPublicFeed = null;
+      }
+    }
+    syncPublicFeed();
 
     // ── Seed Timo's default projects (once) ───────
     if (profile.isTimo === true && !profile.projectsSeeded) {
@@ -548,7 +678,9 @@
     }
 
     // ── Service worker ────────────────────────────
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.warn);
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
+    }
   </script>
 </body>
 </html>

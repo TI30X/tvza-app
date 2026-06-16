@@ -10,9 +10,13 @@
   --surface-2: oklch(0.975 0.004 95);
   --ink:       oklch(0.22 0.01 250);
   --ink-soft:  oklch(0.45 0.01 250);
-  --accent:    oklch(0.43 0.16 264);
-  --accent-hover: oklch(0.38 0.14 264);
-  --accent-bg: oklch(0.95 0.03 264);
+  --brand-navy: #1a1a2e;
+  --brand-navy-mid: #16213e;
+  --brand-navy-deep: #0f3460;
+  --brand-gradient: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-mid), var(--brand-navy-deep));
+  --accent:    var(--brand-navy-deep);
+  --accent-hover: var(--brand-navy-mid);
+  --accent-bg: oklch(0.95 0.025 250);
   /* Danger / Löschen — eigenes Rot, passt sich pro Modus an */
   --danger:    oklch(0.52 0.19 25);
   --danger-bg: oklch(0.95 0.03 25);
@@ -50,9 +54,9 @@
   --text-lg: 18px; --text-xl: 22px; --text-2xl: 28px;
 
   /* ── Legacy aliases (keep older selectors & inline styles working) ── */
-  --primary:      var(--ink);
-  --primary-mid:  var(--ink);
-  --primary-deep: var(--ink);
+  --primary:      var(--brand-navy);
+  --primary-mid:  var(--brand-navy-mid);
+  --primary-deep: var(--brand-navy-deep);
   --text:         var(--ink);
   --text-muted:   var(--ink-soft);
   --text-faint:   oklch(0.60 0.01 250);
@@ -74,10 +78,9 @@
   --surface-2: oklch(0.26 0.008 250);
   --ink:       oklch(0.94 0.006 95);
   --ink-soft:  oklch(0.72 0.01 95);
-  /* Akzent im Dark Mode = tieferes, ruhigeres Vertrauens-Blau (weniger grell) */
-  --accent:    oklch(0.54 0.14 264);
-  --accent-hover: oklch(0.60 0.14 264);
-  --accent-bg: oklch(0.28 0.07 264);
+  --accent:    oklch(0.76 0.06 250);
+  --accent-hover: oklch(0.84 0.045 250);
+  --accent-bg: oklch(0.28 0.04 250);
   --danger:    oklch(0.64 0.15 25);
   --danger-bg: oklch(0.28 0.06 25);
   --border:    oklch(0.34 0.006 250);
@@ -127,12 +130,13 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ─── Header ─── */
 .header {
-  background: var(--surface);
-  color: var(--ink);
+  background: var(--brand-gradient);
+  color: white;
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 0;
+  box-shadow: 0 2px 12px oklch(0 0 0 / 0.16);
 }
 
 .header-inner {
@@ -206,6 +210,30 @@ button, input, select, textarea { font-family: inherit; }
   color: var(--ink-soft);
 }
 .logo { color: var(--ink); }
+
+.header .tvz-wordmark,
+.header .app-brand-title,
+.header .logo,
+.header .page-title,
+.header .back-btn:hover,
+.header .user-chip:hover {
+  color: white;
+}
+.header .app-brand-sub,
+.header .tvz-mark,
+.header .back-btn,
+.header .user-chip,
+.header .icon-btn {
+  color: rgba(255,255,255,0.74);
+}
+.header .brand-divider {
+  background: rgba(255,255,255,0.18);
+}
+.header .app-brand-icon {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.18);
+  color: white;
+}
 
 .accent-bar { height: 3px; }
 .accent-bar--ski    { background: var(--tint-ski); }
@@ -807,22 +835,22 @@ button, input, select, textarea { font-family: inherit; }
   align-items: center;
   gap: var(--s5);
   text-align: left;
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--border);
+  background: var(--brand-gradient);
+  color: white;
+  border: 0;
   border-radius: var(--r2);
   padding: var(--s5) 26px;
   box-shadow: var(--shadow-sm);
 }
 .tvz-footer-logo {
-  border-right: 1px solid var(--border);
+  border-right: 1px solid rgba(255,255,255,0.24);
   padding-right: 22px;
 }
 .tvz-footer-logo span:last-child {
   display: block;
   margin-top: var(--s2);
   font-size: 11px;
-  color: var(--ink-soft);
+  color: rgba(255,255,255,0.72);
 }
 .tvz-footer-copy strong {
   display: block;
@@ -831,15 +859,15 @@ button, input, select, textarea { font-family: inherit; }
 }
 .tvz-footer-copy span {
   display: block;
-  color: var(--ink-soft);
+  color: rgba(255,255,255,0.78);
   font-size: var(--text-sm);
 }
 .tvz-footer-copy p {
   margin-top: var(--s3);
   padding: 10px var(--s3);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: var(--r1);
-  color: var(--ink-soft);
+  color: rgba(255,255,255,0.84);
   font-size: var(--text-xs);
   line-height: 1.5;
 }
@@ -856,9 +884,9 @@ button, input, select, textarea { font-family: inherit; }
 }
 .tvz-footer img { height: 30px; opacity: 0.72; }
 .tvz-footer span { font-size: 11px; color: var(--ink-soft); }
-.tvz-footer-panel .tvz-wordmark { color: var(--accent); font-size: 32px; }
-.tvz-footer-panel .tvz-footer-logo span:last-child { color: var(--ink-soft); }
-.tvz-footer-panel .tvz-footer-copy span { color: var(--ink-soft); }
+.tvz-footer-panel .tvz-wordmark { color: white; font-size: 32px; }
+.tvz-footer-panel .tvz-footer-logo span:last-child { color: rgba(255,255,255,0.72); }
+.tvz-footer-panel .tvz-footer-copy span { color: rgba(255,255,255,0.78); }
 
 @media (max-width: 620px) {
   .header-inner { align-items: flex-start; flex-direction: column; justify-content: center; gap: 10px; padding: var(--s3) var(--s4); }

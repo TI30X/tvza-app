@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#1E40AF" />
+  <meta name="theme-color" content="#1A1A2E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%237C3AED'/><text x='16' y='22' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'>TvZ</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
   <script src="../theme.js"></script>
   <link rel="stylesheet" href="../style.css" />
@@ -42,7 +44,7 @@
           <div class="form-group">
             <input class="form-input" id="newFamName" type="text" placeholder="Familienname, z.B. van Zanten" />
           </div>
-          <button class="btn btn-primary btn-block" id="createFamBtn">Familie gründen (du wirst Familienchef/in)</button>
+          <button class="btn btn-primary btn-block" id="createFamBtn">Familie gründen (du wirst Verwalter/in)</button>
         </div>
 
         <div class="form-card">
@@ -184,7 +186,7 @@
       if (!qs.empty) {
         const f = qs.docs[0].data();
         document.getElementById('joinStatus').textContent =
-          `⏳ Anfrage an "${f.name}" wartet auf Bestätigung durch den Familienchef.`;
+          `⏳ Anfrage an "${f.name}" wartet auf Bestätigung durch einen Verwalter.`;
       }
     }
 
@@ -200,11 +202,12 @@
       const ref = await addDoc(famCol, {
         name,
         headUid: user.uid,
+        managers: [user.uid],
         members: [user.uid],
         pendingRequests: [],
         createdAt: serverTimestamp()
       });
-      await updateDoc(userRef, { familyId: ref.id, role: 'head' });
+      await updateDoc(userRef, { familyId: ref.id, role: 'manager' });
       myProfile.familyId = ref.id;
       document.getElementById('noFamilyView').style.display = 'none';
       watchFamily(ref.id);
@@ -222,7 +225,7 @@
       if ((data.pendingRequests || []).includes(user.uid)) { alert('Anfrage läuft bereits.'); return; }
       await updateDoc(doc(famCol, famDoc.id), { pendingRequests: arrayUnion(user.uid) });
       document.getElementById('joinStatus').textContent =
-        `⏳ Anfrage an "${data.name}" gesendet — der Familienchef muss bestätigen.`;
+        `⏳ Anfrage an "${data.name}" gesendet — ein Verwalter muss bestätigen.`;
     });
 
     /* ════ Watch family ══════════════════════════ */
@@ -233,6 +236,10 @@
       unsubFam = onSnapshot(doc(famCol, famId), async snap => {
         if (!snap.exists()) { location.reload(); return; }
         family = { id: snap.id, ...snap.data() };
+        if (!(family.managers || []).length && family.headUid) {
+          family.managers = [family.headUid];
+          updateDoc(doc(famCol, famId), { managers: family.managers }).catch(console.warn);
+        }
 
         // Kicked out?
         if (!(family.members || []).includes(user.uid)) {
@@ -243,7 +250,7 @@
         document.getElementById('famName').textContent = family.name;
         await loadMemberNames();
         renderMembers();
-        renderPending();
+        renderFamilyAdmin();
         refreshWhoSelect();
       });
 
@@ -262,25 +269,53 @@
     }
 
     function renderMembers() {
+      const managers = familyManagers();
       document.getElementById('famMembers').innerHTML =
         (family.members || []).map(uid => {
-          const isHead = uid === family.headUid;
-          return `${isHead ? '👑 ' : ''}${escHtml(memberNames[uid] || '?')}`;
+          const isManager = managers.includes(uid);
+          return `${isManager ? '★ ' : ''}${escHtml(memberNames[uid] || '?')}`;
         }).join(' · ');
     }
 
-    function renderPending() {
+    function familyManagers() {
+      return [...new Set([...(family?.managers || []), family?.headUid].filter(Boolean))];
+    }
+
+    function isFamilyManager() {
+      return familyManagers().includes(user.uid);
+    }
+
+    function renderFamilyAdmin() {
       const wrap = document.getElementById('pendingWrap');
-      const isHead = family.headUid === user.uid;
+      const managers = familyManagers();
+      const canManage = isFamilyManager();
       const pending = family.pendingRequests || [];
-      if (!isHead || !pending.length) { wrap.innerHTML = ''; return; }
-      wrap.innerHTML = `<div style="font-size:12px;font-weight:600;margin-bottom:6px">Beitrittsanfragen:</div>` +
-        pending.map(uid => `
+      if (!canManage) { wrap.innerHTML = ''; return; }
+
+      let html = '';
+      if (pending.length) {
+        html += `<div style="font-size:12px;font-weight:600;margin-bottom:6px">Beitrittsanfragen:</div>` +
+          pending.map(uid => `
           <div class="pending-card">
             <span style="flex:1">👤 ${escHtml(memberNames[uid] || '?')}</span>
             <button class="btn btn-primary" data-approve="${uid}">✓</button>
             <button class="btn btn-secondary" data-reject="${uid}">${ICON_CLOSE}</button>
           </div>`).join('');
+      }
+
+      html += `<div style="font-size:12px;font-weight:600;margin:12px 0 6px">Verwalter</div>` +
+        (family.members || []).map(uid => {
+          const isManager = managers.includes(uid);
+          const lastManager = isManager && managers.length <= 1;
+          return `
+          <div class="pending-card">
+            <span style="flex:1">${isManager ? '★' : '👤'} ${escHtml(memberNames[uid] || '?')}</span>
+            <button class="btn ${isManager ? 'btn-secondary' : 'btn-primary'}" data-manager="${uid}" data-is-manager="${isManager ? '1' : ''}" ${lastManager ? 'disabled' : ''}>
+              ${isManager ? 'Entfernen' : 'Zum Verwalter'}
+            </button>
+          </div>`;
+        }).join('');
+      wrap.innerHTML = html;
 
       wrap.querySelectorAll('[data-approve]').forEach(b => b.addEventListener('click', async () => {
         const uid = b.dataset.approve;
@@ -292,6 +327,14 @@
       }));
       wrap.querySelectorAll('[data-reject]').forEach(b => b.addEventListener('click', () =>
         updateDoc(doc(famCol, family.id), { pendingRequests: arrayRemove(b.dataset.reject) })));
+      wrap.querySelectorAll('[data-manager]').forEach(b => b.addEventListener('click', async () => {
+        const uid = b.dataset.manager;
+        const currentlyManager = b.dataset.isManager === '1';
+        const next = currentlyManager ? managers.filter(id => id !== uid) : [...managers, uid];
+        if (!next.length) { alert('Mindestens ein Verwalter muss bleiben.'); return; }
+        await updateDoc(doc(famCol, family.id), { managers: next, headUid: next[0] });
+        await updateDoc(doc(db, 'users', uid), { role: currentlyManager ? 'member' : 'manager' }).catch(console.warn);
+      }));
     }
 
     /* ════ Trips ═════════════════════════════════ */

@@ -65,11 +65,13 @@ export const MODULES = {
   food: { key:'food', name:'Food Tracker',   sub:'Kalorien & Nährstoffe',  emoji:'🍎', page:'pages/foodtracker.html', perUser:true,  shareable:true  },
   trip: { key:'trip', name:'Familienreisen', sub:'Gemeinsam planen',       emoji:'🧳', page:'pages/tripplanner.html', perUser:false, shareable:false },
   matura: { key:'matura', name:'Maturaarbeit', sub:'Status & Fortschritt', emoji:'📊', page:'pages/maturaarbeit.html', perUser:false, shareable:false },
+  maturatracker: { key:'maturatracker', name:'Maturaarbeit-Tracker', sub:'To-dos & Countdown', emoji:'🧵', page:'pages/maturaarbeit-tracker.html', perUser:true, shareable:false },
   publicProjects: { key:'publicProjects', name:'Öffentliche Projekte', sub:'Von allen geteilt', emoji:'🌐', perUser:false, shareable:false },
 };
 
-// Standardmäßig haben neue Nutzer alle Module aktiviert; sie können selbst abwählen.
-export const DEFAULT_MODULES = { ski:true, food:true, trip:true, matura:true, publicProjects:true };
+// Neue Nutzer starten schlank; weitere Module schaltet ein Admin frei.
+export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:true, publicProjects:false };
+export const ALL_MODULES = Object.fromEntries(Object.keys(MODULES).map(key => [key, true]));
 
 export async function getProfile(user) {
   try {
@@ -78,9 +80,17 @@ export async function getProfile(user) {
   } catch (e) { console.warn(e); return {}; }
 }
 
-// Effektive Modul-Auswahl eines Nutzers (Standard + persönliche Auswahl).
+// Admin-Freigabe eines Nutzers.
+export function allowedModules(profile) {
+  if (profile?.isTimo === true) return { ...ALL_MODULES };
+  return { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}) };
+}
+
+// Effektive Modul-Auswahl: Admin-Freigabe UND persönliche Sichtbarkeit.
 export function enabledModules(profile) {
-  return { ...DEFAULT_MODULES, ...(profile?.modules || {}) };
+  const allowed = allowedModules(profile);
+  const visible = { ...allowed, ...(profile?.modules || {}) };
+  return Object.fromEntries(Object.keys(MODULES).map(key => [key, !!allowed[key] && !!visible[key]]));
 }
 
 /* ── Teilen (Module mit anderen Nutzern) ──────────── */

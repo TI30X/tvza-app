@@ -17,7 +17,7 @@
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.themeMode = mode;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = theme === 'dark' ? '#151515' : '#1E40AF';
+    if (meta) meta.content = '#1A1A2E';
     window.dispatchEvent(new CustomEvent('tvza-theme-change', { detail: { mode, theme } }));
   }
 

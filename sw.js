@@ -1,6 +1,11 @@
-/* TVZA Service Worker v12 — offline-first */
+/* TVZA Service Worker v17 - offline-first */
 
-const CACHE = 'tvza-v12';
+const CACHE = 'tvza-v17';
+const FIREBASE_SDK = [
+  'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
+  'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js',
+];
 const SHELL = [
   './',
   './index.html',
@@ -13,10 +18,13 @@ const SHELL = [
   './pages/skitracker.html',
   './pages/foodtracker.html',
   './pages/tripplanner.html',
+  './pages/maturaarbeit.html',
+  './pages/maturaarbeit-tracker.html',
   './public.html',
   './icons/TvZ_Logo.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  ...FIREBASE_SDK,
 ];
 
 self.addEventListener('install', event => {

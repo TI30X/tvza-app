@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#1E40AF" />
+  <meta name="theme-color" content="#1A1A2E" />
   <meta name="description" content="Webprojekte von Timothy van Zanten" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23a93b2e'/><text x='16' y='23' font-family='Georgia,serif' font-size='16' font-weight='700' fill='white' text-anchor='middle'>TZ</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%231a1a2e'/><stop offset='.55' stop-color='%2316213e'/><stop offset='1' stop-color='%230f3460'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><text x='16' y='22' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'>TvZ</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
   <title>TVZA · Projekte</title>
   <script src="theme.js"></script>
@@ -19,8 +20,12 @@
       --surface-2: oklch(0.975 0.004 95);
       --ink:       oklch(0.22 0.01 250);
       --ink-soft:  oklch(0.45 0.01 250);
-      --accent:    oklch(0.43 0.16 264);
-      --accent-bg: oklch(0.95 0.03 264);
+      --brand-navy: #1a1a2e;
+      --brand-navy-mid: #16213e;
+      --brand-navy-deep: #0f3460;
+      --brand-gradient: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-mid), var(--brand-navy-deep));
+      --accent:    var(--brand-navy-deep);
+      --accent-bg: oklch(0.95 0.025 250);
       --border:    oklch(0.88 0.005 95);
       --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.06);
       --shadow-md: 0 4px 12px oklch(0 0 0 / 0.08);
@@ -39,8 +44,8 @@
       --surface-2: oklch(0.26 0.008 250);
       --ink:       oklch(0.94 0.006 95);
       --ink-soft:  oklch(0.72 0.01 95);
-      --accent:    oklch(0.54 0.14 264);
-      --accent-bg: oklch(0.28 0.07 264);
+      --accent:    oklch(0.76 0.06 250);
+      --accent-bg: oklch(0.28 0.04 250);
       --border:    oklch(0.34 0.006 250);
       --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.28);
       --shadow-md: 0 4px 14px oklch(0 0 0 / 0.34);
@@ -55,20 +60,20 @@
     }
     h1 { text-wrap: balance; }
     .hero {
-      background: var(--surface); color: var(--ink); padding: 22px 24px; text-align: left;
-      border-bottom: 1px solid var(--border);
+      background: var(--brand-gradient); color: white; padding: 22px 24px; text-align: left;
+      border-bottom: 0;
     }
     .hero-inner {
       width: 100%; max-width: 680px; margin: 0 auto;
       display: flex; align-items: center; gap: 22px;
     }
     .hero-logo { min-width: 104px; }
-    .hero-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 34px; font-weight: 700; line-height: 1; color: var(--accent); text-shadow: none; }
-    .hero-logo .logo-rule { width: 100px; height: 1px; background: var(--border); margin: 8px 0 4px; }
-    .hero-logo span:last-child { font-size: 11px; color: var(--ink-soft); }
-    .hero-divider { width: 1px; align-self: stretch; background: var(--border); }
+    .hero-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 34px; font-weight: 700; line-height: 1; color: white; text-shadow: none; }
+    .hero-logo .logo-rule { width: 100px; height: 1px; background: rgba(255,255,255,0.22); margin: 8px 0 4px; }
+    .hero-logo span:last-child { font-size: 11px; color: rgba(255,255,255,0.58); }
+    .hero-divider { width: 1px; align-self: stretch; background: rgba(255,255,255,0.18); }
     .hero-copy h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
-    .hero-copy p { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+    .hero-copy p { font-size: 13px; color: rgba(255,255,255,0.68); margin-top: 3px; }
     main {
       flex: 1; width: 100%; max-width: 620px; margin: 0 auto; padding: 30px 18px 44px;
       animation: fadeIn 0.2s ease both;
@@ -104,16 +109,16 @@
     }
     .tvz-footer-box {
       width: 100%; max-width: 680px; display: grid; grid-template-columns: 120px 1fr;
-      align-items: center; gap: 22px; text-align: left; background: var(--surface); color: var(--ink);
-      border: 1px solid var(--border);
+      align-items: center; gap: 22px; text-align: left; background: var(--brand-gradient); color: white;
+      border: 0;
       border-radius: var(--r2); padding: 24px 26px; box-shadow: var(--shadow-sm);
     }
-    .tvz-footer-logo { border-right: 1px solid var(--border); padding-right: 20px; }
-    .tvz-footer-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 32px; font-weight: 700; line-height: 1; color: var(--accent); text-shadow: none; }
-    .tvz-footer-logo span:last-child { display:block; margin-top: 8px; font-size: 11px; color: var(--ink-soft); }
+    .tvz-footer-logo { border-right: 1px solid rgba(255,255,255,0.24); padding-right: 20px; }
+    .tvz-footer-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 32px; font-weight: 700; line-height: 1; color: white; text-shadow: none; }
+    .tvz-footer-logo span:last-child { display:block; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.72); }
     .tvz-footer-copy strong { display:block; font-size: 15px; margin-bottom: 5px; }
-    .tvz-footer-copy span { display:block; font-size: 13px; color: var(--ink-soft); }
-    .tvz-footer-copy p { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r1); font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+    .tvz-footer-copy span { display:block; font-size: 13px; color: rgba(255,255,255,0.78); }
+    .tvz-footer-copy p { margin-top: 12px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.18); border-radius: var(--r1); font-size: 12px; color: rgba(255,255,255,0.84); line-height: 1.5; }
     @media (max-width: 560px) {
       .hero-inner, .tvz-footer-box { display: flex; flex-direction: column; align-items: flex-start; }
       .hero-divider, .tvz-footer-logo { border-right: 0; padding-right: 0; }
