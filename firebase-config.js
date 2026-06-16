@@ -64,11 +64,12 @@ export const MODULES = {
   ski:  { key:'ski',  name:'Ski Tracker',    sub:'Schliff & Wachs',        emoji:'🎿', page:'pages/skitracker.html',  perUser:true,  shareable:true  },
   food: { key:'food', name:'Food Tracker',   sub:'Kalorien & Nährstoffe',  emoji:'🍎', page:'pages/foodtracker.html', perUser:true,  shareable:true  },
   trip: { key:'trip', name:'Familienreisen', sub:'Gemeinsam planen',       emoji:'🧳', page:'pages/tripplanner.html', perUser:false, shareable:false },
+  matura: { key:'matura', name:'Maturaarbeit', sub:'Status & Fortschritt', emoji:'📊', page:'pages/maturaarbeit.html', perUser:false, shareable:false },
   publicProjects: { key:'publicProjects', name:'Öffentliche Projekte', sub:'Von allen geteilt', emoji:'🌐', perUser:false, shareable:false },
 };
 
 // Standardmäßig haben neue Nutzer alle Module aktiviert; sie können selbst abwählen.
-export const DEFAULT_MODULES = { ski:true, food:true, trip:true, publicProjects:true };
+export const DEFAULT_MODULES = { ski:true, food:true, trip:true, matura:true, publicProjects:true };
 
 export async function getProfile(user) {
   try {

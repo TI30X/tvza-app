@@ -10,9 +10,12 @@
   --surface-2: oklch(0.975 0.004 95);
   --ink:       oklch(0.22 0.01 250);
   --ink-soft:  oklch(0.45 0.01 250);
-  --accent:    oklch(0.55 0.16 25);
-  --accent-hover: oklch(0.50 0.16 25);
-  --accent-bg: oklch(0.96 0.02 25);
+  --accent:    oklch(0.43 0.16 264);
+  --accent-hover: oklch(0.38 0.14 264);
+  --accent-bg: oklch(0.95 0.03 264);
+  /* Danger / Löschen — eigenes Rot, passt sich pro Modus an */
+  --danger:    oklch(0.52 0.19 25);
+  --danger-bg: oklch(0.95 0.03 25);
   --border:    oklch(0.88 0.005 95);
 
   /* Tracker tints — muted, same lightness/chroma, differ only in hue */
@@ -29,6 +32,7 @@
   --ski-deep:  oklch(0.40 0.08 240);
   --food-deep: oklch(0.40 0.08 145);
   --trip-deep: oklch(0.45 0.09 60);
+  --matura-deep: oklch(0.45 0.12 300);
 
   /* Space scale */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
@@ -61,6 +65,35 @@
   --ski-l:    var(--tint-ski);
   --food-l:   var(--tint-food);
   --trip-l:   var(--tint-trip);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:        oklch(0.16 0.006 250);
+  --surface:   oklch(0.21 0.008 250);
+  --surface-2: oklch(0.26 0.008 250);
+  --ink:       oklch(0.94 0.006 95);
+  --ink-soft:  oklch(0.72 0.01 95);
+  /* Akzent im Dark Mode = tieferes, ruhigeres Vertrauens-Blau (weniger grell) */
+  --accent:    oklch(0.54 0.14 264);
+  --accent-hover: oklch(0.60 0.14 264);
+  --accent-bg: oklch(0.28 0.07 264);
+  --danger:    oklch(0.64 0.15 25);
+  --danger-bg: oklch(0.28 0.06 25);
+  --border:    oklch(0.34 0.006 250);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.28);
+  --shadow-md: 0 4px 14px oklch(0 0 0 / 0.34);
+
+  /* Tracker-Tints im Dark Mode abdunkeln, damit sie nicht "poppen" (gleiche Hues) */
+  --tint-ski:    oklch(0.30 0.04 240);
+  --tint-food:   oklch(0.30 0.04 145);
+  --tint-trip:   oklch(0.31 0.045 60);
+  --tint-matura: oklch(0.30 0.04 300);
+  --ski-deep:  oklch(0.78 0.07 240);
+  --food-deep: oklch(0.78 0.08 145);
+  --trip-deep: oklch(0.80 0.09 60);
+  --matura-deep: oklch(0.80 0.09 300);
+  --text-faint: oklch(0.58 0.01 250);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -303,6 +336,7 @@ button, input, select, textarea { font-family: inherit; }
 .card--ski    .card-icon { background: var(--tint-ski);  color: var(--ski-deep); }
 .card--food   .card-icon { background: var(--tint-food); color: var(--food-deep); }
 .card--trip   .card-icon { background: var(--tint-trip); color: var(--trip-deep); }
+.card--matura .card-icon { background: var(--tint-matura); color: var(--matura-deep); }
 
 .card-content h3 { font-size: var(--text-base); font-weight: 700; }
 .card-content p  { font-size: var(--text-sm); color: var(--ink-soft); margin-top: 2px; }
@@ -357,8 +391,8 @@ button, input, select, textarea { font-family: inherit; }
 .action-btn svg { display: block; }
 .action-btn--public { background: var(--tint-food); border-color: var(--border); color: var(--food-deep); }
 .action-btn--public:hover { background: var(--tint-food); }
-.action-btn--danger { background: var(--accent-bg); border-color: var(--border); color: var(--accent); }
-.action-btn--danger:hover { background: var(--accent-bg); }
+.action-btn--danger { background: var(--danger-bg); border-color: var(--border); color: var(--danger); }
+.action-btn--danger:hover { background: var(--danger-bg); }
 
 /* ─── Form card ─── */
 .form-card {
