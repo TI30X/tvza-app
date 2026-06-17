@@ -465,20 +465,20 @@
         if (!handle || isBlockedTarget(e.target) || (e.pointerType === 'mouse' && e.button !== 0)) return;
         const item = itemFromHandle(handle);
         if (!item) return;
-        touchDrag = { item, startX: e.clientX, startY: e.clientY, active: false };
+        touchDrag = { item, handle, startX: e.clientX, startY: e.clientY, active: false };
         activePointerId = e.pointerId;
-        handle.setPointerCapture?.(e.pointerId);
       });
 
       document.addEventListener('pointermove', e => {
         if (!touchDrag || e.pointerId !== activePointerId) return;
         const distance = Math.hypot(e.clientX - touchDrag.startX, e.clientY - touchDrag.startY);
-        if (!touchDrag.active && distance < 8) return;
+        if (!touchDrag.active && distance < 14) return;
         e.preventDefault();
         if (!touchDrag.active) {
           touchDrag.active = true;
           draggedItem = touchDrag.item;
           draggedItem.classList.add(draggingClass);
+          touchDrag.handle.setPointerCapture?.(e.pointerId);
         }
         moveDraggedItem(e.clientX, e.clientY);
       });

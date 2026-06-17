@@ -410,15 +410,14 @@ button, input, select, textarea { font-family: inherit; }
 .module-tile {
   min-width: 0;
   position: relative;
-  cursor: grab;
   touch-action: none;
 }
-.module-tile:active { cursor: grabbing; }
 .module-tile .card {
   height: 100%;
-  cursor: grab;
+  cursor: pointer;
 }
-.module-tile:active .card { cursor: grabbing; }
+.module-tile--dragging,
+.module-tile--dragging .card { cursor: grabbing; }
 .module-tile:hover .card { border-color: var(--ink-soft); }
 
 .card {
@@ -484,10 +483,10 @@ button, input, select, textarea { font-family: inherit; }
 
 .project-row {
   align-items: center;
-  cursor: grab;
+  cursor: default;
   touch-action: none;
 }
-.project-row:active { cursor: grabbing; }
+.project-row--dragging { cursor: grabbing; }
 .project-row:hover { border-color: var(--ink-soft); }
 .project-actions {
   display: flex;
