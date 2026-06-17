@@ -258,6 +258,9 @@
     const ICON_GLOBE  = svgIcon('<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>');
     const ICON_PENCIL = svgIcon('<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>');
     const ICON_CLOSE  = svgIcon('<path d="M18 6L6 18M6 6l12 12"/>');
+    const ICON_CHEVRON = svgIcon('<polyline points="6 9 12 15 18 9"/>');
+    const ICON_UP = svgIcon('<polyline points="18 15 12 9 6 15"/>');
+    const ICON_DOWN = svgIcon('<polyline points="6 9 12 15 18 9"/>');
 
     // ── Profile & Module ──────────────────────────
     let profile = await getProfile(user);
@@ -508,10 +511,50 @@
     const projCol = collection(db, 'projects', user.uid, 'items');
     const pubDoc = id => doc(db, 'publicProjects', `${user.uid}__${id}`);
     let editingId = null;
+    let latestProjects = [];
+    const collapsedProjectsKey = `tvza.collapsedProjects.${user.uid}`;
+    let collapsedProjects = new Set();
+    try {
+      collapsedProjects = new Set(JSON.parse(localStorage.getItem(collapsedProjectsKey) || '[]'));
+    } catch (e) {
+      localStorage.removeItem(collapsedProjectsKey);
+    }
 
     onSnapshot(query(projCol, orderBy('createdAt', 'asc')), snap => {
-      renderProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      latestProjects = sortProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      renderProjects(latestProjects);
     });
+
+    function sortProjects(items) {
+      return [...items].sort((a, b) => {
+        const hasOrderA = Number.isFinite(Number(a.sortOrder));
+        const hasOrderB = Number.isFinite(Number(b.sortOrder));
+        if (hasOrderA && hasOrderB && Number(a.sortOrder) !== Number(b.sortOrder)) {
+          return Number(a.sortOrder) - Number(b.sortOrder);
+        }
+        const at = a.createdAt?.toMillis?.() || 0;
+        const bt = b.createdAt?.toMillis?.() || 0;
+        return at - bt || String(a.name || '').localeCompare(String(b.name || ''), 'de-CH');
+      });
+    }
+
+    function saveCollapsedProjects() {
+      localStorage.setItem(collapsedProjectsKey, JSON.stringify([...collapsedProjects]));
+    }
+
+    async function moveProject(id, dir, items) {
+      const from = items.findIndex(p => p.id === id);
+      const to = from + dir;
+      if (from < 0 || to < 0 || to >= items.length) return;
+      const next = [...items];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      latestProjects = next;
+      renderProjects(next);
+      await Promise.all(next.map((p, index) =>
+        updateDoc(doc(projCol, p.id), { sortOrder: index }).catch(console.warn)
+      ));
+    }
 
     function renderProjects(items) {
       const wrap = document.getElementById('projectList');
@@ -519,16 +562,27 @@
         wrap.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">📁</div><p class="empty-text">Noch keine Projekte. Füge dein erstes hinzu!</p></div>`;
         return;
       }
-      wrap.innerHTML = items.map(p => {
+      items = sortProjects(items);
+      wrap.innerHTML = items.map((p, index) => {
         const isProtected = !!(p.publicPassword || '').trim();
+        const isCollapsed = collapsedProjects.has(p.id);
         return `
-        <div class="link-row project-row">
+        <div class="link-row project-row ${isCollapsed ? 'project-row--collapsed' : ''}">
+          <button class="project-toggle" type="button" data-toggle="${p.id}" aria-expanded="${isCollapsed ? 'false' : 'true'}" title="${isCollapsed ? 'Projekt aufklappen' : 'Projekt zuklappen'}">
+            <span class="project-toggle-icon">${ICON_CHEVRON}</span>
+          </button>
           <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
           <a class="link-title" href="${escHtml(p.url)}" target="_blank" rel="noopener">
             <span>${escHtml(p.name)}</span>
             <small>${p.isPublic ? (isProtected ? 'Öffentlich mit Passwort' : 'Öffentlich ohne Passwort') : 'Privat'}</small>
           </a>
           <div class="project-actions">
+            <button class="action-btn project-move-btn" data-move="${p.id}" data-dir="-1" title="Projekt nach oben" ${index === 0 ? 'disabled' : ''}>
+              <span>${ICON_UP}</span><b>Hoch</b>
+            </button>
+            <button class="action-btn project-move-btn" data-move="${p.id}" data-dir="1" title="Projekt nach unten" ${index === items.length - 1 ? 'disabled' : ''}>
+              <span>${ICON_DOWN}</span><b>Runter</b>
+            </button>
             <button class="action-btn ${p.isPublic ? 'action-btn--public' : ''}" data-pub="${p.id}" data-ispub="${p.isPublic ? '1':''}" title="${p.isPublic ? 'Veröffentlichung beenden' : 'Projekt veröffentlichen'}">
               <span>${p.isPublic ? (isProtected ? ICON_LOCK : ICON_GLOBE) : ICON_LOCK}</span>
               <b>${p.isPublic ? 'Öffentlich' : 'Privat'}</b>
@@ -542,6 +596,20 @@
           </div>
         </div>`;
       }).join('');
+
+      wrap.querySelectorAll('[data-toggle]').forEach(b =>
+        b.addEventListener('click', () => {
+          if (collapsedProjects.has(b.dataset.toggle)) collapsedProjects.delete(b.dataset.toggle);
+          else collapsedProjects.add(b.dataset.toggle);
+          saveCollapsedProjects();
+          renderProjects(items);
+        }));
+
+      wrap.querySelectorAll('[data-move]').forEach(b =>
+        b.addEventListener('click', async () => {
+          if (b.disabled) return;
+          await moveProject(b.dataset.move, Number(b.dataset.dir), items);
+        }));
 
       wrap.querySelectorAll('[data-del]').forEach(b =>
         b.addEventListener('click', async () => {
@@ -602,7 +670,7 @@
         const pubSnap = await getDoc(pubDoc(editingId)).catch(() => null);
         if (pubSnap?.exists()) await setDoc(pubDoc(editingId), { ownerUid: user.uid, ownerName, emoji, name: pname, url, publicPassword, updatedAt: serverTimestamp() });
       } else {
-        await addDoc(projCol, { emoji, name: pname, url, publicPassword, isPublic: false, createdAt: serverTimestamp() });
+        await addDoc(projCol, { emoji, name: pname, url, publicPassword, isPublic: false, sortOrder: latestProjects.length, createdAt: serverTimestamp() });
       }
       modal.classList.remove('visible');
     });

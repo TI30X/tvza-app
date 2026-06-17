@@ -391,6 +391,27 @@ button, input, select, textarea { font-family: inherit; }
 .link-arrow { color: var(--ink-soft); font-size: 16px; }
 
 .project-row { align-items: center; }
+.project-toggle {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r1);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: transform 150ms ease, background 150ms ease, color 150ms ease;
+}
+.project-toggle:hover { background: var(--surface-2); color: var(--ink); }
+.project-toggle-icon {
+  display: inline-flex;
+  transition: transform 150ms ease;
+}
+.project-row--collapsed .project-toggle-icon { transform: rotate(-90deg); }
+.project-row--collapsed .project-actions { display: none; }
 .project-actions {
   display: flex;
   align-items: center;
@@ -415,6 +436,14 @@ button, input, select, textarea { font-family: inherit; }
   transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
 }
 .action-btn:hover { transform: translateY(-1px); background: var(--surface-2); }
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.action-btn:disabled:hover {
+  transform: none;
+  background: transparent;
+}
 .action-btn span { font-size: 15px; display: inline-flex; align-items: center; }
 .action-btn svg { display: block; }
 .action-btn--public { background: var(--tint-food); border-color: var(--border); color: var(--food-deep); }
