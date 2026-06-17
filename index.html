@@ -394,6 +394,10 @@
     function setupDragSort({ handleSelector, itemSelector, draggingClass, commit, grid = false }) {
       let draggedItem = null;
       let touchDrag = null;
+      let activePointerId = null;
+
+      const handleFromEvent = e => e.target.closest(handleSelector);
+      const itemFromHandle = handle => handle?.closest(itemSelector) || null;
 
       function moveDraggedItem(clientX, clientY) {
         if (!draggedItem) return;
@@ -413,50 +417,64 @@
         document.querySelectorAll(`${itemSelector}.drag-over`).forEach(item => item.classList.remove('drag-over'));
         draggedItem = null;
         touchDrag = null;
+        activePointerId = null;
         commit();
       }
 
-      document.querySelectorAll(handleSelector).forEach(handle => {
-        handle.addEventListener('dragstart', e => {
-          draggedItem = handle.closest(itemSelector);
-          if (!draggedItem) return;
+      document.addEventListener('dragstart', e => {
+        const handle = handleFromEvent(e);
+        if (!handle) return;
+        draggedItem = itemFromHandle(handle);
+        if (!draggedItem) return;
+        draggedItem.classList.add(draggingClass);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', draggedItem.dataset.overviewSection || draggedItem.dataset.trackerTile || draggedItem.dataset.projectId || '');
+      });
+
+      document.addEventListener('dragend', e => {
+        if (!draggedItem) return;
+        finishDrag();
+      });
+
+      document.addEventListener('pointerdown', e => {
+        const handle = handleFromEvent(e);
+        if (!handle || e.pointerType === 'mouse') return;
+        const item = itemFromHandle(handle);
+        if (!item) return;
+        touchDrag = { item, startX: e.clientX, startY: e.clientY, active: false };
+        activePointerId = e.pointerId;
+        handle.setPointerCapture?.(e.pointerId);
+      });
+
+      document.addEventListener('pointermove', e => {
+        if (!touchDrag || e.pointerId !== activePointerId) return;
+        const distance = Math.hypot(e.clientX - touchDrag.startX, e.clientY - touchDrag.startY);
+        if (!touchDrag.active && distance < 8) return;
+        e.preventDefault();
+        if (!touchDrag.active) {
+          touchDrag.active = true;
+          draggedItem = touchDrag.item;
           draggedItem.classList.add(draggingClass);
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', draggedItem.dataset.overviewSection || draggedItem.dataset.trackerTile || '');
-        });
+        }
+        moveDraggedItem(e.clientX, e.clientY);
+      });
 
-        handle.addEventListener('dragend', finishDrag);
+      document.addEventListener('pointerup', e => {
+        if (!touchDrag || e.pointerId !== activePointerId) return;
+        if (touchDrag.active) finishDrag();
+        else {
+          touchDrag = null;
+          activePointerId = null;
+        }
+      });
 
-        handle.addEventListener('pointerdown', e => {
-          if (e.pointerType === 'mouse') return;
-          const item = handle.closest(itemSelector);
-          if (!item) return;
-          touchDrag = { item, startX: e.clientX, startY: e.clientY, active: false };
-          handle.setPointerCapture?.(e.pointerId);
-        });
-
-        handle.addEventListener('pointermove', e => {
-          if (!touchDrag) return;
-          const distance = Math.hypot(e.clientX - touchDrag.startX, e.clientY - touchDrag.startY);
-          if (!touchDrag.active && distance < 8) return;
-          e.preventDefault();
-          if (!touchDrag.active) {
-            touchDrag.active = true;
-            draggedItem = touchDrag.item;
-            draggedItem.classList.add(draggingClass);
-          }
-          moveDraggedItem(e.clientX, e.clientY);
-        });
-
-        handle.addEventListener('pointerup', () => {
-          if (touchDrag?.active) finishDrag();
-          else touchDrag = null;
-        });
-
-        handle.addEventListener('pointercancel', () => {
-          if (touchDrag?.active) finishDrag();
-          else touchDrag = null;
-        });
+      document.addEventListener('pointercancel', e => {
+        if (!touchDrag || e.pointerId !== activePointerId) return;
+        if (touchDrag.active) finishDrag();
+        else {
+          touchDrag = null;
+          activePointerId = null;
+        }
       });
 
       document.addEventListener('dragover', e => {
@@ -720,9 +738,39 @@
     const projCol = collection(db, 'projects', user.uid, 'items');
     const pubDoc = id => doc(db, 'publicProjects', `${user.uid}__${id}`);
     let editingId = null;
+    let latestProjects = [];
 
     onSnapshot(query(projCol, orderBy('createdAt', 'asc')), snap => {
-      renderProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      latestProjects = sortProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      renderProjects(latestProjects);
+    });
+
+    function sortProjects(items) {
+      return [...items].sort((a, b) => {
+        const ao = Number(a.sortOrder);
+        const bo = Number(b.sortOrder);
+        if (Number.isFinite(ao) && Number.isFinite(bo) && ao !== bo) return ao - bo;
+        if (Number.isFinite(ao) && !Number.isFinite(bo)) return -1;
+        if (!Number.isFinite(ao) && Number.isFinite(bo)) return 1;
+        const at = a.createdAt?.toMillis?.() || 0;
+        const bt = b.createdAt?.toMillis?.() || 0;
+        return at - bt || String(a.name || '').localeCompare(String(b.name || ''), 'de-CH');
+      });
+    }
+
+    setupDragSort({
+      handleSelector: '[data-project-drag]',
+      itemSelector: '[data-project-row]',
+      draggingClass: 'project-row--dragging',
+      commit() {
+        const ids = [...document.querySelectorAll('[data-project-row]')].map(row => row.dataset.projectRow);
+        latestProjects = ids
+          .map(id => latestProjects.find(project => project.id === id))
+          .filter(Boolean);
+        latestProjects.forEach((project, index) => {
+          updateDoc(doc(projCol, project.id), { sortOrder: index }).catch(console.warn);
+        });
+      }
     });
 
     function renderProjects(items) {
@@ -731,10 +779,12 @@
         wrap.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">📁</div><p class="empty-text">Noch keine Projekte. Füge dein erstes hinzu!</p></div>`;
         return;
       }
+      items = sortProjects(items);
       wrap.innerHTML = items.map(p => {
         const isProtected = !!(p.publicPassword || '').trim();
         return `
-        <div class="link-row project-row">
+        <div class="link-row project-row" data-project-row="${p.id}">
+          <button class="project-drag" type="button" draggable="true" data-project-drag="${p.id}" title="Projekt ziehen"></button>
           <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
           <a class="link-title" href="${escHtml(p.url)}" target="_blank" rel="noopener">
             <span>${escHtml(p.name)}</span>
@@ -814,7 +864,7 @@
         const pubSnap = await getDoc(pubDoc(editingId)).catch(() => null);
         if (pubSnap?.exists()) await setDoc(pubDoc(editingId), { ownerUid: user.uid, ownerName, emoji, name: pname, url, publicPassword, updatedAt: serverTimestamp() });
       } else {
-        await addDoc(projCol, { emoji, name: pname, url, publicPassword, isPublic: false, createdAt: serverTimestamp() });
+        await addDoc(projCol, { emoji, name: pname, url, publicPassword, isPublic: false, sortOrder: latestProjects.length, createdAt: serverTimestamp() });
       }
       modal.classList.remove('visible');
     });
@@ -885,7 +935,7 @@
         { emoji: '🏦', name: 'Banking App', url: 'https://example.com/REPLACE-banking' },
         { emoji: '📚', name: 'Werbeposter', url: 'https://example.com/REPLACE-werbeposter' },
       ];
-      for (const p of seed) await addDoc(projCol, { ...p, isPublic: false, createdAt: serverTimestamp() });
+      for (const [index, p] of seed.entries()) await addDoc(projCol, { ...p, isPublic: false, sortOrder: index, createdAt: serverTimestamp() });
       await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true }).catch(() => {});
     }
 

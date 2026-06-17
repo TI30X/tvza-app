@@ -332,22 +332,34 @@ button, input, select, textarea { font-family: inherit; }
 
 .overview-toggle,
 .overview-drag,
-.tile-drag {
+.tile-drag,
+.project-drag {
   width: 28px;
   height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: var(--r1);
-  background: var(--surface);
+  background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
+  line-height: 1;
+  opacity: 0.62;
   transition: transform 150ms ease, background 150ms ease, color 150ms ease, opacity 150ms ease;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .overview-toggle:hover,
 .overview-drag:hover,
-.tile-drag:hover { background: var(--surface-2); color: var(--ink); }
+.tile-drag:hover,
+.project-drag:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--ink);
+  opacity: 1;
+}
 .overview-toggle::before {
   content: "";
   width: 7px;
@@ -358,14 +370,17 @@ button, input, select, textarea { font-family: inherit; }
 }
 .section--collapsed .overview-toggle::before { transform: translateX(-2px) rotate(-45deg); }
 .overview-drag,
-.tile-drag {
+.tile-drag,
+.project-drag {
   cursor: grab;
   touch-action: none;
 }
 .overview-drag:active,
-.tile-drag:active { cursor: grabbing; }
+.tile-drag:active,
+.project-drag:active { cursor: grabbing; }
 .overview-drag::before,
-.tile-drag::before {
+.tile-drag::before,
+.project-drag::before {
   content: "";
   width: 3px;
   height: 3px;
@@ -380,12 +395,13 @@ button, input, select, textarea { font-family: inherit; }
   transform: translateX(-3px);
 }
 .section--dragging,
-.module-tile--dragging {
+.module-tile--dragging,
+.project-row--dragging {
   opacity: 0.55;
+  transform: scale(0.99);
 }
 .drag-over {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
+  box-shadow: var(--shadow-md), inset 0 0 0 2px var(--accent) !important;
 }
 .section--collapsed > :not(.section-head) { display: none !important; }
 
@@ -403,13 +419,12 @@ button, input, select, textarea { font-family: inherit; }
 .module-tile .card { height: 100%; }
 .tile-drag {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  opacity: 0.72;
-  width: 26px;
-  height: 26px;
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  opacity: 0.32;
+  width: 24px;
+  height: 24px;
 }
 .module-tile:hover .tile-drag,
 .module-tile:focus-within .tile-drag { opacity: 1; }
@@ -476,6 +491,15 @@ button, input, select, textarea { font-family: inherit; }
 .link-arrow { color: var(--ink-soft); font-size: 16px; }
 
 .project-row { align-items: center; }
+.project-drag {
+  flex: 0 0 auto;
+  margin-left: -6px;
+  opacity: 0.38;
+}
+.project-row:hover .project-drag,
+.project-row:focus-within .project-drag {
+  opacity: 1;
+}
 .project-actions {
   display: flex;
   align-items: center;
