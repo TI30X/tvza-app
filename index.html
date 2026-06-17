@@ -79,43 +79,38 @@
         <div class="card-grid" id="trackerGrid">
 
           <div class="module-tile" data-tracker-tile="ski">
-            <a href="pages/skitracker.html" class="card card--ski" id="cardSki" style="display:none">
+            <a href="pages/skitracker.html" class="card card--ski" id="cardSki" draggable="false" style="display:none">
               <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg></div>
               <div class="card-content"><h3>Ski Tracker</h3><p>Schliff &amp; Wachs</p></div>
             </a>
-            <button class="tile-drag" type="button" draggable="true" data-tile-drag="ski" title="Kachel ziehen"></button>
           </div>
 
           <div class="module-tile" data-tracker-tile="food">
-            <a href="pages/foodtracker.html" class="card card--food" id="cardFood" style="display:none">
+            <a href="pages/foodtracker.html" class="card card--food" id="cardFood" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
             <div class="card-content"><h3>Food Tracker</h3><p>Kalorien &amp; Nährstoffe</p></div>
             </a>
-            <button class="tile-drag" type="button" draggable="true" data-tile-drag="food" title="Kachel ziehen"></button>
           </div>
 
           <div class="module-tile" data-tracker-tile="trip">
-            <a href="pages/tripplanner.html" class="card card--trip" id="cardTrip" style="display:none">
+            <a href="pages/tripplanner.html" class="card card--trip" id="cardTrip" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
             <div class="card-content"><h3>Familienreisen</h3><p>Gemeinsam planen</p></div>
             </a>
-            <button class="tile-drag" type="button" draggable="true" data-tile-drag="trip" title="Kachel ziehen"></button>
           </div>
 
           <div class="module-tile" data-tracker-tile="matura">
-            <a href="pages/maturaarbeit.html" class="card card--matura" id="cardMatura" style="display:none">
+            <a href="pages/maturaarbeit.html" class="card card--matura" id="cardMatura" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
             <div class="card-content"><h3>Maturaarbeit</h3><p>Status &amp; Fortschritt</p></div>
             </a>
-            <button class="tile-drag" type="button" draggable="true" data-tile-drag="matura" title="Kachel ziehen"></button>
           </div>
 
           <div class="module-tile" data-tracker-tile="maturatracker">
-            <a href="pages/maturaarbeit-tracker.html" class="card card--matura" id="cardMaturaTracker" style="display:none">
+            <a href="pages/maturaarbeit-tracker.html" class="card card--matura" id="cardMaturaTracker" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
             <div class="card-content"><h3>Maturaarbeit-Tracker</h3><p>To-dos &amp; Countdown</p></div>
             </a>
-            <button class="tile-drag" type="button" draggable="true" data-tile-drag="maturatracker" title="Kachel ziehen"></button>
           </div>
 
         </div>
@@ -395,19 +390,46 @@
       let draggedItem = null;
       let touchDrag = null;
       let activePointerId = null;
+      let suppressClick = false;
 
       const handleFromEvent = e => e.target.closest(handleSelector);
       const itemFromHandle = handle => handle?.closest(itemSelector) || null;
+      const isBlockedTarget = target => !!target.closest('button, input, select, textarea') && !target.closest(handleSelector);
+
+      function targetFromPoint(clientX, clientY) {
+        const stacked = document.elementsFromPoint(clientX, clientY)
+          .map(el => el.closest(itemSelector))
+          .filter(item => item && item !== draggedItem && item.style.display !== 'none');
+        if (stacked.length) return stacked[0];
+
+        const candidates = [...document.querySelectorAll(itemSelector)]
+          .filter(item => item !== draggedItem && item.style.display !== 'none');
+        let best = null;
+        let bestDistance = Infinity;
+        candidates.forEach(item => {
+          const rect = item.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const distance = Math.hypot(clientX - cx, clientY - cy);
+          if (distance < bestDistance) {
+            best = item;
+            bestDistance = distance;
+          }
+        });
+        return best;
+      }
 
       function moveDraggedItem(clientX, clientY) {
         if (!draggedItem) return;
-        const target = document.elementFromPoint(clientX, clientY)?.closest(itemSelector);
-        if (!target || target === draggedItem || target.style.display === 'none') return;
+        const target = targetFromPoint(clientX, clientY);
+        if (!target) return;
         document.querySelectorAll(`${itemSelector}.drag-over`).forEach(item => item.classList.remove('drag-over'));
         target.classList.add('drag-over');
         const rect = target.getBoundingClientRect();
         const before = grid
-          ? (clientY < rect.top + rect.height * 0.35 || (clientY <= rect.bottom && clientY >= rect.top && clientX < rect.left + rect.width / 2))
+          ? (Math.abs(clientY - (rect.top + rect.height / 2)) < rect.height / 2
+              ? clientX < rect.left + rect.width / 2
+              : clientY < rect.top + rect.height / 2)
           : clientY < rect.top + rect.height / 2;
         target.parentNode.insertBefore(draggedItem, before ? target : target.nextSibling);
       }
@@ -418,12 +440,14 @@
         draggedItem = null;
         touchDrag = null;
         activePointerId = null;
+        suppressClick = true;
+        setTimeout(() => { suppressClick = false; }, 0);
         commit();
       }
 
       document.addEventListener('dragstart', e => {
         const handle = handleFromEvent(e);
-        if (!handle) return;
+        if (!handle || isBlockedTarget(e.target)) return;
         draggedItem = itemFromHandle(handle);
         if (!draggedItem) return;
         draggedItem.classList.add(draggingClass);
@@ -438,7 +462,7 @@
 
       document.addEventListener('pointerdown', e => {
         const handle = handleFromEvent(e);
-        if (!handle || e.pointerType === 'mouse') return;
+        if (!handle || isBlockedTarget(e.target) || (e.pointerType === 'mouse' && e.button !== 0)) return;
         const item = itemFromHandle(handle);
         if (!item) return;
         touchDrag = { item, startX: e.clientX, startY: e.clientY, active: false };
@@ -488,6 +512,12 @@
         e.preventDefault();
         finishDrag();
       });
+
+      document.addEventListener('click', e => {
+        if (!suppressClick || !e.target.closest(itemSelector)) return;
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
     }
 
     setupDragSort({
@@ -503,7 +533,7 @@
     });
 
     setupDragSort({
-      handleSelector: '[data-tile-drag]',
+      handleSelector: '[data-tracker-tile]',
       itemSelector: '[data-tracker-tile]',
       draggingClass: 'module-tile--dragging',
       grid: true,
@@ -759,7 +789,7 @@
     }
 
     setupDragSort({
-      handleSelector: '[data-project-drag]',
+      handleSelector: '[data-project-row]',
       itemSelector: '[data-project-row]',
       draggingClass: 'project-row--dragging',
       commit() {
@@ -784,7 +814,6 @@
         const isProtected = !!(p.publicPassword || '').trim();
         return `
         <div class="link-row project-row" data-project-row="${p.id}">
-          <button class="project-drag" type="button" draggable="true" data-project-drag="${p.id}" title="Projekt ziehen"></button>
           <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
           <a class="link-title" href="${escHtml(p.url)}" target="_blank" rel="noopener">
             <span>${escHtml(p.name)}</span>

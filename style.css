@@ -331,9 +331,7 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 .overview-toggle,
-.overview-drag,
-.tile-drag,
-.project-drag {
+.overview-drag {
   width: 28px;
   height: 28px;
   display: inline-flex;
@@ -352,9 +350,7 @@ button, input, select, textarea { font-family: inherit; }
   appearance: none;
 }
 .overview-toggle:hover,
-.overview-drag:hover,
-.tile-drag:hover,
-.project-drag:hover {
+.overview-drag:hover {
   background: var(--surface-2);
   border-color: var(--border);
   color: var(--ink);
@@ -369,18 +365,12 @@ button, input, select, textarea { font-family: inherit; }
   transform: translateY(-2px) rotate(45deg);
 }
 .section--collapsed .overview-toggle::before { transform: translateX(-2px) rotate(-45deg); }
-.overview-drag,
-.tile-drag,
-.project-drag {
+.overview-drag {
   cursor: grab;
   touch-action: none;
 }
-.overview-drag:active,
-.tile-drag:active,
-.project-drag:active { cursor: grabbing; }
-.overview-drag::before,
-.tile-drag::before,
-.project-drag::before {
+.overview-drag:active { cursor: grabbing; }
+.overview-drag::before {
   content: "";
   width: 3px;
   height: 3px;
@@ -394,11 +384,16 @@ button, input, select, textarea { font-family: inherit; }
     6px 6px 0 currentColor;
   transform: translateX(-3px);
 }
-.section--dragging,
+.section--dragging { opacity: 0.82; }
 .module-tile--dragging,
 .project-row--dragging {
-  opacity: 0.55;
-  transform: scale(0.99);
+  opacity: 0.9;
+  transform: scale(1.015);
+  z-index: 5;
+}
+.module-tile--dragging .card,
+.project-row--dragging {
+  box-shadow: var(--shadow-md);
 }
 .drag-over {
   box-shadow: var(--shadow-md), inset 0 0 0 2px var(--accent) !important;
@@ -415,19 +410,16 @@ button, input, select, textarea { font-family: inherit; }
 .module-tile {
   min-width: 0;
   position: relative;
+  cursor: grab;
+  touch-action: none;
 }
-.module-tile .card { height: 100%; }
-.tile-drag {
-  position: absolute;
-  z-index: 2;
-  top: 12px;
-  right: 12px;
-  opacity: 0.32;
-  width: 24px;
-  height: 24px;
+.module-tile:active { cursor: grabbing; }
+.module-tile .card {
+  height: 100%;
+  cursor: grab;
 }
-.module-tile:hover .tile-drag,
-.module-tile:focus-within .tile-drag { opacity: 1; }
+.module-tile:active .card { cursor: grabbing; }
+.module-tile:hover .card { border-color: var(--ink-soft); }
 
 .card {
   background: var(--surface);
@@ -490,16 +482,13 @@ button, input, select, textarea { font-family: inherit; }
 .link-title small { display: block; margin-top: 3px; color: var(--ink-soft); font-size: var(--text-xs); font-weight: 500; }
 .link-arrow { color: var(--ink-soft); font-size: 16px; }
 
-.project-row { align-items: center; }
-.project-drag {
-  flex: 0 0 auto;
-  margin-left: -6px;
-  opacity: 0.38;
+.project-row {
+  align-items: center;
+  cursor: grab;
+  touch-action: none;
 }
-.project-row:hover .project-drag,
-.project-row:focus-within .project-drag {
-  opacity: 1;
-}
+.project-row:active { cursor: grabbing; }
+.project-row:hover { border-color: var(--ink-soft); }
 .project-actions {
   display: flex;
   align-items: center;
