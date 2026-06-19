@@ -483,7 +483,6 @@ button, input, select, textarea { font-family: inherit; }
 .project-row {
   align-items: center;
   cursor: default;
-  touch-action: none;
 }
 .project-row--dragging { cursor: grabbing; }
 .project-row:hover { border-color: var(--ink-soft); }
@@ -1044,7 +1043,39 @@ body.reorder-editing .reorder-fab {
 
 /* ── Settings menu layout — even vertical rhythm ── */
 #settingsModal .modal { padding: var(--s5); }
+/* Header with title + X close */
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: var(--s5);
+}
+.modal-head .modal-title { margin-bottom: 0; }
+.modal-close {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background 150ms ease, color 150ms ease;
+}
+.modal-close:hover { background: var(--border); color: var(--ink); }
 #settingsModal .modal-title { margin-bottom: var(--s5); }
+/* Keep share / admin rows tidy inside the narrow modal */
+#settingsModal .link-row { padding: 10px 12px; }
+#settingsModal .link-title { min-width: 0; }
+#settingsModal .link-title small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-section { margin: 0; }
 .settings-section-title {
   font-size: 11px;

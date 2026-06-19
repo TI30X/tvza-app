@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
-  <script src="theme.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <script src="theme.js?v=3"></script>
+  <link rel="stylesheet" href="style.css?v=3" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>TVZA</title>
   <style>
@@ -215,7 +215,10 @@
   <!-- Settings modal -->
   <div class="modal-backdrop" id="settingsModal">
     <div class="modal">
-      <div class="modal-title">Einstellungen</div>
+      <div class="modal-head">
+        <div class="modal-title">Einstellungen</div>
+        <button class="modal-close" id="settingsClose" type="button" aria-label="Einstellungen schliessen" title="Schliessen">&times;</button>
+      </div>
 
       <section class="settings-section">
         <p class="settings-section-title">Erscheinungsbild</p>
@@ -231,8 +234,7 @@
         <p class="settings-section-title">Module</p>
         <div id="moduleToggles"></div>
         <div class="modal-actions">
-          <button class="btn btn-secondary" id="settingsClose">Schliessen</button>
-          <button class="btn btn-primary" id="modulesSave">Module speichern</button>
+          <button class="btn btn-primary btn-block" id="modulesSave">Module speichern</button>
         </div>
       </section>
 
