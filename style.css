@@ -410,7 +410,6 @@ button, input, select, textarea { font-family: inherit; }
 .module-tile {
   min-width: 0;
   position: relative;
-  touch-action: none;
 }
 .module-tile .card {
   height: 100%;
@@ -1001,6 +1000,180 @@ button, input, select, textarea { font-family: inherit; }
   .action-btn { flex: 1; min-width: 0; }
   .tvz-footer-panel { display: flex; flex-direction: column; align-items: flex-start; }
   .tvz-footer-logo { border-right: 0; padding-right: 0; }
+}
+
+/* ════════════════════════════════════════════════
+   Reorder / Edit mode ("Anordnen")
+   ════════════════════════════════════════════════ */
+
+/* Edit toggle button in header */
+.icon-btn--edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.icon-btn--edit svg { display: block; }
+.icon-btn--edit .edit-ico-done { display: none; }
+.icon-btn--edit.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.icon-btn--edit.active .edit-ico-arrange { display: none; }
+.icon-btn--edit.active .edit-ico-done { display: block; }
+
+/* Drag handles for sections: hidden until edit mode */
+.overview-drag { display: none; }
+body.reorder-editing .overview-drag { display: inline-flex; }
+
+/* Floating hint pill */
+.reorder-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translate(-50%, 14px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 12px 10px 16px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1200;
+  transition: opacity 200ms ease, transform 200ms ease;
+  max-width: calc(100vw - 32px);
+}
+body.reorder-editing .reorder-hint {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+.reorder-hint button {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Wobble keyframe (iOS-style) */
+@keyframes tvzaWobble {
+  0%   { transform: rotate(-0.55deg); }
+  50%  { transform: rotate(0.55deg); }
+  100% { transform: rotate(-0.55deg); }
+}
+
+/* While editing: items wobble, show they are grabbable, links are inert */
+body.reorder-editing .module-tile,
+body.reorder-editing .project-row,
+body.reorder-editing [data-overview-section] {
+  touch-action: none;          /* drag instead of scroll only while editing */
+}
+body.reorder-editing .module-tile .card,
+body.reorder-editing .project-row a,
+body.reorder-editing .project-row .project-actions {
+  pointer-events: none;        /* taps don't open / trigger while sorting */
+}
+body.reorder-editing .module-tile,
+body.reorder-editing .project-row {
+  cursor: grab;
+}
+
+/* Wobble only the smaller items (tiles + project rows) */
+body.reorder-editing .module-tile .card,
+body.reorder-editing .project-row {
+  animation: tvzaWobble 0.34s ease-in-out infinite;
+  will-change: transform;
+}
+body.reorder-editing .card-grid .module-tile:nth-child(2n) .card { animation-delay: 0.06s; }
+body.reorder-editing .card-grid .module-tile:nth-child(3n) .card { animation-delay: 0.12s; }
+body.reorder-editing .project-row:nth-child(2n) { animation-delay: 0.05s; }
+body.reorder-editing .project-row:nth-child(3n) { animation-delay: 0.11s; }
+
+/* Sections get a clear grabbable affordance (no wobble — too large) */
+body.reorder-editing [data-overview-section] > .section-head {
+  cursor: grab;
+}
+body.reorder-editing .overview-drag {
+  opacity: 1;
+  color: var(--accent);
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+/* Grip dots on tiles while editing */
+body.reorder-editing .module-tile::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  box-shadow:
+    0 5px 0 var(--ink-soft), 0 10px 0 var(--ink-soft),
+    5px 0 0 var(--ink-soft), 5px 5px 0 var(--ink-soft), 5px 10px 0 var(--ink-soft);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Lifted clone that follows the finger/cursor */
+.reorder-clone {
+  filter: drop-shadow(0 16px 36px rgba(0,0,0,0.24));
+}
+.reorder-clone .card,
+.reorder-clone.link-row,
+.reorder-clone .section-head {
+  animation: none !important;
+}
+.reorder-clone:not(.reorder-clone--landing) {
+  transform: scale(1.05) rotate(1.4deg);
+  transition: transform 0.14s ease;
+}
+.reorder-clone .card {
+  box-shadow: 0 16px 36px rgba(0,0,0,0.24);
+  border-color: rgba(15,52,96,0.4);
+}
+
+/* The gap left behind by the lifted item */
+.reorder-placeholder {
+  animation: none !important;
+}
+.reorder-placeholder .card,
+.reorder-placeholder.link-row,
+.reorder-placeholder[data-overview-section] > * {
+  visibility: hidden;
+}
+.reorder-placeholder {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--r2);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
 }
 
 /* ─── Reduced motion ─── */

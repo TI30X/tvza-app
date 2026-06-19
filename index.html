@@ -50,6 +50,11 @@
           </span>
         </a>
         <div class="header-actions">
+          <button class="icon-btn icon-btn--edit" id="editModeBtn" type="button" aria-pressed="false" title="Kacheln & Bereiche anordnen">
+            <svg class="edit-ico-arrange" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+            <svg class="edit-ico-done" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="edit-label">Anordnen</span>
+          </button>
           <span class="icon-btn" id="themeToggle" title="Theme wechseln">◐</span>
           <span class="icon-btn" id="settingsBtn" title="Einstellungen & Module">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -156,6 +161,11 @@
       </section>
 
     </main>
+
+    <div class="reorder-hint" id="reorderHint" role="status">
+      <span>Ziehe Kacheln &amp; Bereiche in die gewünschte Reihenfolge.</span>
+      <button type="button" id="reorderHintDone">Fertig</button>
+    </div>
 
     <footer class="tvz-footer">
       <div class="tvz-footer-panel">
@@ -386,162 +396,209 @@
       applyOverviewLayout();
     }));
 
-    function setupDragSort({ handleSelector, itemSelector, draggingClass, commit, grid = false }) {
-      let draggedItem = null;
-      let touchDrag = null;
-      let activePointerId = null;
-      let suppressClick = false;
+    /* ════ Reorder engine — Edit-Modus ("Anordnen") ════
+       Reordering is only active while in edit mode, so normal taps
+       open tiles and swipes scroll the page. Inside edit mode a lifted
+       clone follows the finger and the remaining items glide into their
+       new spots (FLIP) instead of jumping. */
+    let reorderEditing = false;
+    const sortables = [];
+    let drag = null;   // active drag
+    let cand = null;   // press, before threshold
+    let suppressClick = false;
 
-      const handleFromEvent = e => e.target.closest(handleSelector);
-      const itemFromHandle = handle => handle?.closest(itemSelector) || null;
-      const isBlockedTarget = target => !!target.closest('button, input, select, textarea') && !target.closest(handleSelector);
+    function registerSortable(cfg) { sortables.push(cfg); }  // { itemSelector, grid, commit }
 
-      function targetFromPoint(clientX, clientY) {
-        const stacked = document.elementsFromPoint(clientX, clientY)
-          .map(el => el.closest(itemSelector))
-          .filter(item => item && item !== draggedItem && item.style.display !== 'none');
-        if (stacked.length) return stacked[0];
+    function depth(node) { let d = 0; while (node) { d++; node = node.parentElement; } return d; }
 
-        const candidates = [...document.querySelectorAll(itemSelector)]
-          .filter(item => item !== draggedItem && item.style.display !== 'none');
-        let best = null;
-        let bestDistance = Infinity;
-        candidates.forEach(item => {
-          const rect = item.getBoundingClientRect();
-          const cx = rect.left + rect.width / 2;
-          const cy = rect.top + rect.height / 2;
-          const distance = Math.hypot(clientX - cx, clientY - cy);
-          if (distance < bestDistance) {
-            best = item;
-            bestDistance = distance;
-          }
-        });
-        return best;
+    function matchSortable(el) {
+      let best = null;
+      for (const cfg of sortables) {
+        const item = el.closest(cfg.itemSelector);
+        if (item && (!best || depth(item) > depth(best.item))) best = { cfg, item };
       }
-
-      function moveDraggedItem(clientX, clientY) {
-        if (!draggedItem) return;
-        const target = targetFromPoint(clientX, clientY);
-        if (!target) return;
-        document.querySelectorAll(`${itemSelector}.drag-over`).forEach(item => item.classList.remove('drag-over'));
-        target.classList.add('drag-over');
-        const rect = target.getBoundingClientRect();
-        const before = grid
-          ? (Math.abs(clientY - (rect.top + rect.height / 2)) < rect.height / 2
-              ? clientX < rect.left + rect.width / 2
-              : clientY < rect.top + rect.height / 2)
-          : clientY < rect.top + rect.height / 2;
-        target.parentNode.insertBefore(draggedItem, before ? target : target.nextSibling);
-      }
-
-      function finishDrag() {
-        if (draggedItem) draggedItem.classList.remove(draggingClass);
-        document.querySelectorAll(`${itemSelector}.drag-over`).forEach(item => item.classList.remove('drag-over'));
-        draggedItem = null;
-        touchDrag = null;
-        activePointerId = null;
-        suppressClick = true;
-        setTimeout(() => { suppressClick = false; }, 0);
-        commit();
-      }
-
-      document.addEventListener('dragstart', e => {
-        const handle = handleFromEvent(e);
-        if (!handle || isBlockedTarget(e.target)) return;
-        draggedItem = itemFromHandle(handle);
-        if (!draggedItem) return;
-        draggedItem.classList.add(draggingClass);
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', draggedItem.dataset.overviewSection || draggedItem.dataset.trackerTile || draggedItem.dataset.projectId || '');
-      });
-
-      document.addEventListener('dragend', e => {
-        if (!draggedItem) return;
-        finishDrag();
-      });
-
-      document.addEventListener('pointerdown', e => {
-        const handle = handleFromEvent(e);
-        if (!handle || isBlockedTarget(e.target) || (e.pointerType === 'mouse' && e.button !== 0)) return;
-        const item = itemFromHandle(handle);
-        if (!item) return;
-        touchDrag = { item, handle, startX: e.clientX, startY: e.clientY, active: false };
-        activePointerId = e.pointerId;
-      });
-
-      document.addEventListener('pointermove', e => {
-        if (!touchDrag || e.pointerId !== activePointerId) return;
-        const distance = Math.hypot(e.clientX - touchDrag.startX, e.clientY - touchDrag.startY);
-        if (!touchDrag.active && distance < 14) return;
-        e.preventDefault();
-        if (!touchDrag.active) {
-          touchDrag.active = true;
-          draggedItem = touchDrag.item;
-          draggedItem.classList.add(draggingClass);
-          touchDrag.handle.setPointerCapture?.(e.pointerId);
-        }
-        moveDraggedItem(e.clientX, e.clientY);
-      });
-
-      document.addEventListener('pointerup', e => {
-        if (!touchDrag || e.pointerId !== activePointerId) return;
-        if (touchDrag.active) finishDrag();
-        else {
-          touchDrag = null;
-          activePointerId = null;
-        }
-      });
-
-      document.addEventListener('pointercancel', e => {
-        if (!touchDrag || e.pointerId !== activePointerId) return;
-        if (touchDrag.active) finishDrag();
-        else {
-          touchDrag = null;
-          activePointerId = null;
-        }
-      });
-
-      document.addEventListener('dragover', e => {
-        if (!draggedItem) return;
-        e.preventDefault();
-        moveDraggedItem(e.clientX, e.clientY);
-      });
-
-      document.addEventListener('drop', e => {
-        if (!draggedItem) return;
-        e.preventDefault();
-        finishDrag();
-      });
-
-      document.addEventListener('click', e => {
-        if (!suppressClick || !e.target.closest(itemSelector)) return;
-        e.preventDefault();
-        e.stopPropagation();
-      }, true);
+      return best;  // innermost wins (tile beats its section)
     }
 
-    setupDragSort({
-      handleSelector: '[data-section-drag]',
-      itemSelector: '[data-overview-section]',
-      draggingClass: 'section--dragging',
+    // FLIP: smoothly animate siblings from their old to new positions.
+    function reorderFlip(container, itemSelector, action) {
+      const items = [...container.querySelectorAll(itemSelector)];
+      const first = new Map();
+      items.forEach(t => first.set(t, t.getBoundingClientRect()));
+      action();
+      items.forEach(t => {
+        const f = first.get(t); if (!f) return;
+        const l = t.getBoundingClientRect();
+        const dx = f.left - l.left, dy = f.top - l.top;
+        if (dx || dy) {
+          t.style.transition = 'none';
+          t.style.transform = `translate(${dx}px, ${dy}px)`;
+          requestAnimationFrame(() => {
+            t.style.transition = 'transform 0.23s cubic-bezier(0.2,0.85,0.25,1)';
+            t.style.transform = '';
+          });
+        }
+      });
+    }
+
+    function startDrag(c, px, py) {
+      cand = null;
+      const item = c.item;
+      const rect = item.getBoundingClientRect();
+      const clone = item.cloneNode(true);
+      clone.classList.add('reorder-clone');
+      clone.removeAttribute('id');
+      Object.assign(clone.style, {
+        position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
+        width: rect.width + 'px', height: rect.height + 'px', margin: '0',
+        zIndex: '1000', pointerEvents: 'none'
+      });
+      document.body.appendChild(clone);
+      item.classList.add('reorder-placeholder');
+      drag = {
+        cfg: c.cfg, item, clone, container: item.parentNode,
+        pointerId: c.pointerId, ox: px - rect.left, oy: py - rect.top
+      };
+      moveDrag(px, py);
+    }
+
+    function moveDrag(px, py) {
+      drag.clone.style.left = (px - drag.ox) + 'px';
+      drag.clone.style.top = (py - drag.oy) + 'px';
+      reorderTarget(px, py);
+    }
+
+    function reorderTarget(px, py) {
+      const dragging = drag.item, cfg = drag.cfg, container = drag.container;
+      const pr = dragging.getBoundingClientRect();
+      if (px >= pr.left && px <= pr.right && py >= pr.top && py <= pr.bottom) return; // over the gap → hold
+      const items = [...container.querySelectorAll(cfg.itemSelector)]
+        .filter(t => t !== dragging && t.offsetParent !== null);
+      let target = null;
+      for (const t of items) {
+        const r = t.getBoundingClientRect();
+        if (px >= r.left && px <= r.right && py >= r.top && py <= r.bottom) { target = t; break; }
+      }
+      if (!target) {
+        let best = Infinity;
+        for (const t of items) {
+          const r = t.getBoundingClientRect();
+          const dd = Math.hypot(px - (r.left + r.width / 2), py - (r.top + r.height / 2));
+          if (dd < best) { best = dd; target = t; }
+        }
+      }
+      if (!target) return;
+      const r = target.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      let before;
+      if (cfg.grid) {
+        const my = r.height * 0.22, mx = r.width * 0.22; // dead-zone to stop flicker
+        if (py < cy - my) before = true;
+        else if (py > cy + my) before = false;
+        else if (px < cx - mx) before = true;
+        else if (px > cx + mx) before = false;
+        else return;
+      } else {
+        const my = r.height * 0.30;
+        if (py < cy - my) before = true;
+        else if (py > cy + my) before = false;
+        else return;
+      }
+      if (before && target.previousElementSibling === dragging) return;
+      if (!before && target.nextElementSibling === dragging) return;
+      reorderFlip(container, cfg.itemSelector,
+        () => container.insertBefore(dragging, before ? target : target.nextSibling));
+    }
+
+    function endDrag() {
+      const d = drag; drag = null;
+      const item = d.item;
+      const rect = item.getBoundingClientRect();
+      d.clone.classList.add('reorder-clone--landing');
+      d.clone.style.transition = 'left 0.22s cubic-bezier(0.2,0.85,0.25,1), top 0.22s cubic-bezier(0.2,0.85,0.25,1), transform 0.22s ease';
+      d.clone.style.transform = 'none';
+      d.clone.style.left = rect.left + 'px';
+      d.clone.style.top = rect.top + 'px';
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 0);
+      setTimeout(() => {
+        d.clone.remove();
+        item.classList.remove('reorder-placeholder');
+        try { d.cfg.commit(); } catch (e) { console.warn(e); }
+      }, 230);
+    }
+
+    window.addEventListener('pointerdown', e => {
+      if (!reorderEditing || drag || cand) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      const m = matchSortable(e.target);
+      if (!m) return;
+      e.preventDefault();
+      cand = { ...m, x0: e.clientX, y0: e.clientY, pointerId: e.pointerId };
+    });
+
+    window.addEventListener('pointermove', e => {
+      if (drag) {
+        if (e.pointerId !== drag.pointerId) return;
+        e.preventDefault();
+        moveDrag(e.clientX, e.clientY);
+        return;
+      }
+      if (!cand || e.pointerId !== cand.pointerId) return;
+      if (Math.hypot(e.clientX - cand.x0, e.clientY - cand.y0) > 6) {
+        e.preventDefault();
+        startDrag(cand, e.clientX, e.clientY);
+      }
+    }, { passive: false });
+
+    function releasePointer(e) {
+      if (drag && e.pointerId === drag.pointerId) { endDrag(); return; }
+      if (cand && e.pointerId === cand.pointerId) cand = null;
+    }
+    window.addEventListener('pointerup', releasePointer);
+    window.addEventListener('pointercancel', releasePointer);
+
+    // Block link/button activation while sorting (and the click right after a drop).
+    document.addEventListener('click', e => {
+      if (!reorderEditing && !suppressClick) return;
+      const inItem = sortables.some(cfg => e.target.closest(cfg.itemSelector));
+      if (!inItem) return;
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+
+    // ── Edit-mode toggle ──
+    const editModeBtn = document.getElementById('editModeBtn');
+    const reorderHint = document.getElementById('reorderHint');
+    function setReorderEditing(on) {
+      reorderEditing = on;
+      document.body.classList.toggle('reorder-editing', on);
+      editModeBtn.classList.toggle('active', on);
+      editModeBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      editModeBtn.querySelector('.edit-label').textContent = on ? 'Fertig' : 'Anordnen';
+      if (!on && drag) endDrag();
+    }
+    editModeBtn.addEventListener('click', () => setReorderEditing(!reorderEditing));
+    document.getElementById('reorderHintDone').addEventListener('click', () => setReorderEditing(false));
+    // Native HTML5 drag is no longer used — stop ghost-drag on the handles.
+    document.querySelectorAll('[draggable="true"]').forEach(el => { el.draggable = false; });
+
+    registerSortable({
+      itemSelector: '[data-tracker-tile]',
+      grid: true,
       commit() {
-        overviewSectionOrder = [
-          ...document.querySelectorAll('[data-overview-section]')
-        ].map(section => section.dataset.overviewSection);
-        saveOverviewState();
+        trackerTileOrder = [...document.querySelectorAll('[data-tracker-tile]')]
+          .map(tile => tile.dataset.trackerTile);
+        saveTrackerOrder();
       }
     });
 
-    setupDragSort({
-      handleSelector: '[data-tracker-tile]',
-      itemSelector: '[data-tracker-tile]',
-      draggingClass: 'module-tile--dragging',
-      grid: true,
+    registerSortable({
+      itemSelector: '[data-overview-section]',
       commit() {
-        trackerTileOrder = [
-          ...document.querySelectorAll('[data-tracker-tile]')
-        ].map(tile => tile.dataset.trackerTile);
-        saveTrackerOrder();
+        overviewSectionOrder = [...document.querySelectorAll('[data-overview-section]')]
+          .map(section => section.dataset.overviewSection);
+        saveOverviewState();
       }
     });
 
@@ -788,10 +845,8 @@
       });
     }
 
-    setupDragSort({
-      handleSelector: '[data-project-row]',
+    registerSortable({
       itemSelector: '[data-project-row]',
-      draggingClass: 'project-row--dragging',
       commit() {
         const ids = [...document.querySelectorAll('[data-project-row]')].map(row => row.dataset.projectRow);
         latestProjects = ids
