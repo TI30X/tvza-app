@@ -50,12 +50,6 @@
           </span>
         </a>
         <div class="header-actions">
-          <button class="icon-btn icon-btn--edit" id="editModeBtn" type="button" aria-pressed="false" title="Kacheln & Bereiche anordnen">
-            <svg class="edit-ico-arrange" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-            <svg class="edit-ico-done" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span class="edit-label">Anordnen</span>
-          </button>
-          <span class="icon-btn" id="themeToggle" title="Theme wechseln">◐</span>
           <span class="icon-btn" id="settingsBtn" title="Einstellungen & Module">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </span>
@@ -162,8 +156,15 @@
 
     </main>
 
+    <!-- Floating "arrange" button (hidden while already editing) -->
+    <button class="reorder-fab" id="editModeBtn" type="button" aria-pressed="false" title="Kacheln &amp; Bereiche anordnen">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+      <span class="edit-label">Anordnen</span>
+    </button>
+
+    <!-- Slim status bar shown only while arranging -->
     <div class="reorder-hint" id="reorderHint" role="status">
-      <span>Ziehe Kacheln &amp; Bereiche in die gewünschte Reihenfolge.</span>
+      <span class="reorder-hint-text">Ziehe Kacheln &amp; Bereiche an ihren Platz</span>
       <button type="button" id="reorderHintDone">Fertig</button>
     </div>
 
@@ -216,40 +217,55 @@
     <div class="modal">
       <div class="modal-title">Einstellungen</div>
 
-      <p class="form-label" style="margin-bottom:8px">Module</p>
-      <div id="moduleToggles"></div>
-      <div class="modal-actions" style="margin-top:8px">
-        <button class="btn btn-secondary" id="settingsClose">Schliessen</button>
-        <button class="btn btn-primary" id="modulesSave">Module speichern</button>
-      </div>
+      <section class="settings-section">
+        <p class="settings-section-title">Erscheinungsbild</p>
+        <div class="settings-row">
+          <span class="settings-row-label">Design <small>hell, dunkel oder automatisch</small></span>
+          <button class="icon-btn theme-toggle-btn" id="themeToggle" type="button" title="Theme wechseln">◐</button>
+        </div>
+      </section>
 
       <hr class="settings-divider" />
 
-      <p class="form-label" style="margin-bottom:8px">Modul teilen — mit Ansehen oder Bearbeiten</p>
-      <div class="form-group">
-        <label class="form-label" for="shareModule">Modul</label>
-        <select class="form-select" id="shareModule"></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="shareUser">Person</label>
-        <input class="form-input" id="shareUser" list="appUserSuggestions" type="text" placeholder="Name oder E-Mail" autocapitalize="off" autocorrect="off" />
-        <datalist id="appUserSuggestions"></datalist>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Rechte</label>
-        <div class="radio-row">
-          <label><input type="radio" name="shareRole" value="view" checked /> Nur ansehen</label>
-          <label><input type="radio" name="shareRole" value="edit" /> Bearbeiten</label>
+      <section class="settings-section">
+        <p class="settings-section-title">Module</p>
+        <div id="moduleToggles"></div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="settingsClose">Schliessen</button>
+          <button class="btn btn-primary" id="modulesSave">Module speichern</button>
         </div>
-      </div>
-      <button class="btn btn-primary btn-block" id="shareCreate">Teilen</button>
+      </section>
 
-      <div id="myShares" style="margin-top:16px"></div>
+      <hr class="settings-divider" />
+
+      <section class="settings-section">
+        <p class="settings-section-title">Modul teilen — mit Ansehen oder Bearbeiten</p>
+        <div class="form-group">
+          <label class="form-label" for="shareModule">Modul</label>
+          <select class="form-select" id="shareModule"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="shareUser">Person</label>
+          <input class="form-input" id="shareUser" list="appUserSuggestions" type="text" placeholder="Name oder E-Mail" autocapitalize="off" autocorrect="off" />
+          <datalist id="appUserSuggestions"></datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rechte</label>
+          <div class="radio-row">
+            <label><input type="radio" name="shareRole" value="view" checked /> Nur ansehen</label>
+            <label><input type="radio" name="shareRole" value="edit" /> Bearbeiten</label>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" id="shareCreate">Teilen</button>
+        <div id="myShares"></div>
+      </section>
 
       <div id="adminSection" style="display:none">
         <hr class="settings-divider" />
-        <p class="form-label" style="margin-bottom:8px">Admin · Benutzer verwalten</p>
-        <div id="adminUsers"><div class="spinner">Lade…</div></div>
+        <section class="settings-section">
+          <p class="settings-section-title">Admin · Benutzer verwalten</p>
+          <div id="adminUsers"><div class="spinner">Lade…</div></div>
+        </section>
       </div>
     </div>
   </div>
@@ -457,15 +473,44 @@
       item.classList.add('reorder-placeholder');
       drag = {
         cfg: c.cfg, item, clone, container: item.parentNode,
-        pointerId: c.pointerId, ox: px - rect.left, oy: py - rect.top
+        pointerId: c.pointerId, ox: px - rect.left, oy: py - rect.top,
+        px, py
       };
       moveDrag(px, py);
+      startAutoScroll();
     }
 
     function moveDrag(px, py) {
+      drag.px = px; drag.py = py;
       drag.clone.style.left = (px - drag.ox) + 'px';
       drag.clone.style.top = (py - drag.oy) + 'px';
       reorderTarget(px, py);
+    }
+
+    // Auto-scroll the page when the dragged item nears the top/bottom edge —
+    // so you can move a tile or whole section across a long page without lifting.
+    let autoScrollRAF = null;
+    function startAutoScroll() {
+      if (autoScrollRAF) return;
+      const EDGE = 90, MAX = 16;
+      const step = () => {
+        if (!drag) { autoScrollRAF = null; return; }
+        const h = window.innerHeight;
+        let dy = 0;
+        if (drag.py < EDGE) dy = -MAX * (1 - drag.py / EDGE);
+        else if (drag.py > h - EDGE) dy = MAX * (1 - (h - drag.py) / EDGE);
+        if (dy) {
+          const before = window.scrollY;
+          window.scrollBy(0, dy);
+          // if the page actually moved, the finger now hovers new content → re-evaluate
+          if (window.scrollY !== before) reorderTarget(drag.px, drag.py);
+        }
+        autoScrollRAF = requestAnimationFrame(step);
+      };
+      autoScrollRAF = requestAnimationFrame(step);
+    }
+    function stopAutoScroll() {
+      if (autoScrollRAF) { cancelAnimationFrame(autoScrollRAF); autoScrollRAF = null; }
     }
 
     function reorderTarget(px, py) {
@@ -511,6 +556,7 @@
     }
 
     function endDrag() {
+      stopAutoScroll();
       const d = drag; drag = null;
       const item = d.item;
       const rect = item.getBoundingClientRect();
