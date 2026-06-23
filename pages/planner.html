@@ -559,6 +559,13 @@
       if (currentTripData) renderPlanSection(currentTripData.planUrl || null);
     }
 
+    /* Declare these early so applyI18n() can safely reference them */
+    let group = null;
+    let currentTripData = null;
+    let memberNames = {};
+    let currentTripId = null;
+    let cachedTrips = [];
+
     const langSel = document.getElementById('langSel');
     langSel.value = langKey;
     langSel.addEventListener('change', () => {
@@ -669,12 +676,8 @@
     let myProfile = {};
     { const s = await getDoc(userRef); myProfile = s.exists() ? s.data() : {}; }
 
-    let group = null;          // { id, ...data }
-    let memberNames = {};      // uid → displayName
-    let currentTripId = null;
-    let currentTripData = null;
+    // (group, memberNames, currentTripId, currentTripData, cachedTrips declared above applyI18n)
     let unsubGrp = null, unsubTrips = null, unsubActs = null;
-    let cachedTrips = [];
 
     /* URL params */
     const urlParams = new URLSearchParams(location.search);
