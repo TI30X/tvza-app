@@ -12,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
-  <script src="theme.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <script src="theme.js?v=3"></script>
+  <link rel="stylesheet" href="style.css?v=3" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>TVZA</title>
   <style>
@@ -50,7 +50,6 @@
           </span>
         </a>
         <div class="header-actions">
-          <span class="icon-btn" id="themeToggle" title="Theme wechseln">◐</span>
           <span class="icon-btn" id="settingsBtn" title="Einstellungen & Module">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </span>
@@ -70,34 +69,48 @@
       </div>
 
       <!-- Trackers -->
-      <section class="section" id="trackerSection">
-        <h2 class="section-title">Tracker</h2>
+      <section class="section" id="trackerSection" data-overview-section="tracker">
+        <div class="section-head">
+          <button class="overview-toggle" type="button" data-section-toggle="tracker" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
+          <h2 class="section-title">Tracker</h2>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="tracker" title="Bereich ziehen"></button>
+        </div>
         <div class="card-grid" id="trackerGrid">
 
-          <a href="pages/skitracker.html" class="card card--ski" id="cardSki" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg></div>
-            <div class="card-content"><h3>Ski Tracker</h3><p>Schliff &amp; Wachs</p></div>
-          </a>
+          <div class="module-tile" data-tracker-tile="ski">
+            <a href="pages/skitracker.html" class="card card--ski" id="cardSki" draggable="false" style="display:none">
+              <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg></div>
+              <div class="card-content"><h3>Ski Tracker</h3><p>Schliff &amp; Wachs</p></div>
+            </a>
+          </div>
 
-          <a href="pages/foodtracker.html" class="card card--food" id="cardFood" style="display:none">
+          <div class="module-tile" data-tracker-tile="food">
+            <a href="pages/foodtracker.html" class="card card--food" id="cardFood" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
             <div class="card-content"><h3>Food Tracker</h3><p>Kalorien &amp; Nährstoffe</p></div>
-          </a>
+            </a>
+          </div>
 
-          <a href="pages/tripplanner.html" class="card card--trip" id="cardTrip" style="display:none">
+          <div class="module-tile" data-tracker-tile="trip">
+            <a href="pages/planner.html" class="card card--trip" id="cardTrip" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
-            <div class="card-content"><h3>Familienreisen</h3><p>Gemeinsam planen</p></div>
-          </a>
+            <div class="card-content"><h3>Planner</h3><p>Plan trips together</p></div>
+            </a>
+          </div>
 
-          <a href="pages/maturaarbeit.html" class="card card--matura" id="cardMatura" style="display:none">
+          <div class="module-tile" data-tracker-tile="matura">
+            <a href="pages/maturaarbeit.html" class="card card--matura" id="cardMatura" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
             <div class="card-content"><h3>Maturaarbeit</h3><p>Status &amp; Fortschritt</p></div>
-          </a>
+            </a>
+          </div>
 
-          <a href="pages/maturaarbeit-tracker.html" class="card card--matura" id="cardMaturaTracker" style="display:none">
+          <div class="module-tile" data-tracker-tile="maturatracker">
+            <a href="pages/maturaarbeit-tracker.html" class="card card--matura" id="cardMaturaTracker" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
             <div class="card-content"><h3>Maturaarbeit-Tracker</h3><p>To-dos &amp; Countdown</p></div>
-          </a>
+            </a>
+          </div>
 
         </div>
         <p id="noModulesHint" style="display:none;color:var(--ink-soft);font-size:14px">
@@ -106,14 +119,22 @@
       </section>
 
       <!-- Shared with me -->
-      <section class="section" id="sharedSection" style="display:none">
-        <h2 class="section-title">Mit mir geteilt</h2>
+      <section class="section" id="sharedSection" data-overview-section="shared" style="display:none">
+        <div class="section-head">
+          <button class="overview-toggle" type="button" data-section-toggle="shared" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
+          <h2 class="section-title">Mit mir geteilt</h2>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="shared" title="Bereich ziehen"></button>
+        </div>
         <div class="link-list share-list" id="sharedList"></div>
       </section>
 
       <!-- My projects -->
-      <section class="section">
-        <h2 class="section-title">Meine Projekte</h2>
+      <section class="section" id="projectsSection" data-overview-section="projects">
+        <div class="section-head">
+          <button class="overview-toggle" type="button" data-section-toggle="projects" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
+          <h2 class="section-title">Meine Projekte</h2>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="projects" title="Bereich ziehen"></button>
+        </div>
         <div class="link-list" id="projectList">
           <div class="spinner">Lade…</div>
         </div>
@@ -124,12 +145,28 @@
       </section>
 
       <!-- Global public feed -->
-      <section class="section" id="publicFeedSection" style="display:none">
-        <h2 class="section-title">Öffentliche Projekte · von allen</h2>
+      <section class="section" id="publicFeedSection" data-overview-section="public" style="display:none">
+        <div class="section-head">
+          <button class="overview-toggle" type="button" data-section-toggle="public" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
+          <h2 class="section-title">Öffentliche Projekte · von allen</h2>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="public" title="Bereich ziehen"></button>
+        </div>
         <div class="link-list" id="publicFeedList"><div class="spinner">Lade…</div></div>
       </section>
 
     </main>
+
+    <!-- Floating "arrange" button (hidden while already editing) -->
+    <button class="reorder-fab" id="editModeBtn" type="button" aria-pressed="false" title="Kacheln &amp; Bereiche anordnen">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+      <span class="edit-label">Anordnen</span>
+    </button>
+
+    <!-- Slim status bar shown only while arranging -->
+    <div class="reorder-hint" id="reorderHint" role="status">
+      <span class="reorder-hint-text">Ziehe Kacheln &amp; Bereiche an ihren Platz</span>
+      <button type="button" id="reorderHintDone">Fertig</button>
+    </div>
 
     <footer class="tvz-footer">
       <div class="tvz-footer-panel">
@@ -139,7 +176,7 @@
         </div>
         <div class="tvz-footer-copy">
           <strong>TVZA · Webprojekte und persönliche Tracker</strong>
-          <span>Ski Tracker · Food Tracker · Familienreisen · Projektverwaltung</span>
+          <span>Ski Tracker · Food Tracker · Planner · Projektverwaltung</span>
           <p>Eine private Web-App von TvZ für Alltag, Projekte und Lernen.</p>
         </div>
       </div>
@@ -178,42 +215,59 @@
   <!-- Settings modal -->
   <div class="modal-backdrop" id="settingsModal">
     <div class="modal">
-      <div class="modal-title">Einstellungen</div>
-
-      <p class="form-label" style="margin-bottom:8px">Module</p>
-      <div id="moduleToggles"></div>
-      <div class="modal-actions" style="margin-top:8px">
-        <button class="btn btn-secondary" id="settingsClose">Schliessen</button>
-        <button class="btn btn-primary" id="modulesSave">Module speichern</button>
+      <div class="modal-head">
+        <div class="modal-title">Einstellungen</div>
+        <button class="modal-close" id="settingsClose" type="button" aria-label="Einstellungen schliessen" title="Schliessen">&times;</button>
       </div>
+
+      <section class="settings-section">
+        <p class="settings-section-title">Erscheinungsbild</p>
+        <div class="settings-row">
+          <span class="settings-row-label">Design <small>hell, dunkel oder automatisch</small></span>
+          <button class="icon-btn theme-toggle-btn" id="themeToggle" type="button" title="Theme wechseln">◐</button>
+        </div>
+      </section>
 
       <hr class="settings-divider" />
 
-      <p class="form-label" style="margin-bottom:8px">Modul teilen — mit Ansehen oder Bearbeiten</p>
-      <div class="form-group">
-        <label class="form-label" for="shareModule">Modul</label>
-        <select class="form-select" id="shareModule"></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="shareUser">Person</label>
-        <input class="form-input" id="shareUser" list="appUserSuggestions" type="text" placeholder="Name oder E-Mail" autocapitalize="off" autocorrect="off" />
-        <datalist id="appUserSuggestions"></datalist>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Rechte</label>
-        <div class="radio-row">
-          <label><input type="radio" name="shareRole" value="view" checked /> Nur ansehen</label>
-          <label><input type="radio" name="shareRole" value="edit" /> Bearbeiten</label>
+      <section class="settings-section">
+        <p class="settings-section-title">Module</p>
+        <div id="moduleToggles"></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary btn-block" id="modulesSave">Module speichern</button>
         </div>
-      </div>
-      <button class="btn btn-primary btn-block" id="shareCreate">Teilen</button>
+      </section>
 
-      <div id="myShares" style="margin-top:16px"></div>
+      <hr class="settings-divider" />
+
+      <section class="settings-section">
+        <p class="settings-section-title">Modul teilen — mit Ansehen oder Bearbeiten</p>
+        <div class="form-group">
+          <label class="form-label" for="shareModule">Modul</label>
+          <select class="form-select" id="shareModule"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="shareUser">Person</label>
+          <input class="form-input" id="shareUser" list="appUserSuggestions" type="text" placeholder="Name oder E-Mail" autocapitalize="off" autocorrect="off" />
+          <datalist id="appUserSuggestions"></datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rechte</label>
+          <div class="radio-row">
+            <label><input type="radio" name="shareRole" value="view" checked /> Nur ansehen</label>
+            <label><input type="radio" name="shareRole" value="edit" /> Bearbeiten</label>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" id="shareCreate">Teilen</button>
+        <div id="myShares"></div>
+      </section>
 
       <div id="adminSection" style="display:none">
         <hr class="settings-divider" />
-        <p class="form-label" style="margin-bottom:8px">Admin · Benutzer verwalten</p>
-        <div id="adminUsers"><div class="spinner">Lade…</div></div>
+        <section class="settings-section">
+          <p class="settings-section-title">Admin · Benutzer verwalten</p>
+          <div id="adminUsers"><div class="spinner">Lade…</div></div>
+        </section>
       </div>
     </div>
   </div>
@@ -258,9 +312,6 @@
     const ICON_GLOBE  = svgIcon('<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>');
     const ICON_PENCIL = svgIcon('<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>');
     const ICON_CLOSE  = svgIcon('<path d="M18 6L6 18M6 6l12 12"/>');
-    const ICON_CHEVRON = svgIcon('<polyline points="6 9 12 15 18 9"/>');
-    const ICON_UP = svgIcon('<polyline points="18 15 12 9 6 15"/>');
-    const ICON_DOWN = svgIcon('<polyline points="6 9 12 15 18 9"/>');
 
     // ── Profile & Module ──────────────────────────
     let profile = await getProfile(user);
@@ -269,6 +320,70 @@
     document.getElementById('userName').textContent = name;
     let appUsers = [];
     let appUsersLoaded = false;
+    const overviewSectionDefaults = ['tracker', 'shared', 'projects', 'public'];
+    const trackerTileDefaults = ['ski', 'food', 'trip', 'matura', 'maturatracker'];
+
+    function storedOrder(key, defaults) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(key) || '[]');
+        const valid = Array.isArray(saved) ? saved.filter(id => defaults.includes(id)) : [];
+        return [...new Set([...valid, ...defaults])];
+      } catch (e) {
+        localStorage.removeItem(key);
+        return defaults;
+      }
+    }
+
+    const overviewOrderKey = `tvza.overviewOrder.${user.uid}`;
+    const collapsedSectionsKey = `tvza.collapsedSections.${user.uid}`;
+    const trackerOrderKey = `tvza.trackerTileOrder.${user.uid}`;
+    let overviewSectionOrder = storedOrder(overviewOrderKey, overviewSectionDefaults);
+    let trackerTileOrder = storedOrder(trackerOrderKey, trackerTileDefaults);
+    let collapsedSections = new Set();
+    try {
+      collapsedSections = new Set(JSON.parse(localStorage.getItem(collapsedSectionsKey) || '[]'));
+    } catch (e) {
+      localStorage.removeItem(collapsedSectionsKey);
+    }
+
+    function saveOverviewState() {
+      localStorage.setItem(overviewOrderKey, JSON.stringify(overviewSectionOrder));
+      localStorage.setItem(collapsedSectionsKey, JSON.stringify([...collapsedSections]));
+    }
+
+    function saveTrackerOrder() {
+      localStorage.setItem(trackerOrderKey, JSON.stringify(trackerTileOrder));
+    }
+
+    function applyOverviewLayout() {
+      const main = document.querySelector('.main');
+      overviewSectionOrder.forEach(id => {
+        const section = document.querySelector(`[data-overview-section="${id}"]`);
+        if (section) main.appendChild(section);
+      });
+      document.querySelectorAll('[data-overview-section]').forEach(section => {
+        const id = section.dataset.overviewSection;
+        const collapsed = collapsedSections.has(id);
+        section.classList.toggle('section--collapsed', collapsed);
+        section.querySelector('[data-section-toggle]')?.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      });
+    }
+
+    function setTrackerTile(key, enabled) {
+      const tile = document.querySelector(`[data-tracker-tile="${key}"]`);
+      const link = tile?.querySelector('.card');
+      if (!tile || !link) return;
+      tile.style.display = enabled ? '' : 'none';
+      link.style.display = enabled ? '' : 'none';
+    }
+
+    function applyTrackerTileOrder() {
+      const grid = document.getElementById('trackerGrid');
+      trackerTileOrder.forEach(id => {
+        const tile = document.querySelector(`[data-tracker-tile="${id}"]`);
+        if (tile) grid.appendChild(tile);
+      });
+    }
 
     const h = new Date().getHours();
     const g = h>=5&&h<12 ? 'Guten Morgen' : h>=12&&h<18 ? 'Guten Tag' : h>=18 ? 'Guten Abend' : 'Gute Nacht';
@@ -278,16 +393,262 @@
 
     function applyModules() {
       const mods = enabledModules(profile);
-      document.getElementById('cardSki').style.display  = mods.ski  ? '' : 'none';
-      document.getElementById('cardFood').style.display = mods.food ? '' : 'none';
-      document.getElementById('cardTrip').style.display = mods.trip ? '' : 'none';
-      document.getElementById('cardMatura').style.display = mods.matura ? '' : 'none';
-      document.getElementById('cardMaturaTracker').style.display = mods.maturatracker ? '' : 'none';
+      setTrackerTile('ski', mods.ski);
+      setTrackerTile('food', mods.food);
+      setTrackerTile('trip', mods.trip);
+      setTrackerTile('matura', mods.matura);
+      setTrackerTile('maturatracker', mods.maturatracker);
       document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
-      const anyTracker = mods.ski || mods.food || mods.trip || mods.matura;
+      const anyTracker = mods.ski || mods.food || mods.trip || mods.matura || mods.maturatracker;
       document.getElementById('noModulesHint').style.display = anyTracker ? 'none' : '';
+      applyTrackerTileOrder();
+      applyOverviewLayout();
     }
     applyModules();
+
+    document.querySelectorAll('[data-section-toggle]').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.dataset.sectionToggle;
+      if (collapsedSections.has(id)) collapsedSections.delete(id);
+      else collapsedSections.add(id);
+      saveOverviewState();
+      applyOverviewLayout();
+    }));
+
+    /* ════ Reorder engine — Edit-Modus ("Anordnen") ════
+       Reordering is only active while in edit mode, so normal taps
+       open tiles and swipes scroll the page. Inside edit mode a lifted
+       clone follows the finger and the remaining items glide into their
+       new spots (FLIP) instead of jumping. */
+    let reorderEditing = false;
+    const sortables = [];
+    let drag = null;   // active drag
+    let cand = null;   // press, before threshold
+    let suppressClick = false;
+
+    function registerSortable(cfg) { sortables.push(cfg); }  // { itemSelector, grid, commit }
+
+    function depth(node) { let d = 0; while (node) { d++; node = node.parentElement; } return d; }
+
+    function matchSortable(el) {
+      let best = null;
+      for (const cfg of sortables) {
+        const item = el.closest(cfg.itemSelector);
+        if (item && (!best || depth(item) > depth(best.item))) best = { cfg, item };
+      }
+      return best;  // innermost wins (tile beats its section)
+    }
+
+    // FLIP: smoothly animate siblings from their old to new positions.
+    function reorderFlip(container, itemSelector, action) {
+      const items = [...container.querySelectorAll(itemSelector)];
+      const first = new Map();
+      items.forEach(t => first.set(t, t.getBoundingClientRect()));
+      action();
+      items.forEach(t => {
+        const f = first.get(t); if (!f) return;
+        const l = t.getBoundingClientRect();
+        const dx = f.left - l.left, dy = f.top - l.top;
+        if (dx || dy) {
+          t.style.transition = 'none';
+          t.style.transform = `translate(${dx}px, ${dy}px)`;
+          requestAnimationFrame(() => {
+            t.style.transition = 'transform 0.23s cubic-bezier(0.2,0.85,0.25,1)';
+            t.style.transform = '';
+          });
+        }
+      });
+    }
+
+    function startDrag(c, px, py) {
+      cand = null;
+      const item = c.item;
+      const rect = item.getBoundingClientRect();
+      const clone = item.cloneNode(true);
+      clone.classList.add('reorder-clone');
+      clone.removeAttribute('id');
+      Object.assign(clone.style, {
+        position: 'fixed', left: rect.left + 'px', top: rect.top + 'px',
+        width: rect.width + 'px', height: rect.height + 'px', margin: '0',
+        zIndex: '1000', pointerEvents: 'none'
+      });
+      document.body.appendChild(clone);
+      item.classList.add('reorder-placeholder');
+      drag = {
+        cfg: c.cfg, item, clone, container: item.parentNode,
+        pointerId: c.pointerId, ox: px - rect.left, oy: py - rect.top,
+        px, py
+      };
+      moveDrag(px, py);
+      startAutoScroll();
+    }
+
+    function moveDrag(px, py) {
+      drag.px = px; drag.py = py;
+      drag.clone.style.left = (px - drag.ox) + 'px';
+      drag.clone.style.top = (py - drag.oy) + 'px';
+      reorderTarget(px, py);
+    }
+
+    // Auto-scroll the page when the dragged item nears the top/bottom edge —
+    // so you can move a tile or whole section across a long page without lifting.
+    let autoScrollRAF = null;
+    function startAutoScroll() {
+      if (autoScrollRAF) return;
+      const EDGE = 90, MAX = 16;
+      const step = () => {
+        if (!drag) { autoScrollRAF = null; return; }
+        const h = window.innerHeight;
+        let dy = 0;
+        if (drag.py < EDGE) dy = -MAX * (1 - drag.py / EDGE);
+        else if (drag.py > h - EDGE) dy = MAX * (1 - (h - drag.py) / EDGE);
+        if (dy) {
+          const before = window.scrollY;
+          window.scrollBy(0, dy);
+          // if the page actually moved, the finger now hovers new content → re-evaluate
+          if (window.scrollY !== before) reorderTarget(drag.px, drag.py);
+        }
+        autoScrollRAF = requestAnimationFrame(step);
+      };
+      autoScrollRAF = requestAnimationFrame(step);
+    }
+    function stopAutoScroll() {
+      if (autoScrollRAF) { cancelAnimationFrame(autoScrollRAF); autoScrollRAF = null; }
+    }
+
+    function reorderTarget(px, py) {
+      const dragging = drag.item, cfg = drag.cfg, container = drag.container;
+      const pr = dragging.getBoundingClientRect();
+      if (px >= pr.left && px <= pr.right && py >= pr.top && py <= pr.bottom) return; // over the gap → hold
+      const items = [...container.querySelectorAll(cfg.itemSelector)]
+        .filter(t => t !== dragging && t.offsetParent !== null);
+      let target = null;
+      for (const t of items) {
+        const r = t.getBoundingClientRect();
+        if (px >= r.left && px <= r.right && py >= r.top && py <= r.bottom) { target = t; break; }
+      }
+      if (!target) {
+        let best = Infinity;
+        for (const t of items) {
+          const r = t.getBoundingClientRect();
+          const dd = Math.hypot(px - (r.left + r.width / 2), py - (r.top + r.height / 2));
+          if (dd < best) { best = dd; target = t; }
+        }
+      }
+      if (!target) return;
+      const r = target.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      let before;
+      if (cfg.grid) {
+        const my = r.height * 0.22, mx = r.width * 0.22; // dead-zone to stop flicker
+        if (py < cy - my) before = true;
+        else if (py > cy + my) before = false;
+        else if (px < cx - mx) before = true;
+        else if (px > cx + mx) before = false;
+        else return;
+      } else {
+        const my = r.height * 0.30;
+        if (py < cy - my) before = true;
+        else if (py > cy + my) before = false;
+        else return;
+      }
+      if (before && target.previousElementSibling === dragging) return;
+      if (!before && target.nextElementSibling === dragging) return;
+      reorderFlip(container, cfg.itemSelector,
+        () => container.insertBefore(dragging, before ? target : target.nextSibling));
+    }
+
+    function endDrag() {
+      stopAutoScroll();
+      const d = drag; drag = null;
+      const item = d.item;
+      const rect = item.getBoundingClientRect();
+      d.clone.classList.add('reorder-clone--landing');
+      d.clone.style.transition = 'left 0.22s cubic-bezier(0.2,0.85,0.25,1), top 0.22s cubic-bezier(0.2,0.85,0.25,1), transform 0.22s ease';
+      d.clone.style.transform = 'none';
+      d.clone.style.left = rect.left + 'px';
+      d.clone.style.top = rect.top + 'px';
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 0);
+      setTimeout(() => {
+        d.clone.remove();
+        item.classList.remove('reorder-placeholder');
+        try { d.cfg.commit(); } catch (e) { console.warn(e); }
+      }, 230);
+    }
+
+    window.addEventListener('pointerdown', e => {
+      if (!reorderEditing || drag || cand) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      const m = matchSortable(e.target);
+      if (!m) return;
+      e.preventDefault();
+      cand = { ...m, x0: e.clientX, y0: e.clientY, pointerId: e.pointerId };
+    });
+
+    window.addEventListener('pointermove', e => {
+      if (drag) {
+        if (e.pointerId !== drag.pointerId) return;
+        e.preventDefault();
+        moveDrag(e.clientX, e.clientY);
+        return;
+      }
+      if (!cand || e.pointerId !== cand.pointerId) return;
+      if (Math.hypot(e.clientX - cand.x0, e.clientY - cand.y0) > 6) {
+        e.preventDefault();
+        startDrag(cand, e.clientX, e.clientY);
+      }
+    }, { passive: false });
+
+    function releasePointer(e) {
+      if (drag && e.pointerId === drag.pointerId) { endDrag(); return; }
+      if (cand && e.pointerId === cand.pointerId) cand = null;
+    }
+    window.addEventListener('pointerup', releasePointer);
+    window.addEventListener('pointercancel', releasePointer);
+
+    // Block link/button activation while sorting (and the click right after a drop).
+    document.addEventListener('click', e => {
+      if (!reorderEditing && !suppressClick) return;
+      const inItem = sortables.some(cfg => e.target.closest(cfg.itemSelector));
+      if (!inItem) return;
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+
+    // ── Edit-mode toggle ──
+    const editModeBtn = document.getElementById('editModeBtn');
+    const reorderHint = document.getElementById('reorderHint');
+    function setReorderEditing(on) {
+      reorderEditing = on;
+      document.body.classList.toggle('reorder-editing', on);
+      editModeBtn.classList.toggle('active', on);
+      editModeBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      editModeBtn.querySelector('.edit-label').textContent = on ? 'Fertig' : 'Anordnen';
+      if (!on && drag) endDrag();
+    }
+    editModeBtn.addEventListener('click', () => setReorderEditing(!reorderEditing));
+    document.getElementById('reorderHintDone').addEventListener('click', () => setReorderEditing(false));
+    // Native HTML5 drag is no longer used — stop ghost-drag on the handles.
+    document.querySelectorAll('[draggable="true"]').forEach(el => { el.draggable = false; });
+
+    registerSortable({
+      itemSelector: '[data-tracker-tile]',
+      grid: true,
+      commit() {
+        trackerTileOrder = [...document.querySelectorAll('[data-tracker-tile]')]
+          .map(tile => tile.dataset.trackerTile);
+        saveTrackerOrder();
+      }
+    });
+
+    registerSortable({
+      itemSelector: '[data-overview-section]',
+      commit() {
+        overviewSectionOrder = [...document.querySelectorAll('[data-overview-section]')]
+          .map(section => section.dataset.overviewSection);
+        saveOverviewState();
+      }
+    });
 
     // ── Logout ────────────────────────────────────
     document.getElementById('userChip').addEventListener('click', async () => {
@@ -492,7 +853,7 @@
         shares.push({ ownerUid: timoUid, module: 'ski', role: 'view', ownerName: 'Timo' });
       }
       const sec = document.getElementById('sharedSection');
-      if (!shares.length) { sec.style.display = 'none'; return; }
+      if (!shares.length) { sec.style.display = 'none'; applyOverviewLayout(); return; }
       sec.style.display = '';
       document.getElementById('sharedList').innerHTML = shares.map(s => {
         const m = MODULES[s.module];
@@ -505,6 +866,7 @@
           <span class="role-badge">${s.role === 'edit' ? 'Bearbeiten' : 'Ansehen'}</span>
         </a>`;
       }).join('');
+      applyOverviewLayout();
     })();
 
     /* ════ Projekte (eigene) ═════════════════════ */
@@ -512,13 +874,6 @@
     const pubDoc = id => doc(db, 'publicProjects', `${user.uid}__${id}`);
     let editingId = null;
     let latestProjects = [];
-    const collapsedProjectsKey = `tvza.collapsedProjects.${user.uid}`;
-    let collapsedProjects = new Set();
-    try {
-      collapsedProjects = new Set(JSON.parse(localStorage.getItem(collapsedProjectsKey) || '[]'));
-    } catch (e) {
-      localStorage.removeItem(collapsedProjectsKey);
-    }
 
     onSnapshot(query(projCol, orderBy('createdAt', 'asc')), snap => {
       latestProjects = sortProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -527,34 +882,29 @@
 
     function sortProjects(items) {
       return [...items].sort((a, b) => {
-        const hasOrderA = Number.isFinite(Number(a.sortOrder));
-        const hasOrderB = Number.isFinite(Number(b.sortOrder));
-        if (hasOrderA && hasOrderB && Number(a.sortOrder) !== Number(b.sortOrder)) {
-          return Number(a.sortOrder) - Number(b.sortOrder);
-        }
+        const ao = Number(a.sortOrder);
+        const bo = Number(b.sortOrder);
+        if (Number.isFinite(ao) && Number.isFinite(bo) && ao !== bo) return ao - bo;
+        if (Number.isFinite(ao) && !Number.isFinite(bo)) return -1;
+        if (!Number.isFinite(ao) && Number.isFinite(bo)) return 1;
         const at = a.createdAt?.toMillis?.() || 0;
         const bt = b.createdAt?.toMillis?.() || 0;
         return at - bt || String(a.name || '').localeCompare(String(b.name || ''), 'de-CH');
       });
     }
 
-    function saveCollapsedProjects() {
-      localStorage.setItem(collapsedProjectsKey, JSON.stringify([...collapsedProjects]));
-    }
-
-    async function moveProject(id, dir, items) {
-      const from = items.findIndex(p => p.id === id);
-      const to = from + dir;
-      if (from < 0 || to < 0 || to >= items.length) return;
-      const next = [...items];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      latestProjects = next;
-      renderProjects(next);
-      await Promise.all(next.map((p, index) =>
-        updateDoc(doc(projCol, p.id), { sortOrder: index }).catch(console.warn)
-      ));
-    }
+    registerSortable({
+      itemSelector: '[data-project-row]',
+      commit() {
+        const ids = [...document.querySelectorAll('[data-project-row]')].map(row => row.dataset.projectRow);
+        latestProjects = ids
+          .map(id => latestProjects.find(project => project.id === id))
+          .filter(Boolean);
+        latestProjects.forEach((project, index) => {
+          updateDoc(doc(projCol, project.id), { sortOrder: index }).catch(console.warn);
+        });
+      }
+    });
 
     function renderProjects(items) {
       const wrap = document.getElementById('projectList');
@@ -563,26 +913,16 @@
         return;
       }
       items = sortProjects(items);
-      wrap.innerHTML = items.map((p, index) => {
+      wrap.innerHTML = items.map(p => {
         const isProtected = !!(p.publicPassword || '').trim();
-        const isCollapsed = collapsedProjects.has(p.id);
         return `
-        <div class="link-row project-row ${isCollapsed ? 'project-row--collapsed' : ''}">
-          <button class="project-toggle" type="button" data-toggle="${p.id}" aria-expanded="${isCollapsed ? 'false' : 'true'}" title="${isCollapsed ? 'Projekt aufklappen' : 'Projekt zuklappen'}">
-            <span class="project-toggle-icon">${ICON_CHEVRON}</span>
-          </button>
+        <div class="link-row project-row" data-project-row="${p.id}">
           <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
           <a class="link-title" href="${escHtml(p.url)}" target="_blank" rel="noopener">
             <span>${escHtml(p.name)}</span>
             <small>${p.isPublic ? (isProtected ? 'Öffentlich mit Passwort' : 'Öffentlich ohne Passwort') : 'Privat'}</small>
           </a>
           <div class="project-actions">
-            <button class="action-btn project-move-btn" data-move="${p.id}" data-dir="-1" title="Projekt nach oben" ${index === 0 ? 'disabled' : ''}>
-              <span>${ICON_UP}</span><b>Hoch</b>
-            </button>
-            <button class="action-btn project-move-btn" data-move="${p.id}" data-dir="1" title="Projekt nach unten" ${index === items.length - 1 ? 'disabled' : ''}>
-              <span>${ICON_DOWN}</span><b>Runter</b>
-            </button>
             <button class="action-btn ${p.isPublic ? 'action-btn--public' : ''}" data-pub="${p.id}" data-ispub="${p.isPublic ? '1':''}" title="${p.isPublic ? 'Veröffentlichung beenden' : 'Projekt veröffentlichen'}">
               <span>${p.isPublic ? (isProtected ? ICON_LOCK : ICON_GLOBE) : ICON_LOCK}</span>
               <b>${p.isPublic ? 'Öffentlich' : 'Privat'}</b>
@@ -596,20 +936,6 @@
           </div>
         </div>`;
       }).join('');
-
-      wrap.querySelectorAll('[data-toggle]').forEach(b =>
-        b.addEventListener('click', () => {
-          if (collapsedProjects.has(b.dataset.toggle)) collapsedProjects.delete(b.dataset.toggle);
-          else collapsedProjects.add(b.dataset.toggle);
-          saveCollapsedProjects();
-          renderProjects(items);
-        }));
-
-      wrap.querySelectorAll('[data-move]').forEach(b =>
-        b.addEventListener('click', async () => {
-          if (b.disabled) return;
-          await moveProject(b.dataset.move, Number(b.dataset.dir), items);
-        }));
 
       wrap.querySelectorAll('[data-del]').forEach(b =>
         b.addEventListener('click', async () => {
@@ -741,7 +1067,7 @@
         { emoji: '🏦', name: 'Banking App', url: 'https://example.com/REPLACE-banking' },
         { emoji: '📚', name: 'Werbeposter', url: 'https://example.com/REPLACE-werbeposter' },
       ];
-      for (const p of seed) await addDoc(projCol, { ...p, isPublic: false, createdAt: serverTimestamp() });
+      for (const [index, p] of seed.entries()) await addDoc(projCol, { ...p, isPublic: false, sortOrder: index, createdAt: serverTimestamp() });
       await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true }).catch(() => {});
     }
 
