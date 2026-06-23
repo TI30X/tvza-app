@@ -63,7 +63,7 @@ export function escHtml(str) {
 export const MODULES = {
   ski:  { key:'ski',  name:'Ski Tracker',    sub:'Schliff & Wachs',        emoji:'🎿', page:'pages/skitracker.html',  perUser:true,  shareable:true  },
   food: { key:'food', name:'Food Tracker',   sub:'Kalorien & Nährstoffe',  emoji:'🍎', page:'pages/foodtracker.html', perUser:true,  shareable:true  },
-  trip: { key:'trip', name:'Familienreisen', sub:'Gemeinsam planen',       emoji:'🧳', page:'pages/tripplanner.html', perUser:false, shareable:false },
+  trip: { key:'trip', name:'Planner',         sub:'Plan trips together',    emoji:'🗓️', page:'pages/planner.html',    perUser:false, shareable:false },
   matura: { key:'matura', name:'Maturaarbeit', sub:'Status & Fortschritt', emoji:'📊', page:'pages/maturaarbeit.html', perUser:false, shareable:false },
   maturatracker: { key:'maturatracker', name:'Maturaarbeit-Tracker', sub:'To-dos & Countdown', emoji:'🧵', page:'pages/maturaarbeit-tracker.html', perUser:true, shareable:false },
   publicProjects: { key:'publicProjects', name:'Öffentliche Projekte', sub:'Von allen geteilt', emoji:'🌐', perUser:false, shareable:false },
