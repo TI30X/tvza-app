@@ -13,67 +13,224 @@
   <link rel="stylesheet" href="../style.css" />
   <title>Planner — TVZA</title>
   <style>
+    /* ══════════════════════════════════════════════════════════════
+       Planner — v4 polish + tasteful, smooth animations (scoped)
+    ══════════════════════════════════════════════════════════════ */
+
+    /* ── Animation keyframes ── */
+    @keyframes viewIn   { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes cardIn   { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+    @keyframes rowIn    { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+    @keyframes popIn    { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+    @keyframes slideUp  { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+    @keyframes pulseDot { 0%,80%,100% { opacity: .25; transform: scale(.7); } 40% { opacity: 1; transform: scale(1); } }
+    @keyframes flashOk  { 0% { transform: scale(1); } 35% { transform: scale(1.12); } 100% { transform: scale(1); } }
+    @keyframes barFlow  { from { background-position: 0 0; } to { background-position: 200% 0; } }
+    @keyframes ripple   { from { transform: scale(0); opacity: .45; } to { transform: scale(2.4); opacity: 0; } }
+
+    /* ── View enter animation ── */
+    .view-in { animation: viewIn .32s cubic-bezier(.22,.61,.36,1) both; }
+
+    /* ── Animated accent bar (subtle flowing gradient) ── */
+    .accent-bar--trip {
+      background: linear-gradient(90deg,
+        var(--tint-trip), var(--trip), var(--tint-trip));
+      background-size: 200% 100%;
+      animation: barFlow 6s linear infinite;
+    }
+
     /* ── Language selector ── */
     .lang-sel {
       font-size: 13px; font-family: inherit; cursor: pointer;
       padding: 4px 6px; border-radius: 6px;
-      border: 1px solid var(--border); background: var(--surface-2);
-      color: var(--ink); min-height: 36px;
+      border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.12);
+      color: #fff; min-height: 36px;
+      transition: background .15s ease, transform .15s ease;
     }
-    .lang-sel:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .lang-sel option { color: #1a1a2e; }
+    .lang-sel:hover  { background: rgba(255,255,255,0.2); }
+    .lang-sel:focus  { outline: 2px solid #fff; outline-offset: 2px; }
 
-    /* ── Calendar / share action buttons ── */
-    .action-row {
-      display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;
-    }
+    /* ── Pill action buttons ── */
+    .action-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
     .pill-btn {
-      font-size: 11px; font-weight: 600; padding: 5px 10px;
+      position: relative; overflow: hidden;
+      font-size: 11px; font-weight: 600; padding: 6px 12px;
       border-radius: 999px; border: 1px solid var(--border);
       background: var(--surface-2); color: var(--ink);
       cursor: pointer; white-space: nowrap;
       display: inline-flex; align-items: center; gap: 4px;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      transition: background .18s ease, border-color .18s ease, color .18s ease,
+                  transform .12s ease, box-shadow .18s ease;
     }
-    .pill-btn:hover { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
-    .pill-btn:active { opacity: 0.75; }
+    .pill-btn:hover  { background: var(--accent-bg); border-color: var(--accent); color: var(--accent);
+                       transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .pill-btn:active { transform: scale(.94); }
+    .pill-btn.flash  { animation: flashOk .4s ease; color: var(--food-deep); border-color: var(--food); }
+    .pill-btn .rip   { position: absolute; border-radius: 50%; background: currentColor;
+                       width: 16px; height: 16px; pointer-events: none; animation: ripple .55s ease-out forwards; }
+    .pill-btn--primary { font-weight: 700; border-color: var(--trip); color: var(--trip-deep);
+                         background: var(--tint-trip); }
 
-    /* ── Invite / share link row ── */
+    /* ── Button micro-feedback ── */
+    .btn { position: relative; overflow: hidden; }
+    .btn .rip { position: absolute; border-radius: 50%; background: rgba(255,255,255,.5);
+                width: 20px; height: 20px; pointer-events: none; animation: ripple .6s ease-out forwards; }
+    .btn-primary { box-shadow: 0 2px 8px oklch(0.45 0.09 60 / 0.18); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px oklch(0.45 0.09 60 / 0.26); }
+
+    /* ── Cards animate in ── */
+    .form-card { animation: cardIn .4s cubic-bezier(.22,.61,.36,1) both; }
+    .trip-card { animation: cardIn .42s cubic-bezier(.22,.61,.36,1) both;
+                 animation-delay: calc(var(--i, 0) * 55ms); }
+    .trip-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+    /* ── Invite / share strip ── */
     .invite-strip {
       display: flex; gap: 8px; align-items: center; margin-top: 12px;
-      padding: 8px 10px; border-radius: 8px;
+      padding: 9px 11px; border-radius: 10px;
       background: var(--surface-2); border: 1px solid var(--border);
+      animation: popIn .3s ease both;
     }
     .invite-strip span {
       flex: 1; font-size: 11px; color: var(--ink-soft);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .invite-strip button {
-      font-size: 11px; font-weight: 600; padding: 5px 10px;
-      border-radius: 6px; border: 1px solid var(--accent);
+      font-size: 11px; font-weight: 700; padding: 6px 12px;
+      border-radius: 999px; border: 1px solid var(--accent);
       background: var(--accent-bg); color: var(--accent); cursor: pointer; white-space: nowrap;
+      transition: transform .12s ease, background .15s ease;
     }
+    .invite-strip button:active { transform: scale(.93); }
+    .invite-strip button.flash { animation: flashOk .4s ease; }
 
-    /* ── Pending cards ── */
+    /* ── Pending / member rows ── */
     .pending-card {
       display: flex; align-items: center; gap: 8px;
-      padding: 6px 0; border-bottom: 1px solid var(--border);
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      animation: rowIn .3s ease both;
     }
     .pending-card:last-child { border-bottom: none; }
+
+    /* ── Reminder banner ── */
+    .reminder-card {
+      background: linear-gradient(135deg, var(--tint-trip), var(--surface));
+      border: 1px solid var(--trip);
+      border-radius: var(--r2); padding: 14px 16px; margin-bottom: var(--s4);
+      box-shadow: var(--shadow-sm); animation: slideUp .4s cubic-bezier(.22,.61,.36,1) both;
+      position: relative;
+    }
+    .reminder-head { display: flex; align-items: center; gap: 8px; font-weight: 700;
+                     font-size: 14px; color: var(--trip-deep); margin-bottom: 8px; }
+    .reminder-bell { display: inline-block; transform-origin: 50% 0;
+                     animation: bell 2.4s ease infinite; }
+    @keyframes bell { 0%,92%,100% { transform: rotate(0); } 94% { transform: rotate(14deg); }
+                      96% { transform: rotate(-12deg); } 98% { transform: rotate(8deg); } }
+    .reminder-item { font-size: 13px; color: var(--ink); padding: 4px 0;
+                     display: flex; align-items: center; gap: 8px; animation: rowIn .35s ease both; }
+    .reminder-item .when { margin-left: auto; font-weight: 700; font-size: 12px; color: var(--trip-deep);
+                           background: var(--surface); padding: 2px 9px; border-radius: 999px;
+                           border: 1px solid var(--trip); }
+    .reminder-close { position: absolute; top: 10px; right: 12px; cursor: pointer;
+                      color: var(--ink-soft); font-size: 16px; line-height: 1; background: none; border: none; }
+
+    /* ── Itinerary timeline ── */
+    .itin-day { margin-top: 14px; animation: cardIn .4s ease both;
+                animation-delay: calc(var(--d, 0) * 70ms); }
+    .itin-day-head {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700; letter-spacing: .03em;
+      color: var(--trip-deep); background: var(--tint-trip);
+      padding: 4px 12px; border-radius: 999px; margin-bottom: 6px;
+    }
+    .itin-line { position: relative; padding-left: 20px; }
+    .itin-line::before {
+      content: ''; position: absolute; left: 5px; top: 4px; bottom: 4px;
+      width: 2px; background: var(--border); border-radius: 2px;
+    }
+    .itin-item {
+      position: relative; padding: 8px 10px; margin-bottom: 7px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; box-shadow: var(--shadow-sm);
+      display: flex; align-items: flex-start; gap: 10px;
+      animation: rowIn .35s ease both; animation-delay: calc(var(--ii, 0) * 45ms);
+      transition: transform .14s ease, box-shadow .14s ease;
+    }
+    .itin-item:hover { transform: translateX(2px); box-shadow: var(--shadow-md); }
+    .itin-item::before {
+      content: ''; position: absolute; left: -17px; top: 14px;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--trip); border: 2px solid var(--surface);
+      box-shadow: 0 0 0 2px var(--tint-trip);
+    }
+    .itin-time { font-size: 12px; font-weight: 700; color: var(--trip-deep);
+                 min-width: 44px; padding-top: 1px; }
+    .itin-body { flex: 1; min-width: 0; }
+    .itin-title { font-size: 14px; font-weight: 600; }
+    .itin-notes { font-size: 12px; color: var(--ink-soft); margin-top: 2px; white-space: pre-wrap; }
+    .itin-del { background: none; border: none; color: var(--ink-soft); cursor: pointer;
+                font-size: 14px; padding: 2px 4px; transition: color .15s ease, transform .12s ease; }
+    .itin-del:hover  { color: var(--danger); }
+    .itin-del:active { transform: scale(.85); }
+
+    /* ── Plan attach options ── */
+    .plan-tabs { display: flex; gap: 6px; margin: 10px 0 12px; }
+    .plan-tab {
+      flex: 1; font-size: 12px; font-weight: 600; padding: 8px;
+      border-radius: var(--r1); border: 1px solid var(--border);
+      background: var(--surface-2); color: var(--ink-soft); cursor: pointer;
+      transition: all .15s ease;
+    }
+    .plan-tab.active { background: var(--tint-trip); color: var(--trip-deep);
+                       border-color: var(--trip); }
+    .plan-pane { display: none; animation: popIn .25s ease both; }
+    .plan-pane.active { display: block; }
+    .file-drop {
+      border: 2px dashed var(--border); border-radius: var(--r2);
+      padding: 22px 14px; text-align: center; cursor: pointer;
+      color: var(--ink-soft); font-size: 13px;
+      transition: border-color .18s ease, background .18s ease, color .18s ease;
+    }
+    .file-drop:hover, .file-drop.drag { border-color: var(--trip); background: var(--tint-trip);
+                                        color: var(--trip-deep); }
+    .file-drop strong { color: var(--trip-deep); }
+
+    /* ── Animated spinner (dots) ── */
+    .spinner { display: flex; gap: 6px; align-items: center; justify-content: center; }
+    .spinner::after { content: none; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--trip);
+           animation: pulseDot 1.1s ease-in-out infinite; }
+    .dot:nth-child(2) { animation-delay: .15s; }
+    .dot:nth-child(3) { animation-delay: .3s; }
+
+    /* ── Activity items animate ── */
+    .item-card { animation: rowIn .32s ease both; animation-delay: calc(var(--i, 0) * 45ms); }
 
     /* ── Plan viewer modal (full-screen iframe overlay) ── */
     #planModal {
       display: none; position: fixed; inset: 0; z-index: 9999;
       flex-direction: column; background: var(--bg);
     }
-    #planModal.visible { display: flex; }
+    #planModal.visible { display: flex; animation: viewIn .28s ease both; }
+    #planModal.visible #planFrame { animation: slideUp .4s cubic-bezier(.22,.61,.36,1) both; }
     .plan-bar {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 14px; border-bottom: 1px solid var(--border);
-      background: var(--surface-1); flex-shrink: 0;
+      background: var(--brand-gradient); color: #fff; flex-shrink: 0;
     }
+    .plan-bar .btn-secondary { background: rgba(255,255,255,.14); color: #fff;
+                               border-color: rgba(255,255,255,.25); }
     .plan-bar-title { font-weight: 700; font-size: 15px; flex: 1; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap; }
-    #planFrame { flex: 1; border: none; width: 100%; height: 100%; }
+    .plan-bar a { color: #fff !important; }
+    #planFrame { flex: 1; border: none; width: 100%; height: 100%; background: #fff; }
+
+    /* ── Reduced motion: respect user preference ── */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+      .accent-bar--trip, .reminder-bell { animation: none; }
+    }
   </style>
 </head>
 <body>
@@ -98,7 +255,7 @@
             <option value="nl">NL 🇳🇱</option>
             <option value="pl">PL 🇵🇱</option>
           </select>
-          <span style="cursor:pointer;color:var(--ink-soft);font-size:18px;min-width:40px;
+          <span style="cursor:pointer;color:rgba(255,255,255,0.85);font-size:18px;min-width:40px;
                        min-height:44px;display:inline-flex;align-items:center;justify-content:center"
                 id="themeToggle" title="Theme">◐</span>
         </div>
@@ -136,6 +293,9 @@
       <!-- ═══ Group + trips ═══ -->
       <div id="groupView" style="display:none">
 
+        <!-- Upcoming reminders banner -->
+        <div id="reminderWrap"></div>
+
         <!-- Group info card -->
         <div class="form-card" style="border-left:4px solid var(--trip)">
           <div style="display:flex;justify-content:space-between;align-items:center">
@@ -149,6 +309,9 @@
           <div class="invite-strip" id="inviteStrip" style="display:none">
             <span id="inviteUrlDisplay"></span>
             <button id="copyInviteBtn"></button>
+          </div>
+          <div class="action-row" id="grpActionRow" style="display:none">
+            <button class="pill-btn" id="exportAllBtn"></button>
           </div>
         </div>
 
@@ -178,7 +341,7 @@
         </div>
 
         <h2 class="section-title" id="lblGroupTrips"></h2>
-        <div id="tripList"><div class="spinner" id="tripSpinner"></div></div>
+        <div id="tripList"><div class="spinner"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div></div>
 
       </div>
 
@@ -186,15 +349,54 @@
       <div id="detailView" style="display:none">
         <div id="tripInfoCard" class="form-card" style="border-left:4px solid var(--trip)"></div>
 
+        <!-- Per-day itinerary -->
+        <div class="form-card" id="itinSection">
+          <p class="form-title" id="lblItinSection"></p>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" id="lblItinDate"></label>
+              <input class="form-input" id="itinDate" type="date" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" id="lblItinTime"></label>
+              <input class="form-input" id="itinTime" type="time" />
+            </div>
+          </div>
+          <div class="form-group">
+            <input class="form-input" id="itinTitle" type="text" />
+          </div>
+          <div class="form-group">
+            <textarea class="form-textarea" id="itinNotes" rows="2"></textarea>
+          </div>
+          <button class="btn btn-primary btn-block" id="addItinBtn"></button>
+          <div id="itinList" style="margin-top:14px"></div>
+        </div>
+
         <!-- Custom plan section -->
         <div class="form-card" id="planSection">
           <p class="form-title" id="lblPlanSection"></p>
           <div id="planLinkDisplay"></div>
           <div id="planLinkEdit" style="display:none">
-            <div class="form-group" style="margin-top:8px">
+            <div class="plan-tabs">
+              <button class="plan-tab active" data-pane="paste" id="tabPaste"></button>
+              <button class="plan-tab" data-pane="upload" id="tabUpload"></button>
+              <button class="plan-tab" data-pane="url" id="tabUrl"></button>
+            </div>
+            <div class="plan-pane active" data-pane="paste">
+              <textarea class="form-textarea" id="planHtmlInput" rows="5"
+                        style="font-family:monospace;font-size:12px"></textarea>
+            </div>
+            <div class="plan-pane" data-pane="upload">
+              <label class="file-drop" id="fileDrop">
+                <span id="fileDropText"></span>
+                <input type="file" id="planFileInput" accept=".html,.htm,text/html" hidden />
+              </label>
+              <p id="fileChosen" style="font-size:12px;color:var(--trip-deep);margin-top:8px;display:none"></p>
+            </div>
+            <div class="plan-pane" data-pane="url">
               <input class="form-input" id="planUrlInput" type="url" />
             </div>
-            <div style="display:flex;gap:8px;margin-top:8px">
+            <div style="display:flex;gap:8px;margin-top:12px">
               <button class="btn btn-primary" id="savePlanBtn"></button>
               <button class="btn btn-secondary" id="cancelPlanBtn"></button>
             </div>
@@ -219,7 +421,7 @@
         </div>
 
         <h2 class="section-title" id="lblActivities"></h2>
-        <div id="actList"><div class="spinner" id="actSpinner"></div></div>
+        <div id="actList"><div class="spinner"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div></div>
 
         <button class="btn btn-danger" id="deleteTripBtn"
                 style="width:100%;padding:12px;margin-top:20px"></button>
@@ -239,8 +441,7 @@
               id="planModalClose">←</button>
       <span class="plan-bar-title" id="planModalTitle"></span>
       <a id="planModalFullBtn" href="#" target="_blank" rel="noopener"
-         style="font-size:13px;color:var(--accent);white-space:nowrap;flex-shrink:0"
-         id="lblPlanOpenFull"></a>
+         style="font-size:13px;white-space:nowrap;flex-shrink:0"></a>
     </div>
     <iframe id="planFrame"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
@@ -297,6 +498,7 @@
         icsDownload: '📥 Apple / Outlook',
         shareTrip: '🔗 Share trip',
         tripLinkCopied: '✓ Link copied!',
+        exportAll: '📅 Export all trips',
         loading: 'Loading…',
         noTrips: 'No trips planned yet.',
         noActivities: 'No activities yet.',
@@ -312,14 +514,31 @@
         minOneAdmin: 'At least one admin must remain.',
         customPlan: 'Custom Plan',
         viewPlan: '📋 View Plan',
-        linkPlan: '+ Link a plan',
-        planUrlPlaceholder: 'URL to the HTML plan file…',
+        linkPlan: '+ Add a plan',
+        planUrlPlaceholder: 'URL to an HTML plan file…',
+        planHtmlPlaceholder: 'Paste your HTML plan here…',
         savePlan: 'Save',
         cancelPlan: 'Cancel',
         removePlan: 'Remove',
         editPlan: 'Change',
         openFullScreen: '↗ Full screen',
-        planLinked: 'Plan linked:',
+        planLinked: 'Plan attached:',
+        planStored: 'Stored plan (saved in the app)',
+        tabPaste: 'Paste HTML',
+        tabUpload: 'Upload file',
+        tabUrl: 'Link URL',
+        fileDrop: 'Tap to choose an <strong>.html</strong> file',
+        fileChosen: '✓ {name} ready',
+        itinerary: 'Itinerary',
+        itinDate: 'Day', itinTime: 'Time',
+        itinTitlePlaceholder: 'e.g. Check-in at hotel',
+        itinNotesPlaceholder: 'Details (optional)…',
+        addItin: '+ Add to schedule',
+        noItinerary: 'No schedule items yet — build your day-by-day plan.',
+        itinDateRequired: 'Please pick a day and a title.',
+        upcoming: 'Upcoming',
+        today: 'today', tomorrow: 'tomorrow',
+        inDays: 'in {n} days', daysAgo: 'started',
       },
       de: {
         title: 'Planer',
@@ -360,6 +579,7 @@
         icsDownload: '📥 Apple / Outlook',
         shareTrip: '🔗 Reise teilen',
         tripLinkCopied: '✓ Link kopiert!',
+        exportAll: '📅 Alle Reisen exportieren',
         loading: 'Lade…',
         noTrips: 'Noch keine Reisen geplant.',
         noActivities: 'Noch keine Aktivitäten.',
@@ -375,14 +595,31 @@
         minOneAdmin: 'Mindestens ein Verwalter muss bleiben.',
         customPlan: 'Eigener Plan',
         viewPlan: '📋 Plan anzeigen',
-        linkPlan: '+ Plan verknüpfen',
-        planUrlPlaceholder: 'URL zur HTML-Plandatei…',
+        linkPlan: '+ Plan hinzufügen',
+        planUrlPlaceholder: 'URL zu einer HTML-Plandatei…',
+        planHtmlPlaceholder: 'HTML-Plan hier einfügen…',
         savePlan: 'Speichern',
         cancelPlan: 'Abbrechen',
         removePlan: 'Entfernen',
         editPlan: 'Ändern',
         openFullScreen: '↗ Vollbild',
-        planLinked: 'Plan verknüpft:',
+        planLinked: 'Plan angehängt:',
+        planStored: 'Gespeicherter Plan (in der App)',
+        tabPaste: 'HTML einfügen',
+        tabUpload: 'Datei hochladen',
+        tabUrl: 'Link / URL',
+        fileDrop: 'Tippe für eine <strong>.html</strong>-Datei',
+        fileChosen: '✓ {name} bereit',
+        itinerary: 'Tagesplan',
+        itinDate: 'Tag', itinTime: 'Zeit',
+        itinTitlePlaceholder: 'z.B. Check-in im Hotel',
+        itinNotesPlaceholder: 'Details (optional)…',
+        addItin: '+ Zum Plan hinzufügen',
+        noItinerary: 'Noch keine Programmpunkte — plane deinen Tagesablauf.',
+        itinDateRequired: 'Bitte Tag und Titel angeben.',
+        upcoming: 'Demnächst',
+        today: 'heute', tomorrow: 'morgen',
+        inDays: 'in {n} Tagen', daysAgo: 'läuft',
       },
       nl: {
         title: 'Planner',
@@ -423,6 +660,7 @@
         icsDownload: '📥 Apple / Outlook',
         shareTrip: '🔗 Reis delen',
         tripLinkCopied: '✓ Link gekopieerd!',
+        exportAll: '📅 Alle reizen exporteren',
         loading: 'Laden…',
         noTrips: 'Nog geen reizen gepland.',
         noActivities: 'Nog geen activiteiten.',
@@ -438,14 +676,31 @@
         minOneAdmin: 'Er moet minstens één beheerder blijven.',
         customPlan: 'Aangepast plan',
         viewPlan: '📋 Plan bekijken',
-        linkPlan: '+ Plan koppelen',
-        planUrlPlaceholder: 'URL naar het HTML-planbestand…',
+        linkPlan: '+ Plan toevoegen',
+        planUrlPlaceholder: 'URL naar een HTML-planbestand…',
+        planHtmlPlaceholder: 'Plak hier je HTML-plan…',
         savePlan: 'Opslaan',
         cancelPlan: 'Annuleren',
         removePlan: 'Verwijder',
         editPlan: 'Wijzigen',
         openFullScreen: '↗ Volledig scherm',
-        planLinked: 'Plan gekoppeld:',
+        planLinked: 'Plan toegevoegd:',
+        planStored: 'Opgeslagen plan (in de app)',
+        tabPaste: 'HTML plakken',
+        tabUpload: 'Bestand uploaden',
+        tabUrl: 'Link / URL',
+        fileDrop: 'Tik voor een <strong>.html</strong>-bestand',
+        fileChosen: '✓ {name} klaar',
+        itinerary: 'Dagplanning',
+        itinDate: 'Dag', itinTime: 'Tijd',
+        itinTitlePlaceholder: 'bijv. Inchecken hotel',
+        itinNotesPlaceholder: 'Details (optioneel)…',
+        addItin: '+ Aan planning toevoegen',
+        noItinerary: 'Nog geen programmapunten — maak je dagplanning.',
+        itinDateRequired: 'Kies een dag en een titel.',
+        upcoming: 'Binnenkort',
+        today: 'vandaag', tomorrow: 'morgen',
+        inDays: 'over {n} dagen', daysAgo: 'bezig',
       },
       pl: {
         title: 'Planer',
@@ -486,6 +741,7 @@
         icsDownload: '📥 Apple / Outlook',
         shareTrip: '🔗 Udostępnij',
         tripLinkCopied: '✓ Link skopiowany!',
+        exportAll: '📅 Eksportuj wszystkie',
         loading: 'Ładowanie…',
         noTrips: 'Brak zaplanowanych wycieczek.',
         noActivities: 'Brak aktywności.',
@@ -501,70 +757,101 @@
         minOneAdmin: 'Musi pozostać co najmniej jeden administrator.',
         customPlan: 'Niestandardowy plan',
         viewPlan: '📋 Wyświetl plan',
-        linkPlan: '+ Powiąż plan',
+        linkPlan: '+ Dodaj plan',
         planUrlPlaceholder: 'URL do pliku HTML planu…',
+        planHtmlPlaceholder: 'Wklej tutaj swój plan HTML…',
         savePlan: 'Zapisz',
         cancelPlan: 'Anuluj',
         removePlan: 'Usuń',
         editPlan: 'Zmień',
         openFullScreen: '↗ Pełny ekran',
-        planLinked: 'Plan powiązany:',
+        planLinked: 'Plan dołączony:',
+        planStored: 'Zapisany plan (w aplikacji)',
+        tabPaste: 'Wklej HTML',
+        tabUpload: 'Wgraj plik',
+        tabUrl: 'Link / URL',
+        fileDrop: 'Dotknij, aby wybrać plik <strong>.html</strong>',
+        fileChosen: '✓ {name} gotowy',
+        itinerary: 'Plan dnia',
+        itinDate: 'Dzień', itinTime: 'Godzina',
+        itinTitlePlaceholder: 'np. Zameldowanie w hotelu',
+        itinNotesPlaceholder: 'Szczegóły (opcjonalnie)…',
+        addItin: '+ Dodaj do planu',
+        noItinerary: 'Brak punktów programu — zaplanuj swój dzień.',
+        itinDateRequired: 'Wybierz dzień i tytuł.',
+        upcoming: 'Wkrótce',
+        today: 'dziś', tomorrow: 'jutro',
+        inDays: 'za {n} dni', daysAgo: 'trwa',
       }
     };
 
+    const LOCALE = { en: 'en-GB', de: 'de-DE', nl: 'nl-NL', pl: 'pl-PL' };
     let langKey = localStorage.getItem('tvza.plannerLang') || 'en';
     const t = key => I18N[langKey]?.[key] ?? I18N.en?.[key] ?? key;
 
-    function applyI18n() {
-      document.documentElement.lang = langKey;
-      document.getElementById('offlineBanner').textContent = t('offline');
-      document.getElementById('pageTitle').textContent = t('title');
-      document.title = t('title') + ' — TVZA';
-      document.getElementById('backLabel').textContent = t('back');
-      document.getElementById('noGroupText').innerHTML = t('noGroup').replace('\n', '<br>');
-      document.getElementById('lblCreateGroup').textContent = t('createGroup');
-      document.getElementById('newGrpName').placeholder = t('grpNamePlaceholder');
-      document.getElementById('createGrpBtn').textContent = t('createGrpBtn');
-      document.getElementById('lblJoinGroup').textContent = t('joinGroup');
-      document.getElementById('joinGrpName').placeholder = t('joinNamePlaceholder');
-      document.getElementById('joinGrpBtn').textContent = t('joinBtn');
-      document.getElementById('lblNewTrip').textContent = t('newTrip');
-      document.getElementById('tripName').placeholder = t('tripNamePlaceholder');
-      document.getElementById('tripDest').placeholder = t('destPlaceholder');
-      document.getElementById('lblFrom').textContent = t('from');
-      document.getElementById('lblTo').textContent = t('to');
-      document.getElementById('tripNotes').placeholder = t('notesPlaceholder');
-      document.getElementById('addTripBtn').textContent = t('addTripBtn');
-      document.getElementById('lblGroupTrips').textContent = t('groupTrips');
-      document.getElementById('tripSpinner').textContent = t('loading');
-      document.getElementById('lblActivity').textContent = t('activity');
-      document.getElementById('actName').placeholder = t('actPlaceholder');
-      document.getElementById('lblAssigned').textContent = t('assigned');
-      document.getElementById('addActBtn').textContent = t('addAct');
-      document.getElementById('lblActivities').textContent = t('activities');
-      document.getElementById('actSpinner').textContent = t('loading');
-      document.getElementById('deleteTripBtn').textContent = t('deleteTrip');
-      document.getElementById('copyInviteBtn').textContent = t('copyInvite');
-      // actWho first option
-      const sel = document.getElementById('actWho');
-      if (sel.options.length) sel.options[0].textContent = t('nobody');
-      // plan section
-      document.getElementById('lblPlanSection').textContent = t('customPlan');
-      document.getElementById('planUrlInput').placeholder = t('planUrlPlaceholder');
-      document.getElementById('savePlanBtn').textContent = t('savePlan');
-      document.getElementById('cancelPlanBtn').textContent = t('cancelPlan');
-      const planFull = document.getElementById('planModalFullBtn');
-      if (planFull) planFull.textContent = t('openFullScreen');
-      // re-render plan display if trip is open
-      if (currentTripData) renderPlanSection(currentTripData.planUrl || null);
-    }
-
-    /* Declare these early so applyI18n() can safely reference them */
+    /* Declare shared state early so applyI18n() can safely reference it (avoid TDZ) */
     let group = null;
     let currentTripData = null;
-    let memberNames = {};
     let currentTripId = null;
+    let memberNames = {};
     let cachedTrips = [];
+    let planFileHtml = null;   // holds HTML read from an uploaded file
+
+    function applyI18n() {
+      document.documentElement.lang = langKey;
+      const set = (id, val, prop = 'textContent') => { const el = document.getElementById(id); if (el) el[prop] = val; };
+      set('offlineBanner', t('offline'));
+      set('pageTitle', t('title'));
+      document.title = t('title') + ' — TVZA';
+      set('backLabel', t('back'));
+      const ng = document.getElementById('noGroupText'); if (ng) ng.innerHTML = t('noGroup').replace('\n', '<br>');
+      set('lblCreateGroup', t('createGroup'));
+      set('newGrpName', t('grpNamePlaceholder'), 'placeholder');
+      set('createGrpBtn', t('createGrpBtn'));
+      set('lblJoinGroup', t('joinGroup'));
+      set('joinGrpName', t('joinNamePlaceholder'), 'placeholder');
+      set('joinGrpBtn', t('joinBtn'));
+      set('lblNewTrip', t('newTrip'));
+      set('tripName', t('tripNamePlaceholder'), 'placeholder');
+      set('tripDest', t('destPlaceholder'), 'placeholder');
+      set('lblFrom', t('from'));
+      set('lblTo', t('to'));
+      set('tripNotes', t('notesPlaceholder'), 'placeholder');
+      set('addTripBtn', t('addTripBtn'));
+      set('lblGroupTrips', t('groupTrips'));
+      set('lblActivity', t('activity'));
+      set('actName', t('actPlaceholder'), 'placeholder');
+      set('lblAssigned', t('assigned'));
+      set('addActBtn', t('addAct'));
+      set('lblActivities', t('activities'));
+      set('deleteTripBtn', t('deleteTrip'));
+      set('copyInviteBtn', t('copyInvite'));
+      set('exportAllBtn', t('exportAll'));
+      // plan section
+      set('lblPlanSection', t('customPlan'));
+      set('planUrlInput', t('planUrlPlaceholder'), 'placeholder');
+      set('planHtmlInput', t('planHtmlPlaceholder'), 'placeholder');
+      set('savePlanBtn', t('savePlan'));
+      set('cancelPlanBtn', t('cancelPlan'));
+      set('tabPaste', t('tabPaste'));
+      set('tabUpload', t('tabUpload'));
+      set('tabUrl', t('tabUrl'));
+      const fd = document.getElementById('fileDropText'); if (fd) fd.innerHTML = t('fileDrop');
+      // itinerary section
+      set('lblItinSection', t('itinerary'));
+      set('lblItinDate', t('itinDate'));
+      set('lblItinTime', t('itinTime'));
+      set('itinTitle', t('itinTitlePlaceholder'), 'placeholder');
+      set('itinNotes', t('itinNotesPlaceholder'), 'placeholder');
+      set('addItinBtn', t('addItin'));
+      const planFull = document.getElementById('planModalFullBtn');
+      if (planFull) planFull.textContent = t('openFullScreen');
+      // actWho first option
+      const sel = document.getElementById('actWho');
+      if (sel?.options.length) sel.options[0].textContent = t('nobody');
+      // re-render plan + itinerary if trip is open
+      if (currentTripData) { renderPlanSection(currentTripData); renderItinerary(currentTripData.itinerary || []); }
+    }
 
     const langSel = document.getElementById('langSel');
     langSel.value = langKey;
@@ -572,10 +859,34 @@
       langKey = langSel.value;
       localStorage.setItem('tvza.plannerLang', langKey);
       applyI18n();
-      if (group) { renderMembers(); renderAdminPanel(); }
+      if (group) { renderMembers(); renderAdminPanel(); renderReminders(); renderTrips(cachedTrips); }
       if (currentTripData) renderTripInfoCard(currentTripData);
     });
     applyI18n();
+
+    /* ════════════════════════════════════════════════════════════
+       Animation helpers
+    ════════════════════════════════════════════════════════════ */
+    function showView(el) {
+      el.style.display = '';
+      el.classList.remove('view-in');
+      void el.offsetWidth;          // force reflow to restart animation
+      el.classList.add('view-in');
+    }
+    function ripple(e, btn) {
+      const r = document.createElement('span');
+      r.className = 'rip';
+      const rect = btn.getBoundingClientRect();
+      r.style.left = (e.clientX - rect.left - 10) + 'px';
+      r.style.top  = (e.clientY - rect.top  - 10) + 'px';
+      btn.appendChild(r);
+      setTimeout(() => r.remove(), 650);
+    }
+    // Global ripple on buttons
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.btn, .pill-btn');
+      if (btn && e.clientX) ripple(e, btn);
+    }, true);
 
     /* ════════════════════════════════════════════════════════════
        Icons
@@ -606,13 +917,12 @@
       return url.toString();
     }
 
-    function downloadIcs(trip) {
+    function icsEvent(trip) {
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const dtStart = toCalDate(trip.startDate) || today;
       const dtEnd = toCalDate(trip.endDate) || dtStart;
       const esc = s => (s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
-      const lines = [
-        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//TVZA Planner//EN',
+      return [
         'BEGIN:VEVENT',
         `UID:${trip.id}@tvza-planner`,
         `DTSTART;VALUE=DATE:${dtStart}`,
@@ -620,20 +930,26 @@
         `SUMMARY:${esc(trip.name)}`,
         trip.destination ? `LOCATION:${esc(trip.destination)}` : null,
         trip.notes ? `DESCRIPTION:${esc(trip.notes)}` : null,
-        'END:VEVENT', 'END:VCALENDAR'
+        'END:VEVENT'
       ].filter(Boolean).join('\r\n');
+    }
+
+    function downloadIcsFile(events, filename) {
+      const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//TVZA Planner//EN',
+        ...events, 'END:VCALENDAR'].join('\r\n');
       const blob = new Blob([lines], { type: 'text/calendar;charset=utf-8' });
       const a = Object.assign(document.createElement('a'), {
-        href: URL.createObjectURL(blob),
-        download: `${trip.name.replace(/[^a-z0-9_-]/gi, '_')}.ics`
+        href: URL.createObjectURL(blob), download: filename
       });
-      document.body.appendChild(a);
-      a.click();
+      document.body.appendChild(a); a.click();
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+    function downloadIcs(trip) {
+      downloadIcsFile([icsEvent(trip)], `${trip.name.replace(/[^a-z0-9_-]/gi, '_')}.ics`);
     }
 
     /* ════════════════════════════════════════════════════════════
-       Clipboard helper
+       Clipboard + feedback helpers
     ════════════════════════════════════════════════════════════ */
     async function copyText(text) {
       try { await navigator.clipboard.writeText(text); return; } catch {}
@@ -641,26 +957,24 @@
       document.body.appendChild(inp); inp.select();
       document.execCommand('copy'); inp.remove();
     }
-
     function flashBtn(btn, msg) {
       const orig = btn.textContent;
       btn.textContent = msg;
-      setTimeout(() => { btn.textContent = orig; }, 2000);
+      btn.classList.add('flash');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('flash'); }, 2000);
     }
 
     /* ════════════════════════════════════════════════════════════
-       Invite-token helper
+       Invite-token helpers
     ════════════════════════════════════════════════════════════ */
     function randomToken(len = 22) {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
       return Array.from(crypto.getRandomValues(new Uint8Array(len)))
         .map(b => chars[b % chars.length]).join('');
     }
-
     function buildInviteUrl(grpId, token) {
       return `${location.origin}${location.pathname}?invite=${grpId}&token=${token}`;
     }
-
     function buildTripUrl(tripId) {
       return `${location.origin}${location.pathname}?trip=${tripId}`;
     }
@@ -676,7 +990,6 @@
     let myProfile = {};
     { const s = await getDoc(userRef); myProfile = s.exists() ? s.data() : {}; }
 
-    // (group, memberNames, currentTripId, currentTripData, cachedTrips declared above applyI18n)
     let unsubGrp = null, unsubTrips = null, unsubActs = null;
 
     /* URL params */
@@ -689,13 +1002,10 @@
        Init — determine group membership
     ════════════════════════════════════════════════════════════ */
     async function init() {
-      // 1. Handle invite link first
       if (inviteGrpId && inviteToken) {
         const handled = await handleInviteLink();
         if (handled) return;
       }
-
-      // 2. Existing membership
       if (myProfile.familyId) {
         const fs = await getDoc(doc(grpCol, myProfile.familyId));
         if (fs.exists() && (fs.data().members || []).includes(user.uid)) {
@@ -705,35 +1015,27 @@
         await updateDoc(userRef, { familyId: null });
         myProfile.familyId = null;
       }
-
       showNoGroup();
     }
 
-    /* ════════════════════════════════════════════════════════════
-       Invite-link handler — auto-join on valid token
-    ════════════════════════════════════════════════════════════ */
     async function handleInviteLink() {
       try {
         const snap = await getDoc(doc(grpCol, inviteGrpId));
         if (!snap.exists()) return false;
         const data = snap.data();
-
-        // Already a member → just open the group
         if ((data.members || []).includes(user.uid)) {
           history.replaceState({}, '', location.pathname);
           await updateDoc(userRef, { familyId: inviteGrpId });
           watchGroup(inviteGrpId);
           return true;
         }
-
-        // Token matches → auto-join (no approval needed)
         if (data.inviteToken && data.inviteToken === inviteToken) {
           await updateDoc(doc(grpCol, inviteGrpId), { members: arrayUnion(user.uid) });
           await updateDoc(userRef, { familyId: inviteGrpId, role: 'member' });
           history.replaceState({}, '', location.pathname);
           watchGroup(inviteGrpId);
           const status = document.getElementById('joinStatus');
-          status.textContent = t('autoJoined').replace('{name}', data.name || '');
+          if (status) status.textContent = t('autoJoined').replace('{name}', data.name || '');
           return true;
         }
       } catch (e) { console.warn('Invite link error:', e); }
@@ -744,11 +1046,10 @@
        No-group view
     ════════════════════════════════════════════════════════════ */
     function showNoGroup() {
-      document.getElementById('noGroupView').style.display = '';
+      showView(document.getElementById('noGroupView'));
       document.getElementById('groupView').style.display = 'none';
       checkPending();
     }
-
     async function checkPending() {
       const qs = await getDocs(query(grpCol, where('pendingRequests', 'array-contains', user.uid)));
       if (!qs.empty) {
@@ -759,7 +1060,7 @@
     }
 
     /* ════════════════════════════════════════════════════════════
-       Create group
+       Create group / join request
     ════════════════════════════════════════════════════════════ */
     document.getElementById('createGrpBtn').addEventListener('click', async () => {
       const name = document.getElementById('newGrpName').value.trim();
@@ -777,9 +1078,6 @@
       watchGroup(ref.id);
     });
 
-    /* ════════════════════════════════════════════════════════════
-       Join request
-    ════════════════════════════════════════════════════════════ */
     document.getElementById('joinGrpBtn').addEventListener('click', async () => {
       const name = document.getElementById('joinGrpName').value.trim();
       if (!name) { alert(t('pleaseGrpName')); return; }
@@ -798,7 +1096,7 @@
        Watch group (real-time)
     ════════════════════════════════════════════════════════════ */
     function watchGroup(grpId) {
-      document.getElementById('groupView').style.display = '';
+      showView(document.getElementById('groupView'));
       document.getElementById('noGroupView').style.display = 'none';
       if (unsubGrp) unsubGrp();
 
@@ -806,13 +1104,10 @@
         if (!snap.exists()) { location.reload(); return; }
         group = { id: snap.id, ...snap.data() };
 
-        // Ensure managers field exists
         if (!(group.managers?.length) && group.headUid) {
           group.managers = [group.headUid];
           updateDoc(doc(grpCol, grpId), { managers: group.managers }).catch(console.warn);
         }
-
-        // Kicked out?
         if (!(group.members || []).includes(user.uid)) {
           await updateDoc(userRef, { familyId: null });
           location.reload(); return;
@@ -828,10 +1123,9 @@
 
       watchTrips(grpId);
 
-      // If opened via direct trip link, open that trip after group loads
       if (directTripId) {
         setTimeout(() => {
-          if (cachedTrips.find(t => t.id === directTripId)) {
+          if (cachedTrips.find(tr => tr.id === directTripId)) {
             openTrip(directTripId);
             history.replaceState({}, '', location.pathname);
           }
@@ -899,15 +1193,11 @@
 
       wrap.querySelectorAll('[data-approve]').forEach(b => b.addEventListener('click', async () => {
         const uid = b.dataset.approve;
-        await updateDoc(doc(grpCol, group.id), {
-          members: arrayUnion(uid), pendingRequests: arrayRemove(uid)
-        });
+        await updateDoc(doc(grpCol, group.id), { members: arrayUnion(uid), pendingRequests: arrayRemove(uid) });
         await updateDoc(doc(db, 'users', uid), { familyId: group.id, role: 'member' });
       }));
-
       wrap.querySelectorAll('[data-reject]').forEach(b => b.addEventListener('click', () =>
         updateDoc(doc(grpCol, group.id), { pendingRequests: arrayRemove(b.dataset.reject) })));
-
       wrap.querySelectorAll('[data-mgr]').forEach(b => b.addEventListener('click', async () => {
         const uid = b.dataset.mgr;
         const wasMgr = b.dataset.ismgr === '1';
@@ -918,19 +1208,15 @@
       }));
     }
 
-    /* Invite strip — visible to all members */
+    /* Invite strip + export-all (visible to all members) */
     async function renderInviteStrip() {
       const strip = document.getElementById('inviteStrip');
       let token = group.inviteToken;
-
-      // Generate token if missing (first time for old groups)
       if (!token) {
         token = randomToken();
         await updateDoc(doc(grpCol, group.id), { inviteToken: token }).catch(console.warn);
       }
-
-      const url = buildInviteUrl(group.id, token);
-      document.getElementById('inviteUrlDisplay').textContent = url;
+      document.getElementById('inviteUrlDisplay').textContent = buildInviteUrl(group.id, token);
       strip.style.display = 'flex';
     }
 
@@ -940,6 +1226,55 @@
       await copyText(buildInviteUrl(group.id, token));
       flashBtn(document.getElementById('copyInviteBtn'), t('linkCopied'));
     });
+
+    document.getElementById('exportAllBtn').addEventListener('click', () => {
+      const dated = cachedTrips.filter(tr => tr.startDate);
+      if (!dated.length) return;
+      downloadIcsFile(dated.map(icsEvent), `${(group?.name || 'planner').replace(/[^a-z0-9_-]/gi, '_')}_trips.ics`);
+    });
+
+    /* ════════════════════════════════════════════════════════════
+       Reminders banner — upcoming trips within next 30 days
+    ════════════════════════════════════════════════════════════ */
+    function dayDiff(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      return Math.round((d - now) / 86400000);
+    }
+    function whenLabel(diff) {
+      if (diff === 0) return t('today');
+      if (diff === 1) return t('tomorrow');
+      if (diff < 0)   return t('daysAgo');
+      return t('inDays').replace('{n}', diff);
+    }
+    function renderReminders() {
+      const wrap = document.getElementById('reminderWrap');
+      if (!wrap) return;
+      if (sessionStorage.getItem('tvza.remindersDismissed') === '1') { wrap.innerHTML = ''; return; }
+      const soon = cachedTrips
+        .filter(tr => tr.startDate)
+        .map(tr => ({ tr, diff: dayDiff(tr.startDate) }))
+        .filter(x => x.diff >= 0 && x.diff <= 30)
+        .sort((a, b) => a.diff - b.diff);
+      if (!soon.length) { wrap.innerHTML = ''; return; }
+
+      wrap.innerHTML = `
+        <div class="reminder-card">
+          <button class="reminder-close" id="dismissReminders" title="Dismiss">✕</button>
+          <div class="reminder-head"><span class="reminder-bell">🔔</span> ${t('upcoming')}</div>
+          ${soon.slice(0, 4).map((x, i) => `
+            <div class="reminder-item" style="animation-delay:${i * 60}ms" data-rem-trip="${x.tr.id}">
+              <span>✈️ ${escHtml(x.tr.name)}${x.tr.destination ? ' · 📍 ' + escHtml(x.tr.destination) : ''}</span>
+              <span class="when">${whenLabel(x.diff)}</span>
+            </div>`).join('')}
+        </div>`;
+      document.getElementById('dismissReminders').addEventListener('click', () => {
+        sessionStorage.setItem('tvza.remindersDismissed', '1');
+        wrap.innerHTML = '';
+      });
+      wrap.querySelectorAll('[data-rem-trip]').forEach(el =>
+        el.addEventListener('click', () => openTrip(el.dataset.remTrip)));
+    }
 
     /* ════════════════════════════════════════════════════════════
        Trips (list)
@@ -951,11 +1286,15 @@
         snap => {
           cachedTrips = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           renderTrips(cachedTrips);
+          renderReminders();
         });
     }
 
     function renderTrips(trips) {
       const wrap = document.getElementById('tripList');
+      document.getElementById('grpActionRow').style.display =
+        trips.some(tr => tr.startDate) ? 'flex' : 'none';
+
       if (!trips.length) {
         wrap.innerHTML = `<div class="empty-state">
           <div class="empty-icon">${ICON_MAP}</div>
@@ -963,21 +1302,21 @@
         return;
       }
 
-      wrap.innerHTML = trips.map(trip => {
+      wrap.innerHTML = trips.map((trip, i) => {
         const hasDates = !!trip.startDate;
+        const hasPlan = !!(trip.planUrl || trip.planHtml);
+        const itinCount = (trip.itinerary || []).length;
         return `
-        <div class="trip-card" data-trip="${trip.id}" style="cursor:pointer">
+        <div class="trip-card" data-trip="${trip.id}" style="cursor:pointer;--i:${i}">
           <div class="trip-name">${escHtml(trip.name)}</div>
           <div class="trip-meta">
             📍 ${escHtml(trip.destination || '–')}
             ${hasDates ? ` · 📅 ${trip.startDate}${trip.endDate ? ' – ' + trip.endDate : ''}` : ''}
+            ${itinCount ? ` · 🗓 ${itinCount}` : ''}
           </div>
           ${trip.notes ? `<div class="trip-meta" style="margin-top:4px">📝 ${escHtml(trip.notes)}</div>` : ''}
           <div class="action-row">
-            ${trip.planUrl
-              ? `<button class="pill-btn" data-view-plan="${trip.id}"
-                         style="font-weight:700;border-color:var(--trip);color:var(--trip)">${t('viewPlan')}</button>`
-              : ''}
+            ${hasPlan ? `<button class="pill-btn pill-btn--primary" data-view-plan="${trip.id}">${t('viewPlan')}</button>` : ''}
             ${hasDates
               ? `<button class="pill-btn" data-gcal="${trip.id}">${t('gcal')}</button>
                  <button class="pill-btn" data-ics="${trip.id}">${t('icsDownload')}</button>`
@@ -987,38 +1326,29 @@
         </div>`;
       }).join('');
 
-      // Open trip on card click (not on button clicks)
       wrap.querySelectorAll('[data-trip]').forEach(card =>
         card.addEventListener('click', e => {
           if (e.target.closest('button')) return;
           openTrip(card.dataset.trip);
         }));
-
-      // View plan button
       wrap.querySelectorAll('[data-view-plan]').forEach(btn =>
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const trip = cachedTrips.find(tr => tr.id === btn.dataset.viewPlan);
-          if (trip?.planUrl) openPlanModal(trip.planUrl, trip.name);
+          if (trip) openPlanModal(trip);
         }));
-
-      // Google Calendar
       wrap.querySelectorAll('[data-gcal]').forEach(btn =>
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const trip = cachedTrips.find(tr => tr.id === btn.dataset.gcal);
           if (trip) window.open(gcalUrl(trip), '_blank', 'noopener');
         }));
-
-      // ICS download
       wrap.querySelectorAll('[data-ics]').forEach(btn =>
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const trip = cachedTrips.find(tr => tr.id === btn.dataset.ics);
           if (trip) downloadIcs(trip);
         }));
-
-      // Share trip link
       wrap.querySelectorAll('[data-share-trip]').forEach(btn =>
         btn.addEventListener('click', async e => {
           e.stopPropagation();
@@ -1036,6 +1366,7 @@
         startDate: document.getElementById('tripStart').value,
         endDate: document.getElementById('tripEnd').value,
         notes: document.getElementById('tripNotes').value.trim(),
+        itinerary: [],
         createdBy: user.uid, createdAt: serverTimestamp()
       });
       ['tripName', 'tripDest', 'tripStart', 'tripEnd', 'tripNotes']
@@ -1072,10 +1403,8 @@
         </div>`;
 
       if (hasDates) {
-        document.getElementById('detailGcalBtn')
-          .addEventListener('click', () => window.open(gcalUrl(trip), '_blank', 'noopener'));
-        document.getElementById('detailIcsBtn')
-          .addEventListener('click', () => downloadIcs(trip));
+        document.getElementById('detailGcalBtn').addEventListener('click', () => window.open(gcalUrl(trip), '_blank', 'noopener'));
+        document.getElementById('detailIcsBtn').addEventListener('click', () => downloadIcs(trip));
       }
       document.getElementById('detailShareBtn').addEventListener('click', async () => {
         await copyText(buildTripUrl(trip.id));
@@ -1086,7 +1415,8 @@
     async function openTrip(tripId) {
       currentTripId = tripId;
       document.getElementById('groupView').style.display = 'none';
-      document.getElementById('detailView').style.display = '';
+      showView(document.getElementById('detailView'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
       const back = document.getElementById('backBtn');
       document.getElementById('backLabel').textContent = t('allTrips');
@@ -1098,7 +1428,8 @@
         currentTripData = { id: ts.id, ...ts.data() };
         document.getElementById('pageTitle').textContent = currentTripData.name;
         renderTripInfoCard(currentTripData);
-        renderPlanSection(currentTripData.planUrl || null);
+        renderPlanSection(currentTripData);
+        renderItinerary(currentTripData.itinerary || []);
       }
 
       if (unsubActs) unsubActs();
@@ -1112,7 +1443,7 @@
       currentTripId = null;
       currentTripData = null;
       document.getElementById('detailView').style.display = 'none';
-      document.getElementById('groupView').style.display = '';
+      showView(document.getElementById('groupView'));
       document.getElementById('pageTitle').textContent = t('title');
       document.getElementById('backLabel').textContent = t('back');
       const back = document.getElementById('backBtn');
@@ -1128,8 +1459,8 @@
           <p class="empty-text">${t('noActivities')}</p></div>`;
         return;
       }
-      wrap.innerHTML = '<div class="item-list">' + acts.map(a => `
-        <div class="item-card">
+      wrap.innerHTML = '<div class="item-list">' + acts.map((a, i) => `
+        <div class="item-card" style="--i:${i}">
           <div class="item-check ${a.done ? 'done' : ''}" data-toggle="${a.id}"
                data-done="${a.done}">${a.done ? '✓' : ''}</div>
           <div class="item-content">
@@ -1147,11 +1478,9 @@
       wrap.querySelectorAll('[data-toggle]').forEach(el =>
         el.addEventListener('click', () =>
           updateDoc(doc(db, 'activities', el.dataset.toggle), { done: el.dataset.done !== 'true' })));
-
       wrap.querySelectorAll('[data-del]').forEach(el =>
         el.addEventListener('click', () => {
-          if (confirm(t('confirmDeleteAct')))
-            deleteDoc(doc(db, 'activities', el.dataset.del));
+          if (confirm(t('confirmDeleteAct'))) deleteDoc(doc(db, 'activities', el.dataset.del));
         }));
     }
 
@@ -1172,75 +1501,176 @@
     document.getElementById('deleteTripBtn').addEventListener('click', async () => {
       if (!currentTripId) return;
       if (!confirm(t('confirmDeleteTrip'))) return;
-      const acts = await getDocs(
-        query(collection(db, 'activities'), where('tripId', '==', currentTripId)));
+      const acts = await getDocs(query(collection(db, 'activities'), where('tripId', '==', currentTripId)));
       for (const a of acts.docs) await deleteDoc(a.ref);
       await deleteDoc(doc(db, 'trips', currentTripId));
       closeTrip();
     });
 
     /* ════════════════════════════════════════════════════════════
-       Plan section — link / view custom HTML plan per trip
+       Per-day itinerary
     ════════════════════════════════════════════════════════════ */
+    function fmtDay(dateStr) {
+      try {
+        return new Date(dateStr + 'T00:00:00')
+          .toLocaleDateString(LOCALE[langKey] || 'en-GB',
+            { weekday: 'long', day: 'numeric', month: 'short' });
+      } catch { return dateStr; }
+    }
 
-    // Render the plan section inside trip detail
-    function renderPlanSection(planUrl) {
+    function renderItinerary(items) {
+      const wrap = document.getElementById('itinList');
+      if (!items || !items.length) {
+        wrap.innerHTML = `<div class="empty-state" style="padding:18px">
+          <div class="empty-icon">🗓</div>
+          <p class="empty-text">${t('noItinerary')}</p></div>`;
+        return;
+      }
+      // group by date
+      const byDay = {};
+      items.forEach(it => { (byDay[it.date] = byDay[it.date] || []).push(it); });
+      const days = Object.keys(byDay).sort();
+
+      wrap.innerHTML = days.map((day, di) => {
+        const rows = byDay[day]
+          .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+          .map((it, ii) => `
+            <div class="itin-item" style="--ii:${ii}">
+              <div class="itin-time">${it.time || '–'}</div>
+              <div class="itin-body">
+                <div class="itin-title">${escHtml(it.title)}</div>
+                ${it.notes ? `<div class="itin-notes">${escHtml(it.notes)}</div>` : ''}
+              </div>
+              <button class="itin-del" data-del-itin="${it.id}" title="Delete">✕</button>
+            </div>`).join('');
+        return `<div class="itin-day" style="--d:${di}">
+                  <div class="itin-day-head">🗓 ${fmtDay(day)}</div>
+                  <div class="itin-line">${rows}</div>
+                </div>`;
+      }).join('');
+
+      wrap.querySelectorAll('[data-del-itin]').forEach(btn =>
+        btn.addEventListener('click', () => removeItin(btn.dataset.delItin)));
+    }
+
+    document.getElementById('addItinBtn').addEventListener('click', async () => {
+      if (!currentTripId || !currentTripData) return;
+      const date = document.getElementById('itinDate').value;
+      const title = document.getElementById('itinTitle').value.trim();
+      if (!date || !title) { alert(t('itinDateRequired')); return; }
+      const item = {
+        id: randomToken(10),
+        date,
+        time: document.getElementById('itinTime').value || '',
+        title,
+        notes: document.getElementById('itinNotes').value.trim()
+      };
+      const next = [...(currentTripData.itinerary || []), item];
+      await updateDoc(doc(db, 'trips', currentTripId), { itinerary: next });
+      currentTripData.itinerary = next;
+      renderItinerary(next);
+      renderTrips(cachedTrips);
+      ['itinTitle', 'itinTime', 'itinNotes'].forEach(id => document.getElementById(id).value = '');
+    });
+
+    async function removeItin(itemId) {
+      if (!currentTripId || !currentTripData) return;
+      const next = (currentTripData.itinerary || []).filter(it => it.id !== itemId);
+      await updateDoc(doc(db, 'trips', currentTripId), { itinerary: next });
+      currentTripData.itinerary = next;
+      renderItinerary(next);
+      renderTrips(cachedTrips);
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       Plan section — paste HTML / upload file / link URL
+    ════════════════════════════════════════════════════════════ */
+    function renderPlanSection(trip) {
       const display = document.getElementById('planLinkDisplay');
       const editDiv = document.getElementById('planLinkEdit');
       editDiv.style.display = 'none';
+      const hasUrl = !!trip?.planUrl;
+      const hasHtml = !!trip?.planHtml;
 
-      if (planUrl) {
-        // Shorten long URLs for display
-        const short = planUrl.length > 50 ? '…' + planUrl.slice(-40) : planUrl;
+      if (hasUrl || hasHtml) {
+        const label = hasHtml
+          ? t('planStored')
+          : (trip.planUrl.length > 50 ? '…' + trip.planUrl.slice(-40) : trip.planUrl);
         display.innerHTML = `
           <div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">
-            ${t('planLinked')} <em>${escHtml(short)}</em>
+            ${t('planLinked')} <em>${escHtml(label)}</em>
           </div>
           <div class="action-row">
-            <button class="pill-btn" id="openPlanBtn">${t('viewPlan')}</button>
+            <button class="pill-btn pill-btn--primary" id="openPlanBtn">${t('viewPlan')}</button>
             <button class="pill-btn" id="editPlanBtn">${t('editPlan')}</button>
-            <button class="pill-btn" id="removePlanBtn"
-                    style="color:var(--danger,#e74c3c)">${t('removePlan')}</button>
+            <button class="pill-btn" id="removePlanBtn" style="color:var(--danger)">${t('removePlan')}</button>
           </div>`;
+        display.style.display = '';
 
-        document.getElementById('openPlanBtn').addEventListener('click', () =>
-          openPlanModal(planUrl, currentTripData?.name || ''));
-
-        document.getElementById('editPlanBtn').addEventListener('click', () => {
-          document.getElementById('planUrlInput').value = planUrl;
-          editDiv.style.display = '';
-          display.style.display = 'none';
-        });
-
+        document.getElementById('openPlanBtn').addEventListener('click', () => openPlanModal(trip));
+        document.getElementById('editPlanBtn').addEventListener('click', () => openPlanEditor(trip));
         document.getElementById('removePlanBtn').addEventListener('click', async () => {
           if (!currentTripId) return;
-          await updateDoc(doc(db, 'trips', currentTripId), { planUrl: '' });
-          if (currentTripData) currentTripData.planUrl = '';
-          renderPlanSection(null);
-          // also re-render trip list so button disappears
+          await updateDoc(doc(db, 'trips', currentTripId), { planUrl: '', planHtml: '' });
+          if (currentTripData) { currentTripData.planUrl = ''; currentTripData.planHtml = ''; }
+          renderPlanSection(currentTripData);
           renderTrips(cachedTrips);
         });
-        display.style.display = '';
       } else {
-        display.innerHTML = `
-          <button class="pill-btn" id="linkPlanBtn">${t('linkPlan')}</button>`;
-        document.getElementById('linkPlanBtn').addEventListener('click', () => {
-          document.getElementById('planUrlInput').value = '';
-          editDiv.style.display = '';
-          display.style.display = 'none';
-        });
+        display.innerHTML = `<button class="pill-btn pill-btn--primary" id="linkPlanBtn">${t('linkPlan')}</button>`;
+        display.style.display = '';
+        document.getElementById('linkPlanBtn').addEventListener('click', () => openPlanEditor(trip));
       }
     }
 
-    // Save plan URL to Firestore
+    function openPlanEditor(trip) {
+      planFileHtml = null;
+      document.getElementById('planHtmlInput').value = trip?.planHtml || '';
+      document.getElementById('planUrlInput').value = trip?.planUrl || '';
+      document.getElementById('fileChosen').style.display = 'none';
+      setPlanTab(trip?.planUrl && !trip?.planHtml ? 'url' : 'paste');
+      document.getElementById('planLinkDisplay').style.display = 'none';
+      document.getElementById('planLinkEdit').style.display = '';
+    }
+
+    function setPlanTab(pane) {
+      document.querySelectorAll('.plan-tab').forEach(b => b.classList.toggle('active', b.dataset.pane === pane));
+      document.querySelectorAll('.plan-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === pane));
+    }
+    document.querySelectorAll('.plan-tab').forEach(b =>
+      b.addEventListener('click', () => setPlanTab(b.dataset.pane)));
+
+    // File upload / drop
+    const fileDrop = document.getElementById('fileDrop');
+    const planFileInput = document.getElementById('planFileInput');
+    planFileInput.addEventListener('change', () => { if (planFileInput.files[0]) readPlanFile(planFileInput.files[0]); });
+    ['dragenter', 'dragover'].forEach(ev => fileDrop.addEventListener(ev, e => { e.preventDefault(); fileDrop.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(ev => fileDrop.addEventListener(ev, e => { e.preventDefault(); fileDrop.classList.remove('drag'); }));
+    fileDrop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) readPlanFile(f); });
+
+    function readPlanFile(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        planFileHtml = reader.result;
+        const chosen = document.getElementById('fileChosen');
+        chosen.textContent = t('fileChosen').replace('{name}', file.name);
+        chosen.style.display = '';
+      };
+      reader.readAsText(file);
+    }
+
     document.getElementById('savePlanBtn').addEventListener('click', async () => {
       if (!currentTripId) return;
-      const url = document.getElementById('planUrlInput').value.trim();
-      await updateDoc(doc(db, 'trips', currentTripId), { planUrl: url });
-      if (currentTripData) currentTripData.planUrl = url;
+      const active = document.querySelector('.plan-tab.active')?.dataset.pane;
+      let planHtml = '', planUrl = '';
+      if (active === 'upload' && planFileHtml) planHtml = planFileHtml;
+      else if (active === 'url') planUrl = document.getElementById('planUrlInput').value.trim();
+      else planHtml = document.getElementById('planHtmlInput').value.trim();
+
+      await updateDoc(doc(db, 'trips', currentTripId), { planHtml, planUrl });
+      if (currentTripData) { currentTripData.planHtml = planHtml; currentTripData.planUrl = planUrl; }
       document.getElementById('planLinkEdit').style.display = 'none';
-      document.getElementById('planLinkDisplay').style.display = '';
-      renderPlanSection(url || null);
+      renderPlanSection(currentTripData);
       renderTrips(cachedTrips);
     });
 
@@ -1249,18 +1679,32 @@
       document.getElementById('planLinkDisplay').style.display = '';
     });
 
-    // Open the plan viewer modal
-    function openPlanModal(url, title) {
-      document.getElementById('planModalTitle').textContent = title || '';
-      document.getElementById('planModalFullBtn').href = url;
-      document.getElementById('planModalFullBtn').textContent = t('openFullScreen');
-      document.getElementById('planFrame').src = url;
+    // Plan viewer modal
+    let planBlobUrl = null;
+    function openPlanModal(trip) {
+      const frame = document.getElementById('planFrame');
+      const fullBtn = document.getElementById('planModalFullBtn');
+      document.getElementById('planModalTitle').textContent = trip.name || '';
+      if (planBlobUrl) { URL.revokeObjectURL(planBlobUrl); planBlobUrl = null; }
+
+      if (trip.planHtml) {
+        frame.removeAttribute('src');
+        frame.srcdoc = trip.planHtml;
+        planBlobUrl = URL.createObjectURL(new Blob([trip.planHtml], { type: 'text/html' }));
+        fullBtn.href = planBlobUrl;
+      } else {
+        frame.removeAttribute('srcdoc');
+        frame.src = trip.planUrl;
+        fullBtn.href = trip.planUrl;
+      }
+      fullBtn.textContent = t('openFullScreen');
       document.getElementById('planModal').classList.add('visible');
     }
-
     document.getElementById('planModalClose').addEventListener('click', () => {
+      const frame = document.getElementById('planFrame');
       document.getElementById('planModal').classList.remove('visible');
-      document.getElementById('planFrame').src = '';
+      frame.removeAttribute('src'); frame.removeAttribute('srcdoc');
+      if (planBlobUrl) { URL.revokeObjectURL(planBlobUrl); planBlobUrl = null; }
     });
 
     /* ════════════════════════════════════════════════════════════
