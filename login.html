@@ -177,6 +177,7 @@
         } else {
           await signInWithEmailAndPassword(auth, email, pass);
         }
+        sessionStorage.setItem('tvza-just-logged-in', '1'); // Welcome-Animation auslösen
         window.location.href = 'index.html';
       } catch (err) {
         showErr(translateError(err.code));
