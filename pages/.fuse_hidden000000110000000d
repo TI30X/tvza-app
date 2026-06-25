@@ -82,8 +82,8 @@
     .viewer-bar .v-title { flex:1; font-weight:700; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     #viewerFrame { flex:1; border:0; width:100%; background:#fff; }
   </style>
-  <link rel="stylesheet" href="../ui-fx.css?v=11" />
-  <script src="../ui-fx.js?v=11" defer></script>
+  <link rel="stylesheet" href="../ui-fx.css?v=10" />
+  <script src="../ui-fx.js?v=10" defer></script>
 </head>
 <body>
   <div class="app">

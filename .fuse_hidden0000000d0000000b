@@ -1,0 +1,356 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1A1A2E" />
+  <meta name="description" content="Webprojekte von Timothy van Zanten" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%231a1a2e'/><stop offset='.55' stop-color='%2316213e'/><stop offset='1' stop-color='%230f3460'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><text x='16' y='22' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'>TvZ</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
+  <title>TVZA · Projekte</title>
+  <script src="theme.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        oklch(0.985 0.004 95);
+      --surface:   oklch(0.995 0.002 95);
+      --surface-2: oklch(0.975 0.004 95);
+      --ink:       oklch(0.22 0.01 250);
+      --ink-soft:  oklch(0.45 0.01 250);
+      --brand-navy: #1a1a2e;
+      --brand-navy-mid: #16213e;
+      --brand-navy-deep: #0f3460;
+      --brand-gradient: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-mid), var(--brand-navy-deep));
+      --accent:    var(--brand-navy-deep);
+      --accent-bg: oklch(0.95 0.025 250);
+      --border:    oklch(0.88 0.005 95);
+      --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.06);
+      --shadow-md: 0 4px 12px oklch(0 0 0 / 0.08);
+      --r1: 8px; --r2: 12px;
+      --font-ui: 'Hanken Grotesk', system-ui, sans-serif;
+      /* legacy aliases */
+      --primary: var(--ink);
+      --text: var(--ink);
+      --muted: var(--ink-soft);
+      --shadow: var(--shadow-sm);
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg:        oklch(0.16 0.006 250);
+      --surface:   oklch(0.21 0.008 250);
+      --surface-2: oklch(0.26 0.008 250);
+      --ink:       oklch(0.94 0.006 95);
+      --ink-soft:  oklch(0.72 0.01 95);
+      --accent:    oklch(0.76 0.06 250);
+      --accent-bg: oklch(0.28 0.04 250);
+      --border:    oklch(0.34 0.006 250);
+      --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.28);
+      --shadow-md: 0 4px 14px oklch(0 0 0 / 0.34);
+    }
+    body {
+      font-family: var(--font-ui);
+      font-size: 15px;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+    h1 { text-wrap: balance; }
+    .hero {
+      background: var(--brand-gradient); color: white; padding: 22px 24px; text-align: left;
+      border-bottom: 0; position: relative; overflow: hidden;
+    }
+    /* Greeting: a soft light sweep across the banner on arrival */
+    .hero::after {
+      content: ""; position: absolute; top: 0; left: -45%; width: 45%; height: 100%;
+      background: linear-gradient(100deg, transparent, rgba(255,255,255,0.14), transparent);
+      transform: skewX(-12deg); pointer-events: none;
+      animation: heroSheen 1.15s ease 0.25s 1;
+    }
+    @keyframes heroSheen { from { left: -45%; } to { left: 130%; } }
+    .hero-logo  { animation: heroPop 0.7s cubic-bezier(0.22,0.61,0.36,1) both; }
+    .hero-copy h1 { animation: heroUp 0.6s cubic-bezier(0.22,0.61,0.36,1) 0.12s both; }
+    .hero-copy p  { animation: heroUp 0.6s cubic-bezier(0.22,0.61,0.36,1) 0.20s both; }
+    .hero-actions { animation: heroUp 0.6s cubic-bezier(0.22,0.61,0.36,1) 0.28s both; }
+    @keyframes heroUp  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes heroPop { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
+    .hero-actions {
+      display: flex; align-items: center; gap: 10px; margin-left: auto; align-self: center;
+    }
+    .hero-actions #themeToggle {
+      background: none; border: 0; cursor: pointer; color: rgba(255,255,255,0.78);
+      font-size: 20px; line-height: 1; padding: 6px; min-width: 36px; min-height: 36px;
+    }
+    #authBtn {
+      background: rgba(255,255,255,0.16); color: #fff; text-decoration: none;
+      font-weight: 700; font-size: 13px; padding: 9px 16px; border-radius: var(--r1);
+      white-space: nowrap; border: 1px solid rgba(255,255,255,0.30);
+      transition: background 150ms ease;
+    }
+    #authBtn:hover { background: rgba(255,255,255,0.26); }
+    .hero-inner {
+      width: 100%; max-width: 680px; margin: 0 auto;
+      display: flex; align-items: center; gap: 22px;
+    }
+    .hero-logo { min-width: 104px; }
+    .hero-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 34px; font-weight: 700; line-height: 1; color: white; text-shadow: none; }
+    .hero-logo .logo-rule { width: 100px; height: 1px; background: rgba(255,255,255,0.22); margin: 8px 0 4px; }
+    .hero-logo span:last-child { font-size: 11px; color: rgba(255,255,255,0.58); }
+    .hero-divider { width: 1px; align-self: stretch; background: rgba(255,255,255,0.18); }
+    .hero-copy h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+    .hero-copy p { font-size: 13px; color: rgba(255,255,255,0.68); margin-top: 3px; }
+    main {
+      flex: 1; width: 100%; max-width: 620px; margin: 0 auto; padding: 30px 18px 44px;
+      animation: fadeIn 0.2s ease both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .section-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--ink-soft); margin-bottom: 14px;
+    }
+    .proj {
+      background: var(--surface); border-radius: var(--r2); padding: 18px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+      margin-bottom: 10px; text-decoration: none; color: inherit;
+      font-family: inherit; font-size: inherit;
+      transition: transform 150ms ease, box-shadow 150ms ease;
+      width: 100%; min-height: 44px; cursor: pointer; text-align: left;
+    }
+    .proj:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .proj-emoji { font-size: 30px; }
+    .proj-name { flex: 1; font-size: 15px; font-weight: 700; }
+    .proj-arrow { color: var(--ink-soft); font-size: 18px; display: inline-flex; align-items: center; }
+    .proj-arrow svg { display: block; }
+    .proj-meta { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+    .empty { text-align: center; color: var(--ink-soft); padding: 50px 16px; font-size: 14px; }
+    .spinner { text-align: center; color: var(--ink-soft); padding: 40px; font-size: 14px; }
+    footer {
+      text-align: center; padding: 28px 16px 36px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .tvz-footer-box {
+      width: 100%; max-width: 680px; display: grid; grid-template-columns: 120px 1fr;
+      align-items: center; gap: 22px; text-align: left; background: var(--brand-gradient); color: white;
+      border: 0;
+      border-radius: var(--r2); padding: 24px 26px; box-shadow: var(--shadow-sm);
+    }
+    .tvz-footer-logo { border-right: 1px solid rgba(255,255,255,0.24); padding-right: 20px; }
+    .tvz-footer-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 32px; font-weight: 700; line-height: 1; color: white; text-shadow: none; }
+    .tvz-footer-logo span:last-child { display:block; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.72); }
+    .tvz-footer-copy strong { display:block; font-size: 15px; margin-bottom: 5px; }
+    .tvz-footer-copy span { display:block; font-size: 13px; color: rgba(255,255,255,0.78); }
+    .tvz-footer-copy p { margin-top: 12px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.18); border-radius: var(--r1); font-size: 12px; color: rgba(255,255,255,0.84); line-height: 1.5; }
+    @media (max-width: 560px) {
+      /* Footer can still stack */
+      .tvz-footer-box { display: flex; flex-direction: column; align-items: flex-start; }
+      .tvz-footer-logo { border-right: 0; padding-right: 0; }
+
+      /* Compact hero: brand + actions on row 1, title wraps to row 2 */
+      .hero { padding: 13px 16px; }
+      .hero-inner { flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+      .hero-logo { order: 1; min-width: 0; }
+      .hero-logo .tvz-wordmark { font-size: 23px; }
+      .hero-logo .logo-rule { display: none; }
+      .hero-logo span:last-child { display: none; }
+      .hero-divider { display: none; }
+      .hero-actions { order: 2; margin-left: auto; align-self: center; }
+      .hero-actions #authBtn { padding: 8px 14px; }
+      .hero-copy { order: 3; flex-basis: 100%; }
+      .hero-copy h1 { font-size: 18px; }
+      .hero-copy p { font-size: 12px; margin-top: 1px; }
+      main { padding: 22px 16px 40px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
+    /* Passwort-Dialog (ersetzt natives prompt — behebt Tipp-Problem auf Mobil) */
+    .pw-backdrop { position: fixed; inset: 0; background: oklch(0 0 0 / 0.45); display: none;
+      align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+    .pw-backdrop.visible { display: flex; }
+    .pw-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2);
+      box-shadow: var(--shadow-md); padding: 22px; width: 100%; max-width: 360px; }
+    .pw-card h3 { font-size: 16px; margin-bottom: 4px; }
+    .pw-card p { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
+    .pw-input { width: 100%; font-family: inherit; font-size: 16px; padding: 11px 12px;
+      border: 1px solid var(--border); border-radius: var(--r1); background: var(--surface-2); color: var(--ink); }
+    .pw-input:focus { outline: none; border-color: var(--accent); }
+    .pw-err { color: var(--accent); font-size: 12px; margin-top: 8px; display: none; }
+    .pw-err.visible { display: block; }
+    .pw-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .pw-btn { flex: 1; font-family: inherit; font-size: 14px; font-weight: 700; padding: 10px;
+      border-radius: var(--r1); cursor: pointer; border: 1px solid var(--border); }
+    .pw-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .pw-btn-secondary { background: var(--surface-2); color: var(--ink); }
+  </style>
+  <link rel="stylesheet" href="ui-fx.css?v=10" />
+  <script src="ui-fx.js?v=10" defer></script>
+</head>
+<body>
+  <script src="welcome.js?v=1"></script>
+
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-logo">
+        <span class="tvz-wordmark">TvZ</span>
+        <div class="logo-rule"></div>
+        <span>Timothy van Zanten</span>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-copy">
+        <h1>TVZA · Projekte</h1>
+        <p>Webprojekte · eine Webseite von TvZ</p>
+      </div>
+      <div class="hero-actions">
+        <button id="themeToggle" type="button" title="Theme wechseln">◐</button>
+        <a id="authBtn" href="login.html">Anmelden</a>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="section-label">Projekte</div>
+    <div id="list"><div class="spinner">Lade Projekte…</div></div>
+  </main>
+
+  <footer>
+    <div class="tvz-footer-box">
+      <div class="tvz-footer-logo">
+        <span class="tvz-wordmark">TvZ</span>
+        <span>Timothy van Zanten</span>
+      </div>
+      <div class="tvz-footer-copy">
+        <strong>TVZA · Webprojekte</strong>
+        <span>Eine öffentliche Projektübersicht von TvZ.</span>
+        <p>Einige Projekte sind frei zugänglich, andere werden erst nach Eingabe des Projektpassworts geöffnet.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Passwort-Dialog -->
+  <div class="pw-backdrop" id="pwModal">
+    <div class="pw-card">
+      <h3 id="pwTitle">Passwort eingeben</h3>
+      <p id="pwSub">Dieses Projekt ist passwortgeschützt.</p>
+      <input class="pw-input" id="pwInput" type="text" inputmode="text"
+             autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
+             placeholder="Projektpasswort" />
+      <div class="pw-err" id="pwErr">Falsches Passwort.</div>
+      <div class="pw-actions">
+        <button class="pw-btn pw-btn-secondary" id="pwCancel">Abbrechen</button>
+        <button class="pw-btn pw-btn-primary" id="pwOk">Öffnen</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import {
+      getFirestore, doc, getDoc, collection, getDocs
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+    // Standalone init — no auth, no offline persistence needed here
+    const app = initializeApp({
+      apiKey: "AIzaSyBNOe75cdHgw0kqL6xHACaUm0EUt83-cbE",
+      authDomain: "tvza-11d44.firebaseapp.com",
+      projectId: "tvza-11d44",
+      storageBucket: "tvza-11d44.firebasestorage.app",
+      messagingSenderId: "214201333283",
+      appId: "1:214201333283:web:08adcd69499ef4046e2396"
+    });
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // Theme-Umschalter (#themeToggle) wird automatisch von theme.js verkabelt.
+
+    const ICON_LOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`;
+
+    // Anmelden-Button: angemeldet → "Zur App", sonst → "Anmelden"
+    onAuthStateChanged(auth, u => {
+      const btn = document.getElementById('authBtn');
+      if (u) { btn.textContent = 'Zur App →'; btn.href = 'index.html'; }
+      else   { btn.textContent = 'Anmelden';  btn.href = 'login.html'; }
+    });
+
+    /* ── Eigener Passwort-Dialog (statt prompt) ──────────
+       Behebt das Problem, dass auf Mobil getippte Passwörter
+       durch Autokorrektur/Großschreibung nicht passten.      */
+    const pwModal = document.getElementById('pwModal');
+    const pwInput = document.getElementById('pwInput');
+    const pwErr   = document.getElementById('pwErr');
+    let pwResolve = null;
+
+    function askPassword() {
+      return new Promise(resolve => {
+        pwResolve = resolve;
+        pwInput.value = '';
+        pwErr.classList.remove('visible');
+        pwModal.classList.add('visible');
+        setTimeout(() => pwInput.focus(), 50);
+      });
+    }
+    function closePw(val) { pwModal.classList.remove('visible'); const r = pwResolve; pwResolve = null; r && r(val); }
+    document.getElementById('pwCancel').addEventListener('click', () => closePw(null));
+    document.getElementById('pwOk').addEventListener('click', () => closePw(pwInput.value));
+    pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') closePw(pwInput.value); });
+    pwModal.addEventListener('click', e => { if (e.target === pwModal) closePw(null); });
+
+    async function openProtected(project) {
+      // Wiederholt fragen, bis korrekt oder abgebrochen.
+      while (true) {
+        const entered = await askPassword();
+        if (entered === null) return;                 // abgebrochen
+        if (entered.trim() === String(project.publicPassword).trim()) {
+          window.open(project.url, '_blank', 'noopener');
+          return;
+        }
+        // falsch → Fehler zeigen und erneut fragen
+        pwInput.value = '';
+        pwErr.classList.add('visible');
+        pwModal.classList.add('visible');
+        setTimeout(() => pwInput.focus(), 50);
+      }
+    }
+
+    async function load() {
+      const list = document.getElementById('list');
+      try {
+        // Gemeinsamer Feed: alle öffentlichen Projekte ALLER Nutzer (flache Sammlung).
+        const snap = await getDocs(collection(db, 'publicProjects'));
+        const items = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
+
+        if (!items.length) {
+          list.innerHTML = '<div class="empty">Im Moment sind keine Projekte freigegeben.</div>';
+          return;
+        }
+        list.innerHTML = items.map(p => `
+          <button class="proj" type="button" data-id="${esc(p.id)}">
+            <span class="proj-emoji">${esc(p.emoji || '🔗')}</span>
+            <span class="proj-name">${esc(p.name)}<small class="proj-meta">${p.ownerName ? esc(p.ownerName) + ' · ' : ''}${p.publicPassword ? 'Mit Passwort geschützt' : 'Ohne Passwort öffentlich'}</small></span>
+            <span class="proj-arrow">${p.publicPassword ? ICON_LOCK : '↗'}</span>
+          </button>`).join('');
+
+        list.querySelectorAll('[data-id]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const project = items.find(item => item.id === btn.dataset.id);
+            if (!project) return;
+            if (String(project.publicPassword || '').trim()) openProtected(project);
+            else window.open(project.url, '_blank', 'noopener');
+          });
+        });
+      } catch (err) {
+        console.warn(err);
+        list.innerHTML = '<div class="empty">Projekte konnten nicht geladen werden.</div>';
+      }
+    }
+    load();
