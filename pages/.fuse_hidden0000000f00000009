@@ -1,0 +1,477 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1A1A2E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232F9E44'/><text x='16' y='22' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'>TvZ</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
+  <script src="../theme.js"></script>
+  <link rel="stylesheet" href="../style.css" />
+  <title>Food Tracker — TVZA</title>
+  <link rel="stylesheet" href="../ui-fx.css?v=6" />
+  <script src="../ui-fx.js?v=6" defer></script>
+</head>
+<body>
+  <div class="app">
+
+    <div class="offline-banner" id="offlineBanner">✈️ Offline – wird später synchronisiert</div>
+
+    <header class="header">
+      <div class="header-inner" style="position:relative;">
+        <a href="../index.html" class="back-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
+          Zurück
+        </a>
+        <span class="page-title">Food Tracker</span>
+        <span style="margin-left:auto;cursor:pointer;color:var(--ink-soft);font-size:18px;min-width:40px;min-height:44px;display:inline-flex;align-items:center;justify-content:center" id="themeToggle" title="Theme wechseln">◐</span>
+        <span style="cursor:pointer;color:var(--ink-soft);font-size:18px;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:flex-end" id="profileBtn" title="Profil">⚙️</span>
+      </div>
+    </header>
+    <div class="accent-bar accent-bar--food"></div>
+
+    <main class="main">
+
+      <div class="tabs">
+        <div class="tab active" id="tabDay"   onclick="showView('day')">📅 Tag</div>
+        <div class="tab"        id="tabMonth" onclick="showView('month')">🗓 Monat</div>
+      </div>
+
+      <!-- ═══ Day view ═══ -->
+      <div id="viewDay">
+
+        <!-- Daily kcal progress -->
+        <div class="form-card" id="kcalCard" style="display:none">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+            <strong id="kcalToday">0 kcal</strong>
+            <span style="color:var(--ink-soft)" id="kcalGoal"></span>
+          </div>
+          <div class="kcal-bar"><div class="kcal-fill" id="kcalFill" style="width:0%"></div></div>
+        </div>
+
+        <!-- Date navigation -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button class="date-pill" onclick="changeDay(-1)">‹</button>
+          <div class="date-pill" style="flex:1;justify-content:center;" id="datePill">Heute</div>
+          <button class="date-pill" onclick="changeDay(1)">›</button>
+        </div>
+
+        <!-- Entry form -->
+        <div class="form-card">
+          <p class="form-title">Mahlzeit erfassen</p>
+
+          <div class="form-group">
+            <label class="form-label" for="fMeal">Mahlzeit</label>
+            <select class="form-select" id="fMeal">
+              <option>🌅 Frühstück</option>
+              <option>☀️ Mittagessen</option>
+              <option>🌙 Abendessen</option>
+              <option>🍎 Snack</option>
+            </select>
+          </div>
+
+          <label class="form-label">Zutaten (ungefähres Gewicht)</label>
+          <div id="ingRows"></div>
+          <button class="btn btn-secondary" id="addIngBtn" style="font-size:13px;padding:7px 14px;margin-bottom:12px">+ Zutat</button>
+
+          <div class="nutri-box" id="nutriBox" style="display:none"></div>
+
+          <button class="btn btn-primary btn-block" id="saveBtn">✓ Speichern</button>
+        </div>
+
+        <!-- Entries -->
+        <h2 class="section-title" id="dayLabel">Heutige Einträge</h2>
+        <div id="listWrap"><div class="spinner">Lade…</div></div>
+
+      </div>
+
+      <!-- ═══ Month view ═══ -->
+      <div id="viewMonth" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <button class="date-pill" onclick="changeMonth(-1)">‹</button>
+          <div class="date-pill" style="flex:1;justify-content:center;" id="monthPill"></div>
+          <button class="date-pill" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <p style="font-size:11px;color:var(--ink-soft);margin-top:10px;text-align:center">
+          Tippe auf einen Tag, um die Einträge zu sehen
+        </p>
+      </div>
+
+    </main>
+
+    <footer class="tvz-footer">
+      <img src="../icons/TvZ_Logo.svg" alt="TvZ" />
+    </footer>
+  </div>
+
+  <!-- Profile modal -->
+  <div class="modal-backdrop" id="profileModal">
+    <div class="modal">
+      <div class="modal-title">Mein Profil</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="profWeight">Gewicht (kg)</label>
+          <input class="form-input" id="profWeight" type="number" min="20" max="250" placeholder="70" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="profGoal">Ziel</label>
+          <select class="form-select" id="profGoal">
+            <option value="halten">Halten</option>
+            <option value="abnehmen">Abnehmen</option>
+            <option value="zunehmen">Zunehmen</option>
+          </select>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--ink-soft);margin-bottom:12px">
+        Der Kalorienrichtwert ist eine grobe Schätzung — kein medizinischer Rat.
+      </p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="profCancel">Abbrechen</button>
+        <button class="btn btn-primary" id="profSave">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail } from '../firebase-config.js';
+    import { searchFoods, findFood } from '../foods.js';
+    import {
+      doc, getDoc, setDoc, collection, addDoc, onSnapshot,
+      deleteDoc, serverTimestamp, query, where, orderBy
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    wireOfflineBanner();
+    const user = await requireAuth('../login.html');
+
+    // ── Zugriff: eigene Daten, oder per Freigabe (?owner=…) ──
+    let dataUid = user.uid;
+    let readOnly = false;
+    let ownerLabel = '';
+    const ownerParam = new URLSearchParams(location.search).get('owner');
+    if (ownerParam && ownerParam !== user.uid) {
+      const shares = await sharesForEmail(user.email);
+      const s = shares.find(x => x.ownerUid === ownerParam && x.module === 'food');
+      if (s) { dataUid = ownerParam; readOnly = s.role !== 'edit'; ownerLabel = s.ownerName || 'geteilt'; }
+      else { alert('Kein Zugriff auf diese Freigabe.'); window.location.href = '../index.html'; }
+    }
+    if (dataUid !== user.uid) {
+      document.querySelector('.page-title').textContent =
+        (ownerLabel ? ownerLabel + 's' : 'Geteilter') + ' Food Tracker';
+      const note = document.createElement('div');
+      note.className = 'offline-banner visible';
+      note.style.background = 'var(--food)';
+      note.textContent = readOnly ? `👀 Leseansicht — ${ownerLabel || 'geteilte'} Daten` : `✏️ Bearbeiten — ${ownerLabel || 'geteilte'} Daten`;
+      document.querySelector('.accent-bar').after(note);
+    }
+
+    const entriesCol = collection(db, 'foodlog', dataUid, 'entries');
+    const profileRef = doc(db, 'foodlog', dataUid, 'meta', 'profile');
+
+    if (readOnly) {
+      const sb = document.getElementById('saveBtn');
+      if (sb) sb.closest('.form-card').style.display = 'none';
+      const pb = document.getElementById('profileBtn');
+      if (pb) pb.style.display = 'none';
+    }
+
+    /* ── Icon chrome (SVG) ── */
+    const ICON_CLOSE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
+    const ICON_FOOD = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>`;
+
+    /* ════ Profile ═══════════════════════════════ */
+    let profile = null;
+    try {
+      const s = await getDoc(profileRef);
+      if (s.exists()) profile = s.data();
+    } catch(e){}
+
+    function kcalTarget() {
+      if (!profile?.weight) return null;
+      let base = profile.weight * 30; // rough maintenance estimate
+      if (profile.goal === 'abnehmen') base -= 300;
+      if (profile.goal === 'zunehmen') base += 300;
+      return Math.round(base / 10) * 10;
+    }
+
+    const profModal = document.getElementById('profileModal');
+    document.getElementById('profileBtn').addEventListener('click', () => {
+      document.getElementById('profWeight').value = profile?.weight || '';
+      document.getElementById('profGoal').value   = profile?.goal || 'halten';
+      profModal.classList.add('visible');
+    });
+    document.getElementById('profCancel').addEventListener('click', () => profModal.classList.remove('visible'));
+    profModal.addEventListener('click', e => { if (e.target === profModal) profModal.classList.remove('visible'); });
+    document.getElementById('profSave').addEventListener('click', async () => {
+      const weight = parseFloat(document.getElementById('profWeight').value) || null;
+      const goal   = document.getElementById('profGoal').value;
+      profile = { weight, goal };
+      await setDoc(profileRef, profile);
+      profModal.classList.remove('visible');
+      renderKcalBar();
+    });
+
+    /* ════ Ingredient rows + autocomplete ═══════ */
+    const ingRows = document.getElementById('ingRows');
+    let rowSeq = 0;
+
+    function addIngRow(name = '', grams = '') {
+      const id = ++rowSeq;
+      const row = document.createElement('div');
+      row.className = 'ing-row';
+      row.dataset.row = id;
+      row.innerHTML = `
+        <div class="ac-wrap ing-name">
+          <input class="form-input" data-ing="${id}" type="text" placeholder="z.B. Haferflocken" value="${escHtml(name)}" autocomplete="off" />
+          <div class="ac-list" data-ac="${id}"></div>
+        </div>
+        <input class="form-input ing-grams" data-g="${id}" type="number" min="1" placeholder="g" value="${escHtml(grams)}" />
+        <button class="btn btn-danger" data-rm="${id}">${ICON_CLOSE}</button>`;
+      ingRows.appendChild(row);
+
+      const input = row.querySelector(`[data-ing="${id}"]`);
+      const list  = row.querySelector(`[data-ac="${id}"]`);
+
+      input.addEventListener('input', () => {
+        const results = searchFoods(input.value);
+        if (!results.length || !input.value.trim()) { list.classList.remove('visible'); calcNutrition(); return; }
+        list.innerHTML = results.map(f =>
+          `<div class="ac-item" data-pick="${escHtml(f.name)}">${escHtml(f.name)} <small>${f.kcal} kcal/100g</small></div>`).join('');
+        list.classList.add('visible');
+        list.querySelectorAll('.ac-item').forEach(item =>
+          item.addEventListener('mousedown', e => {
+            e.preventDefault();
+            input.value = item.dataset.pick;
+            list.classList.remove('visible');
+            row.querySelector(`[data-g="${id}"]`).focus();
+            calcNutrition();
+          }));
+      });
+      input.addEventListener('blur', () => setTimeout(() => list.classList.remove('visible'), 150));
+
+      row.querySelector(`[data-g="${id}"]`).addEventListener('input', calcNutrition);
+      row.querySelector(`[data-rm="${id}"]`).addEventListener('click', () => { row.remove(); calcNutrition(); });
+    }
+
+    document.getElementById('addIngBtn').addEventListener('click', () => addIngRow());
+    addIngRow(); // start with one row
+
+    /* ════ Nutrition calculation ═════════════════ */
+    function readIngredients() {
+      const out = [];
+      ingRows.querySelectorAll('.ing-row').forEach(row => {
+        const name  = row.querySelector('input[data-ing]').value.trim();
+        const grams = parseFloat(row.querySelector('input[data-g]').value) || 0;
+        if (name && grams > 0) {
+          const food = findFood(name);
+          out.push({ name, grams, food });
+        }
+      });
+      return out;
+    }
+
+    function totalsFor(ings) {
+      const t = { kcal:0, protein:0, carbs:0, fat:0, fibre:0, micros:new Set(), unknown:[] };
+      ings.forEach(({ name, grams, food }) => {
+        if (!food) { t.unknown.push(name); return; }
+        const f = grams / 100;
+        t.kcal    += food.kcal * f;
+        t.protein += food.protein * f;
+        t.carbs   += food.carbs * f;
+        t.fat     += food.fat * f;
+        t.fibre   += food.fibre * f;
+        food.micros.forEach(m => t.micros.add(m));
+      });
+      return t;
+    }
+
+    function calcNutrition() {
+      const ings = readIngredients();
+      const box = document.getElementById('nutriBox');
+      if (!ings.length) { box.style.display = 'none'; return; }
+      const t = totalsFor(ings);
+      box.style.display = '';
+      box.innerHTML = `
+        <span class="nutri-kcal">≈ ${Math.round(t.kcal)} kcal</span>
+        <div class="nutri-row">
+          <span>Protein ${t.protein.toFixed(1)}g</span>
+          <span>KH ${t.carbs.toFixed(1)}g</span>
+          <span>Fett ${t.fat.toFixed(1)}g</span>
+          <span>Ballaststoffe ${t.fibre.toFixed(1)}g</span>
+        </div>
+        ${t.micros.size ? `<div class="nutri-row"><span>💊 ${[...t.micros].join(', ')}</span></div>` : ''}
+        ${t.unknown.length ? `<div class="nutri-row" style="color:var(--trip)"><span>⚠️ Nicht in Datenbank: ${t.unknown.map(escHtml).join(', ')} (zählt 0 kcal)</span></div>` : ''}`;
+    }
+
+    /* ════ Day view ═════════════════════════════ */
+    let offset = 0;
+    let unsubDay = null;
+    let dayEntries = [];
+
+    const toDateStr = d => {
+      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${dd}`;
+    };
+    const currentDate = () => { const d = new Date(); d.setDate(d.getDate()+offset); return d; };
+
+    window.changeDay = delta => { offset += delta; refreshDay(); };
+
+    function refreshDay() {
+      const d = currentDate(), str = toDateStr(d);
+      document.getElementById('datePill').textContent =
+        offset === 0 ? 'Heute' : offset === -1 ? 'Gestern' :
+        d.toLocaleDateString('de-CH', { weekday:'short', day:'numeric', month:'short' });
+      document.getElementById('dayLabel').textContent =
+        offset === 0 ? 'Heutige Einträge' : `Einträge vom ${d.toLocaleDateString('de-CH',{day:'numeric',month:'long'})}`;
+
+      if (unsubDay) unsubDay();
+      document.getElementById('listWrap').innerHTML = '<div class="spinner">Lade…</div>';
+
+      unsubDay = onSnapshot(query(entriesCol, where('date','==',str), orderBy('createdAt','asc')), snap => {
+        dayEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderDay(); renderKcalBar();
+      });
+    }
+
+    function renderKcalBar() {
+      const card = document.getElementById('kcalCard');
+      const total = Math.round(dayEntries.reduce((s,e) => s + (e.kcal||0), 0));
+      const target = kcalTarget();
+      card.style.display = '';
+      document.getElementById('kcalToday').textContent = `${total} kcal`;
+      if (target) {
+        const pct = Math.min(100, total / target * 100);
+        document.getElementById('kcalGoal').textContent = `Richtwert: ~${target} kcal`;
+        const fill = document.getElementById('kcalFill');
+        fill.style.width = pct + '%';
+        fill.classList.toggle('over', total > target);
+      } else {
+        document.getElementById('kcalGoal').innerHTML = readOnly
+          ? 'Kein Richtwert hinterlegt'
+          : `<a style="color:var(--food);cursor:pointer" onclick="document.getElementById('profileBtn').click()">Profil einrichten →</a>`;
+        document.getElementById('kcalFill').style.width = '0%';
+      }
+    }
+
+    function renderDay() {
+      const wrap = document.getElementById('listWrap');
+      if (!dayEntries.length) {
+        wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">${ICON_FOOD}</div><p class="empty-text">Noch keine Einträge.</p></div>`;
+        return;
+      }
+      const order = ['🌅 Frühstück','☀️ Mittagessen','🌙 Abendessen','🍎 Snack'];
+      const grouped = {};
+      dayEntries.forEach(e => { (grouped[e.meal] ||= []).push(e); });
+
+      wrap.innerHTML = order.filter(m => grouped[m]).map(meal => `
+        <h3 style="font-size:13px;font-weight:700;color:var(--ink-soft);margin:14px 0 8px">${meal}</h3>
+        <div class="item-list">` +
+        grouped[meal].map(e => `
+          <div class="item-card">
+            <div class="item-content">
+              <div class="item-title">${e.ingredients.map(i => escHtml(i.name)).join(', ')}</div>
+              <div class="item-sub">≈ ${Math.round(e.kcal)} kcal · P ${e.protein?.toFixed(0)}g · KH ${e.carbs?.toFixed(0)}g · F ${e.fat?.toFixed(0)}g</div>
+            </div>
+            ${readOnly ? '' : `<div class="item-actions"><button class="btn btn-danger" data-del="${e.id}">${ICON_CLOSE}</button></div>`}
+          </div>`).join('') + `</div>`).join('');
+
+      wrap.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+        if (confirm('Eintrag löschen?')) deleteDoc(doc(entriesCol, b.dataset.del));
+      }));
+    }
+
+    /* ════ Save entry ═══════════════════════════ */
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const ings = readIngredients();
+      if (!ings.length) { alert('Bitte mindestens eine Zutat mit Gewicht eingeben.'); return; }
+      const t = totalsFor(ings);
+
+      await addDoc(entriesCol, {
+        date: toDateStr(currentDate()),
+        meal: document.getElementById('fMeal').value,
+        ingredients: ings.map(i => ({ name: i.name, grams: i.grams })),
+        kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat, fibre: t.fibre,
+        micros: [...t.micros],
+        createdAt: serverTimestamp()
+      });
+
+      ingRows.innerHTML = '';
+      addIngRow();
+      document.getElementById('nutriBox').style.display = 'none';
+    });
+
+    /* ════ Month view ═══════════════════════════ */
+    let monthDate = new Date();
+    let unsubMonth = null;
+
+    window.changeMonth = delta => {
+      monthDate.setMonth(monthDate.getMonth() + delta);
+      refreshMonth();
+    };
+
+    function refreshMonth() {
+      const y = monthDate.getFullYear(), m = monthDate.getMonth();
+      document.getElementById('monthPill').textContent =
+        monthDate.toLocaleDateString('de-CH', { month: 'long', year: 'numeric' });
+
+      const fromStr = `${y}-${String(m+1).padStart(2,'0')}-01`;
+      const lastDay = new Date(y, m+1, 0).getDate();
+      const toStr   = `${y}-${String(m+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+      if (unsubMonth) unsubMonth();
+      unsubMonth = onSnapshot(
+        query(entriesCol, where('date','>=',fromStr), where('date','<=',toStr)),
+        snap => {
+          const byDay = {};
+          snap.docs.forEach(d => {
+            const e = d.data();
+            byDay[e.date] = (byDay[e.date] || 0) + (e.kcal || 0);
+          });
+          renderCalendar(y, m, byDay);
+        });
+    }
+
+    function renderCalendar(y, m, byDay) {
+      const grid = document.getElementById('calGrid');
+      const firstWeekday = (new Date(y, m, 1).getDay() + 6) % 7; // Mon=0
+      const lastDay = new Date(y, m+1, 0).getDate();
+      const todayStr = toDateStr(new Date());
+
+      let html = ['Mo','Di','Mi','Do','Fr','Sa','So'].map(d => `<div class="cal-head">${d}</div>`).join('');
+      for (let i = 0; i < firstWeekday; i++) html += '<div class="cal-day empty"></div>';
+      for (let d = 1; d <= lastDay; d++) {
+        const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const kcal = byDay[ds];
+        html += `
+          <div class="cal-day ${ds === todayStr ? 'today' : ''}" data-day="${ds}">
+            <span class="cal-num">${d}</span>
+            ${kcal ? `<span class="cal-kcal">${Math.round(kcal)}</span>` : ''}
+          </div>`;
+      }
+      grid.innerHTML = html;
+
+      grid.querySelectorAll('.cal-day[data-day]').forEach(el => el.addEventListener('click', () => {
+        const target = new Date(el.dataset.day + 'T12:00:00');
+        const today = new Date(); today.setHours(12,0,0,0);
+        offset = Math.round((target - today) / 86400000);
+        showView('day');
+        refreshDay();
+      }));
+    }
+
+    /* ════ View switching ═══════════════════════ */
+    window.showView = v => {
+      document.getElementById('viewDay').style.display   = v === 'day'   ? '' : 'none';
+      document.getElementById('viewMonth').style.display = v === 'month' ? '' : 'none';
+      document.getElementById('tabDay').className   = 'tab' + (v==='day'   ? ' active' : '');
+      document.getElementById('tabMonth').className = 'tab' + (v==='month' ? ' active' : '');
+      if (v === 'month') refreshMonth();
+    };
+
+    refreshDay();
+  </script>
+</body>
+</html>

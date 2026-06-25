@@ -65,8 +65,8 @@
     .switch-mode a { color: var(--accent); font-weight: 700; cursor: pointer; transition: color 150ms ease; }
     .switch-mode a:hover { color: var(--accent-hover); }
   </style>
-  <link rel="stylesheet" href="ui-fx.css?v=6" />
-  <script src="ui-fx.js?v=6" defer></script>
+  <link rel="stylesheet" href="ui-fx.css?v=8" />
+  <script src="ui-fx.js?v=8" defer></script>
 </head>
 <body>
   <span id="themeToggle" title="Theme wechseln" style="position:fixed;top:14px;right:14px;cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;padding:8px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;z-index:10">◐</span>
@@ -77,23 +77,25 @@
 
       <div class="login-error" id="errBox"></div>
 
-      <!-- Name (only for registration) -->
-      <div class="form-group" id="nameGroup" style="display:none">
-        <label class="form-label" for="fName">Dein Name</label>
-        <input class="form-input" id="fName" type="text" placeholder="z.B. Timo" autocomplete="name" />
-      </div>
+      <form id="loginForm" novalidate>
+        <!-- Name (only for registration) -->
+        <div class="form-group" id="nameGroup" style="display:none">
+          <label class="form-label" for="fName">Dein Name</label>
+          <input class="form-input" id="fName" name="name" type="text" placeholder="z.B. Timo" autocomplete="name" />
+        </div>
 
-      <div class="form-group">
-        <label class="form-label" for="fEmail">E-Mail</label>
-        <input class="form-input" id="fEmail" type="email" placeholder="deine@email.com" autocomplete="email" />
-      </div>
+        <div class="form-group">
+          <label class="form-label" for="fEmail">E-Mail</label>
+          <input class="form-input" id="fEmail" name="email" type="email" placeholder="deine@email.com" autocomplete="username" inputmode="email" autocapitalize="none" />
+        </div>
 
-      <div class="form-group">
-        <label class="form-label" for="fPass">Passwort</label>
-        <input class="form-input" id="fPass" type="password" placeholder="mind. 6 Zeichen" autocomplete="current-password" />
-      </div>
+        <div class="form-group">
+          <label class="form-label" for="fPass">Passwort</label>
+          <input class="form-input" id="fPass" name="password" type="password" placeholder="mind. 6 Zeichen" autocomplete="current-password" autocapitalize="none" />
+        </div>
 
-      <button class="btn btn-primary btn-block" id="submitBtn" style="padding:12px">Anmelden</button>
+        <button class="btn btn-primary btn-block" id="submitBtn" type="submit" style="padding:12px">Anmelden</button>
+      </form>
 
       <p class="switch-mode" id="switchText">
         Noch kein Konto? <a id="switchLink">Registrieren</a>
@@ -132,6 +134,7 @@
       $('submitBtn').textContent = mode === 'register' ? 'Registrieren' : 'Anmelden';
       $('switchText').firstChild.textContent = mode === 'register' ? 'Schon ein Konto? ' : 'Noch kein Konto? ';
       $('switchLink').textContent = mode === 'register' ? 'Anmelden' : 'Registrieren';
+      $('fPass').setAttribute('autocomplete', mode === 'register' ? 'new-password' : 'current-password');
       hideErr();
     });
 
@@ -151,7 +154,8 @@
       return map[code] || 'Fehler: ' + code;
     }
 
-    $('submitBtn').addEventListener('click', async () => {
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
       hideErr();
       const email = $('fEmail').value.trim();
       const pass  = $('fPass').value;
@@ -188,10 +192,6 @@
       }
     });
 
-    // Enter key submits
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter') $('submitBtn').click();
-    });
   </script>
 </body>
 </html>
