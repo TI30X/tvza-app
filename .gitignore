@@ -1,0 +1,13 @@
+# OneDrive / FUSE temporary files (created by cloud sync)
+.fuse_hidden*
+**/.fuse_hidden*
+
+# Editor / perl in-place temp work files
+XX[A-Za-z0-9][A-Za-z0-9]*
+*.tmp
+*.swp
+*~
+
+# OS noise
+.DS_Store
+Thumbs.db
