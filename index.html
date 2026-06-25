@@ -31,11 +31,11 @@
       border:1px solid var(--border); border-radius:var(--r1); background:var(--surface-2); color:var(--ink); }
     .pw-input:focus { outline:none; border-color:var(--accent); }
   </style>
-  <link rel="stylesheet" href="ui-fx.css?v=14" />
-  <script src="ui-fx.js?v=14" defer></script>
+  <link rel="stylesheet" href="ui-fx.css?v=15" />
+  <script src="ui-fx.js?v=15" defer></script>
 </head>
 <body>
-  <script src="welcome.js?v=2"></script>
+  <script src="welcome.js?v=3"></script>
   <div class="app">
 
     <div class="offline-banner" id="offlineBanner">
@@ -322,6 +322,7 @@
     const ownerName = profile.displayName || '';
     document.getElementById('userName').textContent = name;
     try { localStorage.setItem('tvza-name', profile.displayName || ''); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent('tvza-name', { detail: profile.displayName || '' })); } catch (e) {}
     let appUsers = [];
     let appUsersLoaded = false;
     const overviewSectionDefaults = ['tracker', 'shared', 'projects', 'public'];
@@ -1075,6 +1076,4 @@
       await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true }).catch(() => {});
     }
 
-    // ── Service worker ────────────────────────────
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigat
+    // ── Service worker ────────────────────�

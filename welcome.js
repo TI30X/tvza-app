@@ -1,8 +1,9 @@
 /* TVZA — Welcome screen
- * Plays on EVERY load: a short, elegant greeting with the user's name,
- * fluid morphing blobs and a soft drifting gradient. Tap / key / scroll skips.
- * Respects prefers-reduced-motion. Reads the cached name from localStorage
- * (index.html writes 'tvza-name' once the profile is loaded).
+ * Plays on EVERY load while the app loads in the background (it's just an
+ * overlay — nothing is blocked). Greets the user by name: the name is read
+ * from localStorage instantly, and also updated live via the 'tvza-name'
+ * event that index.html fires once the Firebase profile is loaded.
+ * Tap / key / scroll skips. Respects prefers-reduced-motion.
  */
 (() => {
   'use strict';
@@ -10,17 +11,18 @@
   const reduce = !!(window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-  let name = '';
-  try { name = (localStorage.getItem('tvza-name') || '').trim(); } catch (e) {}
-  const firstName = name ? name.split(/\s+/)[0] : '';
-
   const hour = new Date().getHours();
-  const greet = hour < 5 ? 'Gute Nacht'
+  const greetWord = hour < 5 ? 'Gute Nacht'
     : hour < 11 ? 'Guten Morgen'
     : hour < 17 ? 'Hallo'
     : hour < 22 ? 'Guten Abend'
     : 'Gute Nacht';
-  const line = firstName ? `${greet}, ${firstName}` : 'Willkommen';
+
+  function firstOf(n) { n = (n || '').trim(); return n ? n.split(/\s+/)[0] : ''; }
+  function greetLine(n) { const f = firstOf(n); return f ? `${greetWord}, ${f}` : 'Willkommen'; }
+
+  let cached = '';
+  try { cached = localStorage.getItem('tvza-name') || ''; } catch (e) {}
 
   const css = `
   #tvza-welcome{
@@ -49,20 +51,21 @@
     top:40%; left:48%; width:38vmin; height:38vmin; animation:morph 12s ease-in-out infinite, drift3 20s ease-in-out infinite; }
   #tvza-welcome .tvza-inner{ position:relative; text-align:center; padding:24px; }
   #tvza-welcome .tvza-mark{
-    font-family:Georgia,'Times New Roman',serif; font-weight:700; font-size:clamp(40px,12vw,84px);
-    line-height:1; letter-spacing:.01em; text-shadow:0 6px 30px rgba(0,0,0,.35);
-    opacity:0; transform:translateY(18px) scale(.96); filter:blur(6px);
-    animation:tvzaReveal .9s cubic-bezier(.22,.61,.36,1) .1s forwards;
+    font-family:Georgia,'Times New Roman',serif; font-weight:700; font-size:clamp(30px,8vw,54px);
+    line-height:1; letter-spacing:.02em; color:rgba(255,255,255,.92); text-shadow:0 6px 30px rgba(0,0,0,.35);
+    opacity:0; transform:translateY(16px) scale(.96); filter:blur(6px);
+    animation:tvzaReveal .85s cubic-bezier(.22,.61,.36,1) .05s forwards;
   }
   #tvza-welcome .tvza-line{
-    margin-top:18px; font-family:'Hanken Grotesk',system-ui,sans-serif;
-    font-size:clamp(20px,5.5vw,30px); font-weight:700;
-    opacity:0; transform:translateY(14px); animation:tvzaUp .8s cubic-bezier(.22,.61,.36,1) .45s forwards;
+    margin-top:16px; font-family:'Hanken Grotesk',system-ui,sans-serif;
+    font-size:clamp(26px,7vw,42px); font-weight:700; letter-spacing:-.01em;
+    opacity:0; transform:translateY(14px); animation:tvzaUp .8s cubic-bezier(.22,.61,.36,1) .4s forwards;
   }
+  #tvza-welcome .tvza-line.tvza-swap{ animation:tvzaSwap .5s cubic-bezier(.22,.61,.36,1); }
   #tvza-welcome .tvza-sub{
-    margin-top:8px; font-family:'Hanken Grotesk',system-ui,sans-serif;
-    font-size:clamp(12px,2.6vw,14px); letter-spacing:.28em; text-transform:uppercase;
-    color:rgba(255,255,255,.66); opacity:0; animation:tvzaFade .8s ease .8s forwards;
+    margin-top:10px; font-family:'Hanken Grotesk',system-ui,sans-serif;
+    font-size:clamp(11px,2.6vw,13px); letter-spacing:.3em; text-transform:uppercase;
+    color:rgba(255,255,255,.6); opacity:0; animation:tvzaFade .8s ease .75s forwards;
   }
   #tvza-welcome .tvza-hint{
     position:absolute; bottom:max(26px,env(safe-area-inset-bottom)); left:0; right:0;
@@ -72,6 +75,7 @@
   }
   @keyframes tvzaReveal{ to{ opacity:1; transform:translateY(0) scale(1); filter:blur(0); } }
   @keyframes tvzaUp{ to{ opacity:1; transform:translateY(0); } }
+  @keyframes tvzaSwap{ from{ opacity:.2; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
   @keyframes tvzaFade{ to{ opacity:1; } }
   @keyframes tvzaGrad{ 0%{ transform:translate(-3%,-2%) scale(1); } 100%{ transform:translate(3%,2%) scale(1.08); } }
   @keyframes morph{
@@ -102,8 +106,8 @@
     <div class="blob b3"></div>
     <div class="tvza-inner">
       <div class="tvza-mark">TvZ</div>
-      <div class="tvza-line">${line.replace(/</g,'&lt;')}</div>
-      <div class="tvza-sub">TVZA</div>
+      <div class="tvza-line" id="tvzaLine">${greetLine(cached).replace(/</g,'&lt;')}</div>
+      <div class="tvza-sub">Willkommen bei TVZA</div>
     </div>
     <div class="tvza-hint">Tippen zum Überspringen</div>`;
 
@@ -111,6 +115,18 @@
   document.documentElement.style.overflow = 'hidden';
 
   let closed = false;
+  function setName(n) {
+    if (closed || !firstOf(n)) return;
+    const lineEl = el.querySelector('#tvzaLine');
+    if (!lineEl) return;
+    const next = greetLine(n);
+    if (lineEl.textContent === next) return;
+    lineEl.textContent = next;
+    if (!reduce) { lineEl.classList.remove('tvza-swap'); void lineEl.offsetWidth; lineEl.classList.add('tvza-swap'); }
+  }
+  window.addEventListener('tvza-name', (e) => setName(e && e.detail));
+  window.tvzaWelcomeName = setName;
+
   function close() {
     if (closed) return;
     closed = true;
@@ -138,7 +154,7 @@
     window.addEventListener('touchmove', onScroll, { passive: true });
   }
 
-  const autoTimer = setTimeout(close, reduce ? 1100 : 2400);
+  const autoTimer = setTimeout(close, reduce ? 1200 : 2600);
 
   if (document.body) mount();
   else document.addEventListener('DOMContentLoaded', mount);
