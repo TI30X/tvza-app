@@ -1,128 +1,112 @@
-/* TVZA — Welcome-Animation (Elegant Reveal)
- *
- * Zeigt beim Öffnen eine edle Begrüssung mit der TvZ-Wortmarke.
- * - Spielt nach frischem Login (sessionStorage-Flag aus login.html)
- *   ODER beim ersten Öffnen pro Tag (localStorage-Datumsschlüssel).
- * - Klick / Tippen / beliebige Taste / Scrollen bricht sofort ab (Zeitsparen).
- * - Respektiert prefers-reduced-motion.
- *
- * Einbinden: <script src="welcome.js?v=1"></script> direkt nach <body>.
+/* TVZA — Welcome screen
+ * Plays on EVERY load: a short, elegant greeting with the user's name,
+ * fluid morphing blobs and a soft drifting gradient. Tap / key / scroll skips.
+ * Respects prefers-reduced-motion. Reads the cached name from localStorage
+ * (index.html writes 'tvza-name' once the profile is loaded).
  */
 (() => {
   'use strict';
 
-  const DAY_KEY     = 'tvza-welcome-day';     // letztes Anzeige-Datum (YYYY-MM-DD)
-  const LOGIN_FLAG  = 'tvza-just-logged-in';  // von login.html gesetzt
-  const today       = new Date().toISOString().slice(0, 10);
-
-  const justLoggedIn = sessionStorage.getItem(LOGIN_FLAG) === '1';
-  const firstToday   = localStorage.getItem(DAY_KEY) !== today;
-
-  // Nichts tun, wenn weder frischer Login noch erster Aufruf des Tages.
-  if (!justLoggedIn && !firstToday) return;
-
-  // Flags direkt verbrauchen, damit es nicht mehrfach auslöst.
-  sessionStorage.removeItem(LOGIN_FLAG);
-  localStorage.setItem(DAY_KEY, today);
-
   const reduce = !!(window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-  // ---- Styles ---------------------------------------------------------------
+  let name = '';
+  try { name = (localStorage.getItem('tvza-name') || '').trim(); } catch (e) {}
+  const firstName = name ? name.split(/\s+/)[0] : '';
+
+  const hour = new Date().getHours();
+  const greet = hour < 5 ? 'Gute Nacht'
+    : hour < 11 ? 'Guten Morgen'
+    : hour < 17 ? 'Hallo'
+    : hour < 22 ? 'Guten Abend'
+    : 'Gute Nacht';
+  const line = firstName ? `${greet}, ${firstName}` : 'Willkommen';
+
   const css = `
   #tvza-welcome{
-    position:fixed; inset:0; z-index:99999;
+    position:fixed; inset:0; z-index:99999; overflow:hidden;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:
-      radial-gradient(120% 90% at 50% 38%, rgba(15,52,96,.55), transparent 60%),
-      linear-gradient(135deg,#1a1a2e,#16213e 55%,#0f3460);
-    color:#fff; overflow:hidden; cursor:pointer;
-    -webkit-tap-highlight-color:transparent;
-    opacity:1; transition:opacity .5s ease, visibility .5s ease;
+    background:linear-gradient(135deg,#1a1a2e,#16213e 55%,#0f3460);
+    color:#fff; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    opacity:1; transition:opacity .55s ease, visibility .55s ease;
   }
   #tvza-welcome.tvza-closing{ opacity:0; visibility:hidden; }
-  #tvza-welcome .tvza-glow{
-    position:absolute; width:62vmin; height:62vmin; border-radius:50%;
-    background:radial-gradient(circle, rgba(120,160,230,.30), transparent 65%);
-    filter:blur(8px); opacity:0; transform:scale(.7);
-    animation:tvzaGlow 2.6s ease forwards;
+  #tvza-welcome .tvza-grad{
+    position:absolute; inset:-20%;
+    background:radial-gradient(40% 40% at 30% 30%, rgba(99,140,225,.40), transparent 60%),
+               radial-gradient(45% 45% at 72% 68%, rgba(15,52,96,.55), transparent 62%);
+    animation:tvzaGrad 9s ease-in-out infinite alternate; filter:blur(6px);
   }
-  #tvza-welcome .tvza-ring{
-    position:absolute; width:48vmin; height:48vmin; border-radius:50%;
-    border:1px solid rgba(255,255,255,.10);
-    opacity:0; transform:scale(.6);
-    animation:tvzaRing 2.4s cubic-bezier(.22,.61,.36,1) forwards;
+  #tvza-welcome .blob{
+    position:absolute; width:46vmin; height:46vmin; filter:blur(14px); opacity:.55; mix-blend-mode:screen;
+    will-change:border-radius, transform;
   }
+  #tvza-welcome .b1{ background:radial-gradient(circle at 40% 40%, #5b7fe0, transparent 65%);
+    top:8%; left:6%; animation:morph 8s ease-in-out infinite, drift1 14s ease-in-out infinite; }
+  #tvza-welcome .b2{ background:radial-gradient(circle at 50% 50%, #2a6db5, transparent 65%);
+    bottom:6%; right:4%; animation:morph 10s ease-in-out infinite reverse, drift2 17s ease-in-out infinite; }
+  #tvza-welcome .b3{ background:radial-gradient(circle at 50% 50%, #7a5bd0, transparent 65%);
+    top:40%; left:48%; width:38vmin; height:38vmin; animation:morph 12s ease-in-out infinite, drift3 20s ease-in-out infinite; }
+  #tvza-welcome .tvza-inner{ position:relative; text-align:center; padding:24px; }
   #tvza-welcome .tvza-mark{
-    position:relative; font-family:Georgia,'Times New Roman',serif;
-    font-weight:700; line-height:1; letter-spacing:.01em;
-    font-size:clamp(64px,17vw,148px);
-    display:flex; gap:.02em;
-    text-shadow:0 6px 30px rgba(0,0,0,.35);
+    font-family:Georgia,'Times New Roman',serif; font-weight:700; font-size:clamp(40px,12vw,84px);
+    line-height:1; letter-spacing:.01em; text-shadow:0 6px 30px rgba(0,0,0,.35);
+    opacity:0; transform:translateY(18px) scale(.96); filter:blur(6px);
+    animation:tvzaReveal .9s cubic-bezier(.22,.61,.36,1) .1s forwards;
   }
-  #tvza-welcome .tvza-mark span{
-    display:inline-block; opacity:0;
-    transform:translateY(22px); filter:blur(8px);
-    animation:tvzaLetter .8s cubic-bezier(.22,.61,.36,1) forwards;
-  }
-  #tvza-welcome .tvza-mark span:nth-child(1){ animation-delay:.15s; }
-  #tvza-welcome .tvza-mark span:nth-child(2){ animation-delay:.30s; }
-  #tvza-welcome .tvza-mark span:nth-child(3){ animation-delay:.45s; }
   #tvza-welcome .tvza-line{
-    width:0; height:1px; margin-top:22px;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
-    animation:tvzaLine .9s ease .7s forwards;
+    margin-top:18px; font-family:'Hanken Grotesk',system-ui,sans-serif;
+    font-size:clamp(20px,5.5vw,30px); font-weight:700;
+    opacity:0; transform:translateY(14px); animation:tvzaUp .8s cubic-bezier(.22,.61,.36,1) .45s forwards;
   }
   #tvza-welcome .tvza-sub{
-    margin-top:18px; font-family:'Hanken Grotesk',system-ui,sans-serif;
-    font-size:clamp(12px,2.4vw,15px); letter-spacing:.34em; text-transform:uppercase;
-    color:rgba(255,255,255,.72); opacity:0;
-    animation:tvzaFade .8s ease 1.05s forwards;
+    margin-top:8px; font-family:'Hanken Grotesk',system-ui,sans-serif;
+    font-size:clamp(12px,2.6vw,14px); letter-spacing:.28em; text-transform:uppercase;
+    color:rgba(255,255,255,.66); opacity:0; animation:tvzaFade .8s ease .8s forwards;
   }
   #tvza-welcome .tvza-hint{
-    position:absolute; bottom:max(26px,env(safe-area-inset-bottom));
-    font-family:'Hanken Grotesk',system-ui,sans-serif;
-    font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.32);
-    opacity:0; animation:tvzaFade 1s ease 1.6s forwards;
+    position:absolute; bottom:max(26px,env(safe-area-inset-bottom)); left:0; right:0;
+    text-align:center; font-family:'Hanken Grotesk',system-ui,sans-serif;
+    font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.3); opacity:0;
+    animation:tvzaFade 1s ease 1.5s forwards;
   }
-  @keyframes tvzaLetter{ to{ opacity:1; transform:translateY(0); filter:blur(0); } }
-  @keyframes tvzaLine{ to{ width:min(240px,52vw); } }
+  @keyframes tvzaReveal{ to{ opacity:1; transform:translateY(0) scale(1); filter:blur(0); } }
+  @keyframes tvzaUp{ to{ opacity:1; transform:translateY(0); } }
   @keyframes tvzaFade{ to{ opacity:1; } }
-  @keyframes tvzaGlow{
-    35%{ opacity:1; transform:scale(1); }
-    100%{ opacity:.55; transform:scale(1.04); }
+  @keyframes tvzaGrad{ 0%{ transform:translate(-3%,-2%) scale(1); } 100%{ transform:translate(3%,2%) scale(1.08); } }
+  @keyframes morph{
+    0%{ border-radius:42% 58% 63% 37% / 45% 38% 62% 55%; }
+    50%{ border-radius:60% 40% 33% 67% / 55% 62% 38% 45%; }
+    100%{ border-radius:42% 58% 63% 37% / 45% 38% 62% 55%; }
   }
-  @keyframes tvzaRing{
-    40%{ opacity:1; transform:scale(1); }
-    100%{ opacity:.35; transform:scale(1.12); }
-  }
+  @keyframes drift1{ 0%,100%{ transform:translate(0,0) rotate(0deg); } 50%{ transform:translate(6vmin,4vmin) rotate(18deg); } }
+  @keyframes drift2{ 0%,100%{ transform:translate(0,0) rotate(0deg); } 50%{ transform:translate(-7vmin,-3vmin) rotate(-22deg); } }
+  @keyframes drift3{ 0%,100%{ transform:translate(-50%,-40%) rotate(0deg); } 50%{ transform:translate(-44%,-46%) rotate(25deg); } }
   @media (prefers-reduced-motion: reduce){
-    #tvza-welcome .tvza-glow,#tvza-welcome .tvza-ring,
-    #tvza-welcome .tvza-mark span,#tvza-welcome .tvza-line,
-    #tvza-welcome .tvza-sub,#tvza-welcome .tvza-hint{
-      animation:none !important; opacity:1 !important;
-      transform:none !important; filter:none !important; width:auto;
-    }
-    #tvza-welcome .tvza-line{ width:min(240px,52vw); }
+    #tvza-welcome .tvza-grad,#tvza-welcome .blob{ animation:none; }
+    #tvza-welcome .tvza-mark,#tvza-welcome .tvza-line,#tvza-welcome .tvza-sub,#tvza-welcome .tvza-hint{
+      animation:none !important; opacity:1 !important; transform:none !important; filter:none !important; }
   }`;
 
   const style = document.createElement('style');
   style.textContent = css;
 
-  // ---- Overlay --------------------------------------------------------------
   const el = document.createElement('div');
   el.id = 'tvza-welcome';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', 'Willkommen bei TVZA');
   el.innerHTML = `
-    <div class="tvza-glow"></div>
-    <div class="tvza-ring"></div>
-    <div class="tvza-mark"><span>T</span><span>v</span><span>Z</span></div>
-    <div class="tvza-line"></div>
-    <div class="tvza-sub">Willkommen</div>
+    <div class="tvza-grad"></div>
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="tvza-inner">
+      <div class="tvza-mark">TvZ</div>
+      <div class="tvza-line">${line.replace(/</g,'&lt;')}</div>
+      <div class="tvza-sub">TVZA</div>
+    </div>
     <div class="tvza-hint">Tippen zum Überspringen</div>`;
 
-  // Verhindert Scrollen des Hintergrunds während der Animation.
   const prevOverflow = document.documentElement.style.overflow;
   document.documentElement.style.overflow = 'hidden';
 
@@ -133,20 +117,16 @@
     document.documentElement.style.overflow = prevOverflow;
     el.classList.add('tvza-closing');
     cleanup();
-    setTimeout(() => el.remove(), 520);
+    setTimeout(() => el.remove(), 560);
   }
-
   function onScroll() { close(); }
   function cleanup() {
-    ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(
-      ev => el.removeEventListener(ev, close)
-    );
+    ['click', 'pointerdown', 'touchstart', 'keydown'].forEach(ev => el.removeEventListener(ev, close));
     window.removeEventListener('keydown', close);
     window.removeEventListener('wheel', onScroll);
     window.removeEventListener('touchmove', onScroll);
     clearTimeout(autoTimer);
   }
-
   function mount() {
     document.head.appendChild(style);
     document.body.appendChild(el);
@@ -158,8 +138,7 @@
     window.addEventListener('touchmove', onScroll, { passive: true });
   }
 
-  // Automatisches Schliessen nach Ablauf.
-  const autoTimer = setTimeout(close, reduce ? 1100 : 2900);
+  const autoTimer = setTimeout(close, reduce ? 1100 : 2400);
 
   if (document.body) mount();
   else document.addEventListener('DOMContentLoaded', mount);
