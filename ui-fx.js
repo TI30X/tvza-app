@@ -1,9 +1,10 @@
 /* ─────────────────────────────────────────────────────────────
-   TVZA UI FX — runtime glue for ui-fx.css
-   • Upgrades every existing ".spinner" into a shimmering skeleton
-   • Reveals main content blocks with a unified staggered flow-in
-   • Preserves scroll position across page reloads
-   • Fades the page out before navigating to another internal page
+   TVZA UI FX — YouTube-style loading
+   • Shows shimmering skeleton placeholders while data loads
+   • Fades real content in once when it replaces the skeleton
+   • Preserves scroll position across reloads
+   • Gentle page fade on load + fade-out on internal navigation
+   • Injects a consistent version footer on every page
    No build step, no dependencies. Safe to load in <head> or <body>.
    ───────────────────────────────────────────────────────────── */
 (() => {
@@ -14,7 +15,7 @@
   ).matches;
 
   // Single source of truth for the footer version shown on every page.
-  const APP_VERSION = "v23";
+  const APP_VERSION = "v24";
 
   function injectVersion() {
     if (document.querySelector(".fx-version")) return;
@@ -22,11 +23,11 @@
     if (!host) return;
     const el = document.createElement("div");
     el.className = "fx-version";
-    el.textContent = "TVZA \u00b7 " + APP_VERSION;
+    el.textContent = "TVZA · " + APP_VERSION;
     host.appendChild(el);
   }
 
-  /* ── 1. Skeletons ──────────────────────────────────────────── */
+  /* ── 1. Skeleton placeholders ──────────────────────────────── */
   function skeletonMarkup(rows) {
     let html = "";
     for (let i = 0; i < rows; i++) {
@@ -54,39 +55,36 @@
       });
   }
 
-  /* ── 2. Staggered reveal of async-loaded list items ────────── */
+  /* ── 2. Fade real content in once (no per-item jitter) ─────── */
   const LIST_IDS = [
     "listWrap", "publicFeedList", "adminUsers", "tripList", "actList",
     "skiList", "logList", "list", "projectList", "feedList",
   ];
 
-  function revealItem(el, delay) {
-    el.dataset.fxSeen = "1";
-    el.style.animationDelay = delay + "ms";
-    el.classList.add("fx-item-in");
+  function fadeIn(el) {
+    if (reduceMotion || el.dataset.fxFading) return;
+    el.dataset.fxFading = "1";
+    el.classList.add("fx-fade-in");
     el.addEventListener(
       "animationend",
       () => {
-        el.style.animationDelay = "";
-        el.classList.remove("fx-item-in");
+        el.classList.remove("fx-fade-in");
+        delete el.dataset.fxFading;
       },
       { once: true }
     );
   }
 
-  function staggerChildren(container) {
-    if (reduceMotion) return;
-    const kids = Array.from(container.children).filter(
+  function hasRealContent(container) {
+    return Array.from(container.children).some(
       (c) =>
         c.nodeType === 1 &&
         !c.classList.contains("spinner") &&
-        !c.classList.contains("fx-skeleton-host") &&
-        !c.dataset.fxSeen
+        !c.classList.contains("fx-skeleton-host")
     );
-    kids.forEach((c, i) => revealItem(c, Math.min(i * 45, 360)));
   }
 
-  function watchLists() {
+  function watchContent() {
     const targets = LIST_IDS.map((id) => document.getElementById(id)).filter(
       Boolean
     );
@@ -94,97 +92,19 @@
     const obs = new MutationObserver((muts) => {
       const seen = new Set();
       muts.forEach((m) => {
-        if (m.addedNodes && m.addedNodes.length && !seen.has(m.target)) {
-          seen.add(m.target);
-          upgradeSpinners(m.target);
-          staggerChildren(m.target);
-        }
+        const t = m.target;
+        if (seen.has(t)) return;
+        seen.add(t);
+        // App reset the container back to a "Lade…" spinner → re-skeleton it.
+        upgradeSpinners(t);
+        // Real data arrived → fade the whole container in a single time.
+        if (hasRealContent(t)) fadeIn(t);
       });
     });
     targets.forEach((t) => obs.observe(t, { childList: true }));
   }
 
-  /* ── 2b. Unified flow-in: reveal content blocks (load + late) ─ */
-  function isHidden(el) {
-    const cs = window.getComputedStyle ? getComputedStyle(el) : null;
-    if (cs && (cs.display === "none" || cs.visibility === "hidden")) return true;
-    if (el.style && el.style.display === "none") return true;
-    return false;
-  }
-
-  function revealOnLoad() {
-    if (reduceMotion) return;
-    const root =
-      document.querySelector("main, .main") ||
-      document.querySelector(".app") ||
-      document.body;
-    if (!root) return;
-    let cands = Array.from(
-      root.querySelectorAll(".section, .settings-section, .card")
-    );
-    if (!cands.length) {
-      cands = Array.from(root.children).filter(
-        (c) => c.nodeType === 1 && !/^(SCRIPT|STYLE|HEADER)$/.test(c.tagName)
-      );
-    }
-    // Keep only the innermost block when blocks are nested.
-    cands = cands.filter((el) => !cands.some((o) => o !== el && el.contains(o)));
-    let i = 0;
-    cands.forEach((el) => {
-      if (el.dataset.fxSeen) return;
-      if (el.closest(".fx-skeleton-host")) return;
-      if (isHidden(el)) return; // catch it on a later pass once shown
-      revealItem(el, Math.min(i * 55, 440));
-      i++;
-    });
-  }
-
-  // Reveal blocks the moment they become visible (modules/tiles are
-  // un-hidden by JS after the profile loads), so they flow in right then
-  // instead of in a delayed batch.
-  function watchReveals() {
-    if (reduceMotion) return;
-    const root =
-      document.querySelector("main, .main") ||
-      document.querySelector(".app") ||
-      document.body;
-    if (!root) return;
-    const sel = ".section, .settings-section, .card, .module-tile";
-    const mo = new MutationObserver((muts) => {
-      let batch = [];
-      muts.forEach((m) => {
-        const t = m.target;
-        if (
-          t.nodeType === 1 &&
-          t.matches &&
-          t.matches(sel) &&
-          !t.dataset.fxSeen &&
-          !t.closest(".fx-skeleton-host") &&
-          !isHidden(t)
-        )
-          batch.push(t);
-      });
-      if (!batch.length) return;
-      let i = 0;
-      batch.forEach((el) => {
-        if (el.dataset.fxSeen) return;
-        // Animate the innermost block: skip if it holds a visible match.
-        const hasVisibleInner = Array.from(el.querySelectorAll(sel)).some(
-          (d) => !isHidden(d)
-        );
-        if (hasVisibleInner) return;
-        revealItem(el, Math.min(i * 55, 440));
-        i++;
-      });
-    });
-    mo.observe(root, {
-      attributes: true,
-      attributeFilter: ["style", "class", "hidden"],
-      subtree: true,
-    });
-  }
-
-  /* ── 2c. Preserve scroll position across reloads ───────────── */
+  /* ── 3. Preserve scroll position across reloads ────────────── */
   function setupScrollRestore() {
     if (!("sessionStorage" in window)) return;
     let key;
@@ -236,7 +156,7 @@
     requestAnimationFrame(tryRestore);
   }
 
-  /* ── 3. Page fade-out on internal navigation ───────────────── */
+  /* ── 4. Page fade-out on internal navigation ───────────────── */
   function isInternalLink(a) {
     if (!a) return false;
     if (a.target && a.target !== "" && a.target !== "_self") return false;
@@ -298,10 +218,8 @@
     injectVersion();
     setupScrollRestore();
     upgradeSpinners(document);
-    revealOnLoad();
-    watchLists();
+    watchContent();
     wireNavFade();
-    watchReveals();
   }
 
   if (document.readyState === "loading") {
@@ -313,6 +231,5 @@
   window.TVZAFx = {
     skeleton: skeletonMarkup,
     upgrade: upgradeSpinners,
-    stagger: staggerChildren,
   };
 })();

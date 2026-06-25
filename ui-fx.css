@@ -88,14 +88,13 @@ body.fx-leaving {
   border-radius: 999px;
 }
 
-/* ── 3. Staggered reveal of real items ──────────────────────── */
-@keyframes fx-item-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* ── 3. Content fade-in (skeleton → real content, once) ─────── */
+@keyframes fx-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.fx-item-in {
-  animation: fx-item-in 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-  will-change: opacity, transform;
+.fx-fade-in {
+  animation: fx-fade-in 0.28s ease both;
 }
 
 /* ── 4. Subtle tap/press feedback site-wide ─────────────────── */
@@ -128,7 +127,7 @@ button, .btn, .icon-btn, .user-chip, [role="button"] {
 @media (prefers-reduced-motion: reduce) {
   body,
   body.fx-leaving,
-  .fx-item-in,
+  .fx-fade-in,
   .fx-skel::after,
   button, .btn, .icon-btn, .user-chip, [role="button"] {
     animation: none !important;
