@@ -119,8 +119,8 @@
       padding:10px 12px; font-size:12px; margin-bottom:12px; display:none; }
     .info-banner.show { display:block; }
   </style>
-  <link rel="stylesheet" href="../ui-fx.css?v=13" />
-  <script src="../ui-fx.js?v=13" defer></script>
+  <link rel="stylesheet" href="../ui-fx.css?v=11" />
+  <script src="../ui-fx.js?v=11" defer></script>
 </head>
 <body>
   <div class="app">
