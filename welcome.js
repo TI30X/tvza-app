@@ -8,8 +8,14 @@
 (() => {
   'use strict';
 
-  // Show only once per session — not on every return to the dashboard.
-  try { if (sessionStorage.getItem('tvza-welcomed')) return; sessionStorage.setItem('tvza-welcomed', '1'); } catch (e) {}
+  // Always play right after login; otherwise only once per session
+  // (not on every return to the dashboard).
+  let fromLogin = false;
+  try {
+    if (sessionStorage.getItem('tvza-just-logged-in')) { fromLogin = true; sessionStorage.removeItem('tvza-just-logged-in'); }
+    if (!fromLogin && sessionStorage.getItem('tvza-welcomed')) return;
+    sessionStorage.setItem('tvza-welcomed', '1');
+  } catch (e) {}
 
   const reduce = !!(window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
