@@ -8,6 +8,9 @@
 (() => {
   'use strict';
 
+  // Show only once per session — not on every return to the dashboard.
+  try { if (sessionStorage.getItem('tvza-welcomed')) return; sessionStorage.setItem('tvza-welcomed', '1'); } catch (e) {}
+
   const reduce = !!(window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 

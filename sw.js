@@ -1,6 +1,6 @@
-/* TVZA Service Worker v35 - offline-first */
+/* TVZA Service Worker v36 - offline-first */
 
-const CACHE = 'tvza-v35';
+const CACHE = 'tvza-v36';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -20,7 +20,6 @@ const SHELL = [
   './foods.js',
   './pages/skitracker.html',
   './pages/foodtracker.html',
-  './pages/tripplanner.html',
   './pages/planner.html',
   './pages/planner-trips.html',
   './pages/maturaarbeit.html',
@@ -50,11 +49,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-
-  // Cache the Firebase SDK from gstatic too (needed offline)
   const isGstatic = url.hostname === 'www.gstatic.com';
   if (url.origin !== self.location.origin && !isGstatic) return;
-
   event.respondWith(
     caches.match(event.request).then(cached => {
       const network = fetch(event.request).then(res => {
