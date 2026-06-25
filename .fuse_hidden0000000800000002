@@ -31,8 +31,8 @@
       border:1px solid var(--border); border-radius:var(--r1); background:var(--surface-2); color:var(--ink); }
     .pw-input:focus { outline:none; border-color:var(--accent); }
   </style>
-  <link rel="stylesheet" href="ui-fx.css?v=4" />
-  <script src="ui-fx.js?v=4" defer></script>
+  <link rel="stylesheet" href="ui-fx.css?v=3" />
+  <script src="ui-fx.js?v=3" defer></script>
 </head>
 <body>
   <script src="welcome.js?v=1"></script>

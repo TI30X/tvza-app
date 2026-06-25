@@ -110,6 +110,20 @@ button, .btn, .icon-btn, .user-chip, [role="button"] {
   transition: transform 0.08s ease;
 }
 
+/* ── 4b. Version footer (injected on every page) ────────────── */
+.fx-version {
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-ui, system-ui, sans-serif);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft, #8a8a93);
+  opacity: 0.7;
+  padding: 22px 0 calc(20px + env(safe-area-inset-bottom));
+  margin-top: 28px;
+  user-select: none;
+}
+
 /* ── 5. Respect reduced-motion: kill all of the above ───────── */
 @media (prefers-reduced-motion: reduce) {
   body,
