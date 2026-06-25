@@ -1076,4 +1076,10 @@
       await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true }).catch(() => {});
     }
 
-    // ── Service worker ────────────────────�
+    // ── Service worker ────────────────────────────
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
+    }
+  </script>
+</body>
+</html>

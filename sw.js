@@ -1,6 +1,6 @@
-/* TVZA Service Worker v34 - offline-first */
+/* TVZA Service Worker v35 - offline-first */
 
-const CACHE = 'tvza-v34';
+const CACHE = 'tvza-v35';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -63,4 +63,8 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE).then(c => c.put(event.request, clone));
         }
         return res;
-      }).catc
+      }).catch(() => null);
+      return cached || network;
+    })
+  );
+});
