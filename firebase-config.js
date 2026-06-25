@@ -3,7 +3,7 @@ import {
   initializeFirestore, persistentLocalCache, persistentSingleTabManager
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
-  getAuth, setPersistence, browserLocalPersistence
+  getAuth, setPersistence, indexedDBLocalPersistence, browserLocalPersistence
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   collection, query, where, getDocs, getDoc, doc
@@ -26,9 +26,12 @@ export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
 });
 
-// Auth with permanent local persistence (stays logged in offline)
+// Auth with durable persistence — IndexedDB survives installed-PWA reopens
+// better than localStorage (which Android can clear). Falls back if needed.
 export const auth = getAuth(app);
-setPersistence(auth, browserLocalPersistence).catch(console.warn);
+setPersistence(auth, indexedDBLocalPersistence)
+  .catch(() => setPersistence(auth, browserLocalPersistence))
+  .catch(console.warn);
 
 /* ── Shared helpers ────────────────────────────── */
 
