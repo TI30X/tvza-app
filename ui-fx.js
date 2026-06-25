@@ -1,9 +1,9 @@
 /* ─────────────────────────────────────────────────────────────
    TVZA UI FX — YouTube-style loading
    • Shows shimmering skeleton placeholders while data loads
-   • Fades real content in once when it replaces the skeleton
+   • Fades real content in once when it replaces the skeleton (any section)
    • Preserves scroll position across reloads
-   • Gentle page fade on load + fade-out on internal navigation
+   • Fades only the content on navigation, so the header stays put
    • Injects a consistent version footer on every page
    No build step, no dependencies. Safe to load in <head> or <body>.
    ───────────────────────────────────────────────────────────── */
@@ -15,7 +15,11 @@
   ).matches;
 
   // Single source of truth for the footer version shown on every page.
-  const APP_VERSION = "v24";
+  const APP_VERSION = "v25";
+
+  function contentEl() {
+    return document.querySelector("main, .main") || document.body;
+  }
 
   function injectVersion() {
     if (document.querySelector(".fx-version")) return;
@@ -55,12 +59,7 @@
       });
   }
 
-  /* ── 2. Fade real content in once (no per-item jitter) ─────── */
-  const LIST_IDS = [
-    "listWrap", "publicFeedList", "adminUsers", "tripList", "actList",
-    "skiList", "logList", "list", "projectList", "feedList",
-  ];
-
+  /* ── 2. Fade real content in once, for EVERY loading section ─ */
   function fadeIn(el) {
     if (reduceMotion || el.dataset.fxFading) return;
     el.dataset.fxFading = "1";
@@ -84,24 +83,33 @@
     );
   }
 
+  // Watch any container that ever shows a spinner/skeleton — no hard-coded
+  // list of IDs — so all sections across all pages get the same treatment.
   function watchContent() {
-    const targets = LIST_IDS.map((id) => document.getElementById(id)).filter(
-      Boolean
-    );
-    if (!targets.length) return;
+    const observed = new WeakSet();
     const obs = new MutationObserver((muts) => {
       const seen = new Set();
       muts.forEach((m) => {
         const t = m.target;
         if (seen.has(t)) return;
         seen.add(t);
-        // App reset the container back to a "Lade…" spinner → re-skeleton it.
         upgradeSpinners(t);
-        // Real data arrived → fade the whole container in a single time.
+        register(t);
         if (hasRealContent(t)) fadeIn(t);
       });
     });
-    targets.forEach((t) => obs.observe(t, { childList: true }));
+    function register(scope) {
+      (scope || document)
+        .querySelectorAll(".spinner, .fx-skeleton-host")
+        .forEach((sp) => {
+          const c = sp.parentElement;
+          if (c && !observed.has(c)) {
+            observed.add(c);
+            obs.observe(c, { childList: true });
+          }
+        });
+    }
+    register(document);
   }
 
   /* ── 3. Preserve scroll position across reloads ────────────── */
@@ -156,7 +164,7 @@
     requestAnimationFrame(tryRestore);
   }
 
-  /* ── 4. Page fade-out on internal navigation ───────────────── */
+  /* ── 4. Fade content (not header) out on internal navigation ─ */
   function isInternalLink(a) {
     if (!a) return false;
     if (a.target && a.target !== "" && a.target !== "_self") return false;
@@ -198,18 +206,19 @@
       if (!isInternalLink(a)) return;
       e.preventDefault();
       const dest = a.href;
-      document.body.classList.add("fx-leaving");
+      const c = contentEl();
+      c.classList.add("fx-leaving");
       let done = false;
       const go = () => {
         if (done) return;
         done = true;
         location.href = dest;
       };
-      document.body.addEventListener("transitionend", go, { once: true });
+      c.addEventListener("transitionend", go, { once: true });
       setTimeout(go, 260);
     });
     window.addEventListener("pageshow", (e) => {
-      if (e.persisted) document.body.classList.remove("fx-leaving");
+      if (e.persisted) contentEl().classList.remove("fx-leaving");
     });
   }
 

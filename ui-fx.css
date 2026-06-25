@@ -5,21 +5,23 @@
    ───────────────────────────────────────────────────────────── */
 
 /* ── 1. Page enter / leave transition ───────────────────────── */
-/* Opacity-only cross-fade. IMPORTANT: never put a transform on <body>
-   here — a transformed ancestor reparents position:fixed elements
-   (welcome overlay, modals) and breaks them on mobile. */
+/* Only the CONTENT region fades — never the header — so the top bar
+   appears to stay put across page navigations instead of blinking.
+   Opacity-only: a transform on an ancestor would break position:fixed
+   overlays/modals on mobile. */
 @keyframes fx-page-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-body {
+main, .main {
   animation: fx-page-in 0.3s ease both;
 }
-/* Fade out just before navigating to another internal page. */
-body.fx-leaving {
-  opacity: 0;
+/* Fade the content out just before navigating to another internal page.
+   Applied by JS to the content element (main/.main, or body as fallback). */
+.fx-leaving {
+  opacity: 0 !important;
   transition: opacity 0.18s ease;
-  animation: none;
+  animation: none !important;
 }
 
 /* ── 2. Skeleton placeholders (YouTube style) ───────────────── */
@@ -125,8 +127,8 @@ button, .btn, .icon-btn, .user-chip, [role="button"] {
 
 /* ── 5. Respect reduced-motion: kill all of the above ───────── */
 @media (prefers-reduced-motion: reduce) {
-  body,
-  body.fx-leaving,
+  main, .main,
+  .fx-leaving,
   .fx-fade-in,
   .fx-skel::after,
   button, .btn, .icon-btn, .user-chip, [role="button"] {
