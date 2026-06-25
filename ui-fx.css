@@ -1,0 +1,124 @@
+/* ─────────────────────────────────────────────────────────────
+   TVZA UI FX — skeletons · page transitions · micro-animations
+   Shared across the whole site. Theme-aware (uses CSS vars with
+   safe fallbacks) and fully disabled under prefers-reduced-motion.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── 1. Page enter / leave transition ───────────────────────── */
+/* Gentle fade + slight rise on every page load. */
+@keyframes fx-page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+body {
+  animation: fx-page-in 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+/* Fade/slide out just before navigating to another internal page. */
+body.fx-leaving {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  animation: none;
+}
+
+/* ── 2. Skeleton placeholders (YouTube style) ───────────────── */
+.fx-skeleton-host {
+  display: block;
+  padding: 8px 0;
+}
+.fx-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 4px;
+}
+.fx-skel-row + .fx-skel-row {
+  border-top: 1px solid var(--border, rgba(128, 128, 128, 0.16));
+}
+.fx-skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2, rgba(128, 128, 128, 0.16));
+  border-radius: 8px;
+}
+/* moving sheen */
+.fx-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  animation: fx-shimmer 1.4s ease-in-out infinite;
+}
+:root[data-theme="dark"] .fx-skel::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.09) 50%,
+    transparent 100%
+  );
+}
+@keyframes fx-shimmer {
+  100% { transform: translateX(100%); }
+}
+.fx-skel-avatar {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+.fx-skel-lines {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.fx-skel-line { height: 12px; width: 78%; }
+.fx-skel-line.short { width: 46%; height: 10px; }
+.fx-skel-pill {
+  flex: 0 0 auto;
+  width: 58px;
+  height: 26px;
+  border-radius: 999px;
+}
+
+/* ── 3. Staggered reveal of real items ──────────────────────── */
+@keyframes fx-item-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fx-item-in {
+  animation: fx-item-in 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+/* ── 4. Subtle tap/press feedback site-wide ─────────────────── */
+button:active,
+.btn:active,
+.icon-btn:active,
+.user-chip:active,
+[role="button"]:active {
+  transform: scale(0.97);
+}
+button, .btn, .icon-btn, .user-chip, [role="button"] {
+  transition: transform 0.08s ease;
+}
+
+/* ── 5. Respect reduced-motion: kill all of the above ───────── */
+@media (prefers-reduced-motion: reduce) {
+  body,
+  body.fx-leaving,
+  .fx-item-in,
+  .fx-skel::after,
+  button, .btn, .icon-btn, .user-chip, [role="button"] {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}

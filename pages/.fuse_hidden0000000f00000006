@@ -232,9 +232,7 @@
       .accent-bar--trip, .reminder-bell { animation: none; }
     }
   </style>
-  <link rel="stylesheet" href="../ui-fx.css?v=1" />
-  <script src="../ui-fx.js?v=1" defer></script>
-</head>
+  <link rel="stylesheet" href="../ui-fx.css?v=1" />\n  <script src="../ui-fx.js?v=1" defer></script>\n</head>
 <body>
   <div class="app">
 
