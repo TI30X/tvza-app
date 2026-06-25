@@ -5,19 +5,20 @@
    ───────────────────────────────────────────────────────────── */
 
 /* ── 1. Page enter / leave transition ───────────────────────── */
-/* Gentle fade + slight rise on every page load. */
+/* Opacity-only cross-fade. IMPORTANT: never put a transform on <body>
+   here — a transformed ancestor reparents position:fixed elements
+   (welcome overlay, modals) and breaks them on mobile. */
 @keyframes fx-page-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 body {
-  animation: fx-page-in 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: fx-page-in 0.3s ease both;
 }
-/* Fade/slide out just before navigating to another internal page. */
+/* Fade out just before navigating to another internal page. */
 body.fx-leaving {
   opacity: 0;
-  transform: translateY(-6px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity 0.18s ease;
   animation: none;
 }
 
