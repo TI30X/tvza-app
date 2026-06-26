@@ -15,7 +15,7 @@
   ).matches;
 
   // Single source of truth for the footer version shown on every page.
-  const APP_VERSION = "v28.2";
+  const APP_VERSION = "v28.3";
 
   function contentEl() {
     return document.querySelector("main, .main") || document.body;
@@ -85,8 +85,13 @@
 
   // Reflect "anything still loading?" on <body> so the header shows a
   // clean indeterminate bar (CSS) and hides it the moment data arrives.
+  // Only VISIBLE spinners count — placeholders inside closed modals
+  // (display:none → offsetParent null) must not keep the bar running.
   function updateLoading() {
-    const loading = !!document.querySelector(".spinner, .fx-skeleton-host");
+    let loading = false;
+    document.querySelectorAll(".spinner, .fx-skeleton-host").forEach((el) => {
+      if (el.offsetParent !== null) loading = true;
+    });
     document.body.classList.toggle("fx-loading", loading);
   }
 
