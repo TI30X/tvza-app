@@ -192,12 +192,41 @@ export const FOODS = [
   { name: "Darvida / Cracker", kcal: 420, protein: 11.0, carbs: 62.0, fat: 13.0, fibre: 8.0, micros: ["Eisen","Magnesium"] },
 ];
 
+/* ── Dynamische Lebensmittel ───────────────────────
+   Vom Admin freigegebene (Firestore `customFoods`) und
+   frisch gescannte Produkte werden zur Laufzeit hier
+   registriert. Sie verhalten sich wie die statischen
+   Einträge oben (Suche, Treffer, Nährwerte).            */
+export const EXTRA = [];
+
+// Fügt Lebensmittel hinzu. Doppelte Namen werden übersprungen.
+// `food` braucht mindestens { name, kcal } — fehlende Makros werden 0.
+export function registerFoods(list) {
+  for (const raw of (Array.isArray(list) ? list : [list])) {
+    if (!raw || !raw.name) continue;
+    const n = norm(raw.name);
+    if (FOODS.some(f => norm(f.name) === n) || EXTRA.some(f => norm(f.name) === n)) continue;
+    EXTRA.push({
+      name: String(raw.name),
+      kcal: +raw.kcal || 0,
+      protein: +raw.protein || 0,
+      carbs: +raw.carbs || 0,
+      fat: +raw.fat || 0,
+      fibre: +raw.fibre || 0,
+      micros: Array.isArray(raw.micros) ? raw.micros : [],
+      custom: true,
+    });
+  }
+}
+
+function allFoods() { return FOODS.concat(EXTRA); }
+
 // Fuzzy search: substring + word-start matching, case/umlaut insensitive
 export function searchFoods(query, limit = 8) {
   const q = norm(query);
   if (!q) return [];
   const scored = [];
-  for (const f of FOODS) {
+  for (const f of allFoods()) {
     const n = norm(f.name);
     let score = -1;
     if (n.startsWith(q)) score = 0;
@@ -216,5 +245,95 @@ function norm(s) {
 
 export function findFood(name) {
   const n = norm(name);
-  return FOODS.find(f => norm(f.name) === n) || null;
+  return allFoods().find(f => norm(f.name) === n) || null;
+}
+
+/* ── Portionen-Schätzung ────────────────────────────
+   Liefert für ein Lebensmittel eine grobe „1 Portion"
+   in Gramm + ein passendes Wort (Portion/Glas/Stück…).
+   Damit kann man mit einem Tipp loggen, ohne zu wägen.  */
+export function defaultServing(food) {
+  const n = norm(food?.name || '');
+  const has = (...ws) => ws.some(w => n.includes(norm(w)));
+
+  // Fette & Öle — teelöffel-/esslöffelweise
+  if (has('ol') && has('olivenol','rapsol','sonnenblumenol','kokosol','ol ')) return { grams: 12, label: '1 EL' };
+  if (has('zucker'))                                                          return { grams: 8,  label: '1 TL' };
+  // Schokolade zuerst (sonst greift unten „…milch…" als Getränk)
+  if (has('schokolade'))                                                      return { grams: 30, label: '1 Portion' };
+  if (has('butter','margarine'))                                             return { grams: 12, label: '1 Portion' };
+  if (has('mayonnaise','pesto','ketchup','senf','sojasauce','tomatensauce','honig','konfit','marmelade','nutella','brotaufstrich','erdnussbutter','sirup','rahm','sahne'))
+                                                                              return { grams: 20, label: '1 Portion' };
+
+  // Getränke
+  if (has('wein'))                                                            return { grams: 150, label: '1 Glas' };
+  if (has('bier'))                                                            return { grams: 300, label: '1 Stange' };
+  if (has('kaffee','cappuccino','espresso','tee ','tee('))                    return { grams: 150, label: '1 Tasse' };
+  if (has('milch','saft','cola','eistee','rivella','shake','kakao','ovomaltine','drink','smoothie'))
+                                                                              return { grams: 200, label: '1 Glas' };
+
+  // Milchprodukte im Becher
+  if (has('joghurt','quark','huttenkase','bircher'))                          return { grams: 180, label: '1 Becher' };
+  if (has('kase','mozzarella','raclettekase','frischkase'))                   return { grams: 30,  label: '1 Portion' };
+
+  // Eier
+  if (has('ei (','spiegelei','ruhrei') || n === 'ei')                         return { grams: 55,  label: '1 Stück' };
+
+  // Aufschnitt / Wurstwaren (dünn, als Belag)
+  if (has('schinken','salami','speck','trockenfleisch','bundnerfleisch','cervelat'))
+                                                                              return { grams: 30,  label: '1 Portion' };
+  // Würste am Stück
+  if (has('bratwurst','wienerli'))                                            return { grams: 120, label: '1 Stück' };
+
+  // Fleisch & Fisch — Portion
+  if (has('poulet','rind','schwein','kalb','lamm','fleisch','hackfleisch','lachs','thunfisch','forelle','crevetten','tofu','quorn','fischstab'))
+                                                                              return { grams: 120, label: '1 Portion' };
+
+  // Fertige Hauptgerichte (vor den Beilagen, damit „Spaghetti Bolognese" als Teller zählt)
+  if (has('pizza','lasagne','bolognese','carbonara','burger','doner','sushi','curry','sandwich','fondue','raclette','fruhlingsrolle','alplermagronen'))
+                                                                              return { grams: 300, label: '1 Portion' };
+
+  // Sättigungsbeilagen (gekocht)
+  if (has('reis','pasta','teigwaren','spaghetti','nudeln','kartoffel','couscous','quinoa','polenta','spatzli','rosti','pommes','puree','stock','magronen'))
+                                                                              return { grams: 200, label: '1 Portion' };
+
+  // Hülsenfrüchte (gekocht)
+  if (has('linsen','kichererbsen','bohnen','hummus'))                         return { grams: 150, label: '1 Portion' };
+
+  // Brot & Backwaren
+  if (has('gipfeli','croissant','brotli','semmel','zopf'))                    return { grams: 60,  label: '1 Stück' };
+  if (has('brot','knackebrot','zwieback','toast','cracker','darvida','reiswaffel'))
+                                                                              return { grams: 40,  label: '1 Scheibe' };
+
+  // Frühstücksflocken
+  if (has('haferflocken','musli','cornflakes','knusper','flocken'))           return { grams: 50,  label: '1 Portion' };
+
+  // Trockenfrüchte / Nüsse / Kerne / Samen
+  if (has('rosinen','datteln'))                                               return { grams: 25,  label: '1 Handvoll' };
+  if (has('mandeln','nusse','walnusse','haselnusse','cashew','erdnusse','kerne','samen','oliven'))
+                                                                              return { grams: 25,  label: '1 Handvoll' };
+
+  // Obst am Stück vs. Beeren
+  if (has('apfel','banane','orange','mandarine','birne','kiwi','pfirsich','aprikose','zwetschg','pflaumen','mango'))
+                                                                              return { grams: 120, label: '1 Stück' };
+  if (has('beeren','erdbeeren','himbeeren','trauben','kirschen','ananas','wassermelone'))
+                                                                              return { grams: 100, label: '1 Portion' };
+
+  // Salate (leicht)
+  if (has('salat','rucola','nusslisalat','feldsalat'))                        return { grams: 50,  label: '1 Portion' };
+
+  // Suppen
+  if (has('suppe','bouillon'))                                                return { grams: 250, label: '1 Teller' };
+
+  // Süsses / Snacks / Desserts
+  if (has('gummibarchen','biscuit','keks','guetzli','riegel','chips','bretzeli','popcorn','salzstangen'))
+                                                                              return { grams: 30,  label: '1 Portion' };
+  if (has('kuchen','strudel','glace','eis','sorbet'))                         return { grams: 90,  label: '1 Portion' };
+
+  // Gemüse allgemein
+  if (has('tomaten','gurke','karotten','ruebli','broccoli','blumenkohl','spinat','zucch','peperoni','paprika','aubergine','pilze','champignon','zwiebel','lauch','mais','erbsen','kurbis','suskartoffel','randen','sauerkraut'))
+                                                                              return { grams: 150, label: '1 Portion' };
+
+  // Fallback
+  return { grams: 100, label: '100 g' };
 }

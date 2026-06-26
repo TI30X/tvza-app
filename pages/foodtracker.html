@@ -75,7 +75,13 @@
 
           <label class="form-label">Zutaten (ungefähres Gewicht)</label>
           <div id="ingRows"></div>
-          <button class="btn btn-secondary" id="addIngBtn" style="font-size:13px;padding:7px 14px;margin-bottom:12px">+ Zutat</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn btn-primary" id="scanBtn" style="font-size:13px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+              Scannen
+            </button>
+            <button class="btn btn-secondary" id="addIngBtn" style="font-size:13px;padding:7px 14px">+ Zutat</button>
+          </div>
 
           <div class="nutri-box" id="nutriBox" style="display:none"></div>
 
@@ -136,12 +142,72 @@
     </div>
   </div>
 
+  <!-- Scanner modal -->
+  <div class="modal-backdrop" id="scanModal">
+    <div class="modal">
+      <div class="modal-title">Barcode scannen</div>
+      <div id="reader" style="width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:220px"></div>
+      <p id="scanStatus" style="font-size:13px;color:var(--ink-soft);margin:10px 0 6px;text-align:center">Kamera wird gestartet…</p>
+      <div class="form-group" style="margin-top:6px">
+        <label class="form-label" for="manualCode">Oder Code von Hand eingeben</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="manualCode" type="text" inputmode="numeric" placeholder="z.B. 7610200416014" />
+          <button class="btn btn-primary" id="manualCodeBtn" style="padding:9px 14px">OK</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="scanClose">Schliessen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Amount sheet -->
+  <div class="modal-backdrop" id="amountModal">
+    <div class="modal">
+      <div class="modal-title" id="amountTitle">Wie viel?</div>
+      <p id="amountSub" style="font-size:13px;color:var(--ink-soft);margin:-4px 0 14px"></p>
+      <div id="amountBtns" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="form-group" style="margin-top:14px">
+        <label class="form-label" for="amountManual">Eigene Menge (g)</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="amountManual" type="number" min="1" placeholder="g" />
+          <button class="btn btn-primary" id="amountManualBtn" style="padding:9px 14px">Hinzufügen</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="amountCancel">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Request food modal -->
+  <div class="modal-backdrop" id="reqModal">
+    <div class="modal">
+      <div class="modal-title">Lebensmittel vorschlagen</div>
+      <p style="font-size:13px;color:var(--ink-soft);margin:-4px 0 14px">
+        Nicht gefunden? Schlag es vor — sobald es freigegeben ist, steht es allen zur Verfügung.
+      </p>
+      <div class="form-group">
+        <label class="form-label" for="reqName">Name</label>
+        <input class="form-input" id="reqName" type="text" placeholder="z.B. Skyr Vanille" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reqNote">Notiz (optional)</label>
+        <input class="form-input" id="reqNote" type="text" placeholder="Marke, Packungsgrösse, Geschmack …" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="reqCancel">Abbrechen</button>
+        <button class="btn btn-primary" id="reqSend">Vorschlag senden</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail } from '../firebase-config.js';
-    import { searchFoods, findFood } from '../foods.js';
+    import { searchFoods, findFood, registerFoods, defaultServing } from '../foods.js';
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot,
-      deleteDoc, serverTimestamp, query, where, orderBy
+      deleteDoc, serverTimestamp, query, where, orderBy, getDocs
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     wireOfflineBanner();
@@ -236,19 +302,33 @@
       const list  = row.querySelector(`[data-ac="${id}"]`);
 
       input.addEventListener('input', () => {
+        const q = input.value.trim();
         const results = searchFoods(input.value);
-        if (!results.length || !input.value.trim()) { list.classList.remove('visible'); calcNutrition(); return; }
-        list.innerHTML = results.map(f =>
+        if (!q) { list.classList.remove('visible'); calcNutrition(); return; }
+        let html = results.map(f =>
           `<div class="ac-item" data-pick="${escHtml(f.name)}">${escHtml(f.name)} <small>${f.kcal} kcal/100g</small></div>`).join('');
+        // Nicht gefunden → Vorschlag anbieten
+        if (q.length >= 2)
+          html += `<div class="ac-item" data-suggest="${escHtml(q)}" style="color:var(--food)">➕ „${escHtml(q)}" vorschlagen <small>nicht in der Liste</small></div>`;
+        list.innerHTML = html;
         list.classList.add('visible');
-        list.querySelectorAll('.ac-item').forEach(item =>
+        list.querySelectorAll('.ac-item[data-pick]').forEach(item =>
           item.addEventListener('mousedown', e => {
             e.preventDefault();
             input.value = item.dataset.pick;
             list.classList.remove('visible');
-            row.querySelector(`[data-g="${id}"]`).focus();
+            const gEl = row.querySelector(`[data-g="${id}"]`);
+            const f = findFood(item.dataset.pick);
+            if (f && !gEl.value) gEl.value = defaultServing(f).grams; // 1-Tipp-Portion
+            gEl.focus();
             calcNutrition();
           }));
+        const sg = list.querySelector('.ac-item[data-suggest]');
+        if (sg) sg.addEventListener('mousedown', e => {
+          e.preventDefault();
+          list.classList.remove('visible');
+          openRequest(sg.dataset.suggest);
+        });
       });
       input.addEventListener('blur', () => setTimeout(() => list.classList.remove('visible'), 150));
 
@@ -401,6 +481,225 @@
       ingRows.innerHTML = '';
       addIngRow();
       document.getElementById('nutriBox').style.display = 'none';
+    });
+
+    /* ════ Freigegebene Lebensmittel (customFoods) ═══
+       Vom Admin freigegebene Vorschläge — für alle sichtbar. */
+    async function loadCustomFoods() {
+      try {
+        const qs = await getDocs(collection(db, 'customFoods'));
+        registerFoods(qs.docs.map(d => d.data()));
+      } catch (e) { console.warn('customFoods', e); }
+    }
+    loadCustomFoods();
+
+    /* ════ Zutat per Tipp einfügen ═══════════════ */
+    function addFoodByAmount(name, grams) {
+      // freie leere Zeile nutzen, sonst neue anlegen
+      let targetId = null;
+      ingRows.querySelectorAll('.ing-row').forEach(r => {
+        const nameEl = r.querySelector('input[data-ing]');
+        if (targetId === null && !nameEl.value.trim()) targetId = r.dataset.row;
+      });
+      if (targetId === null) { addIngRow(name, Math.round(grams)); }
+      else {
+        const r = ingRows.querySelector(`.ing-row[data-row="${targetId}"]`);
+        r.querySelector('input[data-ing]').value = name;
+        r.querySelector('input[data-g]').value = Math.round(grams);
+      }
+      calcNutrition();
+    }
+
+    /* ════ Mengen-Auswahl (Sheet) ════════════════
+       Zeigt grosse Tipp-Buttons: Packung / Portion / 100 g. */
+    const amountModal = document.getElementById('amountModal');
+    function openAmount(food, opts = {}) {
+      // food: {name, kcal, …}  opts: {packGrams, servingGrams, brand}
+      document.getElementById('amountTitle').textContent = food.name;
+      document.getElementById('amountSub').textContent =
+        `${opts.brand ? opts.brand + ' · ' : ''}${food.kcal} kcal / 100 g`;
+
+      const serving = defaultServing(food);
+      const sGrams = opts.servingGrams || serving.grams;
+      const btns = [];
+      if (opts.packGrams) {
+        btns.push({ label: `Ganze Packung`, sub: `${Math.round(opts.packGrams)} g`, g: opts.packGrams });
+        btns.push({ label: `Halbe Packung`, sub: `${Math.round(opts.packGrams/2)} g`, g: opts.packGrams/2 });
+      }
+      btns.push({ label: serving.label === '100 g' ? '1 Portion' : serving.label, sub: `${Math.round(sGrams)} g · ~${Math.round(food.kcal*sGrams/100)} kcal`, g: sGrams });
+      if (Math.abs(sGrams - 100) > 1) btns.push({ label: '100 g', sub: `~${Math.round(food.kcal)} kcal`, g: 100 });
+
+      document.getElementById('amountBtns').innerHTML = btns.map((b,i) =>
+        `<button class="btn ${i===0?'btn-primary':'btn-secondary'} btn-block" data-amt="${b.g}" style="justify-content:space-between;display:flex">
+           <span>${escHtml(b.label)}</span><span style="opacity:.75;font-size:12px">${escHtml(b.sub)}</span>
+         </button>`).join('');
+
+      document.querySelectorAll('#amountBtns [data-amt]').forEach(btn =>
+        btn.addEventListener('click', () => {
+          registerFoods(food); // sicherstellen, dass Nährwerte verfügbar sind
+          addFoodByAmount(food.name, parseFloat(btn.dataset.amt));
+          amountModal.classList.remove('visible');
+        }));
+
+      document.getElementById('amountManual').value = '';
+      document.getElementById('amountManualBtn').onclick = () => {
+        const g = parseFloat(document.getElementById('amountManual').value);
+        if (!g || g <= 0) return;
+        registerFoods(food);
+        addFoodByAmount(food.name, g);
+        amountModal.classList.remove('visible');
+      };
+      amountModal.classList.add('visible');
+    }
+    document.getElementById('amountCancel').addEventListener('click', () => amountModal.classList.remove('visible'));
+    amountModal.addEventListener('click', e => { if (e.target === amountModal) amountModal.classList.remove('visible'); });
+
+    /* ════ Barcode-Scanner ═══════════════════════ */
+    const scanModal = document.getElementById('scanModal');
+    let html5Qr = null, scanLibPromise = null;
+
+    function ensureScanLib() {
+      if (window.Html5Qrcode) return Promise.resolve();
+      if (scanLibPromise) return scanLibPromise;
+      scanLibPromise = new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+      return scanLibPromise;
+    }
+
+    function setScanStatus(t) { document.getElementById('scanStatus').textContent = t; }
+
+    async function startCamera() {
+      try {
+        await ensureScanLib();
+      } catch { setScanStatus('Scanner konnte nicht geladen werden — Code von Hand eingeben.'); return; }
+      const fmts = window.Html5QrcodeSupportedFormats ? [
+        Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.QR_CODE,
+      ] : undefined;
+      html5Qr = new Html5Qrcode('reader', { formatsToSupport: fmts, verbose: false });
+      setScanStatus('Halte den Barcode in den Rahmen…');
+      try {
+        await html5Qr.start({ facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 160 } },
+          code => { onScanned(code); },
+          () => {});
+      } catch (e) {
+        setScanStatus('Kein Kamerazugriff — Code bitte von Hand eingeben.');
+      }
+    }
+
+    async function stopCamera() {
+      if (html5Qr) { try { await html5Qr.stop(); html5Qr.clear(); } catch {} html5Qr = null; }
+    }
+
+    function openScanner() {
+      if (readOnly) return;
+      scanModal.classList.add('visible');
+      setScanStatus('Kamera wird gestartet…');
+      startCamera();
+    }
+    async function closeScanner() { scanModal.classList.remove('visible'); await stopCamera(); }
+
+    document.getElementById('scanBtn').addEventListener('click', openScanner);
+    document.getElementById('scanClose').addEventListener('click', closeScanner);
+    scanModal.addEventListener('click', e => { if (e.target === scanModal) closeScanner(); });
+    document.getElementById('manualCodeBtn').addEventListener('click', () => {
+      const c = document.getElementById('manualCode').value.trim();
+      if (c) onScanned(c);
+    });
+
+    let lastCode = '';
+    async function onScanned(code) {
+      if (code === lastCode) return;        // Doppelscans ignorieren
+      lastCode = code;
+      setTimeout(() => { lastCode = ''; }, 2500);
+      await stopCamera();
+      setScanStatus('Produkt wird gesucht…');
+      const prod = await lookupBarcode(code);
+      scanModal.classList.remove('visible');
+      if (!prod) { openRequest('', { barcode: code }); return; }
+      if (prod.knownFood) openAmount(prod.knownFood, { packGrams: prod.packGrams, servingGrams: prod.servingGrams, brand: prod.brand });
+      else if (prod.kcal != null) openAmount(
+        { name: prod.name, kcal: prod.kcal, protein: prod.protein, carbs: prod.carbs, fat: prod.fat, fibre: prod.fibre, micros: [] },
+        { packGrams: prod.packGrams, servingGrams: prod.servingGrams, brand: prod.brand });
+      else openRequest(prod.name, { barcode: code, brand: prod.brand });   // keine Nährwerte → Vorschlag
+    }
+
+    // Open Food Facts Lookup
+    async function lookupBarcode(code) {
+      try {
+        const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,product_name_de,generic_name_de,generic_name,brands,quantity,serving_size,nutriments`;
+        const r = await fetch(url);
+        const j = await r.json();
+        if (!j || j.status !== 1 || !j.product) return null;
+        const p = j.product, nut = p.nutriments || {};
+        const name = (p.product_name_de || p.product_name || p.generic_name_de || p.generic_name || '').trim();
+        if (!name) return { name: '', brand: p.brands || '', kcal: null };
+        let kcal = num(nut['energy-kcal_100g']);
+        if (kcal == null && num(nut['energy_100g']) != null) kcal = Math.round(num(nut['energy_100g']) / 4.184);
+        const known = findFood(name);
+        return {
+          name, brand: (p.brands || '').split(',')[0].trim(),
+          knownFood: known || null,
+          kcal: kcal,
+          protein: num(nut['proteins_100g']) || 0,
+          carbs: num(nut['carbohydrates_100g']) || 0,
+          fat: num(nut['fat_100g']) || 0,
+          fibre: num(nut['fiber_100g']) || 0,
+          packGrams: parseAmount(p.quantity),
+          servingGrams: parseAmount(p.serving_size),
+        };
+      } catch (e) { console.warn('OFF', e); return null; }
+    }
+    const num = v => (v == null || v === '' || isNaN(+v)) ? null : +v;
+    function parseAmount(str) {       // "500 g" / "1 kg" / "250ml" → Gramm
+      if (!str) return null;
+      const m = String(str).replace(',', '.').match(/([\d.]+)\s*(kg|g|l|ml|cl)?/i);
+      if (!m) return null;
+      let v = parseFloat(m[1]); const u = (m[2] || 'g').toLowerCase();
+      if (u === 'kg' || u === 'l') v *= 1000;
+      if (u === 'cl') v *= 10;
+      return (v >= 10 && v <= 5000) ? v : null;
+    }
+
+    /* ════ Lebensmittel vorschlagen ══════════════ */
+    const reqModal = document.getElementById('reqModal');
+    let reqExtra = {};
+    function openRequest(name = '', extra = {}) {
+      reqExtra = extra;
+      document.getElementById('reqName').value = name;
+      document.getElementById('reqNote').value = extra.brand ? `Marke: ${extra.brand}` : '';
+      reqModal.classList.add('visible');
+      setTimeout(() => document.getElementById('reqName').focus(), 50);
+    }
+    window.openRequest = openRequest;
+    document.getElementById('reqCancel').addEventListener('click', () => reqModal.classList.remove('visible'));
+    reqModal.addEventListener('click', e => { if (e.target === reqModal) reqModal.classList.remove('visible'); });
+    document.getElementById('reqSend').addEventListener('click', async () => {
+      const name = document.getElementById('reqName').value.trim();
+      if (!name) { document.getElementById('reqName').focus(); return; }
+      const btn = document.getElementById('reqSend');
+      btn.disabled = true; btn.textContent = 'Wird gesendet…';
+      try {
+        await addDoc(collection(db, 'foodRequests'), {
+          name,
+          note: document.getElementById('reqNote').value.trim(),
+          barcode: reqExtra.barcode || '',
+          brand: reqExtra.brand || '',
+          requestedByUid: user.uid,
+          requestedByEmail: user.email || '',
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        });
+        reqModal.classList.remove('visible');
+        alert('Danke! Dein Vorschlag wurde gesendet.');
+      } catch (e) { alert('Senden fehlgeschlagen — bitte nochmal versuchen.'); }
+      btn.disabled = false; btn.textContent = 'Vorschlag senden';
     });
 
     /* ════ Month view ═══════════════════════════ */

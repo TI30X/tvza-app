@@ -20,6 +20,23 @@
   Felder: `ownerUid, ownerName, emoji, name, url, publicPassword, updatedAt`.
 - `shares/{id}` — Freigaben: `ownerUid, ownerName, module, targetEmail, role` (`view`/`edit`).
 - `skitracker/{uid}/…`, `foodlog/{uid}/…`, `families`/`trips`/`activities` — wie bisher.
+- `customFoods/{id}` — vom Admin freigegebene Lebensmittel (`name, kcal, protein, carbs, fat, fibre, micros`).
+  Werden im Food Tracker beim Start geladen und stehen dann allen in Suche & Scan zur Verfügung.
+- `foodRequests/{id}` — Vorschläge von Nutzern für fehlende Lebensmittel
+  (`name, note, barcode, brand, kcal…, requestedByEmail, status, createdAt`).
+  Admin gibt sie in ⚙️ Einstellungen → „Admin · Food-Anfragen" frei (→ `customFoods`) oder lehnt ab.
+  Beides löscht die Anfrage. Beide Sammlungen sind durch die `match /{document=**}`-Regel
+  bereits abgedeckt — keine Regeländerung nötig.
+
+## Food Tracker — Scannen & Portionen
+- 📷 **Barcode/QR scannen:** „Scannen" im Erfassungsformular öffnet die Kamera
+  (html5-qrcode via CDN). Der Code wird bei **Open Food Facts** nachgeschlagen;
+  erkannte Produkte werden direkt mit Nährwerten geloggt. Alternativ Code von Hand eingeben.
+- 🍽️ **1-Tipp-Menge:** Nach dem Scan (oder beim Auswählen) fragt die App grob „wie viel?"
+  mit grossen Buttons — je nach Produkt **Ganze/Halbe Packung**, **1 Portion** (z.B. Poulet 120 g,
+  Reis/Pasta 200 g, Glas 200 ml) oder **100 g**. Eigene Menge bleibt jederzeit möglich.
+- ➕ **Nicht gefunden?** In der Zutatensuche erscheint „… vorschlagen"; der Vorschlag
+  landet als `foodRequest` im Admin-Panel.
 
 ## Einmalige Firebase-Schritte
 
