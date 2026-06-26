@@ -99,6 +99,30 @@ main, .main {
   animation: fx-fade-in 0.28s ease both;
 }
 
+/* ── 3b. Indeterminate loading bar on the header ────────────────
+   Shown whenever a skeleton/spinner is on the page (body.fx-loading,
+   toggled by ui-fx.js). Sits flush on the header's bottom edge and
+   sweeps a soft highlight across — a clean "still loading" cue that
+   never shifts layout. */
+.header { position: sticky; }              /* ensure ::after anchors to header */
+body.fx-loading .header::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent 0%, transparent 38%,
+    rgba(255, 255, 255, 0.9) 50%,
+    transparent 62%, transparent 100%);
+  background-size: 250% 100%;
+  animation: fx-loadbar 1.2s linear infinite;
+}
+@keyframes fx-loadbar {
+  0%   { background-position: 125% 0; }
+  100% { background-position: -25% 0; }
+}
+
 /* ── 4. Subtle tap/press feedback site-wide ─────────────────── */
 button:active,
 .btn:active,
@@ -131,10 +155,13 @@ button, .btn, .icon-btn, .user-chip, [role="button"] {
   .fx-leaving,
   .fx-fade-in,
   .fx-skel::after,
+  body.fx-loading .header::after,
   button, .btn, .icon-btn, .user-chip, [role="button"] {
     animation: none !important;
     transition: none !important;
     transform: none !important;
     opacity: 1 !important;
   }
+  /* Keep a calm static hint instead of motion */
+  body.fx-loading .header::after { background: rgba(255,255,255,0.35) !important; }
 }

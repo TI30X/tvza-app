@@ -15,7 +15,7 @@
   ).matches;
 
   // Single source of truth for the footer version shown on every page.
-  const APP_VERSION = "v28";
+  const APP_VERSION = "v28.2";
 
   function contentEl() {
     return document.querySelector("main, .main") || document.body;
@@ -83,6 +83,13 @@
     );
   }
 
+  // Reflect "anything still loading?" on <body> so the header shows a
+  // clean indeterminate bar (CSS) and hides it the moment data arrives.
+  function updateLoading() {
+    const loading = !!document.querySelector(".spinner, .fx-skeleton-host");
+    document.body.classList.toggle("fx-loading", loading);
+  }
+
   // Watch any container that ever shows a spinner/skeleton — no hard-coded
   // list of IDs — so all sections across all pages get the same treatment.
   function watchContent() {
@@ -97,6 +104,7 @@
         register(t);
         if (hasRealContent(t)) fadeIn(t);
       });
+      updateLoading();
     });
     function register(scope) {
       (scope || document)
@@ -227,6 +235,7 @@
     injectVersion();
     setupScrollRestore();
     upgradeSpinners(document);
+    updateLoading();
     watchContent();
     wireNavFade();
   }

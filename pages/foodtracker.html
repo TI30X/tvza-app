@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#1A1A2E" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232F9E44'/><text x='16' y='22' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'>TvZ</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,6 +14,41 @@
   <title>Food Tracker — TVZA</title>
   <link rel="stylesheet" href="../ui-fx.css?v=15" />
   <script src="../ui-fx.js?v=15" defer></script>
+  <style>
+    /* Top bar flush to the very top — also on mobile / installed PWA.
+       The shared rule stacks the header into a column on phones; the
+       Food-Tracker bar should stay a single flush row that paints into
+       the status-bar safe area. */
+    .header { padding-top: env(safe-area-inset-top, 0px); }
+    @media (max-width: 620px) {
+      .header-inner {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        min-height: 54px;
+        padding: 0 12px;
+      }
+      .header-inner .back-btn { flex: 0 0 auto; }
+      .header-inner .page-title { flex: 1; text-align: center; font-size: 16px; }
+    }
+    /* Quick-amount buttons: comfy tap targets */
+    #amountBtns .btn { padding: 13px 14px; font-size: 15px; align-items: center; }
+    /* Live "added so far" list inside the scanner */
+    .scan-summary { margin: 10px 0 4px; }
+    .scan-summary .ss-item { display:flex; justify-content:space-between; gap:10px;
+      font-size:13px; padding:6px 10px; border-radius:8px; background:var(--surface-2); margin-bottom:6px; }
+    .scan-summary .ss-item small { color:var(--ink-soft); }
+    /* Lightweight toast */
+    #toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom,0px));
+      transform: translateX(-50%) translateY(8px); background: var(--food, #2F9E44); color:#fff;
+      padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
+      box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease; z-index: 1000; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    /* Entry cards: tap to edit affordance */
+    .item-card .item-content { cursor: pointer; }
+  </style>
 </head>
 <body>
   <div class="app">
@@ -60,8 +95,8 @@
         </div>
 
         <!-- Entry form -->
-        <div class="form-card">
-          <p class="form-title">Mahlzeit erfassen</p>
+        <div class="form-card" id="entryCard">
+          <p class="form-title" id="formTitle">Mahlzeit erfassen</p>
 
           <div class="form-group">
             <label class="form-label" for="fMeal">Mahlzeit</label>
@@ -86,6 +121,7 @@
           <div class="nutri-box" id="nutriBox" style="display:none"></div>
 
           <button class="btn btn-primary btn-block" id="saveBtn">✓ Speichern</button>
+          <button class="btn btn-secondary btn-block" id="cancelEditBtn" style="display:none;margin-top:8px">Abbrechen</button>
         </div>
 
         <!-- Entries -->
@@ -113,6 +149,8 @@
       <img src="../icons/TvZ_Logo.svg" alt="TvZ" />
     </footer>
   </div>
+
+  <div id="toast"></div>
 
   <!-- Profile modal -->
   <div class="modal-backdrop" id="profileModal">
@@ -148,6 +186,10 @@
       <div class="modal-title">Barcode scannen</div>
       <div id="reader" style="width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:220px"></div>
       <p id="scanStatus" style="font-size:13px;color:var(--ink-soft);margin:10px 0 6px;text-align:center">Kamera wird gestartet…</p>
+
+      <!-- Was bisher in dieser Mahlzeit erfasst wurde -->
+      <div class="scan-summary" id="scanSummary" style="display:none"></div>
+
       <div class="form-group" style="margin-top:6px">
         <label class="form-label" for="manualCode">Oder Code von Hand eingeben</label>
         <div style="display:flex;gap:8px">
@@ -155,6 +197,7 @@
           <button class="btn btn-primary" id="manualCodeBtn" style="padding:9px 14px">OK</button>
         </div>
       </div>
+      <button class="btn btn-primary btn-block" id="scanDoneBtn" style="margin-top:12px;display:none">✓ Das war's — speichern</button>
       <div class="modal-actions">
         <button class="btn btn-secondary" id="scanClose">Schliessen</button>
       </div>
@@ -206,7 +249,7 @@
     import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail } from '../firebase-config.js';
     import { searchFoods, findFood, registerFoods, defaultServing } from '../foods.js';
     import {
-      doc, getDoc, setDoc, collection, addDoc, onSnapshot,
+      doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
       deleteDoc, serverTimestamp, query, where, orderBy, getDocs
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -450,38 +493,99 @@
         <h3 style="font-size:13px;font-weight:700;color:var(--ink-soft);margin:14px 0 8px">${meal}</h3>
         <div class="item-list">` +
         grouped[meal].map(e => `
-          <div class="item-card">
+          <div class="item-card" data-card="${e.id}">
             <div class="item-content">
               <div class="item-title">${e.ingredients.map(i => escHtml(i.name)).join(', ')}</div>
               <div class="item-sub">≈ ${Math.round(e.kcal)} kcal · P ${e.protein?.toFixed(0)}g · KH ${e.carbs?.toFixed(0)}g · F ${e.fat?.toFixed(0)}g</div>
             </div>
-            ${readOnly ? '' : `<div class="item-actions"><button class="btn btn-danger" data-del="${e.id}">${ICON_CLOSE}</button></div>`}
+            ${readOnly ? '' : `<div class="item-actions">
+              <button class="btn btn-secondary" data-edit="${e.id}" title="Bearbeiten" style="padding:7px 9px">✏️</button>
+              <button class="btn btn-danger" data-del="${e.id}" title="Löschen">${ICON_CLOSE}</button>
+            </div>`}
           </div>`).join('') + `</div>`).join('');
 
-      wrap.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+      if (!readOnly) {
+        const editFromId = id => { const e = dayEntries.find(x => x.id === id); if (e) startEdit(e); };
+        wrap.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); editFromId(b.dataset.edit); }));
+        wrap.querySelectorAll('.item-card .item-content').forEach(c => c.addEventListener('click', () => editFromId(c.closest('[data-card]').dataset.card)));
+      }
+      wrap.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', ev => {
+        ev.stopPropagation();
         if (confirm('Eintrag löschen?')) deleteDoc(doc(entriesCol, b.dataset.del));
       }));
     }
 
-    /* ════ Save entry ═══════════════════════════ */
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-      const ings = readIngredients();
-      if (!ings.length) { alert('Bitte mindestens eine Zutat mit Gewicht eingeben.'); return; }
-      const t = totalsFor(ings);
+    /* ════ Toast ════════════════════════════════ */
+    let toastTimer = null;
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+    }
 
-      await addDoc(entriesCol, {
-        date: toDateStr(currentDate()),
+    /* ════ Mahlzeit automatisch nach Uhrzeit ═════
+       Vorauswahl je nach Tageszeit — frei änderbar. */
+    const MEALS = { breakfast:'🌅 Frühstück', lunch:'☀️ Mittagessen', dinner:'🌙 Abendessen', snack:'🍎 Snack' };
+    function guessMeal() {
+      const h = new Date().getHours();
+      let v = MEALS.snack;
+      if (h >= 5 && h < 11)       v = MEALS.breakfast;
+      else if (h >= 11 && h < 15) v = MEALS.lunch;
+      else if (h >= 17 && h < 22) v = MEALS.dinner;
+      const sel = document.getElementById('fMeal');
+      if (sel && !editing) sel.value = v;
+    }
+
+    /* ════ Speichern / Bearbeiten ════════════════ */
+    let editing = null;   // {id, date} wenn ein bestehender Eintrag bearbeitet wird
+
+    function resetForm() {
+      editing = null;
+      ingRows.innerHTML = '';
+      addIngRow();
+      document.getElementById('nutriBox').style.display = 'none';
+      document.getElementById('formTitle').textContent = 'Mahlzeit erfassen';
+      document.getElementById('saveBtn').textContent = '✓ Speichern';
+      document.getElementById('cancelEditBtn').style.display = 'none';
+      guessMeal();
+    }
+
+    async function saveCurrentMeal() {
+      const ings = readIngredients();
+      if (!ings.length) { alert('Bitte mindestens eine Zutat mit Gewicht eingeben.'); return false; }
+      const t = totalsFor(ings);
+      const payload = {
+        date: editing ? editing.date : toDateStr(currentDate()),
         meal: document.getElementById('fMeal').value,
         ingredients: ings.map(i => ({ name: i.name, grams: i.grams })),
         kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat, fibre: t.fibre,
         micros: [...t.micros],
-        createdAt: serverTimestamp()
-      });
+      };
+      try {
+        if (editing) { await updateDoc(doc(entriesCol, editing.id), payload); toast('Aktualisiert ✓'); }
+        else { payload.createdAt = serverTimestamp(); await addDoc(entriesCol, payload); toast('Gespeichert ✓'); }
+      } catch (e) { alert('Speichern fehlgeschlagen — bitte nochmal versuchen.'); return false; }
+      resetForm();
+      return true;
+    }
 
+    function startEdit(entry) {
+      editing = { id: entry.id, date: entry.date };
       ingRows.innerHTML = '';
-      addIngRow();
-      document.getElementById('nutriBox').style.display = 'none';
-    });
+      (entry.ingredients || []).forEach(i => addIngRow(i.name, i.grams));
+      if (!ingRows.children.length) addIngRow();
+      document.getElementById('fMeal').value = entry.meal || MEALS.snack;
+      document.getElementById('formTitle').textContent = 'Mahlzeit bearbeiten';
+      document.getElementById('saveBtn').textContent = '✓ Änderungen speichern';
+      document.getElementById('cancelEditBtn').style.display = '';
+      calcNutrition();
+      document.getElementById('entryCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', () => saveCurrentMeal());
+    document.getElementById('cancelEditBtn').addEventListener('click', () => resetForm());
 
     /* ════ Freigegebene Lebensmittel (customFoods) ═══
        Vom Admin freigegebene Vorschläge — für alle sichtbar. */
@@ -534,25 +638,33 @@
            <span>${escHtml(b.label)}</span><span style="opacity:.75;font-size:12px">${escHtml(b.sub)}</span>
          </button>`).join('');
 
+      amountReturnToScan = !!opts.onAdded;
+      const commit = (grams) => {
+        registerFoods(food); // sicherstellen, dass Nährwerte verfügbar sind
+        addFoodByAmount(food.name, grams);
+        amountModal.classList.remove('visible');
+        if (opts.onAdded) opts.onAdded();
+      };
+
       document.querySelectorAll('#amountBtns [data-amt]').forEach(btn =>
-        btn.addEventListener('click', () => {
-          registerFoods(food); // sicherstellen, dass Nährwerte verfügbar sind
-          addFoodByAmount(food.name, parseFloat(btn.dataset.amt));
-          amountModal.classList.remove('visible');
-        }));
+        btn.addEventListener('click', () => commit(parseFloat(btn.dataset.amt))));
 
       document.getElementById('amountManual').value = '';
       document.getElementById('amountManualBtn').onclick = () => {
         const g = parseFloat(document.getElementById('amountManual').value);
         if (!g || g <= 0) return;
-        registerFoods(food);
-        addFoodByAmount(food.name, g);
-        amountModal.classList.remove('visible');
+        commit(g);
       };
       amountModal.classList.add('visible');
     }
-    document.getElementById('amountCancel').addEventListener('click', () => amountModal.classList.remove('visible'));
-    amountModal.addEventListener('click', e => { if (e.target === amountModal) amountModal.classList.remove('visible'); });
+    let amountReturnToScan = false;
+    function closeAmount() {
+      amountModal.classList.remove('visible');
+      if (amountReturnToScan) reopenScanner();   // zurück zum Scanner, weiter erfassen
+      amountReturnToScan = false;
+    }
+    document.getElementById('amountCancel').addEventListener('click', closeAmount);
+    amountModal.addEventListener('click', e => { if (e.target === amountModal) closeAmount(); });
 
     /* ════ Barcode-Scanner ═══════════════════════ */
     const scanModal = document.getElementById('scanModal');
@@ -597,10 +709,30 @@
       if (html5Qr) { try { await html5Qr.stop(); html5Qr.clear(); } catch {} html5Qr = null; }
     }
 
+    // Was bisher in dieser Sitzung erfasst wurde
+    function renderScanSummary() {
+      const ings = readIngredients();
+      const sum = document.getElementById('scanSummary');
+      const done = document.getElementById('scanDoneBtn');
+      if (!ings.length) { sum.style.display = 'none'; done.style.display = 'none'; return; }
+      const t = totalsFor(ings);
+      sum.style.display = ''; done.style.display = '';
+      sum.innerHTML = ings.map(i =>
+        `<div class="ss-item"><span>${escHtml(i.name)}</span><small>${Math.round(i.grams)} g</small></div>`).join('')
+        + `<div class="ss-item" style="background:transparent;font-weight:700"><span>${ings.length} Artikel · Total</span><small>≈ ${Math.round(t.kcal)} kcal</small></div>`;
+    }
+
     function openScanner() {
       if (readOnly) return;
+      renderScanSummary();
       scanModal.classList.add('visible');
       setScanStatus('Kamera wird gestartet…');
+      startCamera();
+    }
+    function reopenScanner() {        // nach dem Hinzufügen: weiter scannen
+      renderScanSummary();
+      scanModal.classList.add('visible');
+      setScanStatus('Nächsten Barcode scannen…');
       startCamera();
     }
     async function closeScanner() { scanModal.classList.remove('visible'); await stopCamera(); }
@@ -610,7 +742,14 @@
     scanModal.addEventListener('click', e => { if (e.target === scanModal) closeScanner(); });
     document.getElementById('manualCodeBtn').addEventListener('click', () => {
       const c = document.getElementById('manualCode').value.trim();
-      if (c) onScanned(c);
+      if (c) { document.getElementById('manualCode').value = ''; onScanned(c); }
+    });
+    // „Das war's" — alles in einem Tipp speichern
+    document.getElementById('scanDoneBtn').addEventListener('click', async () => {
+      await stopCamera();
+      scanModal.classList.remove('visible');
+      const ok = await saveCurrentMeal();
+      if (!ok) reopenScanner();   // bei Fehler: Sitzung offen lassen
     });
 
     let lastCode = '';
@@ -622,11 +761,12 @@
       setScanStatus('Produkt wird gesucht…');
       const prod = await lookupBarcode(code);
       scanModal.classList.remove('visible');
+      const next = () => { toast('Hinzugefügt ✓'); reopenScanner(); };
       if (!prod) { openRequest('', { barcode: code }); return; }
-      if (prod.knownFood) openAmount(prod.knownFood, { packGrams: prod.packGrams, servingGrams: prod.servingGrams, brand: prod.brand });
+      if (prod.knownFood) openAmount(prod.knownFood, { packGrams: prod.packGrams, servingGrams: prod.servingGrams, brand: prod.brand, onAdded: next });
       else if (prod.kcal != null) openAmount(
         { name: prod.name, kcal: prod.kcal, protein: prod.protein, carbs: prod.carbs, fat: prod.fat, fibre: prod.fibre, micros: [] },
-        { packGrams: prod.packGrams, servingGrams: prod.servingGrams, brand: prod.brand });
+        { packGrams: prod.packGrams, servingGrams: prod.servingGrams, brand: prod.brand, onAdded: next });
       else openRequest(prod.name, { barcode: code, brand: prod.brand });   // keine Nährwerte → Vorschlag
     }
 
@@ -771,6 +911,7 @@
     };
 
     refreshDay();
+    guessMeal();   // Mahlzeit nach Tageszeit vorauswählen
   </script>
 </body>
 </html>
