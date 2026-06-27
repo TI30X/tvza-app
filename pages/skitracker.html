@@ -9,11 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
-  <script src="../theme.js"></script>
-  <link rel="stylesheet" href="../style.css" />
+  <script src="../assets/js/theme.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css" />
   <title>Ski Tracker — TVZA</title>
-  <link rel="stylesheet" href="../ui-fx.css?v=15" />
-  <script src="../ui-fx.js?v=15" defer></script>
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=15" defer></script>
 </head>
 <body>
   <div class="app">
@@ -136,12 +136,12 @@
     </main>
 
     <footer class="tvz-footer">
-      <img src="../icons/TvZ_Logo.svg" alt="TvZ" />
+      <img src="../assets/icons/TvZ_Logo.svg" alt="TvZ" />
     </footer>
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail } from '../firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail } from '../assets/js/firebase-config.js';
     import {
       doc, getDoc, collection, addDoc, onSnapshot, updateDoc,
       deleteDoc, serverTimestamp, query, orderBy
@@ -385,6 +385,4 @@
       document.getElementById('tabLog').className  = 'tab' + (tab==='log'  ? ' active' : '');
     };
   </script>
-  <script type="module" src="../notifications.js?v=1"></script>
-</body>
-</html>
+  <script type="mo

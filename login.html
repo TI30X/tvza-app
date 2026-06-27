@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
-  <script src="theme.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <script src="assets/js/theme.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
   <title>Anmelden — TVZA</title>
   <style>
     .login-wrap {
@@ -65,8 +65,8 @@
     .switch-mode a { color: var(--accent); font-weight: 700; cursor: pointer; transition: color 150ms ease; }
     .switch-mode a:hover { color: var(--accent-hover); }
   </style>
-  <link rel="stylesheet" href="ui-fx.css?v=15" />
-  <script src="ui-fx.js?v=15" defer></script>
+  <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
+  <script src="assets/js/ui-fx.js?v=15" defer></script>
 </head>
 <body>
   <span id="themeToggle" title="Theme wechseln" style="position:fixed;top:14px;right:14px;cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;padding:8px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;z-index:10">◐</span>
@@ -107,7 +107,7 @@
   </div>
 
   <script type="module">
-    import { auth, db, DEFAULT_MODULES } from './firebase-config.js';
+    import { auth, db, DEFAULT_MODULES } from './assets/js/firebase-config.js';
     import {
       signInWithEmailAndPassword, createUserWithEmailAndPassword
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';

@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
-  <script src="../theme.js"></script>
-  <link rel="stylesheet" href="../style.css" />
+  <script src="../assets/js/theme.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css" />
   <title>Planer — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px; }
@@ -119,8 +119,8 @@
       padding:10px 12px; font-size:12px; margin-bottom:12px; display:none; }
     .info-banner.show { display:block; }
   </style>
-  <link rel="stylesheet" href="../ui-fx.css?v=15" />
-  <script src="../ui-fx.js?v=15" defer></script>
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=15" defer></script>
 </head>
 <body>
   <div class="app">
@@ -264,7 +264,7 @@
   </div>
 
   <script type="module">
-    import { auth, db, app, requireAuth, wireOfflineBanner, escHtml, getProfile } from '../firebase-config.js';
+    import { auth, db, app, requireAuth, wireOfflineBanner, escHtml, getProfile } from '../assets/js/firebase-config.js';
     import {
       collection, addDoc, getDocs, getDoc, query, where, doc, updateDoc, deleteDoc,
       onSnapshot, serverTimestamp, arrayUnion, arrayRemove
@@ -722,6 +722,4 @@
     }
 
   </script>
-  <script type="module" src="../notifications.js?v=1"></script>
-</body>
-</html>
+  <script type="

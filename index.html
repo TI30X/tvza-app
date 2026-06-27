@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
-  <script src="theme.js?v=3"></script>
-  <link rel="stylesheet" href="style.css?v=3" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <script src="assets/js/theme.js?v=3"></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=3" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
   <title>TVZA</title>
   <style>
     .icon-btn { cursor:pointer; color:var(--ink-soft); min-width:40px; min-height:40px;
@@ -31,11 +31,11 @@
       border:1px solid var(--border); border-radius:var(--r1); background:var(--surface-2); color:var(--ink); }
     .pw-input:focus { outline:none; border-color:var(--accent); }
   </style>
-  <link rel="stylesheet" href="ui-fx.css?v=15" />
-  <script src="ui-fx.js?v=15" defer></script>
+  <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
+  <script src="assets/js/ui-fx.js?v=15" defer></script>
 </head>
 <body>
-  <script src="welcome.js?v=5"></script>
+  <script src="assets/js/welcome.js?v=5"></script>
   <div class="app">
 
     <div class="offline-banner" id="offlineBanner">
@@ -308,7 +308,7 @@
     import {
       auth, db, requireAuth, wireOfflineBanner, escHtml,
       MODULES, allowedModules, enabledModules, getProfile, sharesForEmail, sharesByOwner
-    } from './firebase-config.js';
+    } from './assets/js/firebase-config.js';
     import { signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
@@ -1169,18 +1169,4 @@
     // ── Seed Timo's default projects (once) ───────
     if (profile.isTimo === true && !profile.projectsSeeded) {
       const seed = [
-        { emoji: '🏦', name: 'Banking App', url: 'https://example.com/REPLACE-banking' },
-        { emoji: '📚', name: 'Werbeposter', url: 'https://example.com/REPLACE-werbeposter' },
-      ];
-      for (const [index, p] of seed.entries()) await addDoc(projCol, { ...p, isPublic: false, sortOrder: index, createdAt: serverTimestamp() });
-      await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true }).catch(() => {});
-    }
-
-    // ── Service worker ────────────────────────────
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
-    }
-  </script>
-  <script type="module" src="./notifications.js?v=1"></script>
-</body>
-</html>
+        { emoji: '🏦', name: 'Banking App

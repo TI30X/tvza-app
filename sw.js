@@ -1,6 +1,6 @@
-/* TVZA Service Worker v42 - offline-first */
+/* TVZA Service Worker v45 - offline-first */
 
-const CACHE = 'tvza-v42';
+const CACHE = 'tvza-v45';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -10,15 +10,15 @@ const SHELL = [
   './',
   './index.html',
   './login.html',
-  './style.css',
-  './ui-fx.css',
-  './theme.js',
-  './ui-fx.js',
-  './welcome.js',
+  './assets/css/style.css',
+  './assets/css/ui-fx.css',
+  './assets/js/theme.js',
+  './assets/js/ui-fx.js',
+  './assets/js/welcome.js',
   './manifest.json',
-  './firebase-config.js',
-  './notifications.js',
-  './foods.js',
+  './assets/js/firebase-config.js',
+  './assets/js/notifications.js',
+  './assets/js/foods.js',
   './pages/skitracker.html',
   './pages/foodtracker.html',
   './pages/watchlist.html',
@@ -27,9 +27,9 @@ const SHELL = [
   './pages/maturaarbeit.html',
   './pages/maturaarbeit-tracker.html',
   './public.html',
-  './icons/TvZ_Logo.svg',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
+  './assets/icons/TvZ_Logo.svg',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png',
   ...FIREBASE_SDK,
 ];
 
@@ -61,8 +61,4 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE).then(c => c.put(event.request, clone));
         }
         return res;
-      }).catch(() => null);
-      return cached || network;
-    })
-  );
-});
+      }).catch(() => nul

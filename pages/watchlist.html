@@ -11,11 +11,11 @@
   <link rel="preconnect" href="https://finnhub.io" crossorigin />
   <link rel="preconnect" href="https://api.coingecko.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
-  <script src="../theme.js"></script>
-  <link rel="stylesheet" href="../style.css" />
+  <script src="../assets/js/theme.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css" />
   <title>TVZA Watchlist</title>
-  <link rel="stylesheet" href="../ui-fx.css?v=15" />
-  <script src="../ui-fx.js?v=15" defer></script>
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=15" defer></script>
 
   <!-- ═══ Deep-green product skin (own identity, both themes) ═══ -->
   <style>
@@ -60,12 +60,26 @@
     .wl-refresh.spin svg { transform:rotate(360deg); }
 
     /* News */
-    .news-card { display:flex; gap:12px; padding:12px; border:1px solid var(--border); border-radius:var(--r2); background:var(--surface); margin-bottom:10px; text-decoration:none; color:inherit; transition:box-shadow .15s ease, transform .15s ease; }
-    .news-card:hover { box-shadow:var(--shadow-sm); transform:translateY(-1px); }
-    .news-thumb { width:64px; height:64px; border-radius:var(--r1); object-fit:cover; flex-shrink:0; background:var(--surface-2); }
-    .news-body { min-width:0; }
-    .news-head { font-size:14px; font-weight:700; line-height:1.3; margin-bottom:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-    .news-src { font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; }
+    .news-list { display:flex; flex-direction:column; gap:8px; }
+    .news-card { display:flex; gap:12px; align-items:center; padding:10px 12px; border:1px solid var(--border);
+      border-radius:14px; background:var(--surface); text-decoration:none; color:inherit;
+      transition:box-shadow .15s ease, transform .12s ease, border-color .15s ease; }
+    .news-card:hover { box-shadow:var(--shadow-sm); transform:translateY(-1px); border-color:var(--accent); }
+    .news-thumbwrap { position:relative; width:54px; height:54px; flex-shrink:0; }
+    .news-thumb { width:54px; height:54px; border-radius:11px; object-fit:cover; display:block; }
+    .news-ph { position:absolute; inset:0; display:grid; place-items:center; font-size:21px; border-radius:11px;
+      background:linear-gradient(135deg,#0e5c43,#19a06a); color:#fff; }
+    .news-img { position:absolute; inset:0; }
+    .news-body { min-width:0; flex:1; }
+    .news-head { font-size:13.5px; font-weight:700; line-height:1.32; display:-webkit-box; -webkit-line-clamp:2;
+      -webkit-box-orient:vertical; overflow:hidden; }
+    .news-meta { display:flex; align-items:center; gap:6px; margin-top:5px; font-size:11px; color:var(--ink-soft); }
+    .news-src { font-weight:700; text-transform:uppercase; letter-spacing:.03em; max-width:58%; overflow:hidden;
+      text-overflow:ellipsis; white-space:nowrap; }
+    .news-dot { opacity:.45; }
+    .news-tag { font-size:10px; font-weight:700; color:var(--accent); background:var(--accent-bg);
+      padding:1px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:.02em; }
+    .news-arrow { margin-left:auto; color:var(--ink-soft); opacity:.5; flex-shrink:0; }
 
     .wl-hint { font-size:13px; color:var(--ink-soft); background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r2); padding:12px 14px; margin-bottom:14px; }
     .wl-hint a { color:var(--accent); cursor:pointer; font-weight:700; }
@@ -184,8 +198,11 @@
       <div class="form-card" id="addCard">
         <p class="form-title" id="addTitle">Aktie hinzufügen</p>
         <div class="wl-add">
-          <input class="form-input" id="symInput" type="text" placeholder="z.B. AAPL" autocomplete="off" autocapitalize="characters" />
-          <button class="btn btn-primary" id="addBtn" style="white-space:nowrap">+ Hinzufügen</button>
+          <div class="ac-wrap" style="flex:1;position:relative">
+            <input class="form-input" id="symInput" type="text" placeholder="Suche: Apple, Bitcoin, SPY…" autocomplete="off" style="width:100%" />
+            <div class="ac-list" id="acList"></div>
+          </div>
+          <button class="btn btn-primary" id="addBtn" style="white-space:nowrap" title="Ersten Treffer hinzufügen">+</button>
         </div>
         <p style="font-size:11px;color:var(--ink-soft);margin:8px 2px 0" id="addHelp">Tippe das Börsenkürzel (Ticker) ein.</p>
       </div>
@@ -209,7 +226,7 @@
     </main>
 
     <footer class="tvz-footer">
-      <img src="../icons/TvZ_Logo.svg" alt="TvZ" />
+      <img src="../assets/icons/TvZ_Logo.svg" alt="TvZ" />
     </footer>
   </div>
 
@@ -255,9 +272,9 @@
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml, resolveAccess, FINNHUB_KEY } from '../firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, resolveAccess, FINNHUB_KEY } from '../assets/js/firebase-config.js';
     import {
-      collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, Timestamp
+      collection, addDoc, deleteDoc, doc, getDoc, setDoc, onSnapshot, query, orderBy, Timestamp
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     wireOfflineBanner();
@@ -284,14 +301,42 @@
 
     /* ════ Tabs ════ */
     const TYPES = {
-      stock:  { label:'Aktie',  ph:'z.B. AAPL',  help:'Tippe das Börsenkürzel (Ticker) ein.' },
-      etf:    { label:'ETF',    ph:'z.B. VWRL',  help:'Ticker des ETF eingeben (z.B. SPY, VWRL).' },
-      crypto: { label:'Krypto', ph:'z.B. Bitcoin', help:'Name oder Kürzel eingeben (z.B. Bitcoin, ETH).' },
+      stock:  { label:'Aktie',  ph:'Suche Aktie: Apple, Nestlé…',  help:'Tippe einen Namen/Kürzel und wähle aus der Liste.' },
+      etf:    { label:'ETF',    ph:'Suche ETF: SPY, World…',       help:'Tippe einen Namen/Kürzel und wähle aus der Liste.' },
+      crypto: { label:'Krypto', ph:'Suche Krypto: Bitcoin, ETH…',  help:'Tippe einen Namen/Kürzel und wähle aus der Liste.' },
     };
     let activeType = (() => { try { return localStorage.getItem('tvza-wl-tab') || 'stock'; } catch(e){ return 'stock'; } })();
     let allItems = [];
     const quotes = new Map();      // docId -> { price, dp, cur }
     const notified = new Set();    // symbols already pinged this session
+    let newsSig = '';              // signature of watched symbols → reload news on change
+
+    /* ════ Starter-Watchlist (einmalig, falls leer) ════
+       Neue Nutzer sehen sofort Beispiele, statt einer leeren Liste.
+       Wird genau einmal angelegt (meta/config.seeded) — später frei löschbar. */
+    const SEED = [
+      { type:'stock',  symbol:'^SSMI',   name:'SMI · Swiss Market Index' },
+      { type:'stock',  symbol:'MSFT',    name:'Microsoft' },
+      { type:'stock',  symbol:'AAPL',    name:'Apple' },
+      { type:'etf',    symbol:'SPY',     name:'S&P 500 ETF' },
+      { type:'etf',    symbol:'VT',      name:'Vanguard Total World' },
+      { type:'crypto', symbol:'BTC',     name:'Bitcoin',  coinId:'bitcoin' },
+      { type:'crypto', symbol:'ETH',     name:'Ethereum', coinId:'ethereum' },
+    ];
+    let seedChecked = false;
+    async function maybeSeed() {
+      if (seedChecked || readOnly || dataUid !== user.uid) return;
+      seedChecked = true;
+      const metaRef = doc(db, 'watchlist', dataUid, 'meta', 'config');
+      try {
+        const snap = await getDoc(metaRef);
+        if (snap.exists() && snap.data().seeded) return;   // schon einmal geseedet
+        if (!allItems.length) {
+          for (const d of SEED) await addDoc(itemsCol, { ...d, createdAt: Timestamp.now() });
+        }
+        await setDoc(metaRef, { seeded: true }, { merge: true });
+      } catch (e) { console.warn('seed', e); }
+    }
 
     window.wlTab = (t) => {
       activeType = t;
@@ -310,71 +355,82 @@
       allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderList();
       refreshQuotes();
+      maybeSeed();
+      const sig = allItems.map(i => i.type + ':' + i.symbol).sort().join('|');
+      if (sig !== newsSig) { newsSig = sig; loadNews(); }
     }, err => {
       console.warn(err);
       document.getElementById('listWrap').innerHTML =
         `<div class="empty-state"><p class="empty-text">Konnte Watchlist nicht laden.</p></div>`;
     });
 
-    /* ════ Add / remove ════ */
-    document.getElementById('addBtn').addEventListener('click', addCurrent);
-    document.getElementById('symInput').addEventListener('keydown', e => { if (e.key === 'Enter') addCurrent(); });
+    /* ════ Browse / search add ════
+       Statt Freitext: Live-Suche nach echten Instrumenten. Es wird nur
+       gespeichert, was ausgewählt wurde → immer ein gültiges, abrufbares Symbol. */
+    const symInput = document.getElementById('symInput');
+    const acList = document.getElementById('acList');
+    let searchTimer = null, searchSeq = 0, acResults = [];
 
-    async function addCurrent() {
-      const input = document.getElementById('symInput');
-      const raw = input.value.trim();
-      if (!raw) return;
-      const btn = document.getElementById('addBtn');
-      btn.disabled = true;
+    function hideAc() { acList.classList.remove('visible'); acList.innerHTML = ''; acResults = []; }
 
-      try {
-        let entry;
-        if (activeType === 'crypto') {
-          const found = await resolveCrypto(raw);
-          if (!found) { alert('Krypto nicht gefunden. Versuch z.B. „Bitcoin" oder „ETH".'); return; }
-          entry = { type:'crypto', symbol:(found.symbol||raw).toUpperCase(), name:found.name||'', coinId:found.id };
-        } else {
-          const symbol = raw.toUpperCase();
-          const name = await resolveStockName(symbol);
-          entry = { type:activeType, symbol, name };
-        }
-        // de-dupe within the same type
-        if (allItems.some(i => i.type === entry.type && (i.symbol||'').toUpperCase() === entry.symbol)) {
-          alert(entry.symbol + ' ist bereits in deiner Watchlist.'); return;
-        }
-        await addDoc(itemsCol, { ...entry, createdAt: Timestamp.now() });
-        input.value = '';
-      } catch (e) {
-        console.warn(e); alert('Konnte nicht hinzufügen — bitte erneut versuchen.');
-      } finally {
-        btn.disabled = false;
-      }
+    symInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const q = symInput.value.trim();
+      if (!q) { hideAc(); return; }
+      acList.innerHTML = `<div class="ac-item" style="opacity:.6">Suche…</div>`;
+      acList.classList.add('visible');
+      searchTimer = setTimeout(() => runSearch(q), 250);
+    });
+    symInput.addEventListener('keydown', e => { if (e.key === 'Enter' && acResults[0]) { e.preventDefault(); addEntry(acResults[0]); } });
+    symInput.addEventListener('blur', () => setTimeout(hideAc, 180));
+    document.getElementById('addBtn').addEventListener('click', () => { if (acResults[0]) addEntry(acResults[0]); else symInput.focus(); });
+
+    async function runSearch(q) {
+      const seq = ++searchSeq;
+      let results = [];
+      try { results = activeType === 'crypto' ? await searchCrypto(q) : await searchStocks(q); }
+      catch (e) { console.warn(e); }
+      if (seq !== searchSeq) return;          // veraltete Antwort verwerfen
+      acResults = results;
+      renderAc(results);
+    }
+
+    function renderAc(results) {
+      acList.classList.add('visible');
+      if (!results.length) { acList.innerHTML = `<div class="ac-item" style="opacity:.6">Keine Treffer</div>`; return; }
+      acList.innerHTML = results.map((r, i) =>
+        `<div class="ac-item" data-idx="${i}"><strong>${escHtml(r.symbol)}</strong> <small>${escHtml(r.name || '')}</small></div>`).join('');
+      acList.querySelectorAll('.ac-item[data-idx]').forEach(el =>
+        el.addEventListener('mousedown', e => { e.preventDefault(); addEntry(results[+el.dataset.idx]); }));
+    }
+
+    async function searchStocks(q) {
+      const r = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(q)}&token=${getKey()}`);
+      if (!r.ok) return [];
+      const j = await r.json();
+      return (j.result || []).slice(0, 12)
+        .map(x => ({ type: activeType, symbol: x.symbol, name: x.description || '' }));
+    }
+
+    async function searchCrypto(q) {
+      const r = await fetch('https://api.coingecko.com/api/v3/search?query=' + encodeURIComponent(q));
+      if (!r.ok) return [];
+      const j = await r.json();
+      return (j.coins || []).slice(0, 12)
+        .map(c => ({ type: 'crypto', symbol: (c.symbol || '').toUpperCase(), name: c.name || '', coinId: c.id }));
+    }
+
+    async function addEntry(entry) {
+      if (!entry || !entry.symbol) return;
+      const dup = allItems.some(i => i.type === entry.type && (i.symbol || '').toUpperCase() === entry.symbol.toUpperCase());
+      symInput.value = ''; hideAc();
+      if (dup) return;
+      try { await addDoc(itemsCol, { ...entry, createdAt: Timestamp.now() }); }
+      catch (e) { console.warn(e); alert('Konnte nicht hinzufügen — bitte erneut versuchen.'); }
     }
 
     function removeItem(id) {
       if (confirm('Aus der Watchlist entfernen?')) deleteDoc(doc(itemsCol, id)).catch(console.warn);
-    }
-
-    /* ════ Symbol resolution ════ */
-    async function resolveCrypto(qStr) {
-      try {
-        const r = await fetch('https://api.coingecko.com/api/v3/search?query=' + encodeURIComponent(qStr));
-        if (!r.ok) return null;
-        const j = await r.json();
-        const c = (j.coins || [])[0];
-        return c ? { id:c.id, symbol:c.symbol, name:c.name } : null;
-      } catch (e) { console.warn(e); return null; }
-    }
-    async function resolveStockName(symbol) {
-      const key = getKey();
-      if (!key) return '';
-      try {
-        const r = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(symbol)}&token=${key}`);
-        if (!r.ok) return '';
-        const j = await r.json();
-        const hit = (j.result || []).find(x => (x.symbol||'').toUpperCase() === symbol) || (j.result || [])[0];
-        return hit ? (hit.description || '') : '';
-      } catch (e) { return ''; }
     }
 
     /* ════ Quotes ════ */
@@ -474,27 +530,54 @@
     }
 
     /* ════ Market news (Finnhub) ════ */
+    function newsTime(sec) {
+      if (!sec) return '';
+      const h = Math.floor((Date.now() - sec * 1000) / 3600000);
+      if (h < 1) return 'gerade eben';
+      if (h < 24) return `vor ${h} Std`;
+      const d = Math.floor(h / 24);
+      if (d < 7) return `vor ${d} Tag${d > 1 ? 'en' : ''}`;
+      return new Date(sec * 1000).toLocaleDateString('de-CH', { day:'numeric', month:'short' });
+    }
     async function loadNews() {
       const wrap = document.getElementById('newsWrap');
       const key = getKey();
-      if (!key) {
-        wrap.innerHTML = `<div class="wl-hint">Markt-News erscheinen, sobald ein <a id="openSetFromNews">Finnhub-Key hinterlegt →</a> ist.</div>`;
-        document.getElementById('openSetFromNews')?.addEventListener('click', openSettings);
-        return;
-      }
       try {
-        const r = await fetch(`https://finnhub.io/api/v1/news?category=general&token=${key}`);
-        if (!r.ok) throw new Error('news ' + r.status);
-        const data = (await r.json()).slice(0, 12);
-        if (!data.length) { wrap.innerHTML = `<p style="color:var(--ink-soft);font-size:13px">Keine News verfügbar.</p>`; return; }
-        wrap.innerHTML = data.map(n => `
+        const stockSyms = [...new Set(allItems.filter(i => i.type !== 'crypto').map(i => i.symbol))].slice(0, 6);
+        const hasCrypto = allItems.some(i => i.type === 'crypto');
+        if (!stockSyms.length && !hasCrypto) {
+          wrap.innerHTML = `<p style="color:var(--ink-soft);font-size:13px">Füge Aktien oder Krypto hinzu — dann erscheinen hier passende Markt-News.</p>`;
+          return;
+        }
+        const fmt = d => d.toISOString().slice(0, 10);
+        const to = new Date(), from = new Date(Date.now() - 7 * 86400000);
+        // Firmen-News je beobachtetem Wert → garantiert marktrelevant
+        const calls = stockSyms.map(s =>
+          fetch(`https://finnhub.io/api/v1/company-news?symbol=${encodeURIComponent(s)}&from=${fmt(from)}&to=${fmt(to)}&token=${key}`)
+            .then(r => r.ok ? r.json() : []).then(a => (a || []).map(n => ({ ...n, _sym: s }))).catch(() => []));
+        if (hasCrypto) calls.push(
+          fetch(`https://finnhub.io/api/v1/news?category=crypto&token=${key}`)
+            .then(r => r.ok ? r.json() : []).then(a => (a || []).slice(0, 12).map(n => ({ ...n, _sym: 'Krypto' }))).catch(() => []));
+
+        let arts = (await Promise.all(calls)).flat().filter(n => n.headline && n.url);
+        const seen = new Set();
+        arts = arts.filter(n => { const k = n.url || n.id; if (seen.has(k)) return false; seen.add(k); return true; });
+        arts.sort((a, b) => (b.datetime || 0) - (a.datetime || 0));
+        arts = arts.slice(0, 12);
+        if (!arts.length) { wrap.innerHTML = `<p style="color:var(--ink-soft);font-size:13px">Aktuell keine News zu deinen Werten.</p>`; return; }
+
+        wrap.innerHTML = `<div class="news-list">` + arts.map(n => `
           <a class="news-card" href="${escHtml(n.url)}" target="_blank" rel="noopener">
-            ${n.image ? `<img class="news-thumb" src="${escHtml(n.image)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
-            <div class="news-body">
-              <div class="news-head">${escHtml(n.headline || '')}</div>
-              <div class="news-src">${escHtml(n.source || '')} · ${new Date((n.datetime||0)*1000).toLocaleDateString('de-CH',{day:'numeric',month:'short'})}</div>
-            </div>
-          </a>`).join('');
+            <span class="news-thumbwrap">
+              <span class="news-ph">📰</span>
+              ${n.image ? `<img class="news-thumb news-img" src="${escHtml(n.image)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+            </span>
+            <span class="news-body">
+              <span class="news-head">${escHtml(n.headline)}</span>
+              <span class="news-meta">${n._sym ? `<span class="news-tag">${escHtml(n._sym)}</span>` : ''}<span class="news-src">${escHtml(n.source || 'News')}</span><span class="news-dot">•</span><span>${newsTime(n.datetime)}</span></span>
+            </span>
+            <svg class="news-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+          </a>`).join('') + `</div>`;
       } catch (e) {
         console.warn(e);
         wrap.innerHTML = `<p style="color:var(--ink-soft);font-size:13px">News konnten nicht geladen werden.</p>`;
@@ -513,7 +596,7 @@
           try {
             new Notification(`${i.symbol} ${dir} ${Math.abs(q.dp).toFixed(1)}%`, {
               body: `Aktueller Kurs: ${fmtPrice(q.price, q.cur)}`,
-              icon: '../icon-192.png', tag: 'wl-' + i.symbol
+              icon: '../assets/icons/icon-192.png', tag: 'wl-' + i.symbol
             });
           } catch (e) {}
         }
@@ -540,7 +623,7 @@
       const nb = document.getElementById('notifyBtn');
       if (p === 'granted') {
         nb.textContent = '🔔 Benachrichtigungen aktiv'; nb.disabled = true;
-        try { new Notification('TVZA Watchlist', { body: 'Benachrichtigungen sind aktiv.', icon:'../icon-192.png' }); } catch(e){}
+        try { new Notification('TVZA Watchlist', { body: 'Benachrichtigungen sind aktiv.', icon:'../assets/icons/icon-192.png' }); } catch(e){}
       }
     });
     document.getElementById('wlSetSave').addEventListener('click', () => {
@@ -563,6 +646,6 @@
     renderKeyHint();
     loadNews();
   </script>
-  <script type="module" src="../notifications.js?v=1"></script>
+  <script type="module" src="../assets/js/notifications.js?v=1"></script>
 </body>
 </html>
