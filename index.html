@@ -1166,7 +1166,20 @@
     }
     syncPublicFeed();
 
-    // ── Seed Timo's default projects (once) ───────
+    // Seed Timo's default projects once.
     if (profile.isTimo === true && !profile.projectsSeeded) {
       const seed = [
-        { emoji: '🏦', name: 'Banking App
+        { emoji: '\u{1F3E6}', name: 'Banking App', url: 'https://example.com/REPLACE-banking' },
+        { emoji: '\u{1F4DA}', name: 'Werbeposter', url: 'https://example.com/REPLACE-werbeposter' },
+      ];
+      for (const [index, p] of seed.entries()) await addDoc(projCol, { ...p, isPublic: false, sortOrder: index, createdAt: serverTimestamp() });
+      await updateDoc(doc(db, 'users', user.uid), { projectsSeeded: true }).catch(() => {});
+    }
+
+    // Service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
+    }
+  </script>
+</body>
+</html>
