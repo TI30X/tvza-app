@@ -94,6 +94,13 @@
             </a>
           </div>
 
+          <div class="module-tile" data-tracker-tile="watch">
+            <a href="pages/watchlist.html" class="card card--watch" id="cardWatch" draggable="false" style="display:none">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+            <div class="card-content"><h3>TVZA Watchlist</h3><p>Kurse, Märkte &amp; News</p></div>
+            </a>
+          </div>
+
           <div class="module-tile" data-tracker-tile="trip">
             <a href="pages/planner.html" class="card card--trip" id="cardTrip" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
@@ -331,7 +338,7 @@
     let appUsers = [];
     let appUsersLoaded = false;
     const overviewSectionDefaults = ['tracker', 'shared', 'projects', 'public'];
-    const trackerTileDefaults = ['ski', 'food', 'trip', 'matura', 'maturatracker'];
+    const trackerTileDefaults = ['ski', 'food', 'watch', 'trip', 'matura', 'maturatracker'];
 
     function storedOrder(key, defaults) {
       try {
@@ -405,11 +412,12 @@
       const mods = enabledModules(profile);
       setTrackerTile('ski', mods.ski);
       setTrackerTile('food', mods.food);
+      setTrackerTile('watch', mods.watch);
       setTrackerTile('trip', mods.trip);
       setTrackerTile('matura', mods.matura);
       setTrackerTile('maturatracker', mods.maturatracker);
       document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
-      const anyTracker = mods.ski || mods.food || mods.trip || mods.matura || mods.maturatracker;
+      const anyTracker = mods.ski || mods.food || mods.watch || mods.trip || mods.matura || mods.maturatracker;
       document.getElementById('noModulesHint').style.display = anyTracker ? 'none' : '';
       applyTrackerTileOrder();
       applyOverviewLayout();
@@ -1173,5 +1181,6 @@
       window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
     }
   </script>
+  <script type="module" src="./notifications.js?v=1"></script>
 </body>
 </html>

@@ -21,6 +21,12 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 
+// Geteilter Finnhub-Key für die Watchlist (Aktien/ETF-Kurse + Markt-News).
+// Eine kostenlose Lizenz für die ganze Familie — niemand muss sich selbst
+// registrieren. Wer will, kann im ⚙️ der Watchlist einen eigenen Key
+// hinterlegen (überschreibt diesen lokal). Gratis-Limit: 60 Abfragen/Minute.
+export const FINNHUB_KEY = 'd902hchr01qk8bfiar80d902hchr01qk8bfiar8g';
+
 // Firestore with offline persistence (modern API)
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
@@ -66,14 +72,16 @@ export function escHtml(str) {
 export const MODULES = {
   ski:  { key:'ski',  name:'Ski Tracker',    sub:'Schliff & Wachs',        emoji:'🎿', page:'pages/skitracker.html',  perUser:true,  shareable:true  },
   food: { key:'food', name:'Food Tracker',   sub:'Kalorien & Nährstoffe',  emoji:'🍎', page:'pages/foodtracker.html', perUser:true,  shareable:true  },
+  watch:{ key:'watch',name:'TVZA Watchlist', sub:'Kurse, Märkte & News',   emoji:'📈', page:'pages/watchlist.html',  perUser:true,  shareable:true  },
   trip: { key:'trip', name:'Planner',         sub:'Plan trips together',    emoji:'🗓️', page:'pages/planner.html',    perUser:false, shareable:false },
   matura: { key:'matura', name:'Maturaarbeit', sub:'Status & Fortschritt', emoji:'📊', page:'pages/maturaarbeit.html', perUser:false, shareable:false },
   maturatracker: { key:'maturatracker', name:'Maturaarbeit-Tracker', sub:'To-dos & Countdown', emoji:'🧵', page:'pages/maturaarbeit-tracker.html', perUser:true, shareable:false },
   publicProjects: { key:'publicProjects', name:'Öffentliche Projekte', sub:'Von allen geteilt', emoji:'🌐', perUser:false, shareable:false },
 };
 
-// Neue Nutzer starten schlank; weitere Module schaltet ein Admin frei.
-export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:true, publicProjects:false };
+// Neue Nutzer starten schlank: nur Familien-Planer, Watchlist und Food sind
+// standardmässig an — alles andere muss angefragt / vom Admin freigeschaltet werden.
+export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:false, publicProjects:false, watch:true };
 export const ALL_MODULES = Object.fromEntries(Object.keys(MODULES).map(key => [key, true]));
 
 export async function getProfile(user) {

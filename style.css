@@ -27,16 +27,19 @@
   --tint-food:   oklch(0.94 0.03 145);
   --tint-trip:   oklch(0.94 0.03 60);
   --tint-matura: oklch(0.94 0.03 300);
+  --tint-watch:  oklch(0.93 0.035 165);
 
   /* Stronger tracker hues (text, borders, fills) */
   --ski:    oklch(0.50 0.09 240);
   --food:   oklch(0.50 0.09 145);
   --trip:   oklch(0.55 0.10 60);
   --matura: oklch(0.50 0.09 300);
+  --watch:  oklch(0.42 0.09 165);
   --ski-deep:  oklch(0.40 0.08 240);
   --food-deep: oklch(0.40 0.08 145);
   --trip-deep: oklch(0.45 0.09 60);
   --matura-deep: oklch(0.45 0.12 300);
+  --watch-deep: oklch(0.34 0.08 165);
 
   /* Space scale */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
@@ -92,10 +95,12 @@
   --tint-food:   oklch(0.30 0.04 145);
   --tint-trip:   oklch(0.31 0.045 60);
   --tint-matura: oklch(0.30 0.04 300);
+  --tint-watch:  oklch(0.30 0.045 165);
   --ski-deep:  oklch(0.78 0.07 240);
   --food-deep: oklch(0.78 0.08 145);
   --trip-deep: oklch(0.80 0.09 60);
   --matura-deep: oklch(0.80 0.09 300);
+  --watch-deep: oklch(0.80 0.09 165);
   --text-faint: oklch(0.58 0.01 250);
 }
 
@@ -243,6 +248,7 @@ button, input, select, textarea { font-family: inherit; }
 .accent-bar--food   { background: var(--tint-food); }
 .accent-bar--trip   { background: var(--tint-trip); }
 .accent-bar--matura { background: var(--tint-matura); }
+.accent-bar--watch  { background: var(--tint-watch); }
 
 /* ─── Back button & page title ─── */
 .back-btn {
@@ -440,6 +446,7 @@ button, input, select, textarea { font-family: inherit; }
 
 .card--ski:hover,
 .card--food:hover,
+.card--watch:hover,
 .card--trip:hover { box-shadow: var(--shadow-md); }
 
 .card-icon {
@@ -458,6 +465,7 @@ button, input, select, textarea { font-family: inherit; }
 .card--food   .card-icon { background: var(--tint-food); color: var(--food-deep); }
 .card--trip   .card-icon { background: var(--tint-trip); color: var(--trip-deep); }
 .card--matura .card-icon { background: var(--tint-matura); color: var(--matura-deep); }
+.card--watch  .card-icon { background: var(--tint-watch); color: var(--watch-deep); }
 
 .card-content h3 { font-size: var(--text-base); font-weight: 700; }
 .card-content p  { font-size: var(--text-sm); color: var(--ink-soft); margin-top: 2px; }

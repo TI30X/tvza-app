@@ -250,7 +250,7 @@
     import { searchFoods, findFood, registerFoods, defaultServing } from '../foods.js';
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
-      deleteDoc, serverTimestamp, query, where, orderBy, getDocs
+      deleteDoc, serverTimestamp, Timestamp, query, where, orderBy, getDocs
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     wireOfflineBanner();
@@ -565,7 +565,7 @@
       };
       try {
         if (editing) { await updateDoc(doc(entriesCol, editing.id), payload); toast('Aktualisiert ✓'); }
-        else { payload.createdAt = serverTimestamp(); await addDoc(entriesCol, payload); toast('Gespeichert ✓'); }
+        else { payload.createdAt = Timestamp.now(); await addDoc(entriesCol, payload); toast('Gespeichert ✓'); }
       } catch (e) { alert('Speichern fehlgeschlagen — bitte nochmal versuchen.'); return false; }
       resetForm();
       return true;
@@ -913,5 +913,6 @@
     refreshDay();
     guessMeal();   // Mahlzeit nach Tageszeit vorauswählen
   </script>
+  <script type="module" src="../notifications.js?v=1"></script>
 </body>
 </html>
