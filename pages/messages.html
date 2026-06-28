@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#5a3aa6" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%235a3aa6'/><path d='M7 8h18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H13l-5 4v-4H7a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z' fill='white'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
+  <script src="../assets/js/theme.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <title>Nachrichten — TVZA</title>
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=15" defer></script>
+
+  <style>
+    body.dm { --accent:#6b46c1; --accent-hover:#5a3aa6; --accent-bg:rgba(107,70,193,.14); }
+    html[data-theme="dark"] body.dm { --accent:#b9a4ec; --accent-hover:#ccbdf2; --accent-bg:rgba(107,70,193,.26); }
+    .dm .accent-bar--dm { background:linear-gradient(90deg,#3c2a73,#6b46c1 55%,#9a7fe6); height:4px; }
+    .dm .main { display:flex; flex-direction:column; gap:12px; }
+
+    /* conversation list */
+    .dm-newbtn { display:flex; align-items:center; justify-content:center; gap:8px; }
+    .dm-list { display:flex; flex-direction:column; gap:8px; }
+    .dm-conv { display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:11px; align-items:center;
+      border:1px solid var(--border); background:var(--surface); border-radius:var(--r2); padding:11px 13px; cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; text-align:left; width:100%; font:inherit; color:inherit; }
+    .dm-conv:hover { transform:translateX(2px); box-shadow:var(--shadow-sm); border-color:var(--accent); }
+    .dm-ava { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:16px;
+      background:var(--accent-bg); color:var(--accent); }
+    .dm-conv-main { min-width:0; }
+    .dm-conv-name { font-weight:700; font-size:14.5px; display:flex; align-items:center; gap:7px; }
+    .dm-conv-last { color:var(--ink-soft); font-size:12.5px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .dm-conv-meta { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+    .dm-time { color:var(--ink-soft); font-size:11px; white-space:nowrap; }
+    .dm-badge { min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:var(--accent); color:#fff;
+      font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+    .dm-empty { border:1px dashed var(--border); border-radius:var(--r2); padding:22px 16px; text-align:center; color:var(--ink-soft); font-size:13px; }
+
+    /* thread */
+    #threadView { display:none; flex-direction:column; gap:0; }
+    .dm-thread-head { display:flex; align-items:center; gap:10px; padding:4px 2px 10px; }
+    .dm-thread-head .dm-ava { width:36px; height:36px; font-size:14px; }
+    .dm-thread-name { font-weight:700; font-size:16px; }
+    .dm-thread-back { background:none; border:0; cursor:pointer; color:var(--accent); font:inherit; font-weight:700;
+      display:inline-flex; align-items:center; gap:4px; padding:6px 4px; }
+    .dm-msgs { display:flex; flex-direction:column; gap:7px; padding:12px 2px; min-height:50vh; max-height:62vh; overflow-y:auto; }
+    .dm-day-sep { align-self:center; font-size:11px; color:var(--ink-soft); background:var(--surface-2); border:1px solid var(--border);
+      border-radius:999px; padding:2px 11px; margin:8px 0 2px; }
+    .dm-bubble { max-width:80%; padding:8px 12px; border-radius:16px; font-size:14px; line-height:1.4; word-wrap:break-word; white-space:pre-wrap; position:relative; }
+    .dm-bubble .b-time { display:block; font-size:10px; opacity:.65; margin-top:3px; text-align:right; }
+    .dm-bubble.me { align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:5px; }
+    .dm-bubble.them { align-self:flex-start; background:var(--surface-2); color:var(--ink); border:1px solid var(--border); border-bottom-left-radius:5px; }
+    .dm-compose { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:end; padding-top:10px; border-top:1px solid var(--border); }
+    .dm-compose textarea { width:100%; resize:none; font:inherit; font-size:15px; padding:11px 12px; border:1px solid var(--border);
+      border-radius:14px; background:var(--surface-2); color:var(--ink); max-height:120px; min-height:44px; line-height:1.35; }
+    .dm-compose textarea:focus { outline:none; border-color:var(--accent); }
+    .dm-send { min-width:46px; min-height:46px; border-radius:50%; border:0; background:var(--accent); color:#fff; cursor:pointer;
+      display:grid; place-items:center; transition:filter .15s ease, transform .1s ease; }
+    .dm-send:hover { filter:brightness(1.06); } .dm-send:active { transform:scale(.95); }
+    .dm-send:disabled { opacity:.4; cursor:default; }
+
+    /* user picker modal */
+    .dm-userlist { display:flex; flex-direction:column; gap:6px; max-height:50vh; overflow-y:auto; margin-top:4px; }
+    .dm-user { display:flex; align-items:center; gap:11px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--r1);
+      background:var(--surface); cursor:pointer; font:inherit; color:inherit; text-align:left; width:100%; }
+    .dm-user:hover { border-color:var(--accent); background:var(--accent-bg); }
+    .dm-user small { display:block; color:var(--ink-soft); font-size:11.5px; }
+  </style>
+</head>
+<body class="dm">
+
+  <div class="app">
+    <div class="offline-banner" id="offlineBanner">✈️ Offline – Nachrichten werden gesendet, sobald du wieder online bist</div>
+
+    <header class="header">
+      <div class="header-inner" style="position:relative;">
+        <a href="../index.html" class="back-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="15 18 9 12 15 6"/></svg>
+          Zurück
+        </a>
+        <span class="page-title">Nachrichten</span>
+        <span style="margin-left:auto;cursor:pointer;color:var(--ink-soft);font-size:18px;min-width:40px;min-height:44px;display:inline-flex;align-items:center;justify-content:center" id="themeToggle" title="Theme wechseln">◐</span>
+      </div>
+    </header>
+    <div class="accent-bar accent-bar--dm"></div>
+
+    <main class="main">
+
+      <!-- LIST VIEW -->
+      <div id="listView">
+        <button class="btn btn-primary btn-block dm-newbtn" id="newChatBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neue Unterhaltung
+        </button>
+        <div id="convList" class="dm-list" style="margin-top:12px"><div class="spinner">Lade…</div></div>
+      </div>
+
+      <!-- THREAD VIEW -->
+      <div id="threadView">
+        <div class="dm-thread-head">
+          <button class="dm-thread-back" id="threadBack">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="dm-ava" id="threadAva">?</div>
+          <div class="dm-thread-name" id="threadName">…</div>
+        </div>
+        <div class="dm-msgs" id="msgs"></div>
+        <div class="dm-compose">
+          <textarea id="msgInput" rows="1" placeholder="Nachricht schreiben…" maxlength="2000"></textarea>
+          <button class="dm-send" id="sendBtn" title="Senden" disabled>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="tvz-footer">
+      <img src="../assets/icons/TvZ_Logo.svg" alt="TvZ" />
+    </footer>
+  </div>
+
+  <!-- New-chat user picker -->
+  <div class="modal-backdrop" id="userModal">
+    <div class="modal">
+      <div class="modal-title">Wem schreiben?</div>
+      <input class="form-input" id="userSearch" type="text" placeholder="Name oder E-Mail suchen…" autocomplete="off" />
+      <div class="dm-userlist" id="userList"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="userCancel">Schliessen</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, requireAuth, wireOfflineBanner, escHtml, getProfile } from '../assets/js/firebase-config.js';
+    import {
+      collection, doc, addDoc, setDoc, updateDoc, getDocs, onSnapshot,
+      query, orderBy, where, serverTimestamp, increment
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    wireOfflineBanner();
+    const user = await requireAuth('../login.html');
+    const me = user.uid;
+    const profile = await getProfile(user);
+    const myName = profile.displayName || user.email || 'Ich';
+
+    const $ = id => document.getElementById(id);
+    const convId = (a, b) => [a, b].sort().join('__');
+    const initials = n => (n || '?').trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase() || '?';
+    const otherOf = data => (data.participants || []).find(u => u !== me);
+
+    /* ── time helpers ── */
+    const toDate = ts => ts && typeof ts.toDate === 'function' ? ts.toDate() : (ts instanceof Date ? ts : null);
+    function relTime(ts) {
+      const d = toDate(ts); if (!d) return '';
+      const diff = (Date.now() - d.getTime()) / 1000;
+      if (diff < 60) return 'jetzt';
+      if (diff < 3600) return Math.floor(diff/60) + ' Min';
+      const today = new Date(); today.setHours(0,0,0,0);
+      if (d >= today) return d.toLocaleTimeString('de-CH', { hour:'2-digit', minute:'2-digit' });
+      const yest = new Date(today); yest.setDate(yest.getDate()-1);
+      if (d >= yest) return 'Gestern';
+      return d.toLocaleDateString('de-CH', { day:'numeric', month:'short' });
+    }
+    const clockTime = ts => { const d = toDate(ts); return d ? d.toLocaleTimeString('de-CH', { hour:'2-digit', minute:'2-digit' }) : ''; };
+    const dayKey = ts => { const d = toDate(ts); return d ? d.toLocaleDateString('de-CH', { weekday:'long', day:'numeric', month:'long' }) : ''; };
+
+    /* ════ Conversation list (live) ════ */
+    let convs = [];
+    onSnapshot(query(collection(db, 'dms'), where('participants', 'array-contains', me)), snap => {
+      convs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (toDate(b.lastAt)?.getTime() || 0) - (toDate(a.lastAt)?.getTime() || 0));
+      renderConvList();
+    }, err => {
+      console.warn(err);
+      $('convList').innerHTML = `<div class="dm-empty">Unterhaltungen konnten nicht geladen werden.</div>`;
+    });
+
+    function renderConvList() {
+      const wrap = $('convList');
+      if (!convs.length) {
+        wrap.innerHTML = `<div class="dm-empty">Noch keine Unterhaltungen.<br>Tippe oben auf „Neue Unterhaltung", um jemandem zu schreiben.</div>`;
+        return;
+      }
+      wrap.innerHTML = convs.map(c => {
+        const other = otherOf(c);
+        const name = (c.participantNames && c.participantNames[other]) || 'Unbekannt';
+        const unread = (c.unread && c.unread[me]) || 0;
+        const preview = (c.lastSender === me ? 'Du: ' : '') + (c.lastMessage || '');
+        return `<button class="dm-conv" data-other="${escHtml(other)}" data-name="${escHtml(name)}">
+          <span class="dm-ava">${escHtml(initials(name))}</span>
+          <span class="dm-conv-main">
+            <span class="dm-conv-name">${escHtml(name)}</span>
+            <span class="dm-conv-last">${escHtml(preview) || '—'}</span>
+          </span>
+          <span class="dm-conv-meta">
+            <span class="dm-time">${relTime(c.lastAt)}</span>
+            ${unread ? `<span class="dm-badge">${unread > 99 ? '99+' : unread}</span>` : ''}
+          </span>
+        </button>`;
+      }).join('');
+      wrap.querySelectorAll('.dm-conv').forEach(b =>
+        b.addEventListener('click', () => openThread(b.dataset.other, b.dataset.name)));
+    }
+
+    /* ════ Thread (live) ════ */
+    let activeOther = null, activeName = '', msgUnsub = null;
+    function openThread(other, name) {
+      activeOther = other; activeName = name;
+      $('threadName').textContent = name;
+      $('threadAva').textContent = initials(name);
+      $('listView').style.display = 'none';
+      $('threadView').style.display = 'flex';
+      $('msgs').innerHTML = `<div class="spinner">Lade…</div>`;
+      try { history.pushState({ thread: true }, ''); } catch(e){}
+
+      const cid = convId(me, other);
+      // mark read (no-op if conversation doc doesn't exist yet)
+      updateDoc(doc(db, 'dms', cid), { ['unread.' + me]: 0, ['lastRead.' + me]: serverTimestamp() }).catch(() => {});
+
+      if (msgUnsub) msgUnsub();
+      msgUnsub = onSnapshot(query(collection(db, 'dms', cid, 'messages'), orderBy('createdAt', 'asc')), snap => {
+        renderMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        // keep marking read while the thread is open
+        if (!document.hidden) updateDoc(doc(db, 'dms', cid), { ['unread.' + me]: 0 }).catch(() => {});
+      }, err => {
+        console.warn(err);
+        $('msgs').innerHTML = `<div class="dm-empty">Nachrichten konnten nicht geladen werden.</div>`;
+      });
+      setTimeout(() => $('msgInput').focus(), 60);
+    }
+    function closeThread() {
+      if (msgUnsub) { msgUnsub(); msgUnsub = null; }
+      activeOther = null;
+      $('threadView').style.display = 'none';
+      $('listView').style.display = '';
+    }
+    $('threadBack').addEventListener('click', () => { if (history.state?.thread) history.back(); else closeThread(); });
+    window.addEventListener('popstate', () => { if ($('threadView').style.display !== 'none') closeThread(); });
+
+    function renderMessages(list) {
+      const box = $('msgs');
+      if (!list.length) { box.innerHTML = `<div class="dm-empty" style="border:0">Sag Hallo 👋</div>`; return; }
+      let html = '', lastDay = '';
+      for (const m of list) {
+        const dk = dayKey(m.createdAt);
+        if (dk && dk !== lastDay) { html += `<div class="dm-day-sep">${escHtml(dk)}</div>`; lastDay = dk; }
+        const mine = m.sender === me;
+        html += `<div class="dm-bubble ${mine ? 'me' : 'them'}">${escHtml(m.text)}<span class="b-time">${clockTime(m.createdAt)}</span></div>`;
+      }
+      box.innerHTML = html;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    /* ════ Compose / send ════ */
+    const input = $('msgInput'), sendBtn = $('sendBtn');
+    function autoSize() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
+    input.addEventListener('input', () => { autoSize(); sendBtn.disabled = !input.value.trim(); });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+    sendBtn.addEventListener('click', send);
+
+    let sending = false;
+    async function send() {
+      const text = input.value.trim();
+      if (!text || !activeOther || sending) return;
+      sending = true; sendBtn.disabled = true;
+      const other = activeOther;
+      const cid = convId(me, other);
+      input.value = ''; autoSize();
+      try {
+        const convRef = doc(db, 'dms', cid);
+        await setDoc(convRef, {
+          participants: [me, other].sort(),
+          participantNames: { [me]: myName, [other]: activeName },
+          lastMessage: text.slice(0, 140),
+          lastAt: serverTimestamp(),
+          lastSender: me,
+          unread: { [other]: increment(1), [me]: 0 }
+        }, { merge: true });
+        await addDoc(collection(convRef, 'messages'), { text, sender: me, createdAt: serverTimestamp() });
+      } catch (e) {
+        console.warn(e);
+        alert('Nachricht konnte nicht gesendet werden.');
+        input.value = text; autoSize();
+      } finally {
+        sending = false; sendBtn.disabled = !input.value.trim(); input.focus();
+      }
+    }
+
+    /* ════ New-chat user picker ════ */
+    const userModal = $('userModal');
+    let allUsers = [];
+    async function loadUsers() {
+      if (allUsers.length) return allUsers;
+      try {
+        const qs = await getDocs(collection(db, 'users'));
+        allUsers = qs.docs.map(d => ({ uid: d.id, ...d.data() }))
+          .filter(u => u.uid !== me)
+          .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+      } catch (e) { console.warn(e); allUsers = []; }
+      return allUsers;
+    }
+    function renderUsers(filter = '') {
+      const f = filter.toLowerCase();
+      const list = allUsers.filter(u =>
+        (u.displayName || '').toLowerCase().includes(f) || (u.email || '').toLowerCase().includes(f));
+      const box = $('userList');
+      if (!list.length) { box.innerHTML = `<div class="dm-empty" style="border:0">Keine Personen gefunden.</div>`; return; }
+      box.innerHTML = list.map(u => `
+        <button class="dm-user" data-uid="${escHtml(u.uid)}" data-name="${escHtml(u.displayName || u.email || 'Unbekannt')}">
+          <span class="dm-ava" style="width:36px;height:36px;font-size:13px">${escHtml(initials(u.displayName || u.email))}</span>
+          <span><span style="font-weight:700">${escHtml(u.displayName || 'Ohne Name')}</span><small>${escHtml(u.email || '')}</small></span>
+        </button>`).join('');
+      box.querySelectorAll('.dm-user').forEach(b => b.addEventListener('click', () => {
+        userModal.classList.remove('visible');
+        openThread(b.dataset.uid, b.dataset.name);
+      }));
+    }
+    $('newChatBtn').addEventListener('click', async () => {
+      userModal.classList.add('visible');
+      $('userList').innerHTML = `<div class="spinner">Lade…</div>`;
+      $('userSearch').value = '';
+      await loadUsers();
+      renderUsers();
+      setTimeout(() => $('userSearch').focus(), 60);
+    });
+    $('userSearch').addEventListener('input', () => renderUsers($('userSearch').value.trim()));
+    $('userCancel').addEventListener('click', () => userModal.classList.remove('visible'));
+    userModal.addEventListener('click', e => { if (e.target === userModal) userModal.classList.remove('visible'); });
+
+    /* ════ Deep link: messages.html?to=<uid> ════ */
+    const toUid = new URLSearchParams(location.search).get('to');
+    if (toUid && toUid !== me) {
+      const us = await loadUsers();
+      const u = us.find(x => x.uid === toUid);
+      if (u) openThread(u.uid, u.displayName || u.email || 'Unbekannt');
+    }
+  </script>
+  <script type="module" src="../assets/js/notifications.js?v=1"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
-/* TVZA Service Worker v48 - offline-first */
+/* TVZA Service Worker v49 - offline-first */
 
-const CACHE = 'tvza-v48';
+const CACHE = 'tvza-v49';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -23,6 +23,7 @@ const SHELL = [
   './pages/foodtracker.html',
   './pages/watchlist.html',
   './pages/weather.html',
+  './pages/messages.html',
   './pages/planner.html',
   './pages/planner-trips.html',
   './pages/maturaarbeit.html',

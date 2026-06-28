@@ -25,8 +25,11 @@
 - `foodRequests/{id}` — Vorschläge von Nutzern für fehlende Lebensmittel
   (`name, note, barcode, brand, kcal…, requestedByEmail, status, createdAt`).
   Admin gibt sie in ⚙️ Einstellungen → „Admin · Food-Anfragen" frei (→ `customFoods`) oder lehnt ab.
-  Beides löscht die Anfrage. Beide Sammlungen sind durch die `match /{document=**}`-Regel
-  bereits abgedeckt — keine Regeländerung nötig.
+  Beides löscht die Anfrage.
+- `dms/{convId}` — **Direktnachrichten (privat, nur die zwei Teilnehmer).** `convId = "<uidA>__<uidB>"`
+  (sortiert). Felder: `participants[2], participantNames{uid:name}, lastMessage, lastAt, lastSender,
+  unread{uid:count}`. Nachrichten unter `dms/{convId}/messages/{id}`: `text, sender, createdAt`.
+  Privatsphäre wird **serverseitig** über die Firestore-Regeln erzwungen (siehe unten).
 
 ## Food Tracker — Scannen & Portionen
 - 📷 **Barcode/QR scannen:** „Scannen" im Erfassungsformular öffnet die Kamera
@@ -40,48 +43,20 @@
 
 ## Einmalige Firebase-Schritte
 
-### 1. Firestore-Regeln ERSETZEN durch:
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
+### 1. Firestore-Regeln ERSETZEN durch den Inhalt von [`firestore.rules`](firestore.rules):
+Kopiere die komplette Datei `firestore.rules` (im Repo-Stamm) in die Firebase-Konsole
+(Firestore → Regeln) und klicke **Veröffentlichen**.
 
-    // Gemeinsamer öffentlicher Projekt-Feed (flach) — jeder darf lesen,
-    // nur der Eigentümer schreibt seine eigenen Einträge.
-    match /publicProjects/{docId} {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.ownerUid;
-      allow update: if request.auth != null
-        && request.auth.uid == resource.data.ownerUid;
-      allow delete: if request.auth != null
-        && request.auth.uid == resource.data.ownerUid;
-    }
-
-    // Config (timoUid) — öffentlich lesbar für public.html
-    match /config/{docId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    // Freigaben (Module teilen) — nur angemeldete Nutzer
-    match /shares/{id} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Alles andere: nur angemeldete Nutzer (Familien-Vertrauensmodell)
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-→ Veröffentlichen
-
-> Hinweis zum Sicherheitsmodell: Wie bisher dürfen alle **angemeldeten** Nutzer
-> grundsätzlich lesen/schreiben (kleine Familien-App). Die feinen Rechte beim Teilen
-> (ansehen vs. bearbeiten) werden in der App durchgesetzt. Für strengere serverseitige
-> Trennung müssten die `match /{document=**}`-Regeln pro Sammlung verschärft werden.
+> **Wichtig (Privatsphäre der Nachrichten):** Die alte globale Regel
+> `match /{document=**} { allow read, write … }` wurde entfernt und durch
+> **explizite Regeln pro Sammlung** ersetzt. Das ist nötig, weil Firestore Zugriff
+> gewährt, sobald *irgendeine* Regel passt — eine Catch-all-Regel würde die strikte
+> `dms`-Regel aushebeln und Nachrichten für alle lesbar machen. Alle bisherigen
+> Sammlungen bleiben für angemeldete Nutzer offen (Familien-Vertrauensmodell);
+> nur `dms/{convId}` (+ `messages`) ist auf die zwei Teilnehmer beschränkt.
+>
+> Falls künftig eine **neue** Sammlung dazukommt, muss sie in `firestore.rules`
+> ergänzt werden — sonst wird der Zugriff standardmässig verweigert.
 
 ### 2. Module für bestehende Nutzer
 Neue Nutzer bekommen automatisch alle Module. Bestehende Konten ohne `modules`-Feld

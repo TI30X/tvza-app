@@ -75,6 +75,7 @@ export const MODULES = {
   watch:{ key:'watch',name:'TVZA Watchlist', sub:'Kurse, Märkte & News',   emoji:'📈', page:'pages/watchlist.html',  perUser:true,  shareable:true  },
   trip: { key:'trip', name:'Planner',         sub:'Plan trips together',    emoji:'🗓️', page:'pages/planner.html',    perUser:false, shareable:false },
   weather:{ key:'weather', name:'Wetter',      sub:'Wetter & Bergprognose',  emoji:'⛅', page:'pages/weather.html',    perUser:false, shareable:false },
+  dm:    { key:'dm',   name:'Nachrichten',     sub:'Direktnachrichten',      emoji:'💬', page:'pages/messages.html',   perUser:false, shareable:false },
   matura: { key:'matura', name:'Maturaarbeit', sub:'Status & Fortschritt', emoji:'📊', page:'pages/maturaarbeit.html', perUser:false, shareable:false },
   maturatracker: { key:'maturatracker', name:'Maturaarbeit-Tracker', sub:'To-dos & Countdown', emoji:'🧵', page:'pages/maturaarbeit-tracker.html', perUser:true, shareable:false },
   publicProjects: { key:'publicProjects', name:'Öffentliche Projekte', sub:'Von allen geteilt', emoji:'🌐', perUser:false, shareable:false },
@@ -82,7 +83,7 @@ export const MODULES = {
 
 // Neue Nutzer starten schlank: nur Familien-Planer, Watchlist und Food sind
 // standardmässig an — alles andere muss angefragt / vom Admin freigeschaltet werden.
-export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:false, publicProjects:false, watch:true, weather:true };
+export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:false, publicProjects:false, watch:true, weather:true, dm:true };
 export const ALL_MODULES = Object.fromEntries(Object.keys(MODULES).map(key => [key, true]));
 
 export async function getProfile(user) {
