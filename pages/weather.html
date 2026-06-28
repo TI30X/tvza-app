@@ -390,10 +390,16 @@
     try { const lk = JSON.parse(localStorage.getItem('tvza-weather-lastkind') || 'null'); if (lk) themeSplash(lk.kind, lk.isDay, null); } catch(e){}
 
     /* ════ Open-Meteo fetch ════ */
-    async function getJson(url) {
-      const r = await fetch(url);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
+    async function getJson(url, tries = 2) {
+      let lastErr;
+      for (let i = 0; i < tries; i++) {
+        try {
+          const r = await fetch(url, { cache: 'no-store' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return await r.json();
+        } catch (e) { lastErr = e; if (i < tries - 1) await new Promise(res => setTimeout(res, 450)); }
+      }
+      throw lastErr;
     }
     async function geocode(q) {
       try {
@@ -412,15 +418,22 @@
       } catch(e){ return { name:'Mein Standort', admin1:'' }; }
     }
     async function fetchWeather(l, elevationOverride) {
-      const p = new URLSearchParams({
+      const base = {
         latitude: l.latitude, longitude: l.longitude,
         current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day,precipitation',
-        hourly: 'temperature_2m,weather_code,precipitation_probability,snowfall,snow_depth,freezing_level_height',
         daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,snowfall_sum,sunrise,sunset',
         timezone: 'auto', forecast_days: '7', wind_speed_unit: 'kmh'
-      });
-      if (elevationOverride != null) p.set('elevation', Math.round(elevationOverride));
-      return getJson('https://api.open-meteo.com/v1/forecast?' + p.toString());
+      };
+      // Full request includes the mountain extras; if the API rejects those, fall back to a lean request.
+      const full = { ...base, hourly: 'temperature_2m,weather_code,precipitation_probability,snowfall,snow_depth,freezing_level_height' };
+      const lite = { ...base, hourly: 'temperature_2m,weather_code,precipitation_probability,snowfall' };
+      const build = obj => {
+        const p = new URLSearchParams(obj);
+        if (elevationOverride != null) p.set('elevation', Math.round(elevationOverride));
+        return 'https://api.open-meteo.com/v1/forecast?' + p.toString();
+      };
+      try { return await getJson(build(full)); }
+      catch (e) { return await getJson(build(lite)); }
     }
 
     /* ════ Formatting helpers ════ */
@@ -635,8 +648,16 @@
         closeSplash();
         $('wxUpdated').textContent = 'Stand: ' + new Date().toLocaleTimeString('de-CH', { hour:'2-digit', minute:'2-digit' });
       } catch (e) {
-        console.warn(e);
-        if (seq === loadSeq) $('content').innerHTML = `<div class="wx-msg">Wetterdaten konnten nicht geladen werden. Bist du online?</div>`;
+        console.warn('weather load failed', e);
+        if (seq === loadSeq) {
+          if (lastData) {
+            // Already showing a forecast — don't wipe it just because a refresh hiccuped.
+            $('wxUpdated').textContent = 'Aktualisierung fehlgeschlagen — letzter Stand bleibt sichtbar';
+          } else {
+            $('content').innerHTML = `<div class="wx-msg">Wetterdaten konnten nicht geladen werden. Bist du online?<br><button class="btn btn-secondary" id="wxRetry" style="margin-top:10px">Nochmal versuchen</button></div>`;
+            document.getElementById('wxRetry')?.addEventListener('click', load);
+          }
+        }
         closeSplash();
       } finally {
         if (seq === loadSeq) setTimeout(() => $('refreshBtn').classList.remove('spin'), 500);

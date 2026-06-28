@@ -63,7 +63,7 @@
           </span>
         </a>
         <div class="header-actions">
-          <a class="wx-chip-mini" id="wxChip" href="pages/weather.html?v=1" title="Wetter ansehen" style="display:none">
+          <a class="wx-chip-mini" id="wxChip" href="pages/weather.html?v=2" title="Wetter ansehen" style="display:none">
             <span class="wxc-ic" id="wxChipIc">⛅</span>
             <span class="wxc-temp" id="wxChipTemp">–°</span>
           </a>
@@ -116,7 +116,7 @@
           </div>
 
           <div class="module-tile" data-tracker-tile="weather">
-            <a href="pages/weather.html?v=1" class="card card--weather" id="cardWeather" draggable="false" style="display:none">
+            <a href="pages/weather.html?v=2" class="card card--weather" id="cardWeather" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13a4 4 0 1 0-5.6-5.6"/><path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M20 12h2"/><path d="M17.5 19a3.5 3.5 0 0 0 0-7h-1.3a5 5 0 1 0-9.7 1.8"/><path d="M7 16a3 3 0 0 0 0 6h10"/></svg></div>
             <div class="card-content"><h3>Wetter</h3><p>Wetter &amp; Bergprognose</p></div>
             </a>
@@ -359,7 +359,7 @@
     let appUsers = [];
     let appUsersLoaded = false;
     const overviewSectionDefaults = ['tracker', 'shared', 'projects', 'public'];
-    const trackerTileDefaults = ['ski', 'food', 'watch', 'trip', 'matura', 'maturatracker'];
+    const trackerTileDefaults = ['ski', 'food', 'watch', 'weather', 'trip', 'matura', 'maturatracker'];
 
     function storedOrder(key, defaults) {
       try {
