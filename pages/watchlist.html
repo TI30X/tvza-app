@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a3d2c" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230e5c43'/><polyline points='5 21 13 13 18 18 27 8' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230e5c43'/><polyline points='4 23 12 13 18 18 28 7' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://finnhub.io" crossorigin />
   <link rel="preconnect" href="https://api.coingecko.com" crossorigin />
+  <link rel="preconnect" href="https://query1.finance.yahoo.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
@@ -34,14 +35,8 @@
     }
     .wl .accent-bar--watch { background: linear-gradient(90deg,#0a3d2c,#0e7a57 55%,#19a06a); height:4px; }
     .wl .page-title { letter-spacing:.01em; }
-
-    /* Tab switcher already styled by .tabs/.tab — just give the active one a green pull */
-    .wl .tab.active { color: var(--accent); }
     .wl .main { display:flex; flex-direction:column; gap:14px; }
-    .wl .tabs { margin-bottom:0; }
-    .wl-tab-label { display:flex; align-items:center; gap:6px; }
-    .wl-tab-count { min-width:20px; padding:1px 7px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft); font-size:11px; font-weight:700; }
-    .wl .tab.active .wl-tab-count { background:var(--accent-bg); color:var(--accent); }
+
     .wl-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
     .wl-stat { border:1px solid var(--border); border-radius:var(--r1); background:var(--surface); padding:10px 12px; min-width:0; }
     .wl-stat b { display:block; font-size:18px; line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums; }
@@ -50,7 +45,12 @@
     .wl-stat.down b { color:var(--wl-down); }
     .wl-stat.warn b { color:var(--accent); }
 
-    /* Add row */
+    /* Add card + type selector */
+    .wl-seg { display:flex; gap:6px; flex-wrap:wrap; }
+    .wl-seg button { flex:1 1 0; min-width:62px; border:1px solid var(--border); background:var(--surface-2); color:var(--ink-soft);
+      border-radius:10px; min-height:36px; padding:6px 8px; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; transition:.15s; }
+    .wl-seg button:hover { color:var(--accent); border-color:var(--accent); }
+    .wl-seg button.active { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); }
     .wl-add { display:grid; grid-template-columns:minmax(0,1fr) 48px; gap:8px; }
     .wl-add .form-input { flex:1; }
     .wl-quick { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:11px; }
@@ -60,13 +60,19 @@
     .wl-market-note { border:1px solid var(--border); background:var(--surface-2); border-radius:var(--r1); padding:11px 13px; color:var(--ink-soft); font-size:12px; line-height:1.45; }
     .wl-market-note strong { color:var(--ink); }
 
-    /* Quote cards */
-    .wl-table-head { display:grid; grid-template-columns:minmax(170px,1.4fr) minmax(96px,.7fr) minmax(96px,.7fr) 44px; gap:10px; align-items:center; padding:0 14px 5px; color:var(--ink-soft); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
-    .wl-row { display:grid; grid-template-columns:minmax(170px,1.4fr) minmax(96px,.7fr) minmax(96px,.7fr) 44px; gap:10px; align-items:center; }
+    /* Sectioned combined list */
+    .wl-section { display:flex; flex-direction:column; gap:8px; }
+    .wl-section + .wl-section { margin-top:18px; }
+    .wl-section-title { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.05em; color:var(--ink-soft); margin:0 2px 2px; }
+    .wl-section-title .ic { font-size:14px; }
+    .wl-count { min-width:20px; text-align:center; padding:1px 7px; border-radius:999px; background:var(--surface-2); color:var(--ink-soft); font-size:11px; font-weight:700; }
+
+    .wl-row { display:grid; grid-template-columns:minmax(150px,1.4fr) minmax(90px,.7fr) minmax(86px,.6fr) 44px; gap:10px; align-items:center; }
     .wl-asset { min-width:0; }
     .wl-quote { display:flex; flex-direction:column; align-items:flex-end; gap:2px; margin-left:auto; padding-left:10px; white-space:nowrap; }
     .wl-price { font-size:15px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
-    .wl-change { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; display:inline-flex; align-items:center; gap:3px; }
+    .wl-change { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; display:inline-flex; align-items:center; gap:3px; justify-content:flex-end; }
     .wl-change.up   { color:var(--wl-up); }
     .wl-change.down { color:var(--wl-down); }
     .wl-change.flat { color:var(--ink-soft); }
@@ -74,7 +80,8 @@
     .wl-name { color:var(--ink-soft); font-weight:400; font-size:12px; }
     .wl-status { margin-top:4px; color:var(--ink-soft); font-size:11px; line-height:1.35; }
     .wl-status.warn { color:var(--accent); }
-    .wl-spark { width:64px; height:24px; display:block; }
+    .wl-src-tag { display:inline-block; margin-left:6px; font-size:9.5px; font-weight:700; letter-spacing:.03em; color:var(--ink-soft);
+      border:1px solid var(--border); border-radius:5px; padding:0 5px; vertical-align:middle; text-transform:uppercase; opacity:.8; }
 
     /* Meta line / refresh */
     .wl-meta { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 2px; font-size:12px; color:var(--ink-soft); }
@@ -82,108 +89,133 @@
     .wl-refresh svg { transition:transform .5s ease; }
     .wl-refresh.spin svg { transform:rotate(360deg); }
 
-    /* News */
-    .news-list { display:flex; flex-direction:column; gap:8px; }
-    .news-card { display:flex; gap:12px; align-items:center; padding:10px 12px; border:1px solid var(--border);
-      border-radius:14px; background:var(--surface); text-decoration:none; color:inherit;
-      transition:box-shadow .15s ease, transform .12s ease, border-color .15s ease; }
-    .news-card:hover { box-shadow:var(--shadow-sm); transform:translateY(-1px); border-color:var(--accent); }
-    .news-thumbwrap { position:relative; width:54px; height:54px; flex-shrink:0; }
-    .news-thumb { width:54px; height:54px; border-radius:11px; object-fit:cover; display:block; }
-    .news-ph { position:absolute; inset:0; display:grid; place-items:center; font-size:21px; border-radius:11px;
-      background:linear-gradient(135deg,#0e5c43,#19a06a); color:#fff; }
-    .news-img { position:absolute; inset:0; }
-    .news-body { min-width:0; flex:1; }
-    .news-head { font-size:13.5px; font-weight:700; line-height:1.32; display:-webkit-box; -webkit-line-clamp:2;
-      -webkit-box-orient:vertical; overflow:hidden; }
-    .news-meta { display:flex; align-items:center; gap:6px; margin-top:5px; font-size:11px; color:var(--ink-soft); }
-    .news-src { font-weight:700; text-transform:uppercase; letter-spacing:.03em; max-width:58%; overflow:hidden;
-      text-overflow:ellipsis; white-space:nowrap; }
-    .news-dot { opacity:.45; }
-    .news-tag { font-size:10px; font-weight:700; color:var(--accent); background:var(--accent-bg);
-      padding:1px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:.02em; }
-    .news-arrow { margin-left:auto; color:var(--ink-soft); opacity:.5; flex-shrink:0; }
+    /* ═══ News — grouped grid of taller tiles ═══ */
+    .news-groups { display:flex; flex-direction:column; gap:22px; }
+    .news-group-title { display:flex; align-items:center; gap:8px; margin:0 2px 11px; font-size:12px; font-weight:700;
+      text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
+    .news-group-title .pill { color:var(--accent); background:var(--accent-bg); padding:2px 9px; border-radius:7px; letter-spacing:.02em; }
+    .news-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .news-tile { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:16px; overflow:hidden;
+      background:var(--surface); text-decoration:none; color:inherit; transition:box-shadow .15s ease, transform .12s ease, border-color .15s ease; }
+    .news-tile:hover { box-shadow:var(--shadow-sm); transform:translateY(-2px); border-color:var(--accent); }
+    .nt-thumb { position:relative; width:100%; aspect-ratio:16/9; background:linear-gradient(135deg,#0e5c43,#19a06a); flex-shrink:0; }
+    .nt-thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+    .nt-ph { position:absolute; inset:0; display:grid; place-items:center; font-size:30px; color:#fff; opacity:.85; }
+    .nt-body { padding:11px 13px 13px; display:flex; flex-direction:column; gap:8px; flex:1; }
+    .nt-head { font-size:13.5px; font-weight:700; line-height:1.34; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    .nt-meta { margin-top:auto; display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-soft); }
+    .nt-src { font-weight:700; text-transform:uppercase; letter-spacing:.03em; max-width:62%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .nt-dot { opacity:.45; }
 
-    .wl-hint { font-size:13px; color:var(--ink-soft); background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r2); padding:12px 14px; margin-bottom:14px; }
+    .wl-hint { font-size:13px; color:var(--ink-soft); background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r2); padding:12px 14px; }
     .wl-hint a { color:var(--accent); cursor:pointer; font-weight:700; }
 
-    /* ═══ Unique welcome / splash for the Watchlist ═══ */
+    /* ═══ Unique ski / mountain splash for the Watchlist ═══ */
     #wl-splash{ position:fixed; inset:0; z-index:99999; overflow:hidden; display:flex; align-items:center; justify-content:center;
-      background:linear-gradient(150deg,#06241a,#0a3d2c 52%,#0e5c43); color:#fff; cursor:pointer; -webkit-tap-highlight-color:transparent;
+      background:linear-gradient(160deg,#06241a,#0a3d2c 50%,#0e5c43); color:#fff; cursor:pointer; -webkit-tap-highlight-color:transparent;
       opacity:1; transition:opacity .55s ease, visibility .55s ease; }
     #wl-splash.closing{ opacity:0; visibility:hidden; }
     #wl-splash .glow{ position:absolute; inset:-25%; background:
-        radial-gradient(40% 40% at 26% 32%, rgba(63,213,146,.30), transparent 60%),
-        radial-gradient(46% 46% at 76% 70%, rgba(14,122,87,.55), transparent 62%);
+        radial-gradient(38% 38% at 78% 22%, rgba(126,240,187,.30), transparent 60%),
+        radial-gradient(50% 50% at 22% 78%, rgba(14,122,87,.50), transparent 64%);
       filter:blur(8px); animation:wlGlow 9s ease-in-out infinite alternate; }
     #wl-splash .chip{ position:absolute; font-family:'Hanken Grotesk',system-ui,sans-serif; font-weight:700; font-size:13px;
       padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16);
-      color:rgba(255,255,255,.85); backdrop-filter:blur(2px); opacity:0; animation:wlChip 4.2s ease-in-out infinite; }
+      color:rgba(255,255,255,.85); backdrop-filter:blur(2px); opacity:0; z-index:3; animation:wlChip 4.2s ease-in-out infinite; }
     #wl-splash .chip .u{ color:#7ff0bb; } #wl-splash .chip .d{ color:#ff938c; }
-    #wl-splash .c1{ top:20%; left:10%; animation-delay:.2s; } #wl-splash .c2{ top:30%; right:12%; animation-delay:.9s; }
-    #wl-splash .c3{ bottom:24%; left:16%; animation-delay:1.5s; } #wl-splash .c4{ bottom:30%; right:14%; animation-delay:.6s; }
+    #wl-splash .c1{ top:17%; left:8%; animation-delay:.2s; } #wl-splash .c2{ top:25%; right:9%; animation-delay:.9s; }
+    #wl-splash .c3{ bottom:27%; left:12%; animation-delay:1.5s; } #wl-splash .c4{ bottom:33%; right:11%; animation-delay:.6s; }
     #wl-splash .stage{ position:relative; text-align:center; padding:24px; }
-    #wl-splash svg.chart{ width:min(320px,72vw); height:auto; display:block; margin:0 auto 18px; filter:drop-shadow(0 10px 30px rgba(0,0,0,.35)); }
-    #wl-splash .chart .area{ opacity:0; animation:wlFade .9s ease .55s forwards; }
-    #wl-splash .chart .line{ stroke-dasharray:1; stroke-dashoffset:1; animation:wlDraw 1.25s cubic-bezier(.5,.1,.2,1) .15s forwards; }
-    #wl-splash .chart .dot{ opacity:0; animation:wlFade .5s ease 1.25s forwards; }
+    #wl-splash svg.scene{ width:min(340px,78vw); height:auto; display:block; margin:0 auto 14px; filter:drop-shadow(0 14px 32px rgba(0,0,0,.42)); }
+
+    #wl-splash .sun{ fill:#7ff0bb; opacity:0; filter:blur(1px); animation:wlSun 1.1s ease .2s forwards; }
+    #wl-splash .range{ opacity:0; transform:translateY(26px); }
+    #wl-splash .r3{ fill:#0c5640; animation:wlRise .9s cubic-bezier(.2,.7,.3,1) .15s forwards; }
+    #wl-splash .r2{ fill:#0a4631; animation:wlRise .9s cubic-bezier(.2,.7,.3,1) .32s forwards; }
+    #wl-splash .r1{ fill:url(#mFront); animation:wlRise .9s cubic-bezier(.2,.7,.3,1) .5s forwards; }
+    #wl-splash .snow{ fill:#eafff6; opacity:0; animation:wlFade .6s ease .95s forwards; }
+    #wl-splash .area{ opacity:0; animation:wlFade .9s ease 1.1s forwards; }
+    #wl-splash .line{ fill:none; stroke:#7ff0bb; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round;
+      stroke-dasharray:1; stroke-dashoffset:1; animation:wlDraw 1.4s cubic-bezier(.5,.1,.2,1) .95s forwards; }
+    #wl-splash .dot{ fill:#fff; opacity:0; transform-box:fill-box; transform-origin:center; animation:wlPop .55s cubic-bezier(.2,.8,.3,1.5) 2.25s forwards; }
+    #wl-splash .flake{ fill:#fff; opacity:0; animation:wlSnow linear infinite; }
     #wl-splash .mark{ font-family:Georgia,'Times New Roman',serif; font-weight:700; font-size:clamp(28px,8vw,50px); line-height:1;
       letter-spacing:.02em; opacity:0; transform:translateY(14px) scale(.97); filter:blur(6px);
-      animation:wlReveal .8s cubic-bezier(.22,.61,.36,1) .35s forwards; }
+      animation:wlReveal .8s cubic-bezier(.22,.61,.36,1) .55s forwards; }
     #wl-splash .mark .accent{ color:#5ee6a3; }
     #wl-splash .sub{ margin-top:12px; font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:clamp(11px,2.6vw,13px);
-      letter-spacing:.32em; text-transform:uppercase; color:rgba(255,255,255,.62); opacity:0; animation:wlFade .8s ease .8s forwards; }
+      letter-spacing:.32em; text-transform:uppercase; color:rgba(255,255,255,.62); opacity:0; animation:wlFade .8s ease 1s forwards; }
     #wl-splash .hint{ position:absolute; bottom:max(26px,env(safe-area-inset-bottom)); left:0; right:0; text-align:center;
-      font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.32); opacity:0; animation:wlFade 1s ease 1.6s forwards; }
+      font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.32); opacity:0; animation:wlFade 1s ease 1.9s forwards; }
     @keyframes wlDraw{ to{ stroke-dashoffset:0; } }
     @keyframes wlFade{ to{ opacity:1; } }
+    @keyframes wlSun{ to{ opacity:.6; } }
+    @keyframes wlRise{ to{ opacity:1; transform:translateY(0); } }
+    @keyframes wlPop{ 0%{ opacity:0; transform:scale(0);} 100%{ opacity:1; transform:scale(1);} }
     @keyframes wlReveal{ to{ opacity:1; transform:translateY(0) scale(1); filter:blur(0); } }
     @keyframes wlGlow{ 0%{ transform:translate(-3%,-2%) scale(1);} 100%{ transform:translate(3%,2%) scale(1.07);} }
-    @keyframes wlChip{ 0%,100%{ transform:translateY(0); opacity:.0;} 15%,85%{ opacity:.9;} 50%{ transform:translateY(-12px);} }
+    @keyframes wlChip{ 0%,100%{ transform:translateY(0); opacity:0;} 15%,85%{ opacity:.9;} 50%{ transform:translateY(-12px);} }
+    @keyframes wlSnow{ 0%{ opacity:0; transform:translateY(-8px);} 12%{ opacity:.8;} 88%{ opacity:.8;} 100%{ opacity:0; transform:translateY(46px);} }
     @media (prefers-reduced-motion: reduce){
-      #wl-splash .glow,#wl-splash .chip{ animation:none; }
-      #wl-splash .area,#wl-splash .dot,#wl-splash .mark,#wl-splash .sub,#wl-splash .hint{ animation:none!important; opacity:1!important; transform:none!important; filter:none!important; }
+      #wl-splash .glow,#wl-splash .flake{ animation:none; }
+      #wl-splash .chip{ animation:none!important; opacity:.9!important; transform:none!important; }
+      #wl-splash .sun,#wl-splash .range,#wl-splash .snow,#wl-splash .area,#wl-splash .dot,#wl-splash .mark,#wl-splash .sub,#wl-splash .hint{
+        animation:none!important; opacity:1!important; transform:none!important; filter:none!important; }
       #wl-splash .line{ stroke-dashoffset:0!important; animation:none!important; }
     }
     @media (max-width: 680px){
       .wl-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
-      .wl-table-head { display:none; }
       .wl-row { grid-template-columns:minmax(0,1fr) auto 36px; gap:8px; }
       .wl-row .wl-change { grid-column:2; }
       .wl-row .item-actions { grid-column:3; grid-row:1 / span 2; }
       .wl-row .wl-quote { align-items:flex-end; padding-left:0; }
       .wl-quick { gap:6px; }
     }
+    @media (max-width: 560px){
+      .news-grid { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body class="wl">
 
-  <!-- ═══ Welcome splash (plays once per session, tap to skip) ═══ -->
+  <!-- ═══ Ski / mountain welcome splash (plays once per session, tap to skip) ═══ -->
   <script>
   (() => {
     'use strict';
     try { if (sessionStorage.getItem('tvza-wl-welcomed')) return; sessionStorage.setItem('tvza-wl-welcomed','1'); } catch(e){}
     const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    // a few drifting snowflakes
+    let flakes = '';
+    const F = [[44,36,1.4,6,0],[150,30,1.2,7,1.2],[238,52,1.5,5.5,.6],[300,38,1,7,1.8]];
+    F.forEach(([cx,cy,r,dur,delay]) => { flakes += `<circle class="flake" cx="${cx}" cy="${cy}" r="${r}" style="animation-duration:${dur}s;animation-delay:${delay}s"></circle>`; });
     const el = document.createElement('div');
     el.id = 'wl-splash';
     el.setAttribute('role','dialog'); el.setAttribute('aria-label','TVZA Watchlist');
     el.innerHTML = `
       <div class="glow"></div>
-      <div class="chip c1">AAPL <span class="u">▲</span></div>
+      <div class="chip c1">SMI <span class="u">▲</span></div>
       <div class="chip c2">BTC <span class="u">▲</span></div>
-      <div class="chip c3">VWRL <span class="d">▼</span></div>
-      <div class="chip c4">ETH <span class="u">▲</span></div>
+      <div class="chip c3">EUR/CHF <span class="d">▼</span></div>
+      <div class="chip c4">AAPL <span class="u">▲</span></div>
       <div class="stage">
-        <svg class="chart" viewBox="0 0 300 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <svg class="scene" viewBox="0 0 320 210" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
+            <linearGradient id="mFront" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#0a3d2c"/><stop offset="1" stop-color="#052b1f"/>
+            </linearGradient>
             <linearGradient id="wlA" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#5ee6a3" stop-opacity=".45"/>
-              <stop offset="1" stop-color="#5ee6a3" stop-opacity="0"/>
+              <stop offset="0" stop-color="#5ee6a3" stop-opacity=".42"/><stop offset="1" stop-color="#5ee6a3" stop-opacity="0"/>
             </linearGradient>
           </defs>
-          <path class="area" d="M0,92 L40,84 L80,96 L120,70 L160,78 L200,46 L240,54 L300,18 L300,120 L0,120 Z" fill="url(#wlA)"/>
-          <path class="line" pathLength="1" d="M0,92 L40,84 L80,96 L120,70 L160,78 L200,46 L240,54 L300,18" stroke="#7ff0bb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle class="dot" cx="300" cy="18" r="5" fill="#fff"/>
+          <circle class="sun" cx="246" cy="44" r="21"/>
+          <g class="snowfall">${flakes}</g>
+          <path class="range r3" d="M-20,210 L60,128 L140,40 L210,110 L262,150 L340,210 Z"/>
+          <path class="range r2" d="M-20,210 L40,150 L110,118 L180,150 L250,120 L320,150 L340,134 L340,210 Z"/>
+          <path class="range r1" d="M-20,210 L10,196 L64,150 L112,174 L172,134 L222,162 L285,104 L340,150 L340,210 Z"/>
+          <path class="snow" d="M106,78 L140,40 L178,78 L160,70 L146,77 L128,71 L114,76 Z M43,168 L64,150 L100,168 L86,162 L72,168 L57,162 Z M145,152 L172,134 L204,152 L190,147 L176,152 L160,147 Z M263,124 L285,104 L309,124 L298,118 L286,124 L274,118 Z"/>
+          <path class="area" d="M10,196 L64,150 L112,174 L172,134 L222,162 L285,104 L285,210 L10,210 Z" fill="url(#wlA)"/>
+          <path class="line" pathLength="1" d="M10,196 L64,150 L112,174 L172,134 L222,162 L285,104"/>
+          <circle class="dot" cx="285" cy="104" r="5"/>
         </svg>
         <div class="mark">TVZA <span class="accent">Watchlist</span></div>
         <div class="sub">Märkte · Kurse · News</div>
@@ -195,7 +227,7 @@
     function close(){ if(closed) return; closed = true; document.documentElement.style.overflow = prev; el.classList.add('closing'); setTimeout(()=>el.remove(),560); }
     el.addEventListener('click', close); el.addEventListener('touchstart', close, {passive:true});
     window.addEventListener('keydown', close, {once:true});
-    setTimeout(close, reduce ? 1100 : 2600);
+    setTimeout(close, reduce ? 1100 : 3000);
     if (document.body) document.body.appendChild(el);
     else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(el));
   })();
@@ -227,14 +259,16 @@
         <div class="wl-stat warn"><b>0</b><span>ohne Kurs</span></div>
       </div>
 
-      <div class="tabs">
-        <div class="tab active" id="tabStock"  onclick="wlTab('stock')"><span class="wl-tab-label">Aktien <span class="wl-tab-count" id="countStock">0</span></span></div>
-        <div class="tab"        id="tabEtf"    onclick="wlTab('etf')"><span class="wl-tab-label">ETFs &amp; Indizes <span class="wl-tab-count" id="countEtf">0</span></span></div>
-        <div class="tab"        id="tabCrypto" onclick="wlTab('crypto')"><span class="wl-tab-label">Krypto <span class="wl-tab-count" id="countCrypto">0</span></span></div>
-      </div>
       <!-- Add form -->
       <div class="form-card" id="addCard">
-        <p class="form-title" id="addTitle">Aktie hinzufügen</p>
+        <div class="wl-seg" id="typeSeg">
+          <button type="button" data-type="index">Index</button>
+          <button type="button" data-type="fx">Devisen</button>
+          <button type="button" data-type="stock" class="active">Aktie</button>
+          <button type="button" data-type="etf">ETF</button>
+          <button type="button" data-type="crypto">Krypto</button>
+        </div>
+        <p class="form-title" id="addTitle" style="margin-top:12px">Aktie hinzufügen</p>
         <div class="wl-add">
           <div class="ac-wrap" style="flex:1;position:relative">
             <input class="form-input" id="symInput" type="text" placeholder="Suche: Apple, Bitcoin, SPY…" autocomplete="off" style="width:100%" />
@@ -242,7 +276,7 @@
           </div>
           <button class="btn btn-primary" id="addBtn" style="white-space:nowrap" title="Ersten Treffer hinzufügen">+</button>
         </div>
-        <p style="font-size:11px;color:var(--ink-soft);margin:8px 2px 0" id="addHelp">Tippe das Börsenkürzel (Ticker) ein.</p>
+        <p style="font-size:11px;color:var(--ink-soft);margin:8px 2px 0" id="addHelp">Tippe Name oder Kürzel ein.</p>
         <div class="wl-quick" id="quickPicks"></div>
       </div>
 
@@ -280,7 +314,8 @@
         <label class="form-label" for="apiKey">Eigener Finnhub API-Key <small>(optional)</small></label>
         <input class="form-input" id="apiKey" type="text" placeholder="Standard: gemeinsamer Schlüssel aktiv" autocomplete="off" />
         <p style="font-size:12px;color:var(--ink-soft);margin-top:6px">
-          Aktien-, ETF-Kurse und News laufen bereits über einen gemeinsamen Schlüssel — du musst nichts tun.
+          US-Aktien, ETF-Suche und News laufen über einen gemeinsamen Schlüssel — du musst nichts tun.
+          Indizes, Devisen und ausländische Titel kommen ohne Schlüssel über Yahoo Finance.
           Nur bei viel Nutzung lohnt ein eigener (gratis) Key von
           <a href="https://finnhub.io/register" target="_blank" rel="noopener" style="color:var(--accent)">finnhub.io/register</a>.
         </p>
@@ -340,52 +375,90 @@
     const getKey   = () => { try { return (localStorage.getItem(LS_KEY) || '').trim() || FINNHUB_KEY; } catch(e){ return FINNHUB_KEY; } };
     const getAlert = () => { try { return Number(localStorage.getItem(LS_ALERT)) || 5; } catch(e){ return 5; } };
 
-    /* ════ Tabs ════ */
-    const TYPES = {
-      stock:  { label:'Aktie',  ph:'Suche Aktie: Apple, Samsung...', help:'Suche nach Name oder Ticker. Einige Auslandsboersen sind im Gratis-Key nur eingeschraenkt verfuegbar.' },
-      etf:    { label:'ETF / Index', ph:'Suche ETF/Index: SMI, SPY, World...', help:'SMI gehoert hierhin. Direkte Indexkurse brauchen bei Finnhub oft ein Daten-Abo; ETF-Alternativen laufen meist stabiler.' },
-      crypto: { label:'Krypto', ph:'Suche Krypto: Bitcoin, ETH...',  help:'Suche nach Coin-Name oder Symbol und waehle aus der Liste.' },
+    /* ════ Categories (combined list — no more tabs) ════ */
+    const CATS = {
+      index:  { label:'Index',  plural:'Indizes', ic:'📈', ph:'Suche Index: SMI, S&P 500, DAX…',  help:'Indizes wie der SMI laufen direkt über Yahoo Finance — kein Schlüssel nötig.' },
+      fx:     { label:'Devise', plural:'Devisen', ic:'💱', ph:'Währungspaar: EUR/CHF, USD/CHF…',   help:'Tippe ein Paar wie EURCHF oder wähle unten — Kurse über Yahoo Finance.' },
+      stock:  { label:'Aktie',  plural:'Aktien',  ic:'🏛️', ph:'Suche Aktie: Apple, Samsung…',      help:'Suche nach Name oder Ticker. Ausländische Titel (z. B. Samsung) laufen über Yahoo.' },
+      etf:    { label:'ETF',    plural:'ETFs',    ic:'🧺', ph:'Suche ETF: SPY, World, EWL…',        help:'Suche nach Name oder Ticker und wähle aus der Liste.' },
+      crypto: { label:'Krypto', plural:'Krypto',  ic:'🪙', ph:'Suche Krypto: Bitcoin, ETH…',       help:'Suche nach Coin-Name oder Symbol und wähle aus der Liste.' },
     };
-    let activeType = (() => { try { return localStorage.getItem('tvza-wl-tab') || 'stock'; } catch(e){ return 'stock'; } })();
+    const SECTION_ORDER = ['index','fx','stock','etf','crypto'];
+
+    let addType = (() => { try { return localStorage.getItem('tvza-wl-addtype') || 'stock'; } catch(e){ return 'stock'; } })();
+    if (!CATS[addType]) addType = 'stock';
+
     let allItems = [];
-    const quotes = new Map();      // docId -> { price, dp, cur, error }
+    const quotes = new Map();      // docId -> { price, dp, cur, src, error }
     const notified = new Set();    // symbols already pinged this session
     let newsSig = '';              // signature of watched symbols -> reload news on change
+
     const QUICK = {
+      index: [
+        { symbol:'^SSMI',  name:'SMI · Swiss Market Index' },
+        { symbol:'^GSPC',  name:'S&P 500' },
+        { symbol:'^GDAXI', name:'DAX' },
+        { symbol:'^IXIC',  name:'Nasdaq Composite' },
+      ],
+      fx: [
+        { symbol:'EURCHF=X', name:'Euro / Franken' },
+        { symbol:'USDCHF=X', name:'US-Dollar / Franken' },
+        { symbol:'EURUSD=X', name:'Euro / US-Dollar' },
+        { symbol:'GBPCHF=X', name:'Pfund / Franken' },
+      ],
       stock: [
         { symbol:'AAPL', name:'Apple Inc' },
         { symbol:'MSFT', name:'Microsoft' },
         { symbol:'GOOGL', name:'Alphabet' },
-        { symbol:'005930.KS', name:'Samsung Electronics', note:'Korea-Boerse: Kurs mit dem gemeinsamen Finnhub-Key meist nicht freigeschaltet.' },
+        { symbol:'005930.KS', name:'Samsung Electronics' },
       ],
       etf: [
-        { symbol:'^SSMI', name:'SMI - Swiss Market Index', note:'Direkter Index: Finnhub meldet oft Daten-Abo erforderlich.' },
-        { symbol:'EWL', name:'iShares MSCI Switzerland ETF', note:'US-gehandelter Schweiz-ETF als praktische SMI/Schweiz-Alternative.' },
+        { symbol:'EWL', name:'iShares MSCI Switzerland ETF' },
         { symbol:'SPY', name:'S&P 500 ETF' },
-        { symbol:'VT', name:'Vanguard Total World ETF' },
+        { symbol:'VT',  name:'Vanguard Total World ETF' },
       ],
       crypto: [
-        { symbol:'BTC', name:'Bitcoin', coinId:'bitcoin' },
+        { symbol:'BTC', name:'Bitcoin',  coinId:'bitcoin' },
         { symbol:'ETH', name:'Ethereum', coinId:'ethereum' },
-        { symbol:'SOL', name:'Solana', coinId:'solana' },
+        { symbol:'SOL', name:'Solana',   coinId:'solana' },
       ],
     };
+
+    // Local quick matches so the important picks always resolve without a remote call
     const LOCAL_SUGGESTIONS = [
-      { q:['samsung','005930','galaxy'], type:'stock', symbol:'005930.KS', name:'Samsung Electronics', note:'Korea-Boerse: Kurs mit dem gemeinsamen Finnhub-Key meist nicht freigeschaltet.' },
-      { q:['smi','swiss market','schweiz index'], type:'etf', symbol:'^SSMI', name:'SMI - Swiss Market Index', note:'Direkter Index: Finnhub meldet oft Daten-Abo erforderlich.' },
-      { q:['smi','switzerland','schweiz'], type:'etf', symbol:'EWL', name:'iShares MSCI Switzerland ETF', note:'ETF-Alternative fuer den Schweizer Markt; laeuft mit dem gemeinsamen Key stabiler.' },
+      { q:['smi','swiss market','schweiz'], type:'index', symbol:'^SSMI',  name:'SMI · Swiss Market Index' },
+      { q:['spi','swiss performance'],      type:'index', symbol:'^SSHI',  name:'SPI · Swiss Performance Index' },
+      { q:['sp500','s&p','s&p 500','spx'],  type:'index', symbol:'^GSPC',  name:'S&P 500' },
+      { q:['nasdaq','ixic'],                type:'index', symbol:'^IXIC',  name:'Nasdaq Composite' },
+      { q:['dow','dow jones','djia'],       type:'index', symbol:'^DJI',   name:'Dow Jones Industrial' },
+      { q:['dax'],                          type:'index', symbol:'^GDAXI', name:'DAX' },
+      { q:['nikkei','japan'],               type:'index', symbol:'^N225',  name:'Nikkei 225' },
+      { q:['euro stoxx','stoxx','stoxx50'], type:'index', symbol:'^STOXX50E', name:'Euro Stoxx 50' },
+      { q:['samsung','005930','galaxy'],    type:'stock', symbol:'005930.KS', name:'Samsung Electronics' },
+      { q:['nestle','nestlé'],              type:'stock', symbol:'NESN.SW', name:'Nestlé' },
+      { q:['novartis'],                     type:'stock', symbol:'NOVN.SW', name:'Novartis' },
+      { q:['roche'],                        type:'stock', symbol:'ROG.SW',  name:'Roche Holding' },
+      { q:['switzerland','schweiz'],        type:'etf',   symbol:'EWL',     name:'iShares MSCI Switzerland ETF' },
     ];
-    /* ════ Starter-Watchlist (einmalig, falls leer) ════
-       Neue Nutzer sehen sofort Beispiele, statt einer leeren Liste.
-       Wird genau einmal angelegt (meta/config.seeded) — später frei löschbar. */
+
+    const FX_PAIRS = [
+      { code:'EURCHF', name:'Euro / Franken' }, { code:'USDCHF', name:'US-Dollar / Franken' },
+      { code:'EURUSD', name:'Euro / US-Dollar' }, { code:'GBPCHF', name:'Pfund / Franken' },
+      { code:'GBPUSD', name:'Pfund / US-Dollar' }, { code:'USDJPY', name:'US-Dollar / Yen' },
+      { code:'EURJPY', name:'Euro / Yen' }, { code:'USDKRW', name:'US-Dollar / Won' },
+      { code:'CHFEUR', name:'Franken / Euro' }, { code:'CHFUSD', name:'Franken / US-Dollar' },
+      { code:'AUDUSD', name:'Aussie / US-Dollar' }, { code:'USDCNY', name:'US-Dollar / Yuan' },
+    ];
+
+    /* ════ Starter-Watchlist (einmalig, falls leer) ════ */
     const SEED = [
-      { type:'stock',  symbol:'MSFT',    name:'Microsoft' },
-      { type:'stock',  symbol:'AAPL',    name:'Apple' },
-      { type:'etf',    symbol:'EWL',     name:'iShares MSCI Switzerland ETF' },
-      { type:'etf',    symbol:'SPY',     name:'S&P 500 ETF' },
-      { type:'etf',    symbol:'VT',      name:'Vanguard Total World' },
-      { type:'crypto', symbol:'BTC',     name:'Bitcoin',  coinId:'bitcoin' },
-      { type:'crypto', symbol:'ETH',     name:'Ethereum', coinId:'ethereum' },
+      { type:'index',  symbol:'^SSMI',    name:'SMI · Swiss Market Index' },
+      { type:'fx',     symbol:'EURCHF=X', name:'Euro / Franken' },
+      { type:'stock',  symbol:'MSFT',     name:'Microsoft' },
+      { type:'stock',  symbol:'AAPL',     name:'Apple' },
+      { type:'etf',    symbol:'SPY',      name:'S&P 500 ETF' },
+      { type:'crypto', symbol:'BTC',      name:'Bitcoin',  coinId:'bitcoin' },
+      { type:'crypto', symbol:'ETH',      name:'Ethereum', coinId:'ethereum' },
     ];
     let seedChecked = false;
     async function maybeSeed() {
@@ -394,7 +467,7 @@
       const metaRef = doc(db, 'watchlist', dataUid, 'meta', 'config');
       try {
         const snap = await getDoc(metaRef);
-        if (snap.exists() && snap.data().seeded) return;   // schon einmal geseedet
+        if (snap.exists() && snap.data().seeded) return;
         if (!allItems.length) {
           for (const d of SEED) await addDoc(itemsCol, { ...d, createdAt: Timestamp.now() });
         }
@@ -402,14 +475,23 @@
       } catch (e) { console.warn('seed', e); }
     }
 
-    function typeItems(type) {
-      return allItems.filter(i => i.type === type);
+    /* ════ Categorisation (also covers legacy items) ════ */
+    function sectionOf(i) {
+      const s = (i.symbol || '');
+      if (i.type === 'crypto') return 'crypto';
+      if (i.type === 'fx' || s.includes('=X')) return 'fx';
+      if (i.type === 'index' || s.startsWith('^')) return 'index';
+      if (i.type === 'etf') return 'etf';
+      return 'stock';
+    }
+    // Symbols Yahoo handles natively (indices, FX, foreign exchanges)
+    function isYahooNative(i) {
+      const s = (i.symbol || '');
+      const sec = sectionOf(i);
+      return sec === 'index' || sec === 'fx' || s.startsWith('^') || s.includes('=X') || s.includes('.');
     }
 
     function renderCounts() {
-      document.getElementById('countStock').textContent = typeItems('stock').length;
-      document.getElementById('countEtf').textContent = typeItems('etf').length;
-      document.getElementById('countCrypto').textContent = typeItems('crypto').length;
       let up = 0, down = 0, missing = 0;
       allItems.forEach(i => {
         const q = quotes.get(i.id);
@@ -427,41 +509,35 @@
     function renderQuickPicks() {
       const wrap = document.getElementById('quickPicks');
       if (!wrap || readOnly) return;
-      const picks = QUICK[activeType] || [];
+      const picks = QUICK[addType] || [];
       wrap.innerHTML = `<span class="wl-quick-label">Schnell</span>` + picks.map((p, i) =>
-        `<button class="wl-chip" type="button" data-quick="${i}">${escHtml(p.symbol)}</button>`).join('');
+        `<button class="wl-chip" type="button" data-quick="${i}" title="${escHtml(p.name||'')}">${escHtml(p.symbol.replace('=X','').replace('^',''))}</button>`).join('');
       wrap.querySelectorAll('[data-quick]').forEach(btn =>
-        btn.addEventListener('click', () => addEntry({ type: activeType, ...picks[+btn.dataset.quick] })));
+        btn.addEventListener('click', () => addEntry({ type: addType, ...picks[+btn.dataset.quick] })));
     }
 
     function renderMarketNote() {
       const wrap = document.getElementById('marketNote');
-      if (!wrap) return;
-      if (activeType === 'stock') {
-        wrap.innerHTML = '<strong>Samsung:</strong> 005930.KS ist das richtige Korea-Symbol, aber der gemeinsame Finnhub-Key bekommt dafuer kein Kursrecht. Apple funktioniert, weil US-Aktien im Key enthalten sind.';
-      } else if (activeType === 'etf') {
-        wrap.innerHTML = '<strong>SMI:</strong> Lege den direkten Index als ^SSMI hier ab. Falls kein Kurs erscheint, ist das ein Finnhub-Datenabo-Thema. Als stabile Alternative ist EWL ein Schweiz-ETF.';
-      } else {
-        wrap.innerHTML = '<strong>Krypto:</strong> Kurse kommen ueber CoinGecko und sind unabhaengig vom Finnhub-Key.';
-      }
+      if (wrap) wrap.innerHTML = '<strong>Datenquellen:</strong> US-Aktien & ETFs über Finnhub, Krypto über CoinGecko, und SMI, Devisen sowie ausländische Titel (z. B. Samsung) live über Yahoo Finance — kein eigener Schlüssel nötig.';
     }
 
-    window.wlTab = (t) => {
-      activeType = t;
-      try { localStorage.setItem('tvza-wl-tab', t); } catch(e){}
-      document.getElementById('tabStock').className  = 'tab' + (t==='stock'  ? ' active' : '');
-      document.getElementById('tabEtf').className    = 'tab' + (t==='etf'    ? ' active' : '');
-      document.getElementById('tabCrypto').className = 'tab' + (t==='crypto' ? ' active' : '');
-      document.getElementById('addTitle').textContent = TYPES[t].label + ' hinzufügen';
-      document.getElementById('symInput').placeholder = TYPES[t].ph;
-      document.getElementById('addHelp').textContent  = TYPES[t].help;
-      renderCounts();
+    function setAddType(t) {
+      if (!CATS[t]) return;
+      addType = t;
+      try { localStorage.setItem('tvza-wl-addtype', t); } catch(e){}
+      document.querySelectorAll('#typeSeg button').forEach(b =>
+        b.classList.toggle('active', b.dataset.type === t));
+      document.getElementById('addTitle').textContent = CATS[t].label + ' hinzufügen';
+      document.getElementById('symInput').placeholder = CATS[t].ph;
+      document.getElementById('addHelp').textContent  = CATS[t].help;
+      hideAc();
       renderQuickPicks();
-      renderMarketNote();
-      renderList(); renderKeyHint();
-    };
+      renderKeyHint();
+    }
+    document.querySelectorAll('#typeSeg button').forEach(b =>
+      b.addEventListener('click', () => setAddType(b.dataset.type)));
 
-    /* ════ Live items (instant sync, like the food fix) ════ */
+    /* ════ Live items (instant sync) ════ */
     onSnapshot(query(itemsCol, orderBy('createdAt','asc')), snap => {
       allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderCounts();
@@ -476,9 +552,7 @@
         `<div class="empty-state"><p class="empty-text">Konnte Watchlist nicht laden.</p></div>`;
     });
 
-    /* ════ Browse / search add ════
-       Statt Freitext: Live-Suche nach echten Instrumenten. Es wird nur
-       gespeichert, was ausgewählt wurde → immer ein gültiges, abrufbares Symbol. */
+    /* ════ Browse / search add ════ */
     const symInput = document.getElementById('symInput');
     const acList = document.getElementById('acList');
     let searchTimer = null, searchSeq = 0, acResults = [];
@@ -500,9 +574,12 @@
     async function runSearch(q) {
       const seq = ++searchSeq;
       let results = [];
-      try { results = activeType === 'crypto' ? await searchCrypto(q) : await searchStocks(q); }
-      catch (e) { console.warn(e); }
-      if (seq !== searchSeq) return;          // veraltete Antwort verwerfen
+      try {
+        if (addType === 'crypto')   results = await searchCrypto(q);
+        else if (addType === 'fx')  results = searchFx(q);
+        else                        results = await searchSymbols(q);
+      } catch (e) { console.warn(e); }
+      if (seq !== searchSeq) return;
       acResults = results;
       renderAc(results);
     }
@@ -511,20 +588,37 @@
       acList.classList.add('visible');
       if (!results.length) { acList.innerHTML = `<div class="ac-item" style="opacity:.6">Keine Treffer</div>`; return; }
       acList.innerHTML = results.map((r, i) =>
-        `<div class="ac-item" data-idx="${i}"><strong>${escHtml(r.symbol)}</strong> <small>${escHtml(r.name || '')}</small>${r.note ? `<br><small>${escHtml(r.note)}</small>` : ''}</div>`).join('');
+        `<div class="ac-item" data-idx="${i}"><strong>${escHtml((r.symbol||'').replace('=X','').replace('^',''))}</strong> <small>${escHtml(r.name || '')}</small></div>`).join('');
       acList.querySelectorAll('.ac-item[data-idx]').forEach(el =>
         el.addEventListener('mousedown', e => { e.preventDefault(); addEntry(results[+el.dataset.idx]); }));
     }
 
-    async function searchStocks(q) {
+    function searchFx(q) {
+      const t = q.toUpperCase().replace(/[^A-Z]/g, '');
+      const local = FX_PAIRS
+        .filter(p => p.code.includes(t) || p.name.toUpperCase().includes(q.toUpperCase()))
+        .map(p => ({ type:'fx', symbol: p.code + '=X', name: p.name }));
+      if (!local.length && t.length === 6) {
+        local.push({ type:'fx', symbol: t + '=X', name: t.slice(0,3) + ' / ' + t.slice(3) });
+      }
+      return local.slice(0, 12);
+    }
+
+    async function searchSymbols(q) {
+      const ql = q.toLowerCase();
       const local = LOCAL_SUGGESTIONS
-        .filter(x => x.type === activeType && x.q.some(term => term.includes(q.toLowerCase()) || q.toLowerCase().includes(term)))
+        .filter(x => x.type === addType && x.q.some(term => term.includes(ql) || ql.includes(term)))
         .map(({ q: _q, ...entry }) => entry);
-      const r = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(q)}&token=${getKey()}`);
-      if (!r.ok) return local;
-      const j = await r.json();
-      const remote = (j.result || []).slice(0, 12)
-        .map(x => ({ type: activeType, symbol: x.symbol, name: x.description || '' }));
+      // Allow direct index entry (e.g. ^N225)
+      if (addType === 'index' && q.startsWith('^')) local.push({ type:'index', symbol:q.toUpperCase(), name:'' });
+      let remote = [];
+      try {
+        const r = await fetch(`https://finnhub.io/api/v1/search?q=${encodeURIComponent(q)}&token=${getKey()}`);
+        if (r.ok) {
+          const j = await r.json();
+          remote = (j.result || []).slice(0, 12).map(x => ({ type: addType, symbol: x.symbol, name: x.description || '' }));
+        }
+      } catch (e) { /* offline / blocked → local only */ }
       const seen = new Set();
       return [...local, ...remote].filter(x => {
         const key = (x.type + ':' + x.symbol).toUpperCase();
@@ -561,8 +655,13 @@
       btn.classList.add('spin');
       try {
         const cryptos = allItems.filter(i => i.type === 'crypto' && i.coinId);
-        const stocks  = allItems.filter(i => i.type !== 'crypto');
-        await Promise.all([ fetchCrypto(cryptos), fetchStocks(stocks) ]);
+        const rest    = allItems.filter(i => i.type !== 'crypto');
+        const yahoo   = rest.filter(isYahooNative);
+        const finn    = rest.filter(i => !isYahooNative(i));
+        await Promise.all([ fetchCrypto(cryptos), fetchStocks(finn), fetchYahoo(yahoo) ]);
+        // Finnhub failures → retry via Yahoo
+        const retry = finn.filter(i => { const q = quotes.get(i.id); return !q || q.error || q.price == null; });
+        if (retry.length) await fetchYahoo(retry);
         document.getElementById('wlUpdated').textContent =
           'Stand: ' + new Date().toLocaleTimeString('de-CH', { hour:'2-digit', minute:'2-digit' });
         renderCounts();
@@ -582,7 +681,7 @@
         const byId = {}; data.forEach(d => byId[d.id] = d);
         items.forEach(i => {
           const d = byId[i.coinId]; if (!d) return;
-          quotes.set(i.id, { price:d.current_price, dp:d.price_change_percentage_24h, cur:'$', img:d.image });
+          quotes.set(i.id, { price:d.current_price, dp:d.price_change_percentage_24h, cur:'$', src:'CoinGecko', img:d.image });
         });
       } catch (e) { console.warn(e); }
     }
@@ -590,23 +689,54 @@
     async function fetchStocks(items) {
       if (!items.length) return;
       const key = getKey();
-      if (!key) return; // handled by key hint
-      // Finnhub free tier: one quote call per symbol
+      if (!key) return;
       await Promise.all(items.map(async i => {
         try {
           const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(i.symbol)}&token=${key}`);
-          if (!r.ok) {
-            quotes.set(i.id, { price:null, dp:null, cur:'', error: r.status === 403 ? 'Nicht im gemeinsamen Finnhub-Key enthalten.' : 'Kurs konnte nicht geladen werden.' });
-            return;
-          }
+          if (!r.ok) { quotes.set(i.id, { price:null, dp:null, cur:'', error:'Kurs konnte nicht geladen werden.' }); return; }
           const d = await r.json();
-          if (d && d.error) {
-            quotes.set(i.id, { price:null, dp:null, cur:'', error: String(d.error).includes('subscription') ? 'Direkter Index braucht ein Finnhub-Datenabo.' : d.error });
+          if (d && typeof d.c === 'number' && d.c > 0) quotes.set(i.id, { price:d.c, dp:d.dp, cur:'$', src:'Finnhub' });
+          else quotes.set(i.id, { price:null, dp:null, cur:'', error:'Kein aktueller Kurs verfügbar.' });
+        } catch (e) { quotes.set(i.id, { price:null, dp:null, cur:'', error:'Kurs konnte nicht geladen werden.' }); }
+      }));
+    }
+
+    /* CORS helper — Yahoo is fetched directly when possible, else via a public proxy */
+    const CORS_PROXIES = ['', 'https://corsproxy.io/?url=', 'https://api.allorigins.win/raw?url='];
+    async function fetchJsonCors(url) {
+      for (const p of CORS_PROXIES) {
+        try {
+          const r = await fetch(p ? p + encodeURIComponent(url) : url);
+          if (!r.ok) continue;
+          const j = await r.json();
+          if (j) return j;
+        } catch (e) { /* try next proxy */ }
+      }
+      return null;
+    }
+    const CUR_SYM = { USD:'$', EUR:'€', GBP:'£', JPY:'¥', KRW:'₩', CHF:'CHF ', CNY:'¥', AUD:'A$' };
+    async function fetchYahoo(items) {
+      if (!items.length) return;
+      await Promise.all(items.map(async i => {
+        try {
+          const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(i.symbol)}?range=1d&interval=1d`;
+          const j = await fetchJsonCors(url);
+          const m = j && j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].meta;
+          if (!m || typeof m.regularMarketPrice !== 'number') {
+            if (!quotes.get(i.id) || !quotes.get(i.id).price)
+              quotes.set(i.id, { price:null, dp:null, cur:'', error:'Kein Kurs verfügbar (Yahoo).' });
             return;
           }
-          if (d && typeof d.c === 'number' && d.c > 0) quotes.set(i.id, { price:d.c, dp:d.dp, cur:'' });
-          else quotes.set(i.id, { price:null, dp:null, cur:'', error:'Kein aktueller Kurs verfuegbar.' });
-        } catch (e) { console.warn(e); }
+          const price = m.regularMarketPrice;
+          const prev  = (typeof m.chartPreviousClose === 'number') ? m.chartPreviousClose
+                      : (typeof m.previousClose === 'number') ? m.previousClose : null;
+          const dp = (prev && prev !== 0) ? (price - prev) / prev * 100 : null;
+          const cur = sectionOf(i) === 'fx' ? '' : (CUR_SYM[m.currency] || '');
+          quotes.set(i.id, { price, dp, cur, src:'Yahoo' });
+        } catch (e) {
+          if (!quotes.get(i.id) || !quotes.get(i.id).price)
+            quotes.set(i.id, { price:null, dp:null, cur:'', error:'Kein Kurs verfügbar (Yahoo).' });
+        }
       }));
     }
 
@@ -622,25 +752,17 @@
       const arrow = dp > 0.01 ? '▲' : dp < -0.01 ? '▼' : '·';
       return { cls, txt:`${arrow} ${Math.abs(dp).toFixed(2)}%` };
     };
+    const dispSym = s => (s || '').replace('=X','').replace(/^\^/,'');
 
-    function renderList() {
-      const wrap = document.getElementById('listWrap');
-      const items = typeItems(activeType);
-      renderCounts();
-      if (!items.length) {
-        const t = TYPES[activeType].label;
-        wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128200;</div><p class="empty-text">Noch keine ${escHtml(t)}-Eintraege.<br>Fuege oben dein erstes hinzu.</p></div>`;
-        return;
-      }
-      const deleteCell = readOnly ? '' : '<div>Aktion</div>';
-      wrap.innerHTML = `<div class="wl-table-head"><div>Wert</div><div style="text-align:right">Kurs</div><div style="text-align:right">Tag</div>${deleteCell}</div><div class="item-list">` + items.map(i => {
-        const q = quotes.get(i.id) || {};
-        const ch = changeBits(q.dp);
-        const status = q.error || i.note || '';
-        return `
+    function rowHtml(i) {
+      const q = quotes.get(i.id) || {};
+      const ch = changeBits(q.dp);
+      const status = q.error || i.note || '';
+      const src = q.src ? `<span class="wl-src-tag">${escHtml(q.src)}</span>` : '';
+      return `
         <div class="item-card wl-row">
           <div class="wl-asset">
-            <div class="item-title"><span class="wl-sym">${escHtml(i.symbol)}</span>${i.name ? ` <span class="wl-name">${escHtml(i.name)}</span>` : ''}</div>
+            <div class="item-title"><span class="wl-sym">${escHtml(dispSym(i.symbol))}</span>${i.name ? ` <span class="wl-name">${escHtml(i.name)}</span>` : ''}${src}</div>
             ${status ? `<div class="wl-status ${q.error ? 'warn' : ''}">${escHtml(status)}</div>` : ''}
           </div>
           <div class="wl-quote">
@@ -649,21 +771,39 @@
           <div class="wl-change ${ch.cls}">${ch.txt}</div>
           ${readOnly ? '' : `<div class="item-actions"><button class="btn btn-danger" data-del="${i.id}" title="Entfernen"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`}
         </div>`;
-      }).join('') + `</div>`;
+    }
 
+    function renderList() {
+      const wrap = document.getElementById('listWrap');
+      renderCounts();
+      if (!allItems.length) {
+        wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">&#127956;</div><p class="empty-text">Deine Watchlist ist leer.<br>Füge oben Indizes, Aktien, ETFs, Devisen oder Krypto hinzu.</p></div>`;
+        return;
+      }
+      let html = '';
+      for (const sec of SECTION_ORDER) {
+        const items = allItems.filter(i => sectionOf(i) === sec);
+        if (!items.length) continue;
+        html += `<div class="wl-section">
+            <div class="wl-section-title"><span class="ic">${CATS[sec].ic}</span>${CATS[sec].plural}<span class="wl-count">${items.length}</span></div>
+            <div class="item-list">${items.map(rowHtml).join('')}</div>
+          </div>`;
+      }
+      wrap.innerHTML = html;
       wrap.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removeItem(b.dataset.del)));
     }
+
     function renderKeyHint() {
       const wrap = document.getElementById('keyHint');
-      const needsKey = (activeType === 'stock' || activeType === 'etf') && !getKey();
+      const needsKey = (addType === 'stock' || addType === 'etf') && !getKey();
       wrap.innerHTML = needsKey
-        ? `<div class="wl-hint">Für Aktien- & ETF-Kurse einen kostenlosen <a id="openSetFromHint">Finnhub-Key hinterlegen →</a></div>`
+        ? `<div class="wl-hint">Für Aktien- & ETF-Suche einen kostenlosen <a id="openSetFromHint">Finnhub-Key hinterlegen →</a></div>`
         : '';
       const a = document.getElementById('openSetFromHint');
       if (a) a.addEventListener('click', openSettings);
     }
 
-    /* ════ Market news (Finnhub) ════ */
+    /* ════ Market news — grouped grid of taller tiles ════ */
     function newsTime(sec) {
       if (!sec) return '';
       const h = Math.floor((Date.now() - sec * 1000) / 3600000);
@@ -673,11 +813,25 @@
       if (d < 7) return `vor ${d} Tag${d > 1 ? 'en' : ''}`;
       return new Date(sec * 1000).toLocaleDateString('de-CH', { day:'numeric', month:'short' });
     }
+    function newsTileHtml(n) {
+      return `
+        <a class="news-tile" href="${escHtml(n.url)}" target="_blank" rel="noopener">
+          <span class="nt-thumb">
+            <span class="nt-ph">📰</span>
+            ${n.image ? `<img src="${escHtml(n.image)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+          </span>
+          <span class="nt-body">
+            <span class="nt-head">${escHtml(n.headline)}</span>
+            <span class="nt-meta"><span class="nt-src">${escHtml(n.source || 'News')}</span><span class="nt-dot">•</span><span>${newsTime(n.datetime)}</span></span>
+          </span>
+        </a>`;
+    }
     async function loadNews() {
       const wrap = document.getElementById('newsWrap');
       const key = getKey();
       try {
-        const stockSyms = [...new Set(allItems.filter(i => i.type !== 'crypto').map(i => i.symbol))].slice(0, 6);
+        const stockSyms = [...new Set(allItems.filter(i => sectionOf(i) === 'stock' || sectionOf(i) === 'etf')
+          .map(i => i.symbol).filter(s => !s.includes('.') && !s.startsWith('^')))].slice(0, 6);
         const hasCrypto = allItems.some(i => i.type === 'crypto');
         if (!stockSyms.length && !hasCrypto) {
           wrap.innerHTML = `<p style="color:var(--ink-soft);font-size:13px">Füge Aktien oder Krypto hinzu — dann erscheinen hier passende Markt-News.</p>`;
@@ -685,33 +839,36 @@
         }
         const fmt = d => d.toISOString().slice(0, 10);
         const to = new Date(), from = new Date(Date.now() - 7 * 86400000);
-        // Firmen-News je beobachtetem Wert → garantiert marktrelevant
         const calls = stockSyms.map(s =>
           fetch(`https://finnhub.io/api/v1/company-news?symbol=${encodeURIComponent(s)}&from=${fmt(from)}&to=${fmt(to)}&token=${key}`)
-            .then(r => r.ok ? r.json() : []).then(a => (a || []).map(n => ({ ...n, _sym: s }))).catch(() => []));
+            .then(r => r.ok ? r.json() : []).then(a => (a || []).map(n => ({ ...n, _cat: s }))).catch(() => []));
         if (hasCrypto) calls.push(
           fetch(`https://finnhub.io/api/v1/news?category=crypto&token=${key}`)
-            .then(r => r.ok ? r.json() : []).then(a => (a || []).slice(0, 12).map(n => ({ ...n, _sym: 'Krypto' }))).catch(() => []));
+            .then(r => r.ok ? r.json() : []).then(a => (a || []).slice(0, 16).map(n => ({ ...n, _cat: 'Krypto' }))).catch(() => []));
 
         let arts = (await Promise.all(calls)).flat().filter(n => n.headline && n.url);
         const seen = new Set();
         arts = arts.filter(n => { const k = n.url || n.id; if (seen.has(k)) return false; seen.add(k); return true; });
-        arts.sort((a, b) => (b.datetime || 0) - (a.datetime || 0));
-        arts = arts.slice(0, 12);
         if (!arts.length) { wrap.innerHTML = `<p style="color:var(--ink-soft);font-size:13px">Aktuell keine News zu deinen Werten.</p>`; return; }
 
-        wrap.innerHTML = `<div class="news-list">` + arts.map(n => `
-          <a class="news-card" href="${escHtml(n.url)}" target="_blank" rel="noopener">
-            <span class="news-thumbwrap">
-              <span class="news-ph">📰</span>
-              ${n.image ? `<img class="news-thumb news-img" src="${escHtml(n.image)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
-            </span>
-            <span class="news-body">
-              <span class="news-head">${escHtml(n.headline)}</span>
-              <span class="news-meta">${n._sym ? `<span class="news-tag">${escHtml(n._sym)}</span>` : ''}<span class="news-src">${escHtml(n.source || 'News')}</span><span class="news-dot">•</span><span>${newsTime(n.datetime)}</span></span>
-            </span>
-            <svg class="news-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
-          </a>`).join('') + `</div>`;
+        // Group by category, keep newest first inside each group, cap per group
+        const groups = new Map();
+        arts.sort((a, b) => (b.datetime || 0) - (a.datetime || 0));
+        for (const n of arts) {
+          const cat = n._cat || 'Markt';
+          if (!groups.has(cat)) groups.set(cat, []);
+          const g = groups.get(cat);
+          if (g.length < 6) g.push(n);
+        }
+        // Order categories by their freshest article
+        const ordered = [...groups.entries()].sort((a, b) =>
+          (b[1][0].datetime || 0) - (a[1][0].datetime || 0));
+
+        wrap.innerHTML = `<div class="news-groups">` + ordered.map(([cat, list]) => `
+          <section class="news-group">
+            <div class="news-group-title"><span class="pill">${escHtml(cat)}</span><span>${list.length} ${list.length === 1 ? 'Meldung' : 'Meldungen'}</span></div>
+            <div class="news-grid">${list.map(newsTileHtml).join('')}</div>
+          </section>`).join('') + `</div>`;
       } catch (e) {
         console.warn(e);
         wrap.innerHTML = `<p style="color:var(--ink-soft);font-size:13px">News konnten nicht geladen werden.</p>`;
@@ -728,7 +885,7 @@
           notified.add(i.symbol);
           const dir = q.dp > 0 ? '▲ steigt' : '▼ fällt';
           try {
-            new Notification(`${i.symbol} ${dir} ${Math.abs(q.dp).toFixed(1)}%`, {
+            new Notification(`${dispSym(i.symbol)} ${dir} ${Math.abs(q.dp).toFixed(1)}%`, {
               body: `Aktueller Kurs: ${fmtPrice(q.price, q.cur)}`,
               icon: '../assets/icons/icon-192.png', tag: 'wl-' + i.symbol
             });
@@ -776,7 +933,8 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshQuotes(); });
 
     /* ════ Init ════ */
-    wlTab(activeType);
+    setAddType(addType);
+    renderMarketNote();
     renderKeyHint();
     loadNews();
   </script>
