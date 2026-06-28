@@ -182,7 +182,7 @@
   <script>
   (() => {
     'use strict';
-    try { if (sessionStorage.getItem('tvza-wl-welcomed')) return; sessionStorage.setItem('tvza-wl-welcomed','1'); } catch(e){}
+    // Splash spielt bei JEDEM Öffnen der Watchlist (vom Dashboard-Tile).
     const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     // a few drifting snowflakes
     let flakes = '';
@@ -450,30 +450,13 @@
       { code:'AUDUSD', name:'Aussie / US-Dollar' }, { code:'USDCNY', name:'US-Dollar / Yuan' },
     ];
 
-    /* ════ Starter-Watchlist (einmalig, falls leer) ════ */
-    const SEED = [
-      { type:'index',  symbol:'^SSMI',    name:'SMI · Swiss Market Index' },
-      { type:'fx',     symbol:'EURCHF=X', name:'Euro / Franken' },
-      { type:'stock',  symbol:'MSFT',     name:'Microsoft' },
-      { type:'stock',  symbol:'AAPL',     name:'Apple' },
-      { type:'etf',    symbol:'SPY',      name:'S&P 500 ETF' },
-      { type:'crypto', symbol:'BTC',      name:'Bitcoin',  coinId:'bitcoin' },
-      { type:'crypto', symbol:'ETH',      name:'Ethereum', coinId:'ethereum' },
-    ];
-    let seedChecked = false;
-    async function maybeSeed() {
-      if (seedChecked || readOnly || dataUid !== user.uid) return;
-      seedChecked = true;
-      const metaRef = doc(db, 'watchlist', dataUid, 'meta', 'config');
-      try {
-        const snap = await getDoc(metaRef);
-        if (snap.exists() && snap.data().seeded) return;
-        if (!allItems.length) {
-          for (const d of SEED) await addDoc(itemsCol, { ...d, createdAt: Timestamp.now() });
-        }
-        await setDoc(metaRef, { seeded: true }, { merge: true });
-      } catch (e) { console.warn('seed', e); }
-    }
+    /* ════ Starter-Watchlist ════
+       Bewusst LEER: jede Person baut ihre eigene Liste auf. Früher bekamen
+       alle neuen Konten dieselben 7 Startwerte — das sah aus, als würde die
+       Watchlist „mit allen synchronisieren". Tut sie nicht: die Daten liegen
+       pro Nutzer unter watchlist/{uid}/items. Neue Konten starten jetzt leer
+       (freundlicher Leerzustand + Schnell-Auswahl unten). */
+    async function maybeSeed() { /* no-op: keine automatischen Startwerte mehr */ }
 
     /* ════ Categorisation (also covers legacy items) ════ */
     function sectionOf(i) {

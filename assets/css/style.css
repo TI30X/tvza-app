@@ -466,6 +466,8 @@ button, input, select, textarea { font-family: inherit; }
 .card--trip   .card-icon { background: var(--tint-trip); color: var(--trip-deep); }
 .card--matura .card-icon { background: var(--tint-matura); color: var(--matura-deep); }
 .card--watch  .card-icon { background: var(--tint-watch); color: var(--watch-deep); }
+.card--weather .card-icon { background: oklch(0.93 0.04 230); color: oklch(0.45 0.11 235); }
+:root[data-theme="dark"] .card--weather .card-icon { background: oklch(0.30 0.05 235); color: oklch(0.82 0.09 230); }
 
 .card-content h3 { font-size: var(--text-base); font-weight: 700; }
 .card-content p  { font-size: var(--text-sm); color: var(--ink-soft); margin-top: 2px; }

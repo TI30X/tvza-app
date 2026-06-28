@@ -20,6 +20,16 @@
     .icon-btn { cursor:pointer; color:var(--ink-soft); min-width:40px; min-height:40px;
       display:inline-flex; align-items:center; justify-content:center; }
     .header-actions { display:flex; align-items:center; gap:6px; }
+    /* live weather mini-chip (top-right on laptop, in header on phone) */
+    .wx-chip-mini { display:inline-flex; align-items:center; gap:5px; text-decoration:none;
+      border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
+      border-radius:999px; padding:5px 11px 5px 9px; font-weight:700; font-size:13px;
+      min-height:34px; transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+    .wx-chip-mini:hover { transform:translateY(-1px); box-shadow:var(--shadow-sm); border-color:var(--ink-soft); }
+    .wx-chip-mini .wxc-ic { font-size:16px; line-height:1; }
+    .wx-chip-mini .wxc-temp { font-variant-numeric:tabular-nums; }
+    .wx-chip-mini.loading { opacity:.6; }
+    @media (max-width:520px){ .wx-chip-mini .wxc-temp { font-size:12.5px; } .wx-chip-mini { padding:5px 9px; } }
     .share-list .link-row small { color:var(--ink-soft); }
     .role-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;
       background:var(--accent-bg); color:var(--accent); }
@@ -53,6 +63,10 @@
           </span>
         </a>
         <div class="header-actions">
+          <a class="wx-chip-mini" id="wxChip" href="pages/weather.html?v=1" title="Wetter ansehen" style="display:none">
+            <span class="wxc-ic" id="wxChipIc">⛅</span>
+            <span class="wxc-temp" id="wxChipTemp">–°</span>
+          </a>
           <span class="icon-btn" id="settingsBtn" title="Einstellungen & Module">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </span>
@@ -98,6 +112,13 @@
             <a href="pages/watchlist.html" class="card card--watch" id="cardWatch" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
             <div class="card-content"><h3>TVZA Watchlist</h3><p>Kurse, Märkte &amp; News</p></div>
+            </a>
+          </div>
+
+          <div class="module-tile" data-tracker-tile="weather">
+            <a href="pages/weather.html?v=1" class="card card--weather" id="cardWeather" draggable="false" style="display:none">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13a4 4 0 1 0-5.6-5.6"/><path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M20 12h2"/><path d="M17.5 19a3.5 3.5 0 0 0 0-7h-1.3a5 5 0 1 0-9.7 1.8"/><path d="M7 16a3 3 0 0 0 0 6h10"/></svg></div>
+            <div class="card-content"><h3>Wetter</h3><p>Wetter &amp; Bergprognose</p></div>
             </a>
           </div>
 
@@ -413,11 +434,13 @@
       setTrackerTile('ski', mods.ski);
       setTrackerTile('food', mods.food);
       setTrackerTile('watch', mods.watch);
+      setTrackerTile('weather', mods.weather);
       setTrackerTile('trip', mods.trip);
       setTrackerTile('matura', mods.matura);
       setTrackerTile('maturatracker', mods.maturatracker);
       document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
-      const anyTracker = mods.ski || mods.food || mods.watch || mods.trip || mods.matura || mods.maturatracker;
+      const anyTracker = mods.ski || mods.food || mods.watch || mods.weather || mods.trip || mods.matura || mods.maturatracker;
+      if (window.tvzaWeatherChip) window.tvzaWeatherChip.setVisible(!!mods.weather);
       document.getElementById('noModulesHint').style.display = anyTracker ? 'none' : '';
       applyTrackerTileOrder();
       applyOverviewLayout();
@@ -1180,6 +1203,65 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
     }
+  </script>
+
+  <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
+  <script>
+  (() => {
+    const chip = document.getElementById('wxChip');
+    if (!chip) return;
+    const icEl = document.getElementById('wxChipIc');
+    const tEl  = document.getElementById('wxChipTemp');
+    const EMOJI = code => {
+      if (code === 0) return '☀️';
+      if (code === 1 || code === 2) return '🌤️';
+      if (code === 3) return '☁️';
+      if (code === 45 || code === 48) return '🌫️';
+      if (code >= 51 && code <= 67) return '🌧️';
+      if (code >= 71 && code <= 77) return '🌨️';
+      if (code >= 80 && code <= 82) return '🌦️';
+      if (code === 85 || code === 86) return '❄️';
+      if (code >= 95) return '⛈️';
+      return '⛅';
+    };
+    const DEFAULT_LOC = { name:'Vaduz', latitude:47.141, longitude:9.521 };
+    function getLoc() {
+      try { const v = JSON.parse(localStorage.getItem('tvza-weather-loc') || 'null'); if (v && v.latitude != null) return v; } catch(e){}
+      return DEFAULT_LOC;
+    }
+    let fetched = false;
+    async function fetchChip() {
+      if (fetched) return; fetched = true;
+      chip.classList.add('loading');
+      const finish = () => chip.classList.remove('loading');
+      const go = async (l) => {
+        try {
+          const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${l.latitude}&longitude=${l.longitude}&current=temperature_2m,weather_code&timezone=auto`);
+          if (!r.ok) throw 0;
+          const j = await r.json();
+          const c = j.current;
+          if (c) { icEl.textContent = EMOJI(c.weather_code); tEl.textContent = Math.round(c.temperature_2m) + '°'; }
+        } catch(e) { /* leave placeholder */ }
+        finish();
+      };
+      const saved = getLoc();
+      const hadSaved = (() => { try { return !!localStorage.getItem('tvza-weather-loc'); } catch(e){ return false; } })();
+      if (!hadSaved && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => go({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+          () => go(saved),
+          { enableHighAccuracy:false, timeout:6000, maximumAge:1800000 });
+      } else {
+        go(saved);
+      }
+    }
+    window.tvzaWeatherChip = {
+      setVisible(v) {
+        chip.style.display = v ? '' : 'none';
+        if (v) fetchChip();
+      }
+    };
+  })();
   </script>
 </body>
 </html>
