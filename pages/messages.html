@@ -30,9 +30,9 @@
     .dm-conv:hover { transform:translateX(2px); box-shadow:var(--shadow-sm); border-color:var(--accent); }
     .dm-ava { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:16px;
       background:var(--accent-bg); color:var(--accent); }
-    .dm-conv-main { min-width:0; }
-    .dm-conv-name { font-weight:700; font-size:14.5px; display:flex; align-items:center; gap:7px; }
-    .dm-conv-last { color:var(--ink-soft); font-size:12.5px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .dm-conv-main { min-width:0; display:flex; flex-direction:column; }
+    .dm-conv-name { font-weight:700; font-size:14.5px; display:flex; align-items:center; gap:7px; min-width:0; }
+    .dm-conv-last { color:var(--ink-soft); font-size:12.5px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; min-width:0; }
     .dm-conv-meta { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
     .dm-time { color:var(--ink-soft); font-size:11px; white-space:nowrap; }
     .dm-badge { min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:var(--accent); color:#fff;
@@ -53,6 +53,12 @@
     .dm-bubble .b-time { display:block; font-size:10px; opacity:.65; margin-top:3px; text-align:right; }
     .dm-bubble.me { align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:5px; }
     .dm-bubble.them { align-self:flex-start; background:var(--surface-2); color:var(--ink); border:1px solid var(--border); border-bottom-left-radius:5px; }
+    .dm-typing { font-size:12px; color:var(--ink-soft); padding:0 2px 4px; display:flex; align-items:center; gap:6px; min-height:18px; }
+    .dm-typing-dots { display:inline-flex; gap:2px; }
+    .dm-typing-dots span { width:4px; height:4px; border-radius:50%; background:var(--ink-soft); animation:dmTypingBounce 1.1s infinite ease-in-out; }
+    .dm-typing-dots span:nth-child(2) { animation-delay:.15s; }
+    .dm-typing-dots span:nth-child(3) { animation-delay:.3s; }
+    @keyframes dmTypingBounce { 0%, 60%, 100% { transform:translateY(0); opacity:.5; } 30% { transform:translateY(-3px); opacity:1; } }
     .dm-compose { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:end; padding-top:10px; border-top:1px solid var(--border); }
     .dm-compose textarea { width:100%; resize:none; font:inherit; font-size:15px; padding:11px 12px; border:1px solid var(--border);
       border-radius:14px; background:var(--surface-2); color:var(--ink); max-height:120px; min-height:44px; line-height:1.35; }
@@ -108,6 +114,10 @@
           <div class="dm-thread-name" id="threadName">…</div>
         </div>
         <div class="dm-msgs" id="msgs"></div>
+        <div class="dm-typing" id="typingIndicator" hidden>
+          <span class="dm-typing-dots"><span></span><span></span><span></span></span>
+          <span id="typingText"></span>
+        </div>
         <div class="dm-compose">
           <textarea id="msgInput" rows="1" placeholder="Nachricht schreiben…" maxlength="2000"></textarea>
           <button class="dm-send" id="sendBtn" title="Senden" disabled>
@@ -209,6 +219,13 @@
 
     /* ════ Thread (live) ════ */
     let activeOther = null, activeName = '', msgUnsub = null;
+    let convUnsub = null, typingCheckTimer = null, lastTypingWrite = 0, lastTypingTs = 0;
+    const TYPING_FRESH_MS = 5000; // wie lange ein "tippt…"-Zeitstempel als aktuell gilt
+    function showTyping(show, name) {
+      const el = $('typingIndicator');
+      if (show) { $('typingText').textContent = `${name} tippt…`; el.hidden = false; }
+      else el.hidden = true;
+    }
     function openThread(other, name) {
       activeOther = other; activeName = name;
       $('threadName').textContent = name;
@@ -216,6 +233,7 @@
       $('listView').style.display = 'none';
       $('threadView').style.display = 'flex';
       $('msgs').innerHTML = `<div class="spinner">Lade…</div>`;
+      showTyping(false);
       try { history.pushState({ thread: true }, ''); } catch(e){}
 
       const cid = convId(me, other);
@@ -231,10 +249,29 @@
         console.warn(err);
         $('msgs').innerHTML = `<div class="dm-empty">Nachrichten konnten nicht geladen werden.</div>`;
       });
+
+      // Schreib-Indikator: Konversations-Dokument auf typing.<otherUid> beobachten.
+      if (convUnsub) convUnsub();
+      if (typingCheckTimer) clearInterval(typingCheckTimer);
+      convUnsub = onSnapshot(doc(db, 'dms', cid), snap => {
+        const data = snap.data();
+        const ts = data && data.typing && data.typing[other];
+        const d = toDate(ts);
+        lastTypingTs = d ? d.getTime() : 0;
+        const fresh = lastTypingTs && (Date.now() - lastTypingTs < TYPING_FRESH_MS);
+        showTyping(!!fresh, name);
+      }, () => {});
+      typingCheckTimer = setInterval(() => {
+        // Lokal ausblenden, sobald der letzte Zeitstempel zu alt ist (onSnapshot feuert nicht von selbst mit der Zeit).
+        if (!$('typingIndicator').hidden && (!lastTypingTs || Date.now() - lastTypingTs > TYPING_FRESH_MS)) showTyping(false);
+      }, 1000);
+
       setTimeout(() => $('msgInput').focus(), 60);
     }
     function closeThread() {
       if (msgUnsub) { msgUnsub(); msgUnsub = null; }
+      if (convUnsub) { convUnsub(); convUnsub = null; }
+      if (typingCheckTimer) { clearInterval(typingCheckTimer); typingCheckTimer = null; }
       activeOther = null;
       $('threadView').style.display = 'none';
       $('listView').style.display = '';
@@ -259,7 +296,17 @@
     /* ════ Compose / send ════ */
     const input = $('msgInput'), sendBtn = $('sendBtn');
     function autoSize() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
-    input.addEventListener('input', () => { autoSize(); sendBtn.disabled = !input.value.trim(); });
+    function pingTyping() {
+      if (!activeOther) return;
+      const now = Date.now();
+      if (now - lastTypingWrite < 2500) return; // höchstens alle 2.5s schreiben
+      lastTypingWrite = now;
+      updateDoc(doc(db, 'dms', convId(me, activeOther)), { ['typing.' + me]: serverTimestamp() }).catch(() => {});
+    }
+    input.addEventListener('input', () => {
+      autoSize(); sendBtn.disabled = !input.value.trim();
+      if (input.value.trim()) pingTyping();
+    });
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
@@ -281,7 +328,8 @@
           lastMessage: text.slice(0, 140),
           lastAt: serverTimestamp(),
           lastSender: me,
-          unread: { [other]: increment(1), [me]: 0 }
+          unread: { [other]: increment(1), [me]: 0 },
+          ['typing.' + me]: null
         }, { merge: true });
         await addDoc(collection(convRef, 'messages'), { text, sender: me, createdAt: serverTimestamp() });
       } catch (e) {

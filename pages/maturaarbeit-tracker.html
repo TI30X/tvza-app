@@ -64,6 +64,8 @@ body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; backgr
 /* roter Faden note */
 .faden-note{ background:linear-gradient(90deg,var(--teal-l),#c5f6fa); border-left:4px solid var(--teal); border-radius:0 10px 10px 0; padding:11px 15px; font-size:.8rem; color:#0b6d7d; line-height:1.5; margin-bottom:22px; }
 .faden-note b{ color:var(--teal); }
+:root[data-theme="dark"] .faden-note{ background:rgba(12,133,153,.14); color:var(--text); }
+:root[data-theme="dark"] .faden-note b{ color:oklch(0.82 0.09 195); }
 
 /* meetings */
 .meetings-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }

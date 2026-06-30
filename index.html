@@ -1454,18 +1454,22 @@
         const candidates = [];
         const daySnap = await getDocs(query(collection(db, 'calendarDays'), where('ownerUid','==',uid)));
         daySnap.docs.forEach(d => { const x = d.data(); if (x.date && x.date >= todayStr) candidates.push({ date: x.date, title: x.title || 'Termin' }); });
-        if (profile.familyId) {
-          try {
-            const tripSnap = await getDocs(query(collection(db, 'trips'), where('familyId','==',profile.familyId)));
-            tripSnap.docs.forEach(d => {
-              const x = d.data(); if (!x.startDate) return;
-              // Bereits laufende Reisen (Start in der Vergangenheit, Ende noch nicht erreicht) zählen als "heute".
-              const ongoing = x.startDate < todayStr && (!x.endDate || x.endDate >= todayStr);
-              if (ongoing) candidates.push({ date: todayStr, title: x.name || 'Reise' });
-              else if (x.startDate >= todayStr) candidates.push({ date: x.startDate, title: x.name || 'Reise' });
-            });
-          } catch (e) {}
-        }
+        try {
+          // Alle Reisen holen (Firestore-Regeln erlauben das ohnehin allen angemeldeten
+          // Nutzern) und client-seitig auf die eigene Gruppe ODER selbst erstellte Reisen
+          // filtern — robuster als ein reiner familyId-Filter, falls die Gruppenzuordnung
+          // mal nicht passt.
+          const tripSnap = await getDocs(collection(db, 'trips'));
+          tripSnap.docs.forEach(d => {
+            const x = d.data(); if (!x.startDate) return;
+            const mine = (profile.familyId && x.familyId === profile.familyId) || x.createdBy === uid;
+            if (!mine) return;
+            // Bereits laufende Reisen (Start in der Vergangenheit, Ende noch nicht erreicht) zählen als "heute".
+            const ongoing = x.startDate < todayStr && (!x.endDate || x.endDate >= todayStr);
+            if (ongoing) candidates.push({ date: todayStr, title: x.name || 'Reise' });
+            else if (x.startDate >= todayStr) candidates.push({ date: x.startDate, title: x.name || 'Reise' });
+          });
+        } catch (e) {}
         if (!candidates.length) return;
         candidates.sort((a, b) => a.date < b.date ? -1 : 1);
         const ev = candidates[0];
