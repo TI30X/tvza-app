@@ -569,6 +569,11 @@ function renderGlobalProg(){
   const pct=total?Math.round(done/total*100):0;
   document.getElementById('gp-fill').style.width=pct+'%';
   document.getElementById('gp-pct').textContent=pct+' %';
+  // Persist a compact summary so the dashboard tile reflects this module's Gesamtfortschritt.
+  try {
+    const days = Math.max(0, Math.ceil((DEADLINE - TODAY) / 86400000));
+    localStorage.setItem('matura_v3_summary', JSON.stringify({ pct, done, total, deadline:'2026-08-17', days, ts:Date.now() }));
+  } catch(e){}
 }
 
 // ── PHASES ───────────────────────────────────────────────────────────────────

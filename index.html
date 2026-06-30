@@ -1325,7 +1325,28 @@
     const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
     /* ── 1) Maturaarbeit: Fortschritt + Abgabe-Countdown (localStorage) ── */
+    /* Jede Kachel spiegelt den Gesamtfortschritt ihres eigenen Moduls wider:
+       tileMatura ← matura_v3 (Maturaarbeit-Modul), tileMaturaTracker ← matura_tracker (Tracker-Modul). */
     (function matura() {
+      const paintTile = (idn, pct, days) => {
+        if (pct == null) return;
+        const el = $(idn); if (!el) return;
+        const meta = (days == null) ? '' : `<span class="tl-meta">${days === 0 ? 'Abgabe heute' : days + ' Tage'}</span>`;
+        el.innerHTML = `<div class="tl-head"><span class="tl-pct">${pct}%</span>${meta}</div><div class="tl-bar"><div class="tl-fill"></div></div>`;
+        show(el);
+        requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
+      };
+
+      // Maturaarbeit-Modul (pages/maturaarbeit.html) → matura_v3_summary
+      try {
+        const sumRaw = localStorage.getItem('matura_v3_summary');
+        if (sumRaw) {
+          const s = JSON.parse(sumRaw);
+          paintTile('tileMatura', s.pct, (s.days == null ? null : s.days));
+        }
+      } catch (e) {}
+
+      // Maturaarbeit-Tracker (pages/maturaarbeit-tracker.html) → matura_tracker_<uid>_summary
       try {
         let pct = null, days = null;
         const sumRaw = localStorage.getItem('matura_tracker_' + uid + '_summary');
@@ -1343,14 +1364,7 @@
             if (st.deadline) { const t = new Date(); t.setHours(0,0,0,0); days = Math.max(0, Math.ceil((new Date(st.deadline) - t) / 86400000)); }
           }
         }
-        if (pct == null) return;
-        const meta = (days == null) ? '' : `<span class="tl-meta">${days === 0 ? 'Abgabe heute' : days + ' Tage'}</span>`;
-        const html = `<div class="tl-head"><span class="tl-pct">${pct}%</span>${meta}</div><div class="tl-bar"><div class="tl-fill"></div></div>`;
-        ['tileMaturaTracker','tileMatura'].forEach(idn => {
-          const el = $(idn); if (!el) return;
-          el.innerHTML = html; show(el);
-          requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
-        });
+        paintTile('tileMaturaTracker', pct, days);
       } catch (e) {}
     })();
 
