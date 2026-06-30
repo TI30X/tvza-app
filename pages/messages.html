@@ -219,12 +219,20 @@
 
     /* ════ Thread (live) ════ */
     let activeOther = null, activeName = '', msgUnsub = null;
-    let convUnsub = null, typingCheckTimer = null, lastTypingWrite = 0, lastTypingTs = 0;
-    const TYPING_FRESH_MS = 5000; // wie lange ein "tippt…"-Zeitstempel als aktuell gilt
+    let convUnsub = null, typingHideTimer = null;
+    // Reine Boolean-Flag statt Zeitstempel-Vergleich: ein Vergleich von serverTimestamp()
+    // gegen das lokale Date.now() ist anfällig für Uhrzeit-Drift zwischen den Geräten
+    // (der Indikator könnte dann nie verschwinden oder gar nicht erst erscheinen).
+    // Stattdessen: "typing.<uid> = true/false", und JEDE Seite blendet nach eigener,
+    // lokal gemessener Zeit ohne neues Signal automatisch wieder aus.
+    const TYPING_AUTO_HIDE_MS = 4000;
     function showTyping(show, name) {
       const el = $('typingIndicator');
-      if (show) { $('typingText').textContent = `${name} tippt…`; el.hidden = false; }
-      else el.hidden = true;
+      if (typingHideTimer) { clearTimeout(typingHideTimer); typingHideTimer = null; }
+      if (show) {
+        $('typingText').textContent = `${name} tippt…`; el.hidden = false;
+        typingHideTimer = setTimeout(() => { el.hidden = true; }, TYPING_AUTO_HIDE_MS);
+      } else el.hidden = true;
     }
     function openThread(other, name) {
       activeOther = other; activeName = name;
@@ -252,26 +260,21 @@
 
       // Schreib-Indikator: Konversations-Dokument auf typing.<otherUid> beobachten.
       if (convUnsub) convUnsub();
-      if (typingCheckTimer) clearInterval(typingCheckTimer);
       convUnsub = onSnapshot(doc(db, 'dms', cid), snap => {
         const data = snap.data();
-        const ts = data && data.typing && data.typing[other];
-        const d = toDate(ts);
-        lastTypingTs = d ? d.getTime() : 0;
-        const fresh = lastTypingTs && (Date.now() - lastTypingTs < TYPING_FRESH_MS);
-        showTyping(!!fresh, name);
+        const isTyping = !!(data && data.typing && data.typing[other] === true);
+        showTyping(isTyping, name);
       }, () => {});
-      typingCheckTimer = setInterval(() => {
-        // Lokal ausblenden, sobald der letzte Zeitstempel zu alt ist (onSnapshot feuert nicht von selbst mit der Zeit).
-        if (!$('typingIndicator').hidden && (!lastTypingTs || Date.now() - lastTypingTs > TYPING_FRESH_MS)) showTyping(false);
-      }, 1000);
 
       setTimeout(() => $('msgInput').focus(), 60);
     }
     function closeThread() {
       if (msgUnsub) { msgUnsub(); msgUnsub = null; }
       if (convUnsub) { convUnsub(); convUnsub = null; }
-      if (typingCheckTimer) { clearInterval(typingCheckTimer); typingCheckTimer = null; }
+      if (typingHideTimer) { clearTimeout(typingHideTimer); typingHideTimer = null; }
+      // Eigenen Tipp-Status zurücksetzen, falls man mitten im Schreiben den Thread verlässt.
+      if (activeOther) updateDoc(doc(db, 'dms', convId(me, activeOther)), { ['typing.' + me]: false }).catch(() => {});
+      if (stopTypingTimer) { clearTimeout(stopTypingTimer); stopTypingTimer = null; }
       activeOther = null;
       $('threadView').style.display = 'none';
       $('listView').style.display = '';
@@ -295,17 +298,24 @@
 
     /* ════ Compose / send ════ */
     const input = $('msgInput'), sendBtn = $('sendBtn');
+    let stopTypingTimer = null, typingOn = false;
     function autoSize() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
+    function setTyping(on) {
+      if (!activeOther) return;
+      typingOn = on;
+      updateDoc(doc(db, 'dms', convId(me, activeOther)), { ['typing.' + me]: on }).catch(() => {});
+    }
     function pingTyping() {
       if (!activeOther) return;
-      const now = Date.now();
-      if (now - lastTypingWrite < 2500) return; // höchstens alle 2.5s schreiben
-      lastTypingWrite = now;
-      updateDoc(doc(db, 'dms', convId(me, activeOther)), { ['typing.' + me]: serverTimestamp() }).catch(() => {});
+      if (!typingOn) setTyping(true); // sofort "true" setzen, dann nicht mehr bei jedem Tastendruck schreiben
+      if (stopTypingTimer) clearTimeout(stopTypingTimer);
+      // Nach 3s ohne weiteren Tastendruck gilt man als "fertig getippt".
+      stopTypingTimer = setTimeout(() => setTyping(false), 3000);
     }
     input.addEventListener('input', () => {
       autoSize(); sendBtn.disabled = !input.value.trim();
       if (input.value.trim()) pingTyping();
+      else if (typingOn) { if (stopTypingTimer) clearTimeout(stopTypingTimer); setTyping(false); }
     });
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
@@ -317,6 +327,8 @@
       const text = input.value.trim();
       if (!text || !activeOther || sending) return;
       sending = true; sendBtn.disabled = true;
+      if (stopTypingTimer) { clearTimeout(stopTypingTimer); stopTypingTimer = null; }
+      typingOn = false;
       const other = activeOther;
       const cid = convId(me, other);
       input.value = ''; autoSize();
@@ -329,7 +341,7 @@
           lastAt: serverTimestamp(),
           lastSender: me,
           unread: { [other]: increment(1), [me]: 0 },
-          ['typing.' + me]: null
+          ['typing.' + me]: false
         }, { merge: true });
         await addDoc(collection(convRef, 'messages'), { text, sender: me, createdAt: serverTimestamp() });
       } catch (e) {
