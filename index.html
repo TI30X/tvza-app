@@ -105,6 +105,7 @@
             <a href="pages/foodtracker.html" class="card card--food" id="cardFood" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
             <div class="card-content"><h3>Food Tracker</h3><p>Kalorien &amp; Nährstoffe</p></div>
+            <div class="tile-live tile-prog" id="tileFood" hidden></div>
             </a>
           </div>
 
@@ -112,13 +113,15 @@
             <a href="pages/watchlist.html" class="card card--watch" id="cardWatch" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
             <div class="card-content"><h3>TVZA Watchlist</h3><p>Kurse, Märkte &amp; News</p></div>
+            <div class="tile-live tile-ticker" id="tileWatch" hidden></div>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="weather">
             <a href="pages/weather.html?v=2" class="card card--weather" id="cardWeather" draggable="false" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 13a4 4 0 1 0-5.6-5.6"/><path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M20 12h2"/><path d="M17.5 19a3.5 3.5 0 0 0 0-7h-1.3a5 5 0 1 0-9.7 1.8"/><path d="M7 16a3 3 0 0 0 0 6h10"/></svg></div>
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg></div>
             <div class="card-content"><h3>Wetter</h3><p>Wetter &amp; Bergprognose</p></div>
+            <div class="tile-live" id="tileWeather" hidden></div>
             </a>
           </div>
 
@@ -134,6 +137,7 @@
             <a href="pages/planner.html" class="card card--trip" id="cardTrip" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
             <div class="card-content"><h3>Kalender</h3><p>Termine &amp; besondere Tage</p></div>
+            <div class="tile-live" id="tileTrip" hidden></div>
             </a>
           </div>
 
@@ -141,6 +145,7 @@
             <a href="pages/maturaarbeit.html" class="card card--matura" id="cardMatura" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
             <div class="card-content"><h3>Maturaarbeit</h3><p>Status &amp; Fortschritt</p></div>
+            <div class="tile-live tile-prog" id="tileMatura" hidden></div>
             </a>
           </div>
 
@@ -148,6 +153,7 @@
             <a href="pages/maturaarbeit-tracker.html" class="card card--matura" id="cardMaturaTracker" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
             <div class="card-content"><h3>Maturaarbeit-Tracker</h3><p>To-dos &amp; Countdown</p></div>
+            <div class="tile-live tile-prog" id="tileMaturaTracker" hidden></div>
             </a>
           </div>
 
@@ -1298,6 +1304,144 @@
         if (v) fetchChip();
       }
     };
+  })();
+  </script>
+
+  <!-- ═══ Live dashboard tile content (weather, watchlist, matura, food, calendar) ═══ -->
+  <script type="module">
+  import { db, requireAuth, FINNHUB_KEY } from './assets/js/firebase-config.js';
+  import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  (async () => {
+    let user;
+    try { user = await requireAuth('public.html'); } catch (e) { return; }
+    if (!user) return;
+    const uid = user.uid;
+    const $ = id => document.getElementById(id);
+    const show = el => { if (el) el.hidden = false; };
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+
+    /* ── 1) Maturaarbeit: Fortschritt + Abgabe-Countdown (localStorage) ── */
+    (function matura() {
+      try {
+        let pct = null, days = null;
+        const sumRaw = localStorage.getItem('matura_tracker_' + uid + '_summary');
+        if (sumRaw) {
+          const s = JSON.parse(sumRaw);
+          pct = s.pct; days = (s.days == null ? null : s.days);
+        } else {
+          const raw = localStorage.getItem('matura_tracker_' + uid);
+          if (raw) {
+            const st = JSON.parse(raw || '{}');
+            const IDS = ['p1a','p1b','p1c','p1d','p2a','p2b','p2c','p3a','p3b','p4a','p4b','p4c','p4d','p4e',
+                         'vg1','vg2','vg3','vg4','vg5','vg6','vg7','vg8','meeting_1','meeting_2','meeting_3','meeting_4'];
+            const done = IDS.filter(id => st[id]).length;
+            pct = Math.round(done / IDS.length * 100);
+            if (st.deadline) { const t = new Date(); t.setHours(0,0,0,0); days = Math.max(0, Math.ceil((new Date(st.deadline) - t) / 86400000)); }
+          }
+        }
+        if (pct == null) return;
+        const meta = (days == null) ? '' : `<span class="tl-meta">${days === 0 ? 'Abgabe heute' : days + ' Tage'}</span>`;
+        const html = `<div class="tl-head"><span class="tl-pct">${pct}%</span>${meta}</div><div class="tl-bar"><div class="tl-fill"></div></div>`;
+        ['tileMaturaTracker','tileMatura'].forEach(idn => {
+          const el = $(idn); if (!el) return;
+          el.innerHTML = html; show(el);
+          requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
+        });
+      } catch (e) {}
+    })();
+
+    /* ── 2) Wetter: aktuelle Bedingung + Temperatur (Open-Meteo) ── */
+    (async function weather() {
+      const el = $('tileWeather'); if (!el) return;
+      const EMOJI = c => c===0?'☀️':(c===1||c===2)?'🌤️':c===3?'☁️':(c===45||c===48)?'🌫️':(c>=51&&c<=67)?'🌧️':(c>=71&&c<=77)?'🌨️':(c>=80&&c<=82)?'🌦️':(c===85||c===86)?'❄️':c>=95?'⛈️':'⛅';
+      const LABEL = c => c===0?'Klar':c===1?'Heiter':c===2?'Teils bewölkt':c===3?'Bewölkt':(c===45||c===48)?'Nebel':(c>=51&&c<=57)?'Niesel':(c>=61&&c<=67)?'Regen':(c>=71&&c<=77)?'Schnee':(c>=80&&c<=82)?'Schauer':(c===85||c===86)?'Schneeschauer':c>=95?'Gewitter':'Wechselnd';
+      let loc = { latitude:47.141, longitude:9.521 };
+      try { const v = JSON.parse(localStorage.getItem('tvza-weather-loc') || 'null'); if (v && v.latitude != null) loc = v; } catch (e) {}
+      try {
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code&timezone=auto`);
+        if (!r.ok) return; const j = await r.json(); const c = j.current; if (!c) return;
+        el.innerHTML = `<span class="wxl-ic">${EMOJI(c.weather_code)}</span><span class="wxl-t">${Math.round(c.temperature_2m)}°</span><span class="wxl-lab">${LABEL(c.weather_code)}</span>`;
+        show(el);
+      } catch (e) {}
+    })();
+
+    /* ── 3) Watchlist: rotierende Live-Kurse (Finnhub / CoinGecko / Yahoo) ── */
+    (async function watchlist() {
+      const el = $('tileWatch'); if (!el) return;
+      let items = [];
+      try { const snap = await getDocs(collection(db, 'watchlist', uid, 'items')); items = snap.docs.map(d => ({ id:d.id, ...d.data() })); } catch (e) { return; }
+      if (!items.length) return;
+      const sectionOf = i => { const s = i.symbol || ''; if (i.type==='crypto') return 'crypto'; if (i.type==='fx'||s.includes('=X')) return 'fx'; if (i.type==='index'||s.startsWith('^')) return 'index'; if (i.type==='etf') return 'etf'; return 'stock'; };
+      const isYahoo = i => { const s = i.symbol || ''; const sec = sectionOf(i); return sec==='index'||sec==='fx'||s.startsWith('^')||s.includes('=X')||s.includes('.'); };
+      const quotes = new Map();
+      const CORS = ['', 'https://corsproxy.io/?url=', 'https://api.allorigins.win/raw?url='];
+      const corsJson = async url => { for (const p of CORS) { try { const r = await fetch(p ? p + encodeURIComponent(url) : url); if (!r.ok) continue; const j = await r.json(); if (j) return j; } catch (e) {} } return null; };
+      const CUR = { USD:'$', EUR:'€', GBP:'£', JPY:'¥', KRW:'₩', CHF:'CHF ', CNY:'¥', AUD:'A$' };
+      const key = (() => { try { return (localStorage.getItem('tvza-finnhub-key') || '').trim() || FINNHUB_KEY; } catch (e) { return FINNHUB_KEY; } })();
+      const yhFetch = async i => { const j = await corsJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(i.symbol)}?range=1d&interval=1d`); const m = j && j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].meta; if (!m || typeof m.regularMarketPrice !== 'number') return; const price = m.regularMarketPrice; const prev = (typeof m.chartPreviousClose==='number') ? m.chartPreviousClose : (typeof m.previousClose==='number' ? m.previousClose : null); const dp = (prev && prev!==0) ? (price-prev)/prev*100 : null; const cur = sectionOf(i)==='fx' ? '' : (CUR[m.currency] || ''); quotes.set(i.id, { price, dp, cur }); };
+      const cryptos = items.filter(i => i.type==='crypto' && i.coinId);
+      const rest = items.filter(i => i.type!=='crypto');
+      const yh = rest.filter(isYahoo); const fn = rest.filter(i => !isYahoo(i));
+      const tasks = [];
+      if (cryptos.length) tasks.push((async () => { try { const ids = [...new Set(cryptos.map(i => i.coinId))].join(','); const r = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + encodeURIComponent(ids) + '&price_change_percentage=24h'); if (!r.ok) return; const d = await r.json(); const by = {}; d.forEach(x => by[x.id] = x); cryptos.forEach(i => { const x = by[i.coinId]; if (x) quotes.set(i.id, { price:x.current_price, dp:x.price_change_percentage_24h, cur:'$' }); }); } catch (e) {} })());
+      fn.forEach(i => tasks.push((async () => { if (!key) return; try { const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(i.symbol)}&token=${key}`); if (!r.ok) return; const d = await r.json(); if (d && typeof d.c==='number' && d.c>0) quotes.set(i.id, { price:d.c, dp:d.dp, cur:'$' }); } catch (e) {} })()));
+      yh.forEach(i => tasks.push((async () => { try { await yhFetch(i); } catch (e) {} })()));
+      await Promise.all(tasks);
+      const retry = fn.filter(i => !quotes.get(i.id));
+      if (retry.length) await Promise.all(retry.map(i => yhFetch(i).catch(() => {})));
+      const fmt = (n, cur) => { if (n == null || isNaN(n)) return '—'; const dec = Math.abs(n) < 10 ? 4 : 2; return (cur || '') + n.toLocaleString('de-CH', { minimumFractionDigits:dec, maximumFractionDigits:dec }); };
+      const cleanSym = i => (i.symbol || '').replace(/^\^/, '').replace('=X', '');
+      const list = items.map(i => { const q = quotes.get(i.id); if (!q || q.price == null) return null; return { sym:cleanSym(i), px:fmt(q.price, q.cur), dp:q.dp }; }).filter(Boolean);
+      if (!list.length) return;
+      const dpHtml = dp => dp == null ? '' : `<span class="tk-dp ${dp >= 0 ? 'up' : 'down'}">${dp >= 0 ? '▲' : '▼'} ${Math.abs(dp).toFixed(2)}%</span>`;
+      let idx = 0;
+      const render = () => {
+        const q = list[idx];
+        const dots = list.length > 1 ? `<span class="tk-dots">${list.map((_, k) => `<span class="tk-dot ${k === idx ? 'on' : ''}"></span>`).join('')}</span>` : '';
+        el.innerHTML = `<span class="tk-quote"><span class="tk-sym">${esc(q.sym)}</span><span class="tk-px">${q.px}</span>${dpHtml(q.dp)}</span>${dots}`;
+      };
+      render(); show(el);
+      if (list.length > 1) setInterval(() => { el.classList.add('swap'); setTimeout(() => { idx = (idx + 1) % list.length; render(); el.classList.remove('swap'); }, 350); }, 3600);
+    })();
+
+    /* ── 4) Food: kcal heute (Firestore) ── */
+    (async function food() {
+      const el = $('tileFood'); if (!el) return;
+      try {
+        const snap = await getDocs(query(collection(db, 'foodlog', uid, 'entries'), where('date','==',todayStr)));
+        let total = 0; snap.forEach(d => { total += (d.data().kcal || 0); });
+        total = Math.round(total);
+        let target = null;
+        try { const ps = await getDoc(doc(db, 'foodlog', uid, 'meta', 'profile')); if (ps.exists()) { const p = ps.data(); if (p.weight) { let b = p.weight * 30; if (p.goal === 'abnehmen') b -= 300; if (p.goal === 'zunehmen') b += 300; target = Math.round(b / 10) * 10; } } } catch (e) {}
+        if (total === 0 && !target) return;
+        if (target) {
+          const pct = Math.min(100, Math.round(total / target * 100));
+          el.innerHTML = `<div class="tl-head"><span class="tl-pct">${total}</span><span class="tl-meta">/ ${target} kcal</span></div><div class="tl-bar"><div class="tl-fill"></div></div>`;
+          show(el); requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
+        } else {
+          el.innerHTML = `<div class="tl-head"><span class="tl-pct">${total}</span><span class="tl-meta">kcal heute</span></div>`;
+          show(el);
+        }
+      } catch (e) {}
+    })();
+
+    /* ── 5) Kalender: nächster Eintrag (Firestore) ── */
+    (async function cal() {
+      const el = $('tileTrip'); if (!el) return;
+      try {
+        const snap = await getDocs(query(collection(db, 'calendarDays'), where('ownerUid','==',uid)));
+        const up = snap.docs.map(d => d.data()).filter(x => x.date && x.date >= todayStr).sort((a, b) => a.date < b.date ? -1 : 1);
+        if (!up.length) return;
+        const ev = up[0];
+        const t = new Date(); t.setHours(0,0,0,0);
+        const days = Math.ceil((new Date(ev.date + 'T00:00:00') - t) / 86400000);
+        const when = days === 0 ? 'Heute' : days === 1 ? 'Morgen' : `in ${days} T`;
+        el.innerHTML = `<span class="tp-when">${when}</span><span class="tp-what">${esc(ev.title || 'Termin')}</span>`;
+        show(el);
+      } catch (e) {}
+    })();
   })();
   </script>
 </body>

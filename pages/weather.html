@@ -125,6 +125,9 @@
       cursor:pointer; -webkit-tap-highlight-color:transparent; opacity:1; transition:opacity .55s ease, visibility .55s ease;
       background:linear-gradient(160deg,#1b4a6b,#1b6fa8 55%,#4a98cf); color:#fff; }
     #wx-splash.closing{ opacity:0; visibility:hidden; }
+    /* Cross-fading background layers → theme changes morph instead of flashing */
+    #wx-splash .wx-bg{ position:absolute; inset:0; z-index:0; opacity:0; transition:opacity .55s ease; will-change:opacity; }
+    #wx-splash .stage{ z-index:3; }
     #wx-splash.theme-clear-day  { background:linear-gradient(160deg,#2879b8,#4aa3df 55%,#9fd4f2); }
     #wx-splash.theme-clear-night{ background:linear-gradient(165deg,#0a1430,#16294f 55%,#27406e); }
     #wx-splash.theme-cloud      { background:linear-gradient(160deg,#46586c,#6c7f93 60%,#9aa9b8); }
@@ -184,6 +187,8 @@
 
   <!-- ═══ Weather-dependent entry splash (plays every visit, tap to skip) ═══ -->
   <div id="wx-splash" role="dialog" aria-label="Wetter">
+    <div class="wx-bg" id="wxBgA"></div>
+    <div class="wx-bg" id="wxBgB"></div>
     <div class="stage">
       <svg class="scene" viewBox="0 0 240 170" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <!-- sun / moon -->
@@ -368,9 +373,36 @@
     const splash = $('wx-splash');
     let splashClosed = false, splashMin = Date.now() + 1400;
     const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    // Gradients mirror the CSS theme classes; applied to cross-fading layers so a
+    // change from the cached guess to the real condition morphs instead of flashing.
+    const SPLASH_BG = {
+      'default'          : 'linear-gradient(160deg,#1b4a6b,#1b6fa8 55%,#4a98cf)',
+      'theme-clear-day'  : 'linear-gradient(160deg,#2879b8,#4aa3df 55%,#9fd4f2)',
+      'theme-clear-night': 'linear-gradient(165deg,#0a1430,#16294f 55%,#27406e)',
+      'theme-cloud'      : 'linear-gradient(160deg,#46586c,#6c7f93 60%,#9aa9b8)',
+      'theme-fog'        : 'linear-gradient(160deg,#5a6670,#88939c 60%,#b7bfc6)',
+      'theme-rain'       : 'linear-gradient(160deg,#2b3f52,#41617c 60%,#5d7e98)',
+      'theme-snow'       : 'linear-gradient(160deg,#516a82,#7fa0b9 55%,#cfe2ef)',
+      'theme-storm'      : 'linear-gradient(160deg,#1d2535,#33405a 55%,#4a5878)',
+    };
+    const bgLayers = [$('wxBgA'), $('wxBgB')];
+    let bgIdx = 0, bgCurKey = '';
+    function setSplashBg(themeClass) {
+      const key = SPLASH_BG[themeClass] ? themeClass : 'default';
+      if (key === bgCurKey || !bgLayers[0] || !bgLayers[1]) return;
+      bgCurKey = key;
+      const next = bgLayers[bgIdx ^ 1], cur = bgLayers[bgIdx];
+      next.style.backgroundImage = SPLASH_BG[key];
+      next.getBoundingClientRect();   // force reflow so the opacity transition runs
+      next.style.opacity = '1';
+      cur.style.opacity = '0';
+      bgIdx ^= 1;
+    }
     function themeSplash(kind, isDay, label) {
+      const theme = splashTheme(kind, isDay);
       splash.classList.remove('theme-clear-day','theme-clear-night','theme-cloud','theme-fog','theme-rain','theme-snow','theme-storm');
-      splash.classList.add(splashTheme(kind, isDay));
+      splash.classList.add(theme);
+      setSplashBg(theme);
       if (label) $('wxSplashSub').textContent = label;
     }
     function closeSplash() {

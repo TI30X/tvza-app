@@ -477,6 +477,45 @@ button, input, select, textarea { font-family: inherit; }
 .card-content h3 { font-size: var(--text-base); font-weight: 700; }
 .card-content p  { font-size: var(--text-sm); color: var(--ink-soft); margin-top: 2px; }
 
+/* ─── Live tile content (status bars, ticker, weather row) ─── */
+.tile-live { margin-top: auto; font-size: var(--text-sm); animation: tileLiveIn .35s ease; }
+.tile-live[hidden] { display: none; }
+@keyframes tileLiveIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* progress-bar tiles (Maturaarbeit, Maturaarbeit-Tracker, Food) */
+.tile-prog { display: flex; flex-direction: column; gap: 5px; }
+.tile-prog .tl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.tile-prog .tl-pct { font-weight: 800; font-size: var(--text-base); color: var(--ink); line-height: 1; }
+.tile-prog .tl-meta { color: var(--ink-soft); font-size: var(--text-xs); font-weight: 600; white-space: nowrap; }
+.tile-prog .tl-bar { height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
+.tile-prog .tl-fill { height: 100%; border-radius: 999px; width: 0; transition: width .65s cubic-bezier(.4,0,.2,1); }
+.card--matura .tl-fill { background: linear-gradient(90deg, var(--matura), var(--matura-deep)); }
+.card--food   .tl-fill { background: linear-gradient(90deg, var(--food), var(--food-deep)); }
+
+/* rotating Watchlist ticker */
+.tile-ticker { display: flex; align-items: center; min-height: 22px; }
+.tile-ticker .tk-quote { display: flex; align-items: center; gap: 7px; transition: opacity .35s ease; }
+.tile-ticker.swap .tk-quote { opacity: 0; }
+.tile-ticker .tk-sym { font-weight: 800; color: var(--ink); }
+.tile-ticker .tk-px { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 700; }
+.tile-ticker .tk-dp { font-weight: 700; font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.tile-ticker .tk-dp.up   { color: oklch(0.58 0.13 150); }
+.tile-ticker .tk-dp.down { color: oklch(0.58 0.17 25); }
+.tile-ticker .tk-dots { display: inline-flex; gap: 3px; margin-left: auto; }
+.tile-ticker .tk-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border); }
+.tile-ticker .tk-dot.on { background: var(--watch-deep); }
+
+/* weather live row */
+#tileWeather { display: flex; align-items: center; gap: 7px; }
+#tileWeather .wxl-ic  { font-size: 18px; line-height: 1; }
+#tileWeather .wxl-t   { font-weight: 800; color: var(--ink); }
+#tileWeather .wxl-lab { color: var(--ink-soft); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* next-event row (Kalender) */
+#tileTrip { display: flex; align-items: baseline; gap: 7px; }
+#tileTrip .tp-when { font-weight: 800; color: var(--trip-deep); white-space: nowrap; }
+#tileTrip .tp-what { color: var(--ink-soft); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ─── Link rows (external projects) ─── */
 .link-list { display: flex; flex-direction: column; gap: var(--s2); }
 
