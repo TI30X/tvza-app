@@ -189,6 +189,32 @@
   <div id="wx-splash" role="dialog" aria-label="Wetter">
     <div class="wx-bg" id="wxBgA"></div>
     <div class="wx-bg" id="wxBgB"></div>
+    <script>
+    /* Paint the last-known weather theme BEFORE first paint so the splash never
+       flashes the default blue before switching to today's condition. */
+    (function(){
+      try {
+        var sp = document.getElementById('wx-splash'); if (!sp) return;
+        var lk = JSON.parse(localStorage.getItem('tvza-weather-lastkind') || 'null'); if (!lk) return;
+        var k = lk.kind, isDay = lk.isDay;
+        var theme = (k==='clear') ? (isDay?'theme-clear-day':'theme-clear-night')
+          : k==='fog'?'theme-fog' : k==='rain'?'theme-rain' : k==='snow'?'theme-snow' : k==='storm'?'theme-storm' : 'theme-cloud';
+        var BG = {
+          'theme-clear-day':'linear-gradient(160deg,#2879b8,#4aa3df 55%,#9fd4f2)',
+          'theme-clear-night':'linear-gradient(165deg,#0a1430,#16294f 55%,#27406e)',
+          'theme-cloud':'linear-gradient(160deg,#46586c,#6c7f93 60%,#9aa9b8)',
+          'theme-fog':'linear-gradient(160deg,#5a6670,#88939c 60%,#b7bfc6)',
+          'theme-rain':'linear-gradient(160deg,#2b3f52,#41617c 60%,#5d7e98)',
+          'theme-snow':'linear-gradient(160deg,#516a82,#7fa0b9 55%,#cfe2ef)',
+          'theme-storm':'linear-gradient(160deg,#1d2535,#33405a 55%,#4a5878)'
+        };
+        sp.classList.add(theme);
+        var a = document.getElementById('wxBgA');
+        if (a && BG[theme]) { a.style.transition = 'none'; a.style.backgroundImage = BG[theme]; a.style.opacity = '1'; }
+        window.__wxPretheme = theme;
+      } catch(e){}
+    })();
+    </script>
     <div class="stage">
       <svg class="scene" viewBox="0 0 240 170" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <!-- sun / moon -->
@@ -386,7 +412,9 @@
       'theme-storm'      : 'linear-gradient(160deg,#1d2535,#33405a 55%,#4a5878)',
     };
     const bgLayers = [$('wxBgA'), $('wxBgB')];
-    let bgIdx = 0, bgCurKey = '';
+    // wxBgA may already hold the cached theme (painted instantly before first paint).
+    let bgIdx = 0, bgCurKey = window.__wxPretheme || '';
+    if (bgLayers[0]) { bgLayers[0].getBoundingClientRect(); bgLayers[0].style.transition = ''; }
     function setSplashBg(themeClass) {
       const key = SPLASH_BG[themeClass] ? themeClass : 'default';
       if (key === bgCurKey || !bgLayers[0] || !bgLayers[1]) return;
