@@ -1337,22 +1337,13 @@
         requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
       };
 
-      // Maturaarbeit-Modul (pages/maturaarbeit.html) → matura_v3_summary
+      // Tracker-Modul (pages/maturaarbeit-tracker.html) → matura_tracker_<uid>_summary
+      let tPct = null, tDays = null;
       try {
-        const sumRaw = localStorage.getItem('matura_v3_summary');
-        if (sumRaw) {
-          const s = JSON.parse(sumRaw);
-          paintTile('tileMatura', s.pct, (s.days == null ? null : s.days));
-        }
-      } catch (e) {}
-
-      // Maturaarbeit-Tracker (pages/maturaarbeit-tracker.html) → matura_tracker_<uid>_summary
-      try {
-        let pct = null, days = null;
         const sumRaw = localStorage.getItem('matura_tracker_' + uid + '_summary');
         if (sumRaw) {
           const s = JSON.parse(sumRaw);
-          pct = s.pct; days = (s.days == null ? null : s.days);
+          tPct = s.pct; tDays = (s.days == null ? null : s.days);
         } else {
           const raw = localStorage.getItem('matura_tracker_' + uid);
           if (raw) {
@@ -1360,12 +1351,24 @@
             const IDS = ['p1a','p1b','p1c','p1d','p2a','p2b','p2c','p3a','p3b','p4a','p4b','p4c','p4d','p4e',
                          'vg1','vg2','vg3','vg4','vg5','vg6','vg7','vg8','meeting_1','meeting_2','meeting_3','meeting_4'];
             const done = IDS.filter(id => st[id]).length;
-            pct = Math.round(done / IDS.length * 100);
-            if (st.deadline) { const t = new Date(); t.setHours(0,0,0,0); days = Math.max(0, Math.ceil((new Date(st.deadline) - t) / 86400000)); }
+            tPct = Math.round(done / IDS.length * 100);
+            if (st.deadline) { const t = new Date(); t.setHours(0,0,0,0); tDays = Math.max(0, Math.ceil((new Date(st.deadline) - t) / 86400000)); }
           }
         }
-        paintTile('tileMaturaTracker', pct, days);
       } catch (e) {}
+
+      // Maturaarbeit-Modul (pages/maturaarbeit.html) → matura_v3_summary,
+      // Fallback auf den Tracker-Wert, falls das Modul noch nie geöffnet wurde.
+      let mPct = null, mDays = null;
+      try {
+        const sumRaw = localStorage.getItem('matura_v3_summary');
+        if (sumRaw) { const s = JSON.parse(sumRaw); mPct = s.pct; mDays = (s.days == null ? null : s.days); }
+      } catch (e) {}
+      if (mPct == null) { mPct = tPct; mDays = tDays; }
+
+      // Beide Kacheln zeigen immer einen Fortschritt.
+      paintTile('tileMatura', mPct, mDays);
+      paintTile('tileMaturaTracker', (tPct != null ? tPct : mPct), (tPct != null ? tDays : mDays));
     })();
 
     /* ── 2) Wetter: aktuelle Bedingung + Regenwahrscheinlichkeit (keine Temperatur) ── */
