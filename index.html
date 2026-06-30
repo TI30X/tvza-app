@@ -1447,18 +1447,32 @@
       } catch (e) {}
     })();
 
-    /* ── 5) Kalender: nächster Eintrag (Firestore) ── */
+    /* ── 5) Kalender: nächster Eintrag — besondere Tage + Familienreisen (Firestore) ── */
     (async function cal() {
       const el = $('tileTrip'); if (!el) return;
       try {
-        const snap = await getDocs(query(collection(db, 'calendarDays'), where('ownerUid','==',uid)));
-        const up = snap.docs.map(d => d.data()).filter(x => x.date && x.date >= todayStr).sort((a, b) => a.date < b.date ? -1 : 1);
-        if (!up.length) return;
-        const ev = up[0];
+        const candidates = [];
+        const daySnap = await getDocs(query(collection(db, 'calendarDays'), where('ownerUid','==',uid)));
+        daySnap.docs.forEach(d => { const x = d.data(); if (x.date && x.date >= todayStr) candidates.push({ date: x.date, title: x.title || 'Termin' }); });
+        if (profile.familyId) {
+          try {
+            const tripSnap = await getDocs(query(collection(db, 'trips'), where('familyId','==',profile.familyId)));
+            tripSnap.docs.forEach(d => {
+              const x = d.data(); if (!x.startDate) return;
+              // Bereits laufende Reisen (Start in der Vergangenheit, Ende noch nicht erreicht) zählen als "heute".
+              const ongoing = x.startDate < todayStr && (!x.endDate || x.endDate >= todayStr);
+              if (ongoing) candidates.push({ date: todayStr, title: x.name || 'Reise' });
+              else if (x.startDate >= todayStr) candidates.push({ date: x.startDate, title: x.name || 'Reise' });
+            });
+          } catch (e) {}
+        }
+        if (!candidates.length) return;
+        candidates.sort((a, b) => a.date < b.date ? -1 : 1);
+        const ev = candidates[0];
         const t = new Date(); t.setHours(0,0,0,0);
         const days = Math.ceil((new Date(ev.date + 'T00:00:00') - t) / 86400000);
-        const when = days === 0 ? 'Heute' : days === 1 ? 'Morgen' : `in ${days} T`;
-        el.innerHTML = `<span class="tp-when">${when}</span><span class="tp-what">${esc(ev.title || 'Termin')}</span>`;
+        const when = days <= 0 ? 'Heute' : days === 1 ? 'Morgen' : `in ${days} T`;
+        el.innerHTML = `<span class="tp-when">${when}</span><span class="tp-what">${esc(ev.title)}</span>`;
         show(el);
       } catch (e) {}
     })();
