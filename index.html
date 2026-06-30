@@ -1352,7 +1352,7 @@
       } catch (e) {}
     })();
 
-    /* ── 2) Wetter: aktuelle Bedingung + Temperatur (Open-Meteo) ── */
+    /* ── 2) Wetter: aktuelle Bedingung + Regenwahrscheinlichkeit (keine Temperatur) ── */
     (async function weather() {
       const el = $('tileWeather'); if (!el) return;
       const EMOJI = c => c===0?'☀️':(c===1||c===2)?'🌤️':c===3?'☁️':(c===45||c===48)?'🌫️':(c>=51&&c<=67)?'🌧️':(c>=71&&c<=77)?'🌨️':(c>=80&&c<=82)?'🌦️':(c===85||c===86)?'❄️':c>=95?'⛈️':'⛅';
@@ -1360,9 +1360,11 @@
       let loc = { latitude:47.141, longitude:9.521 };
       try { const v = JSON.parse(localStorage.getItem('tvza-weather-loc') || 'null'); if (v && v.latitude != null) loc = v; } catch (e) {}
       try {
-        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code&timezone=auto`);
-        if (!r.ok) return; const j = await r.json(); const c = j.current; if (!c) return;
-        el.innerHTML = `<span class="wxl-ic">${EMOJI(c.weather_code)}</span><span class="wxl-t">${Math.round(c.temperature_2m)}°</span><span class="wxl-lab">${LABEL(c.weather_code)}</span>`;
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=weather_code&daily=precipitation_probability_max&timezone=auto&forecast_days=1`);
+        if (!r.ok) return; const j = await r.json(); const code = j.current && j.current.weather_code; if (code == null) return;
+        const pop = j.daily && Array.isArray(j.daily.precipitation_probability_max) ? j.daily.precipitation_probability_max[0] : null;
+        const popHtml = (pop != null) ? `<span class="wxl-pop">💧 ${pop}%</span>` : '';
+        el.innerHTML = `<span class="wxl-ic">${EMOJI(code)}</span><span class="wxl-lab">${LABEL(code)}</span>${popHtml}`;
         show(el);
       } catch (e) {}
     })();
@@ -1413,9 +1415,9 @@
         const snap = await getDocs(query(collection(db, 'foodlog', uid, 'entries'), where('date','==',todayStr)));
         let total = 0; snap.forEach(d => { total += (d.data().kcal || 0); });
         total = Math.round(total);
+        if (total === 0) return;
         let target = null;
         try { const ps = await getDoc(doc(db, 'foodlog', uid, 'meta', 'profile')); if (ps.exists()) { const p = ps.data(); if (p.weight) { let b = p.weight * 30; if (p.goal === 'abnehmen') b -= 300; if (p.goal === 'zunehmen') b += 300; target = Math.round(b / 10) * 10; } } } catch (e) {}
-        if (total === 0 && !target) return;
         if (target) {
           const pct = Math.min(100, Math.round(total / target * 100));
           el.innerHTML = `<div class="tl-head"><span class="tl-pct">${total}</span><span class="tl-meta">/ ${target} kcal</span></div><div class="tl-bar"><div class="tl-fill"></div></div>`;
