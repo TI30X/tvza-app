@@ -1311,7 +1311,7 @@
 
   <!-- ═══ Live dashboard tile content (weather, watchlist, matura, food, calendar) ═══ -->
   <script type="module">
-  import { db, requireAuth, FINNHUB_KEY } from './assets/js/firebase-config.js';
+  import { db, requireAuth, getFinnhubKey } from './assets/js/firebase-config.js';
   import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   (async () => {
@@ -1400,7 +1400,8 @@
       const CORS = ['', 'https://corsproxy.io/?url=', 'https://api.allorigins.win/raw?url='];
       const corsJson = async url => { for (const p of CORS) { try { const r = await fetch(p ? p + encodeURIComponent(url) : url); if (!r.ok) continue; const j = await r.json(); if (j) return j; } catch (e) {} } return null; };
       const CUR = { USD:'$', EUR:'€', GBP:'£', JPY:'¥', KRW:'₩', CHF:'CHF ', CNY:'¥', AUD:'A$' };
-      const key = (() => { try { return (localStorage.getItem('tvza-finnhub-key') || '').trim() || FINNHUB_KEY; } catch (e) { return FINNHUB_KEY; } })();
+      const localKey = (() => { try { return (localStorage.getItem('tvza-finnhub-key') || '').trim(); } catch (e) { return ''; } })();
+      const key = localKey || await getFinnhubKey();
       const yhFetch = async i => { const j = await corsJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(i.symbol)}?range=1d&interval=1d`); const m = j && j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].meta; if (!m || typeof m.regularMarketPrice !== 'number') return; const price = m.regularMarketPrice; const prev = (typeof m.chartPreviousClose==='number') ? m.chartPreviousClose : (typeof m.previousClose==='number' ? m.previousClose : null); const dp = (prev && prev!==0) ? (price-prev)/prev*100 : null; const cur = sectionOf(i)==='fx' ? '' : (CUR[m.currency] || ''); quotes.set(i.id, { price, dp, cur }); };
       const cryptos = items.filter(i => i.type==='crypto' && i.coinId);
       const rest = items.filter(i => i.type!=='crypto');

@@ -9,7 +9,7 @@
  * Mounts a bell into the page header (or floats it if there's no header),
  * is fully self-styled, and tracks read-state per device in localStorage.
  */
-import { auth, db, MODULES, escHtml, sharesForEmail, FINNHUB_KEY } from './firebase-config.js';
+import { auth, db, MODULES, escHtml, sharesForEmail, getFinnhubKey } from './firebase-config.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 (() => {
@@ -185,7 +185,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
       } catch(e){ console.warn('[notif] crypto', e); }
     }
 
-    const key = (localStorage.getItem('tvza-finnhub-key') || '').trim() || FINNHUB_KEY;
+    const key = (localStorage.getItem('tvza-finnhub-key') || '').trim() || await getFinnhubKey();
     const stocks = wl.filter(i => i.type !== 'crypto');
     if (key && stocks.length) {
       await Promise.all(stocks.map(async i => {

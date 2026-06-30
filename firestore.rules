@@ -45,6 +45,11 @@ service cloud.firestore {
     // ── Freigaben (Module teilen) ──
     match /shares/{id} { allow read, write: if signedIn(); }
 
+    // ── Geteilte API-Keys (z.B. Finnhub) ──
+    // Nur lesbar für angemeldete Nutzer; Schreiben nur über die Firebase-Konsole
+    // (nie vom Client), damit der Key nicht versehentlich überschrieben wird.
+    match /secrets/{id} { allow read: if signedIn(); allow write: if false; }
+
     // ── Übrige App-Daten: Familien-Vertrauensmodell ──
     // Alle ANGEMELDETEN Nutzer dürfen lesen/schreiben (wie bisher).
     // Diese Sammlungen sind bewusst einzeln aufgeführt, damit die

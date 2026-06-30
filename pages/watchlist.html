@@ -348,7 +348,7 @@
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml, resolveAccess, FINNHUB_KEY } from '../assets/js/firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, resolveAccess, getFinnhubKey } from '../assets/js/firebase-config.js';
     import {
       collection, addDoc, deleteDoc, doc, getDoc, setDoc, onSnapshot, query, orderBy, Timestamp
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -372,7 +372,11 @@
     /* ════ Local settings (API key, alerts) ════ */
     const LS_KEY   = 'tvza-finnhub-key';
     const LS_ALERT = 'tvza-wl-alertpct';
-    const getKey   = () => { try { return (localStorage.getItem(LS_KEY) || '').trim() || FINNHUB_KEY; } catch(e){ return FINNHUB_KEY; } };
+    // Default key now lives in Firestore (secrets/finnhub), not in source —
+    // fetch once and cache; re-render the key hint once it lands.
+    let _defaultKey = '';
+    getFinnhubKey().then(k => { _defaultKey = k || ''; try { renderKeyHint(); } catch(e){} }).catch(() => {});
+    const getKey   = () => { try { return (localStorage.getItem(LS_KEY) || '').trim() || _defaultKey; } catch(e){ return _defaultKey; } };
     const getAlert = () => { try { return Number(localStorage.getItem(LS_ALERT)) || 5; } catch(e){ return 5; } };
 
     /* ════ Categories (combined list — no more tabs) ════ */
@@ -921,6 +925,6 @@
     renderKeyHint();
     loadNews();
   </script>
-  <script type="module" src="../assets/js/notifications.js?v=1"></script>
+  <script type="module" src="../assets/js/notifications.js?v=2"></script>
 </body>
 </html>

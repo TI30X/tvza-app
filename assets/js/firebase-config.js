@@ -21,16 +21,26 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 
-// Geteilter Finnhub-Key für die Watchlist (Aktien/ETF-Kurse + Markt-News).
-// Eine kostenlose Lizenz für die ganze Familie — niemand muss sich selbst
-// registrieren. Wer will, kann im ⚙️ der Watchlist einen eigenen Key
-// hinterlegen (überschreibt diesen lokal). Gratis-Limit: 60 Abfragen/Minute.
-export const FINNHUB_KEY = 'd902hchr01qk8bfiar80d902hchr01qk8bfiar8g';
-
 // Firestore with offline persistence (modern API)
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
 });
+
+// Geteilter Finnhub-Key für die Watchlist (Aktien/ETF-Kurse + Markt-News).
+// Eine kostenlose Lizenz für die ganze Familie — niemand muss sich selbst
+// registrieren. Wer will, kann im ⚙️ der Watchlist einen eigenen Key
+// hinterlegen (überschreibt diesen lokal). Gratis-Limit: 60 Abfragen/Minute.
+// Liegt NICHT mehr im Quellcode (öffentliches Repo!), sondern in Firestore
+// unter secrets/finnhub — lesbar nur für angemeldete Nutzer (firestore.rules).
+let _finnhubKeyCache = null;
+export async function getFinnhubKey() {
+  if (_finnhubKeyCache !== null) return _finnhubKeyCache;
+  try {
+    const snap = await getDoc(doc(db, 'secrets', 'finnhub'));
+    _finnhubKeyCache = snap.exists() ? (snap.data().key || '') : '';
+  } catch (e) { _finnhubKeyCache = ''; }
+  return _finnhubKeyCache;
+}
 
 // Auth with durable persistence — IndexedDB survives installed-PWA reopens
 // better than localStorage (which Android can clear). Falls back if needed.
