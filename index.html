@@ -367,6 +367,20 @@
 
     // ── Profile & Module ──────────────────────────
     let profile = await getProfile(user);
+
+    // Selbstheilung: Vor v.29.8.0 konnte die Gast-Seite ein echtes
+    // Familienkonto fälschlich als Gast markieren (guestProfiles/{uid}).
+    // Die Firestore-Regeln blockieren dann das Lesen des eigenen Profils —
+    // Symptom: „Hallo, du" statt Name und ein leeres Standard-Dashboard.
+    // Ein Familienkonto (users/{uid} existiert) darf laut Regeln seinen
+    // eigenen Gast-Eintrag löschen; danach Profil erneut laden.
+    if (!Object.keys(profile).length) {
+      try {
+        await deleteDoc(doc(db, 'guestProfiles', user.uid));
+        profile = await getProfile(user);
+      } catch (e) { console.warn('guest self-heal', e); }
+    }
+
     const name = profile.displayName || 'du';
     const ownerName = profile.displayName || '';
     document.getElementById('userName').textContent = name;
@@ -738,7 +752,11 @@
 
     // ── Logout ────────────────────────────────────
     document.getElementById('userChip').addEventListener('click', async () => {
-      if (confirm('Abmelden?')) { await signOut(auth); window.location.href = 'login.html'; }
+      if (confirm('Abmelden?')) {
+        try { localStorage.removeItem('tvza-name'); } catch (e) {}
+        await signOut(auth);
+        window.location.href = 'login.html';
+      }
     });
 
     // ── Config: Timos UID (für Legacy-Elternansicht) ──

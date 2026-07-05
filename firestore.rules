@@ -26,7 +26,15 @@ service cloud.firestore {
       allow create: if signedIn() && request.auth.uid == uid
                       && !exists(/databases/$(database)/documents/guestProfiles/$(uid));
       allow update: if signedIn() && request.auth.uid == uid;
-      allow delete: if isMember(); // Familie kann einen Gast jederzeit entfernen
+      // Familie kann einen Gast jederzeit entfernen. Zusätzlich: ein Account,
+      // der ein users/{uid}-Dokument besitzt (= echtes Familienmitglied), darf
+      // seinen EIGENEN guestProfiles-Eintrag löschen — Selbstheilung für
+      // Accounts, die vor v.29.8.0 fälschlich als Gast markiert wurden.
+      // Echte Gäste haben kein users/-Dokument und können sich damit
+      // weiterhin nicht selbst "entgasten".
+      allow delete: if isMember()
+                      || (signedIn() && request.auth.uid == uid
+                          && exists(/databases/$(database)/documents/users/$(uid)));
     }
 
     // Ein Dokument pro (Gast, Reise). docId MUSS "<uid>_<tripId>" sein.
