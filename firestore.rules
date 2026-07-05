@@ -4,9 +4,63 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
 
+    // ── Gäste (Guests) ───────────────────────────────────────────
+    // Ein Account ist ein "Gast", sobald für seine uid ein
+    // guestProfiles/{uid}-Dokument existiert. Dieses Dokument darf
+    // ausschliesslich der Account selbst EINMALIG anlegen (create scheitert,
+    // falls es schon existiert) — damit kann sich niemand nachträglich
+    // selbst zum Gast machen oder wieder "entgasten".
+    // isMember() = angemeldet UND kein Gast → das ist exakt der bisherige
+    // Vertrauenskreis (Familie), unverändert für alle bestehenden Accounts.
+    function isGuest()  { return signedIn() && exists(/databases/$(database)/documents/guestProfiles/$(request.auth.uid)); }
+    function isMember() { return signedIn() && !isGuest(); }
+
+    // Zugriff auf EINE bestimmte Reise als Gast: setzt ein
+    // guestAccess/{uid}_{tripId}-Dokument voraus (siehe unten).
+    function hasGuestAccess(tripId) {
+      return signedIn() && exists(/databases/$(database)/documents/guestAccess/$(request.auth.uid + '_' + tripId));
+    }
+
+    match /guestProfiles/{uid} {
+      allow read:   if signedIn() && (request.auth.uid == uid || isMember());
+      allow create: if signedIn() && request.auth.uid == uid
+                      && !exists(/databases/$(database)/documents/guestProfiles/$(uid));
+      allow update: if signedIn() && request.auth.uid == uid;
+      allow delete: if isMember(); // Familie kann einen Gast jederzeit entfernen
+    }
+
+    // Ein Dokument pro (Gast, Reise). docId MUSS "<uid>_<tripId>" sein.
+    // Die Erstellung ist nur erlaubt, wenn das im Dokument mitgeschickte
+    // "token" mit trips/{tripId}.guestToken übereinstimmt — dieses Token
+    // wird von der Familie beim Erstellen eines Gast-Links gesetzt/erneuert.
+    match /guestAccess/{docId} {
+      allow read:   if signedIn() && (resource.data.uid == request.auth.uid || isMember());
+      allow create: if signedIn()
+                      && request.resource.data.uid == request.auth.uid
+                      && docId == (request.resource.data.uid + '_' + request.resource.data.tripId)
+                      && exists(/databases/$(database)/documents/trips/$(request.resource.data.tripId))
+                      && request.resource.data.token == get(/databases/$(database)/documents/trips/$(request.resource.data.tripId)).data.guestToken;
+      allow update: if false; // unveränderliche Berechtigung — zum Widerrufen löschen
+      allow delete: if isMember();
+    }
+
+    // Sichtbarkeits-Tracking: wer (welcher Gast) hat welche Reise wann
+    // angeschaut. Nur die Familie darf das lesen; nur Gäste dürfen für
+    // sich selbst neue Einträge anlegen (append-only, keine Änderung/Löschung).
+    match /tripViews/{viewId} {
+      allow read:   if isMember();
+      allow create: if signedIn() && isGuest()
+                      && request.resource.data.guestUid == request.auth.uid
+                      && hasGuestAccess(request.resource.data.tripId);
+      allow update, delete: if false;
+    }
+
     // ── Direktnachrichten (PRIVAT) ──────────────────────────────
     // Nur die beiden Teilnehmer dürfen eine Unterhaltung + ihre
     // Nachrichten lesen/schreiben. convId = "<uidA>__<uidB>" (sortiert).
+    // Unverändert: ein Gast-uid darf hier genau wie jede andere uid als
+    // Teilnehmer stehen, sobald ein Familienmitglied die DM mit ihm anlegt —
+    // Chat mit Gästen funktioniert also ohne Änderung an dieser Regel.
     match /dms/{convId} {
       allow read:   if signedIn() && request.auth.uid in resource.data.participants;
       allow create: if signedIn()
@@ -43,7 +97,7 @@ service cloud.firestore {
     }
 
     // ── Freigaben (Module teilen) ──
-    match /shares/{id} { allow read, write: if signedIn(); }
+    match /shares/{id} { allow read, write: if isMember(); }
 
     // ── Geteilte API-Keys (z.B. Finnhub) ──
     // Nur lesbar für angemeldete Nutzer; Schreiben nur über die Firebase-Konsole
@@ -51,22 +105,29 @@ service cloud.firestore {
     match /secrets/{id} { allow read: if signedIn(); allow write: if false; }
 
     // ── Übrige App-Daten: Familien-Vertrauensmodell ──
-    // Alle ANGEMELDETEN Nutzer dürfen lesen/schreiben (wie bisher).
+    // Alle Mitglieder (isMember(), also NICHT Gäste) dürfen lesen/schreiben,
+    // exakt wie bisher — für bestehende Accounts ändert sich nichts.
     // Diese Sammlungen sind bewusst einzeln aufgeführt, damit die
     // strikte dms-Regel oben NICHT von einer globalen Catch-all-Regel
     // ausgehebelt wird (Firestore gewährt Zugriff, sobald EINE Regel passt).
-    match /users/{p=**}      { allow read, write: if signedIn(); }
-    match /projects/{p=**}   { allow read, write: if signedIn(); }
-    match /skitracker/{p=**} { allow read, write: if signedIn(); }
-    match /foodlog/{p=**}    { allow read, write: if signedIn(); }
-    match /watchlist/{p=**}  { allow read, write: if signedIn(); }
-    match /customFoods/{id}  { allow read, write: if signedIn(); }
-    match /foodRequests/{id} { allow read, write: if signedIn(); }
-    match /families/{id}     { allow read, write: if signedIn(); }
-    match /trips/{id}        { allow read, write: if signedIn(); }
-    match /activities/{id}   { allow read, write: if signedIn(); }
-    match /calendarDays/{id} { allow read, write: if signedIn(); }
-    match /attachments/{id}  { allow read, write: if signedIn(); }
+    match /users/{p=**}      { allow read, write: if isMember(); }
+    match /projects/{p=**}   { allow read, write: if isMember(); }
+    match /skitracker/{p=**} { allow read, write: if isMember(); }
+    match /foodlog/{p=**}    { allow read, write: if isMember(); }
+    match /watchlist/{p=**}  { allow read, write: if isMember(); }
+    match /customFoods/{id}  { allow read, write: if isMember(); }
+    match /foodRequests/{id} { allow read, write: if isMember(); }
+    match /families/{id}     { allow read, write: if isMember(); }
+    match /activities/{id}   { allow read, write: if isMember(); }
+    match /calendarDays/{id} { allow read, write: if isMember(); }
+    match /attachments/{id}  { allow read, write: if isMember(); }
+
+    // Reisen: Mitglieder wie bisher voll, Gäste nur lesend und nur für die
+    // Reise(n), für die ihnen explizit Zugriff gewährt wurde (guestAccess).
+    match /trips/{tripId} {
+      allow read:  if isMember() || hasGuestAccess(tripId);
+      allow write: if isMember();
+    }
 
     // Alles andere ist standardmässig verweigert.
   }
