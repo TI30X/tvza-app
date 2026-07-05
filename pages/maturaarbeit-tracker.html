@@ -352,4 +352,6 @@ import { requireAuth } from '../assets/js/firebase-config.js';
 const user = await requireAuth('../login.html');
 window.startTracker(user.uid, user.displayName || user.email || 'Schüler:in');
 </script>
-  <script type="mo
+  <script type="module" src="../assets/js/notifications.js?v=2"></script>
+</body>
+</html>

@@ -48,7 +48,7 @@
     .daynum { font-size:13px; font-weight:700; }
     .cell.today .daynum { color:var(--accent); }
     .chips { margin-top:auto; }
-    .evchip { font-size:10px; line-height:1.3; border-radius:5px; padding:1px 4px; margin-top:2px; color:#fff;
+    .evchip { display:block; max-width:100%; box-sizing:border-box; font-size:10px; line-height:1.3; border-radius:5px; padding:1px 4px; margin-top:2px; color:#fff;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .more { font-size:9px; color:var(--ink-soft); }
     .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; font-size:12px; color:var(--ink-soft); }
@@ -71,9 +71,12 @@
     .backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; z-index:60; }
     .backdrop.visible { display:block; }
     .sheet { position:fixed; left:0; right:0; bottom:0; z-index:61; background:var(--surface); border-radius:18px 18px 0 0;
-      box-shadow:0 -8px 30px rgba(0,0,0,.25); padding:18px 18px calc(22px + env(safe-area-inset-bottom)); max-height:88vh; overflow:auto;
+      padding:18px 18px calc(22px + env(safe-area-inset-bottom)); max-height:88vh; overflow:auto;
       transform:translateY(100%); transition:transform .3s cubic-bezier(.22,.61,.36,1); max-width:680px; margin:0 auto; }
-    .sheet.visible { transform:translateY(0); }
+    /* box-shadow only while open — otherwise the shadow (which extends
+       upward past the sheet's own top edge) bleeds back into the visible
+       viewport even when the sheet is translated fully off-screen. */
+    .sheet.visible { transform:translateY(0); box-shadow:0 -8px 30px rgba(0,0,0,.25); }
     .grip { width:38px; height:4px; border-radius:2px; background:var(--border); margin:0 auto 12px; }
     .sheet-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; }
     .sheet-title { font-size:17px; font-weight:700; }
@@ -128,9 +131,9 @@
 
     <header class="header">
       <div class="header-inner">
-        <a href="../index.html" class="back-btn" aria-label="Zurück">
+        <a href="../index.html" class="back-btn" id="backBtn" aria-label="Zurück">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          <span>Start</span>
+          <span id="backBtnLabel">Start</span>
         </a>
         <span class="page-title" id="pageTitle">Planer</span>
         <span class="icon-btn" id="themeToggle" title="Theme">◐</span>
@@ -430,8 +433,18 @@
     function eventMap() {
       const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
       days.forEach(s=>{ if(s.date) push(s.date,{kind:'day',color:s.color||COLORS[0],title:s.title||'Tag',ref:s}); });
-      trips.forEach(tr=>{ if(!tr.startDate)return; const end=tr.endDate||tr.startDate; let d=new Date(tr.startDate+'T00:00:00'); const last=new Date(end+'T00:00:00'); let g=0;
-        while(d<=last && g++<400){ push(keyOf(d.getFullYear(),d.getMonth(),d.getDate()),{kind:'trip',color:TRIP_COLOR,title:tr.name||'Reise',ref:tr}); d.setDate(d.getDate()+1);} });
+      trips.forEach(tr=>{
+        // Union of the trip's start/end range AND any dates carried by its
+        // itinerary items (e.g. from an imported multi-day plan) — a pasted
+        // itinerary can cover days outside a trip's own start/end fields.
+        const keys = new Set();
+        if (tr.startDate) {
+          const end=tr.endDate||tr.startDate; let d=new Date(tr.startDate+'T00:00:00'); const last=new Date(end+'T00:00:00'); let g=0;
+          while(d<=last && g++<400){ keys.add(keyOf(d.getFullYear(),d.getMonth(),d.getDate())); d.setDate(d.getDate()+1); }
+        }
+        (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
+        keys.forEach(k=>push(k,{kind:'trip',color:TRIP_COLOR,title:tr.name||'Reise',ref:tr}));
+      });
       return map;
     }
 
@@ -474,7 +487,11 @@
       }).join('');
       box.querySelectorAll('.item-card').forEach(c=>c.onclick=()=>{
         const e=(map[c.dataset.k]||[])[+c.dataset.i]; if(!e)return;
-        if(e.kind==='trip') openTrip(e.ref.id); else openDayForm(e.ref);
+        if(e.kind==='trip') { openTrip(e.ref.id); return; }
+        // Open the same read-only day sheet the calendar cell uses,
+        // instead of jumping straight into the edit form.
+        const [y,m,d]=c.dataset.k.split('-').map(Number);
+        openDay(c.dataset.k, y, m-1, d);
       });
     }
 
@@ -529,9 +546,10 @@
       const acts=await getDocs(query(collection(db,'activities'), where('tripId','==',id))).then(q=>q.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[]);
       const files=await loadAttachments(id);
       $('groupView').style.display='none'; $('tripDetail').style.display=''; window.scrollTo(0,0);
+      if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Kalender';
       renderTripDetail(tr, acts, files);
     }
-    function backToGroup(){ $('tripDetail').style.display='none'; $('groupView').style.display=''; reload(); }
+    function backToGroup(){ $('tripDetail').style.display='none'; $('groupView').style.display=''; if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Start'; reload(); }
 
     function renderTripDetail(tr, acts, files){
       files = files || [];
@@ -599,7 +617,22 @@
         const active=[...v.querySelectorAll('[data-tp]')].find(x=>x.classList.contains('active')).dataset.tp;
         let planHtml='',planUrl='';
         if(active==='upload'&&planFileHtml)planHtml=planFileHtml; else if(active==='url')planUrl=$('pUrl').value.trim(); else planHtml=$('pHtml').value.trim();
-        await updateDoc(doc(db,'trips',tr.id),{planHtml,planUrl}); tr.planHtml=planHtml; tr.planUrl=planUrl; renderTripDetail(tr,acts,files);
+
+        // Auto-import: if the pasted/uploaded HTML contains stop cards,
+        // fold them into the itinerary, replacing any stops from a previous
+        // import of this same plan (manually-added stops are untouched).
+        let itinerary = tr.itinerary || [];
+        if (planHtml) {
+          const { items } = parseItineraryHtml(planHtml);
+          if (items.length) {
+            const manual = itinerary.filter(it => !it.autoImported);
+            itinerary = [...manual, ...items];
+          }
+        }
+
+        await updateDoc(doc(db,'trips',tr.id),{planHtml,planUrl,itinerary});
+        tr.planHtml=planHtml; tr.planUrl=planUrl; tr.itinerary=itinerary;
+        renderTripDetail(tr,acts,files);
       };
       if($('pOpen')) $('pOpen').onclick=()=>openViewer(tr.name,tr.planHtml,tr.planUrl);
       // files (Firestore, free plan)
@@ -686,6 +719,46 @@
     document.querySelectorAll('#dayForm .tab').forEach(t=>t.onclick=()=>setDayPane(t.dataset.pane));
     $('dDrop').onclick=()=>$('dHtmlFile').click();
 
+    /* ── Auto-import: pull day-by-day stops out of a pasted/uploaded
+       itinerary HTML (the "stop card" template Claude produces) and fold
+       them straight into the trip's itinerary list. Walks time[datetime]
+       markers and .stop cards together in document order so a multi-day
+       itinerary (one <time> per day, followed by that day's stops) assigns
+       each stop the date of the nearest preceding marker. ── */
+    function parseTimeBadge(text) {
+      if (!text) return '';
+      const m = String(text).match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+      if (!m) return '';
+      let h = parseInt(m[1], 10);
+      const min = m[2];
+      const ap = (m[3] || '').toLowerCase();
+      if (ap === 'pm' && h < 12) h += 12;
+      if (ap === 'am' && h === 12) h = 0;
+      if (h > 23) return '';
+      return `${String(h).padStart(2, '0')}:${min}`;
+    }
+    function parseItineraryHtml(html) {
+      if (!html) return { date: '', items: [] };
+      let dom;
+      try { dom = new DOMParser().parseFromString(html, 'text/html'); }
+      catch { return { date: '', items: [] }; }
+      const nodes = [...dom.querySelectorAll('time[datetime], .stop')];
+      let currentDate = '';
+      const items = [];
+      for (const el of nodes) {
+        if (el.matches('time[datetime]')) { currentDate = (el.getAttribute('datetime') || '').slice(0, 10); continue; }
+        const title = el.querySelector('h2')?.textContent.trim() || '';
+        if (!title) continue;
+        const timeText = el.querySelector('.time-badge')?.textContent.trim() || '';
+        const address = el.querySelector('.card-address')?.textContent.trim().replace(/\s+/g, ' ') || '';
+        const desc = el.querySelector('.card p:not(.card-eyebrow):not(.card-address)')?.textContent.trim().replace(/\s+/g, ' ') || '';
+        const notes = [address, desc].filter(Boolean).join(' — ');
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        items.push({ id, date: currentDate, time: parseTimeBadge(timeText), title, notes, autoImported: true });
+      }
+      return { items };
+    }
+
     /* ── Viewer ── */
     function openViewer(title,html,url){ $('viewerTitle').textContent=title||'Info'; const f=$('viewerFrame'),full=$('viewerFull');
       if(url){f.removeAttribute('srcdoc');f.src=url;full.href=url;full.style.display='';} else {f.removeAttribute('src');f.srcdoc=html||'<p style="font-family:sans-serif;padding:24px">Keine Infos.</p>';full.style.display='none';}
@@ -719,7 +792,20 @@
         else if($('dayForm').classList.contains('visible'))closeDayForm();
         else if($('tripSheet').classList.contains('visible'))closeTripForm();
         else if($('daySheet').classList.contains('visible'))closeDay(); });
+
+      // Header "Start" link: step back to the calendar overview first when a
+      // sheet/viewer/trip detail is open, instead of jumping straight home.
+      $('backBtn').addEventListener('click', e => {
+        if ($('viewer').classList.contains('visible')) { e.preventDefault(); closeViewer(); return; }
+        if ($('dayForm').classList.contains('visible')) { e.preventDefault(); closeDayForm(); return; }
+        if ($('tripSheet').classList.contains('visible')) { e.preventDefault(); closeTripForm(); return; }
+        if ($('daySheet').classList.contains('visible')) { e.preventDefault(); closeDay(); return; }
+        if ($('tripDetail').style.display !== 'none') { e.preventDefault(); backToGroup(); return; }
+        // No nested view open — let the link navigate home normally.
+      });
     }
 
   </script>
-  <script type="
+  <script type="module" src="../assets/js/notifications.js?v=2"></script>
+</body>
+</html>

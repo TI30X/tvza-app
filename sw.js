@@ -1,6 +1,6 @@
-/* TVZA Service Worker v59 - offline-first */
+/* TVZA Service Worker v60 - offline-first */
 
-const CACHE = 'tvza-v59';
+const CACHE = 'tvza-v60';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -55,6 +55,29 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   const isGstatic = url.hostname === 'www.gstatic.com';
   if (url.origin !== self.location.origin && !isGstatic) return;
+
+  const isHtml = event.request.mode === 'navigate' ||
+    (event.request.headers.get('accept') || '').includes('text/html');
+
+  if (isHtml) {
+    // Pages: network-first. Always fetch the latest HTML when online so
+    // edits show up on the very next load — only fall back to the cached
+    // copy when there's no network (offline-first still holds up).
+    event.respondWith(
+      fetch(event.request).then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(event.request, clone));
+        }
+        return res;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Static assets (CSS/JS/images/Firebase SDK): cache-first with a
+  // background refresh — fast loads, still works offline, and self-heals
+  // next time the asset changes.
   event.respondWith(
     caches.match(event.request).then(cached => {
       const network = fetch(event.request).then(res => {
