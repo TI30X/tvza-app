@@ -189,16 +189,15 @@
           <div class="weekdays"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
           <div class="grid" id="grid"><div class="spinner" style="grid-column:1/-1">Lade…</div></div>
           <div class="legend">
-            <span><i style="background:#d8761d"></i>Reisen</span>
-            <span><i style="background:#7f77dd"></i>Besondere Tage</span>
+            <span><i style="background:#d8761d"></i>Termine</span>
+            <span><i style="background:#7f77dd"></i>Ältere Einträge</span>
           </div>
         </div>
 
         <!-- List view -->
         <div id="listView" style="display:none">
           <div class="fab-row">
-            <button class="pill primary" id="addTripBtn">+ Reise</button>
-            <button class="pill" id="addDayBtn">+ Besonderer Tag</button>
+            <button class="pill primary" id="addTripBtn">+ Termin</button>
           </div>
           <h2 class="section-title" style="font-size:15px;margin:6px 0 10px">Kommende Einträge</h2>
           <div id="agenda"><div class="spinner">Lade…</div></div>
@@ -214,7 +213,7 @@
   <div class="sheet" id="daySheet">
     <div class="grip"></div>
     <div class="sheet-head"><span class="sheet-title" id="dayTitle">—</span>
-      <button class="pill primary" id="daySheetAdd">+ Tag</button></div>
+      <button class="pill primary" id="daySheetAdd">+ Termin</button></div>
     <div id="dayEvents"></div>
   </div>
 
@@ -222,13 +221,13 @@
   <div class="backdrop" id="tripBackdrop"></div>
   <div class="sheet" id="tripSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" id="tripFormTitle">Neue Reise</span>
+    <div class="sheet-head"><span class="sheet-title" id="tripFormTitle">Neuer Termin</span>
       <button class="icon-pill" id="tripFormClose">✕</button></div>
-    <div class="field"><label>Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien" /></div>
-    <div class="field"><label>Ziel</label><input class="form-input" id="tDest" placeholder="Ort / Region" /></div>
+    <div class="field"><label>Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" /></div>
+    <div class="field"><label>Ziel / Ort</label><input class="form-input" id="tDest" placeholder="Ort / Region (optional)" /></div>
     <div class="row2">
       <div class="field"><label>Von</label><input class="form-input" id="tStart" type="date" /></div>
-      <div class="field"><label>Bis</label><input class="form-input" id="tEnd" type="date" /></div>
+      <div class="field"><label>Bis (optional)</label><input class="form-input" id="tEnd" type="date" placeholder="leer = eintägig"></div>
     </div>
     <div class="field"><label>Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
     <button class="btn btn-primary btn-block" id="tripSave">Speichern</button>
@@ -394,7 +393,7 @@
         ${pend}
         <div class="grp-actions">
           <button class="pill" id="inviteBtn">🔗 Einladungslink</button>
-          <button class="pill" id="icsAllBtn">📥 Alle Reisen (.ics)</button>
+          <button class="pill" id="icsAllBtn">📥 Alle Termine (.ics)</button>
         </div>
         <p id="inviteOut" style="font-size:11px;color:var(--ink-soft);margin-top:8px;display:none;word-break:break-all"></p>`;
       $('leaveBtn').onclick = leaveGroup;
@@ -450,7 +449,7 @@
           while(d<=last && g++<400){ keys.add(keyOf(d.getFullYear(),d.getMonth(),d.getDate())); d.setDate(d.getDate()+1); }
         }
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
-        keys.forEach(k=>push(k,{kind:'trip',color:TRIP_COLOR,title:tr.name||'Reise',ref:tr}));
+        keys.forEach(k=>push(k,{kind:'trip',color:TRIP_COLOR,title:tr.name||'Termin',ref:tr}));
       });
       return map;
     }
@@ -472,7 +471,7 @@
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
         keys.forEach(k=>{
           const stops = (tr.itinerary||[]).filter(it=>it.date===k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-          push(k,{kind:'trip',color:TRIP_COLOR,title:tr.name||'Reise',ref:tr,stops});
+          push(k,{kind:'trip',color:TRIP_COLOR,title:tr.name||'Termin',ref:tr,stops});
         });
       });
       return map;
@@ -507,7 +506,7 @@
       const map = dayProgramMap();
       const keys = Object.keys(map).filter(k=>k>=todayKey).sort();
       const box=$('agenda');
-      if(!keys.length){ box.innerHTML=`<p class="empty-hint">Keine kommenden Einträge. Füge eine Reise oder einen besonderen Tag hinzu.</p>`; return; }
+      if(!keys.length){ box.innerHTML=`<p class="empty-hint">Keine kommenden Einträge. Füge einen Termin hinzu.</p>`; return; }
       box.innerHTML = keys.map(k=>{
         const items = map[k].map((e,i)=>{
           if (e.kind==='trip' && e.stops && e.stops.length) {
@@ -515,7 +514,7 @@
             return `<div class="item-card" data-k="${k}" data-i="${i}" style="flex-direction:column;align-items:stretch">
               <div style="display:flex;align-items:center;gap:12px">
                 <div class="item-bar" style="background:${e.color}"></div>
-                <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">Reise${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
+                <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">Termin${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
               </div>
               <div class="prog-list">${rows}</div>
             </div>`;
@@ -523,7 +522,7 @@
           return `<div class="item-card" data-k="${k}" data-i="${i}">
             <div class="item-bar" style="background:${e.color}"></div>
             <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-            <div class="item-meta">${e.kind==='trip'?'Reise':'Besonderer Tag'}${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div></div>`;
+            <div class="item-meta">${e.kind==='trip'?'Termin':'Besonderer Tag'}${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div></div>`;
         }).join('');
         return `<div class="agenda-group"><div class="agenda-date">${fmtDateKey(k)}</div>${items}</div>`;
       }).join('');
@@ -549,7 +548,7 @@
         else { act=`<button class="pill" data-edit="${i}">Bearbeiten</button>`; if(hasPage)act=`<button class="pill primary" data-page="${i}">Infos</button>`+act; }
         return `<div class="item-card"><div class="item-bar" style="background:${e.color}"></div>
           <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-          <div class="item-meta">${e.kind==='trip'?'Reise':'Besonderer Tag'}</div>
+          <div class="item-meta">${e.kind==='trip'?'Termin':'Besonderer Tag'}</div>
           <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${act}</div></div></div>`;
       }).join('') : `<p class="empty-hint">Keine Einträge an diesem Tag.</p>`;
       box.querySelectorAll('[data-open-trip]').forEach(b=>b.onclick=()=>{closeDay();openTrip(b.dataset.openTrip);});
@@ -562,7 +561,7 @@
     /* ── Trip form ── */
     function openTripForm(t){
       editTripId = t ? t.id : null;
-      $('tripFormTitle').textContent = t ? 'Reise bearbeiten' : 'Neue Reise';
+      $('tripFormTitle').textContent = t ? 'Termin bearbeiten' : 'Neuer Termin';
       $('tName').value=t?.name||''; $('tDest').value=t?.destination||'';
       $('tStart').value=t?.startDate||(sheetKey||''); $('tEnd').value=t?.endDate||'';
       $('tNotes').value=t?.notes||'';
@@ -571,7 +570,10 @@
     function closeTripForm(){ $('tripBackdrop').classList.remove('visible'); $('tripSheet').classList.remove('visible'); }
     $('tripSave').onclick = async () => {
       const name=$('tName').value.trim(); if(!name){alert('Bitte einen Titel eingeben.');return;}
-      const data={ name, destination:$('tDest').value.trim(), startDate:$('tStart').value, endDate:$('tEnd').value, notes:$('tNotes').value.trim() };
+      const start=$('tStart').value;
+      // "Bis" is optional — a Termin with no end date is simply a single-day
+      // entry, so it still shows correctly everywhere dates are unioned.
+      const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start, notes:$('tNotes').value.trim() };
       $('tripSave').disabled=true;
       try{
         if(editTripId) await updateDoc(doc(db,'trips',editTripId), data);
@@ -617,7 +619,7 @@
         </div>
 
         <div class="sub-card"><div class="sub-title">Gast-Zugang</div>
-          <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Teile diesen Link nur mit Personen, die den Reiseplan sehen und mit euch chatten dürfen.</p>
+          <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Teile diesen Link nur mit Personen, die den Plan sehen und mit euch chatten dürfen.</p>
           <button class="btn btn-primary btn-block" id="gShare">🔗 Gast-Link erstellen &amp; kopieren</button>
           <div id="gList" style="margin-top:10px"><p class="empty-hint" style="padding:10px">Lade Gäste…</p></div>
         </div>
@@ -644,11 +646,11 @@
           <div id="fList" style="margin-top:10px"></div>
         </div>
 
-        <button class="btn btn-danger btn-block" id="tdDelete" style="margin-top:6px">Reise löschen</button>
+        <button class="btn btn-danger btn-block" id="tdDelete" style="margin-top:6px">Termin löschen</button>
       `;
       $('tdBack').onclick = backToGroup;
       $('tdEdit').onclick = () => openTripForm(tr);
-      $('tdIcs').onclick = () => downloadIcs([tr], (tr.name||'reise'));
+      $('tdIcs').onclick = () => downloadIcs([tr], (tr.name||'termin'));
       wireGuestSection(tr);
       $('iAdd').onclick = async () => {
         const title=$('iTitle').value.trim(); if(!title)return;
@@ -692,7 +694,7 @@
       bindFiles();
       $('fDrop').onclick=()=>$('fInput').click();
       $('fInput').onchange=async e=>{ await uploadFiles(tr.id,'trip',[...e.target.files],curFiles); bindFiles(); $('fInput').value=''; };
-      $('tdDelete').onclick = async () => { if(!confirm('Diese Reise löschen?'))return;
+      $('tdDelete').onclick = async () => { if(!confirm('Diesen Termin löschen?'))return;
         const aq=await getDocs(query(collection(db,'activities'),where('tripId','==',tr.id))); await Promise.all(aq.docs.map(d=>deleteDoc(d.ref)));
         const fq=await loadAttachments(tr.id); await Promise.all(fq.map(f=>delAttachment(f.id).catch(()=>{})));
         await deleteDoc(doc(db,'trips',tr.id)); backToGroup(); };
@@ -898,7 +900,7 @@
     /* ── ICS ── */
     function icsEvent(tr){ const s=(tr.startDate||'').replace(/-/g,'');
       const end=(tr.endDate||tr.startDate)?(()=>{const d=new Date(tr.endDate||tr.startDate);d.setDate(d.getDate()+1);return keyOf(d.getFullYear(),d.getMonth(),d.getDate()).replace(/-/g,'');})():s;
-      return ['BEGIN:VEVENT',`UID:${tr.id}@tvza`,`SUMMARY:${(tr.name||'Reise').replace(/[,;]/g,' ')}`,s?`DTSTART;VALUE=DATE:${s}`:'',s?`DTEND;VALUE=DATE:${end}`:'',tr.destination?`LOCATION:${tr.destination.replace(/[,;]/g,' ')}`:'','END:VEVENT'].filter(Boolean).join('\r\n'); }
+      return ['BEGIN:VEVENT',`UID:${tr.id}@tvza`,`SUMMARY:${(tr.name||'Termin').replace(/[,;]/g,' ')}`,s?`DTSTART;VALUE=DATE:${s}`:'',s?`DTEND;VALUE=DATE:${end}`:'',tr.destination?`LOCATION:${tr.destination.replace(/[,;]/g,' ')}`:'','END:VEVENT'].filter(Boolean).join('\r\n'); }
     function downloadIcs(list,fname){ const body=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//TVZA//Planer//DE',...list.filter(t=>t.startDate).map(icsEvent),'END:VCALENDAR'].join('\r\n');
       const blob=new Blob([body],{type:'text/calendar'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname.replace(/[^a-z0-9_-]/gi,'_')+'.ics'; a.click(); }
     function exportAllIcs(){ downloadIcs(trips,(group?.name||'planer')+'_reisen'); }
@@ -911,10 +913,13 @@
       $('prevBtn').onclick=()=>{viewM--;if(viewM<0){viewM=11;viewY--;}renderCalendar();};
       $('nextBtn').onclick=()=>{viewM++;if(viewM>11){viewM=0;viewY++;}renderCalendar();};
       $('todayBtn').onclick=()=>{viewY=tdy.getFullYear();viewM=tdy.getMonth();renderCalendar();};
-      $('calAddBtn').onclick=()=>{ sheetKey=todayKey; openDayForm(null); };
+      // One unified entry point: every new entry is a "Termin" (trip-shaped
+      // record) — single-day or multi-day, both work the same way and get
+      // itinerary parsing + guest sharing. Existing legacy "Besondere Tage"
+      // (calendarDays docs) still render/edit fine, we just stopped creating new ones.
+      $('calAddBtn').onclick=()=>{ sheetKey=todayKey; openTripForm(null); };
       $('addTripBtn').onclick=()=>{ sheetKey=null; openTripForm(null); };
-      $('addDayBtn').onclick=()=>{ sheetKey=todayKey; openDayForm(null); };
-      $('daySheetAdd').onclick=()=>{ closeDay(); openDayForm(null); };
+      $('daySheetAdd').onclick=()=>{ closeDay(); openTripForm(null); };
       $('dayBackdrop').onclick=closeDay; $('tripBackdrop').onclick=closeTripForm; $('tripFormClose').onclick=closeTripForm;
       $('dayFormBackdrop').onclick=closeDayForm; $('dayFormClose').onclick=closeDayForm; $('viewerClose').onclick=closeViewer;
       document.addEventListener('keydown',e=>{ if(e.key!=='Escape')return;
