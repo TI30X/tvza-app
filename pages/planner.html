@@ -281,7 +281,7 @@
   <!-- HTML viewer -->
   <div class="viewer" id="viewer">
     <div class="viewer-bar"><button class="icon-pill" id="viewerClose">‹</button><span class="vt" id="viewerTitle">Info</span>
-      <a id="viewerFull" href="#" target="_blank" rel="noopener" class="pill" style="display:none">Tab ↗</a></div>
+      <a id="viewerFull" href="#" target="_blank" rel="noopener" class="pill" style="display:none">Ganz öffnen ↗</a></div>
     <iframe id="viewerFrame" sandbox="allow-same-origin allow-popups allow-scripts" referrerpolicy="no-referrer"></iframe>
   </div>
 
@@ -989,10 +989,23 @@
     }
 
     /* ── Viewer ── */
+    let viewerBlobUrl=null;
+    function clearViewerBlob(){ if(viewerBlobUrl){ URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl=null; } }
     function openViewer(title,html,url){ $('viewerTitle').textContent=title||'Info'; const f=$('viewerFrame'),full=$('viewerFull');
-      if(url){f.removeAttribute('srcdoc');f.src=url;full.href=url;full.style.display='';} else {f.removeAttribute('src');f.srcdoc=html||'<p style="font-family:sans-serif;padding:24px">Keine Infos.</p>';full.style.display='none';}
+      clearViewerBlob();
+      if(url){ f.removeAttribute('srcdoc'); f.src=url; full.href=url; full.style.display=''; }
+      else {
+        f.removeAttribute('src');
+        f.srcdoc = html || '<p style="font-family:sans-serif;padding:24px">Keine Infos.</p>';
+        // Also expose a "fully open in a new tab" button for pasted/uploaded HTML
+        // by turning it into a Blob URL (a raw srcdoc can't be opened on its own).
+        if(html && html.trim()){
+          viewerBlobUrl = URL.createObjectURL(new Blob([html], {type:'text/html'}));
+          full.href = viewerBlobUrl; full.style.display='';
+        } else { full.removeAttribute('href'); full.style.display='none'; }
+      }
       $('viewer').classList.add('visible'); }
-    function closeViewer(){ $('viewer').classList.remove('visible'); const f=$('viewerFrame'); f.removeAttribute('src'); f.removeAttribute('srcdoc'); }
+    function closeViewer(){ $('viewer').classList.remove('visible'); const f=$('viewerFrame'); f.removeAttribute('src'); f.removeAttribute('srcdoc'); clearViewerBlob(); }
 
     /* ── ICS ── */
     function icsEvent(tr){ const s=(tr.startDate||'').replace(/-/g,'');
