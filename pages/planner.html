@@ -144,7 +144,6 @@
           <span id="backBtnLabel">Start</span>
         </a>
         <span class="page-title" id="pageTitle">Planer</span>
-        <span class="icon-btn" id="themeToggle" title="Theme">◐</span>
       </div>
     </header>
 
@@ -617,6 +616,12 @@
           <div id="iList" style="margin-top:10px">${itin.length?itin.map((it,idx)=>`<div class="line"><span class="l-main"><span class="l-title">${esc(it.title)}</span><span class="l-sub">${esc(it.date||'')} ${esc(it.time||'')}</span></span><button class="mini" data-idel="${idx}">🗑</button></div>`).join(''):'<p class="empty-hint" style="padding:10px">Noch nichts geplant.</p>'}</div>
         </div>
 
+        <div class="sub-card"><div class="sub-title">Gast-Zugang</div>
+          <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Teile diesen Link nur mit Personen, die den Reiseplan sehen und mit euch chatten dürfen.</p>
+          <button class="btn btn-primary btn-block" id="gShare">🔗 Gast-Link erstellen &amp; kopieren</button>
+          <div id="gList" style="margin-top:10px"><p class="empty-hint" style="padding:10px">Lade Gäste…</p></div>
+        </div>
+
         <div class="sub-card"><div class="sub-title">Aufgaben</div>
           <input class="form-input" id="aName" placeholder="Aufgabe / Besorgung">
           <button class="btn btn-primary btn-block" id="aAdd" style="margin-top:8px">Hinzufügen</button>
@@ -644,6 +649,7 @@
       $('tdBack').onclick = backToGroup;
       $('tdEdit').onclick = () => openTripForm(tr);
       $('tdIcs').onclick = () => downloadIcs([tr], (tr.name||'reise'));
+      wireGuestSection(tr);
       $('iAdd').onclick = async () => {
         const title=$('iTitle').value.trim(); if(!title)return;
         const next=[...(tr.itinerary||[]), {title, date:$('iDate').value, time:$('iTime').value}];
@@ -690,6 +696,49 @@
         const aq=await getDocs(query(collection(db,'activities'),where('tripId','==',tr.id))); await Promise.all(aq.docs.map(d=>deleteDoc(d.ref)));
         const fq=await loadAttachments(tr.id); await Promise.all(fq.map(f=>delAttachment(f.id).catch(()=>{})));
         await deleteDoc(doc(db,'trips',tr.id)); backToGroup(); };
+    }
+
+    function randToken(){ return Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(36)).join('').slice(0,16); }
+
+    async function wireGuestSection(tr){
+      $('gShare').onclick = async () => {
+        let token = tr.guestToken;
+        if (!token) { token = randToken(); await updateDoc(doc(db,'trips',tr.id),{guestToken:token}); tr.guestToken = token; }
+        const url = `${location.origin}${location.pathname.replace(/planner\.html$/, 'guest.html')}?trip=${tr.id}&token=${token}`;
+        try { await navigator.clipboard.writeText(url); $('gShare').textContent = '✓ Link kopiert'; }
+        catch(e) { window.prompt('Link kopieren:', url); }
+        setTimeout(()=>{ if($('gShare')) $('gShare').textContent = '🔗 Gast-Link erstellen & kopieren'; }, 2000);
+      };
+      await loadGuestList(tr);
+    }
+
+    async function loadGuestList(tr){
+      const list = $('gList');
+      if (!list) return;
+      try {
+        const aq = await getDocs(query(collection(db,'guestAccess'), where('tripId','==',tr.id)));
+        if (!aq.docs.length) { list.innerHTML = '<p class="empty-hint" style="padding:10px">Noch keine Gäste.</p>'; return; }
+        const rows = await Promise.all(aq.docs.map(async d => {
+          const g = d.data();
+          let name = g.uid;
+          try { const p = await getDoc(doc(db,'guestProfiles',g.uid)); if (p.exists()) name = p.data().name || p.data().email || g.uid; } catch(e) {}
+          return { uid: g.uid, name, docId: d.id };
+        }));
+        list.innerHTML = rows.map(r => `
+          <div class="line">
+            <span class="l-main"><span class="l-title">${esc(r.name)}</span></span>
+            <button class="mini" data-gchat="${esc(r.uid)}" data-gname="${esc(r.name)}" title="Chat">💬</button>
+            <button class="mini" data-gdel="${esc(r.docId)}" title="Entfernen">🗑</button>
+          </div>`).join('');
+        list.querySelectorAll('[data-gchat]').forEach(b=>b.onclick=()=>{
+          location.href = `messages.html?to=${encodeURIComponent(b.dataset.gchat)}&name=${encodeURIComponent(b.dataset.gname)}`;
+        });
+        list.querySelectorAll('[data-gdel]').forEach(b=>b.onclick=async()=>{
+          if(!confirm('Gast-Zugang entfernen?')) return;
+          await deleteDoc(doc(db,'guestAccess',b.dataset.gdel));
+          loadGuestList(tr);
+        });
+      } catch(e) { console.warn(e); list.innerHTML = '<p class="empty-hint" style="padding:10px">Gäste konnten nicht geladen werden.</p>'; }
     }
 
     function renderFileList(files){

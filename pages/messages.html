@@ -394,12 +394,20 @@
     $('userCancel').addEventListener('click', () => userModal.classList.remove('visible'));
     userModal.addEventListener('click', e => { if (e.target === userModal) userModal.classList.remove('visible'); });
 
-    /* ════ Deep link: messages.html?to=<uid> ════ */
+    /* ════ Deep link: messages.html?to=<uid>&name=<optional> ════
+       The &name= param lets this work for guest UIDs too — guests live in
+       guestProfiles, not the users collection, so the lookup below would
+       silently fail to resolve a display name for them without it. */
     const toUid = new URLSearchParams(location.search).get('to');
+    const toName = new URLSearchParams(location.search).get('name');
     if (toUid && toUid !== me) {
-      const us = await loadUsers();
-      const u = us.find(x => x.uid === toUid);
-      if (u) openThread(u.uid, u.displayName || u.email || 'Unbekannt');
+      if (toName) {
+        openThread(toUid, toName);
+      } else {
+        const us = await loadUsers();
+        const u = us.find(x => x.uid === toUid);
+        if (u) openThread(u.uid, u.displayName || u.email || 'Unbekannt');
+      }
     }
   </script>
   <script type="module" src="../assets/js/notifications.js?v=2"></script>

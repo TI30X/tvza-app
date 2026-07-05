@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1A1A2E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script src="../assets/js/theme.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=15" defer></script>
+  <title>Gast-Zugang — TVZA</title>
+  <style>
+    .g-msgs { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px 2px; }
+    .g-bubble { max-width: 80%; padding: 8px 12px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
+    .g-bubble.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
+    .g-bubble.them { align-self: flex-start; background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); border-bottom-left-radius: 5px; }
+    .g-compose { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: end; margin-top: 10px; }
+    .g-day { font-weight: 700; font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; margin: 14px 0 8px; }
+    .g-day:first-child { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-inner">
+        <span class="page-title">Reiseplan</span>
+      </div>
+    </header>
+
+    <main class="main">
+      <div id="loading" class="spinner">Lade…</div>
+
+      <div id="requestForm" style="display:none">
+        <div class="form-card">
+          <p class="form-title">Willkommen!</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:14px">
+            Gib deinen Namen und deine E-Mail-Adresse ein — du bekommst einen
+            Link zugeschickt, mit dem du den Reiseplan öffnen kannst. Kein
+            Passwort nötig.
+          </p>
+          <div class="field"><label class="form-label">Dein Name</label><input id="gName" class="form-input" type="text" /></div>
+          <div class="field"><label class="form-label">E-Mail-Adresse</label><input id="gEmail" class="form-input" type="email" /></div>
+          <button id="requestBtn" class="btn btn-primary btn-block" style="margin-top:8px">Zugang anfordern</button>
+          <p id="requestStatus" style="font-size:12px;color:var(--danger,#c0392b);margin-top:8px"></p>
+        </div>
+      </div>
+
+      <div id="checkEmail" style="display:none">
+        <div class="empty-state">
+          📧 Wir haben einen Link an <strong><span id="sentTo"></span></strong> geschickt.<br>
+          Öffne die E-Mail auf diesem Gerät und tippe auf den Link, um fortzufahren.
+        </div>
+      </div>
+
+      <div id="invalidLink" style="display:none">
+        <div class="empty-state">Dieser Link ist ungültig oder abgelaufen. Bitte frag die Familie nach einem neuen Link.</div>
+      </div>
+
+      <div id="dashboard" style="display:none">
+        <div class="form-card" id="tripCard"></div>
+
+        <div class="form-card">
+          <p class="form-title">Programm</p>
+          <div id="itinList"></div>
+        </div>
+
+        <div class="form-card" id="chatCard" style="display:none">
+          <p class="form-title">Chat mit <span id="hostName">der Familie</span></p>
+          <div class="g-msgs" id="msgs"></div>
+          <div class="g-compose">
+            <textarea id="msgInput" class="form-textarea" rows="1" placeholder="Nachricht schreiben…"></textarea>
+            <button id="sendBtn" class="btn btn-primary">Senden</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="tvz-footer">
+      <img src="../assets/icons/TvZ_Logo.svg" alt="TvZ" />
+    </footer>
+  </div>
+
+  <script type="module">
+    import { auth, db, escHtml } from '../assets/js/firebase-config.js';
+    import {
+      doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, increment
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import {
+      sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+    const $ = id => document.getElementById(id);
+    const params = new URLSearchParams(location.search);
+
+    // Trip/token travel via the URL on first open; stashed in localStorage so
+    // they survive the round-trip through the guest's email client (which may
+    // open the link in a different tab/context than the one that requested it).
+    const tripId = params.get('trip') || localStorage.getItem('tvza.guestTrip') || '';
+    const token  = params.get('token') || localStorage.getItem('tvza.guestToken') || '';
+    if (params.get('trip'))  localStorage.setItem('tvza.guestTrip', tripId);
+    if (params.get('token')) localStorage.setItem('tvza.guestToken', token);
+
+    function show(id) {
+      ['loading', 'requestForm', 'checkEmail', 'invalidLink', 'dashboard']
+        .forEach(x => { $(x).style.display = x === id ? '' : 'none'; });
+    }
+
+    async function ensureGuestAccess(user) {
+      const profRef = doc(db, 'guestProfiles', user.uid);
+      const profSnap = await getDoc(profRef);
+      if (!profSnap.exists()) {
+        await setDoc(profRef, {
+          email: user.email || '',
+          name: localStorage.getItem('tvza.guestName') || user.email || 'Gast',
+          createdAt: serverTimestamp()
+        });
+      }
+      const accessRef = doc(db, 'guestAccess', `${user.uid}_${tripId}`);
+      const accessSnap = await getDoc(accessRef);
+      if (!accessSnap.exists()) {
+        await setDoc(accessRef, { uid: user.uid, tripId, token, createdAt: serverTimestamp() });
+      }
+    }
+
+    async function loadDashboard(user) {
+      const tripSnap = await getDoc(doc(db, 'trips', tripId));
+      if (!tripSnap.exists()) { show('invalidLink'); return; }
+      const trip = tripSnap.data();
+
+      $('tripCard').innerHTML = `
+        <p class="form-title">${escHtml(trip.name || 'Reise')}</p>
+        ${trip.destination ? `<p style="color:var(--ink-soft);font-size:14px">${escHtml(trip.destination)}</p>` : ''}
+        ${trip.notes ? `<p style="margin-top:8px;font-size:14px">${escHtml(trip.notes)}</p>` : ''}
+      `;
+
+      const itin = (trip.itinerary || []).slice()
+        .sort((a, b) => ((a.date || '') + (a.time || '')).localeCompare((b.date || '') + (b.time || '')));
+      const byDay = {};
+      itin.forEach(it => { (byDay[it.date || ''] = byDay[it.date || ''] || []).push(it); });
+      const dayKeys = Object.keys(byDay).sort();
+      $('itinList').innerHTML = dayKeys.length ? dayKeys.map(d => `
+        <div class="g-day">${d ? escHtml(d) : 'Ohne Datum'}</div>
+        ${byDay[d].map(it => `
+          <div class="line">
+            <span class="l-main">
+              <span class="l-title">${it.time ? escHtml(it.time) + ' — ' : ''}${escHtml(it.title)}</span>
+              ${it.notes ? `<span class="l-sub">${escHtml(it.notes)}</span>` : ''}
+            </span>
+          </div>`).join('')}
+      `).join('') : '<p class="empty-hint" style="padding:10px">Noch kein Programm hinterlegt.</p>';
+
+      // Log that this guest viewed the trip — family can see this, guest can't.
+      addDoc(collection(db, 'tripViews'), { tripId, guestUid: user.uid, viewedAt: serverTimestamp() }).catch(() => {});
+
+      if (trip.createdBy) {
+        $('chatCard').style.display = '';
+        wireChat(user.uid, trip.createdBy);
+      }
+      show('dashboard');
+    }
+
+    function convId(a, b) { return [a, b].sort().join('__'); }
+    function wireChat(me, other) {
+      const cid = convId(me, other);
+      onSnapshot(query(collection(db, 'dms', cid, 'messages'), orderBy('createdAt', 'asc')), snap => {
+        const box = $('msgs');
+        box.innerHTML = snap.docs.length ? snap.docs.map(d => {
+          const m = d.data(); const mine = m.sender === me;
+          return `<div class="g-bubble ${mine ? 'me' : 'them'}">${escHtml(m.text)}</div>`;
+        }).join('') : '<p class="empty-hint">Noch keine Nachrichten — sag Hallo 👋</p>';
+        box.scrollTop = box.scrollHeight;
+      }, () => {});
+
+      $('sendBtn').onclick = async () => {
+        const text = $('msgInput').value.trim();
+        if (!text) return;
+        $('msgInput').value = '';
+        const convRef = doc(db, 'dms', cid);
+        const guestName = localStorage.getItem('tvza.guestName') || 'Gast';
+        await setDoc(convRef, {
+          participants: [me, other].sort(),
+          participantNames: { [me]: guestName },
+          lastMessage: text.slice(0, 140),
+          lastAt: serverTimestamp(),
+          lastSender: me,
+          unread: { [other]: increment(1), [me]: 0 }
+        }, { merge: true });
+        await addDoc(collection(convRef, 'messages'), { text, sender: me, createdAt: serverTimestamp() });
+      };
+      $('msgInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('sendBtn').click(); }
+      });
+    }
+
+    async function init() {
+      if (!tripId || !token) { show('invalidLink'); return; }
+
+      if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = localStorage.getItem('tvza.guestEmail');
+        if (!email) email = window.prompt('Bitte bestätige deine E-Mail-Adresse:');
+        try {
+          const cred = await signInWithEmailLink(auth, email, window.location.href);
+          await ensureGuestAccess(cred.user);
+          history.replaceState({}, '', `${location.pathname}?trip=${tripId}`);
+          await loadDashboard(cred.user);
+        } catch (e) {
+          console.warn(e);
+          show('invalidLink');
+        }
+        return;
+      }
+
+      onAuthStateChanged(auth, async user => {
+        if (!user) { show('requestForm'); return; }
+        try {
+          const accessSnap = await getDoc(doc(db, 'guestAccess', `${user.uid}_${tripId}`));
+          if (accessSnap.exists()) { await loadDashboard(user); return; }
+          await ensureGuestAccess(user);
+          await loadDashboard(user);
+        } catch (e) {
+          console.warn(e);
+          show('requestForm');
+        }
+      });
+    }
+
+    $('requestBtn').addEventListener('click', async () => {
+      const name = $('gName').value.trim();
+      const email = $('gEmail').value.trim();
+      if (!name || !email) { $('requestStatus').textContent = 'Bitte Name und E-Mail eingeben.'; return; }
+      $('requestBtn').disabled = true;
+      try {
+        const actionCodeSettings = {
+          url: `${location.origin}${location.pathname}?trip=${tripId}&token=${token}`,
+          handleCodeInApp: true
+        };
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        localStorage.setItem('tvza.guestEmail', email);
+        localStorage.setItem('tvza.guestName', name);
+        $('sentTo').textContent = email;
+        show('checkEmail');
+      } catch (e) {
+        console.warn(e);
+        $('requestStatus').textContent = 'Senden fehlgeschlagen — bitte E-Mail-Adresse prüfen.';
+        $('requestBtn').disabled = false;
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
