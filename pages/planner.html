@@ -718,7 +718,7 @@
           <div data-tb="paste"><textarea class="form-textarea" id="pHtml" rows="3" placeholder="HTML…">${esc(tr.planHtml||'')}</textarea></div>
           <div data-tb="upload" style="display:none"><label class="drop" id="pDrop"><span id="pDropText">HTML-Datei wählen</span><input type="file" id="pFile" accept=".html,.htm,text/html" hidden></label><p id="pChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
           <div data-tb="url" style="display:none"><input class="form-input" id="pUrl" type="url" placeholder="https://… (z.B. Claude-Link)" value="${esc(tr.planUrl||'')}"></div>
-          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="pSave" style="flex:1">Speichern</button>${(tr.planHtml||tr.planUrl)?`<button class="pill primary" id="pOpen">Öffnen</button>`:''}</div>
+          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="pSave" style="flex:1">Speichern</button>${(tr.planHtml||tr.planUrl)?`<button class="pill" id="pFull" title="Als ganze Seite in neuem Tab öffnen">Ganz öffnen ↗</button><button class="pill primary" id="pOpen">Öffnen</button>`:''}</div>
         </div>
 
         <div class="sub-card"><div class="sub-title">Dateien</div>
@@ -768,6 +768,7 @@
         renderTripDetail(tr,acts,files);
       };
       if($('pOpen')) $('pOpen').onclick=()=>openViewer(tr.name,tr.planHtml,tr.planUrl);
+      if($('pFull')) $('pFull').onclick=()=>openPlanFull(tr);
       // files (Firestore, free plan)
       let curFiles = files;
       const bindFiles=()=>{ $('fList').innerHTML=renderFileList(curFiles);
@@ -989,6 +990,15 @@
     }
 
     /* ── Viewer ── */
+    // Open the actual plan HTML as a standalone full page in a new browser tab.
+    function openPlanFull(tr){
+      if(tr.planUrl){ window.open(tr.planUrl,'_blank','noopener'); return; }
+      if(tr.planHtml && tr.planHtml.trim()){
+        const u=URL.createObjectURL(new Blob([tr.planHtml],{type:'text/html'}));
+        window.open(u,'_blank','noopener');
+        setTimeout(()=>URL.revokeObjectURL(u), 60000);
+      }
+    }
     let viewerBlobUrl=null;
     function clearViewerBlob(){ if(viewerBlobUrl){ URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl=null; } }
     function openViewer(title,html,url){ $('viewerTitle').textContent=title||'Info'; const f=$('viewerFrame'),full=$('viewerFull');
