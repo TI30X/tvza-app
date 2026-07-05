@@ -1618,28 +1618,36 @@
       try { dom = new DOMParser().parseFromString(html, 'text/html'); }
       catch { return { date: '', items: [] }; }
 
-      const dateEl = dom.querySelector('time[datetime]');
-      const isoDate = (dateEl?.getAttribute('datetime') || '').slice(0, 10);
-
-      const stopEls = [...dom.querySelectorAll('.stop')];
-      const items = stopEls.map(el => {
+      // Walk time[datetime] markers and .stop cards together, in document
+      // order, so a multi-day itinerary (one <time datetime> per day,
+      // followed by that day's stops) assigns each stop the date of the
+      // nearest preceding marker — not just the very first date on the page.
+      const nodes = [...dom.querySelectorAll('time[datetime], .stop')];
+      let currentDate = '';
+      const items = [];
+      for (const el of nodes) {
+        if (el.matches('time[datetime]')) {
+          currentDate = (el.getAttribute('datetime') || '').slice(0, 10);
+          continue;
+        }
         const title = el.querySelector('h2')?.textContent.trim() || '';
-        if (!title) return null;
+        if (!title) continue;
         const timeText = el.querySelector('.time-badge')?.textContent.trim() || '';
         const address = el.querySelector('.card-address')?.textContent.trim().replace(/\s+/g, ' ') || '';
         const desc = el.querySelector('.card p:not(.card-eyebrow):not(.card-address)')?.textContent.trim().replace(/\s+/g, ' ') || '';
         const notes = [address, desc].filter(Boolean).join(' — ');
-        return {
+        items.push({
           id: randomToken(10),
-          date: isoDate,
+          date: currentDate,
           time: parseTimeBadge(timeText),
           title,
           notes,
           autoImported: true
-        };
-      }).filter(Boolean);
+        });
+      }
 
-      return { date: isoDate, items };
+      const firstDate = items.find(it => it.date)?.date || '';
+      return { date: firstDate, items };
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -1795,4 +1803,6 @@
     ════════════════════════════════════════════════════════════ */
     init();
   </script>
-  <script type="
+  <script type="module" src="../assets/js/notifications.js?v=2"></script>
+</body>
+</html>
