@@ -523,7 +523,7 @@
       box.innerHTML = keys.map(k=>{
         const items = map[k].map((e,i)=>{
           const hasPage=(e.ref.planHtml||e.ref.planUrl);
-          const fullBtn = hasPage ? `<div style="margin-top:8px"><button class="pill" data-full-k="${k}" data-full-i="${i}" title="Programm als ganze Seite öffnen">Ganz öffnen ↗</button></div>` : '';
+          const fullBtn = hasPage ? `<div style="margin-top:8px;display:flex;gap:8px"><button class="pill primary" data-full-k="${k}" data-full-i="${i}" title="Plan/Programm öffnen">Öffnen</button><button class="pill" data-edit-k="${k}" data-edit-i="${i}">Bearbeiten</button></div>` : '';
           if (e.kind==='trip' && e.stops && e.stops.length) {
             const rows = e.stops.map(s=>`<div class="prog-row"><span class="prog-time">${esc(s.time||'–')}</span><span class="prog-title">${esc(s.title)}</span>${s.notes?`<div class="prog-notes">${esc(s.notes)}</div>`:''}</div>`).join('');
             return `<div class="item-card" data-k="${k}" data-i="${i}" style="flex-direction:column;align-items:stretch">
@@ -546,6 +546,11 @@
         ev.stopPropagation();
         const e=(map[b.dataset.fullK]||[])[+b.dataset.fullI]; if(e)openPlanFull(e.ref);
       });
+      box.querySelectorAll('[data-edit-k]').forEach(b=>b.onclick=(ev)=>{
+        ev.stopPropagation();
+        const e=(map[b.dataset.editK]||[])[+b.dataset.editI]; if(!e)return;
+        if(e.kind==='trip'){ openTrip(e.ref.id); } else { openDayForm(e.ref); }
+      });
       box.querySelectorAll('.item-card').forEach(c=>c.onclick=()=>{
         const e=(map[c.dataset.k]||[])[+c.dataset.i]; if(!e)return;
         if(e.kind==='trip') { openTrip(e.ref.id); return; }
@@ -563,10 +568,10 @@
       const box=$('dayEvents');
       box.innerHTML = evs.length ? evs.map((e,i)=>{
         const hasPage=(e.ref.planHtml||e.ref.planUrl);
-        const fullBtn = hasPage ? `<button class="pill" data-full="${i}" title="Programm als ganze Seite öffnen">Ganz öffnen ↗</button>` : '';
+        const fullBtn = hasPage ? `<button class="pill primary" data-full="${i}" title="Plan/Programm öffnen">Öffnen</button>` : '';
         let act='';
-        if(e.kind==='trip'){ act=fullBtn+`<button class="pill primary" data-open-trip="${esc(e.ref.id)}">Öffnen</button>`; }
-        else { act=`<button class="pill" data-edit="${i}">Bearbeiten</button>`; if(hasPage)act=fullBtn+`<button class="pill primary" data-page="${i}">Infos</button>`+act; }
+        if(e.kind==='trip'){ act=fullBtn+`<button class="pill" data-open-trip="${esc(e.ref.id)}">Bearbeiten</button>`; }
+        else { act=fullBtn+`<button class="pill" data-edit="${i}">Bearbeiten</button>`; }
         return `<div class="item-card"><div class="item-bar" style="background:${e.color}"></div>
           <div class="item-body"><div class="item-title">${esc(e.title)}</div>
           <div class="item-meta">${e.kind==='trip'?'Termin':'Besonderer Tag'}</div>
