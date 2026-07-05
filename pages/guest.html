@@ -247,22 +247,24 @@
       return map[code] || 'Fehler: ' + code;
     }
 
+    // This page shares its Firebase project with the family app — signing in
+    // here with a real family email/password must NOT tag that account as a
+    // "guest" (that would break isMember() for them everywhere else in the
+    // app). Family members can read their own users/ doc per the Firestore
+    // rules, guests can't — a permission-denied here IS the "you're a guest"
+    // signal, not an error, so it's handled separately from the real error path.
+    async function isFamilyAccount(uid) {
+      try { return await getDoc(doc(db, 'users', uid)).then(s => s.exists()); }
+      catch (e) { return false; }
+    }
+
     async function init() {
       if (!tripId || !token) { show('invalidLink'); return; }
       applyMode();
 
       onAuthStateChanged(auth, async user => {
         if (!user) { show('requestForm'); return; }
-        // This page shares its Firebase project with the family app — if a
-        // family member is already logged in on this device, don't quietly
-        // grant them "guest" status on their own trip. Family members can
-        // read their own users/ doc (Firestore rules), guests can't — a
-        // permission-denied here is itself the "you're a guest" signal, not
-        // an error, so it's handled separately from the real error path.
-        let isFamily = false;
-        try { isFamily = await getDoc(doc(db, 'users', user.uid)).then(s => s.exists()); }
-        catch (e) { isFamily = false; }
-        if (isFamily) { show('wrongAccount'); return; }
+        if (await isFamilyAccount(user.uid)) { show('wrongAccount'); return; }
 
         try {
           const name = $('gName').value.trim() || localStorage.getItem('tvza.guestName') || '';
@@ -293,6 +295,10 @@
         const cred = mode === 'register'
           ? await createUserWithEmailAndPassword(auth, email, pass)
           : await signInWithEmailAndPassword(auth, email, pass);
+        // Same guard as the auto-login path above — never tag a real family
+        // account as a guest, even if someone types their real credentials
+        // into this form.
+        if (await isFamilyAccount(cred.user.uid)) { show('wrongAccount'); return; }
         await ensureGuestAccess(cred.user, name);
         await loadDashboard(cred.user);
       } catch (e) {

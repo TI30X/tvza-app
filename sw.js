@@ -1,6 +1,6 @@
-/* TVZA Service Worker v68 - offline-first */
+/* TVZA Service Worker v69 - offline-first */
 
-const CACHE = 'tvza-v68';
+const CACHE = 'tvza-v69';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
