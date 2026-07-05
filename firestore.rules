@@ -42,7 +42,13 @@ service cloud.firestore {
     // "token" mit trips/{tripId}.guestToken übereinstimmt — dieses Token
     // wird von der Familie beim Erstellen eines Gast-Links gesetzt/erneuert.
     match /guestAccess/{docId} {
-      allow read:   if signedIn() && (resource.data.uid == request.auth.uid || isMember());
+      // get: auch für noch NICHT existierende Dokumente erlauben (resource ist
+      // dann null → resource.data würde die Regel crashen und alles blockieren).
+      // Ein Gast prüft vor dem Anlegen per get, ob sein Eintrag schon existiert —
+      // die docId beginnt mit der eigenen uid, das reicht als Autorisierung
+      // (uids enthalten keinen Unterstrich).
+      allow get:    if signedIn() && (isMember() || docId.split('_')[0] == request.auth.uid);
+      allow list:   if isMember();
       allow create: if signedIn()
                       && request.resource.data.uid == request.auth.uid
                       && docId == (request.resource.data.uid + '_' + request.resource.data.tripId)

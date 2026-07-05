@@ -137,8 +137,10 @@
         await updateDoc(profRef, { lastActiveAt: serverTimestamp() }).catch(() => {});
       }
       const accessRef = doc(db, 'guestAccess', `${user.uid}_${tripId}`);
-      const accessSnap = await getDoc(accessRef);
-      if (!accessSnap.exists()) {
+      // Defensive: falls das get (z.B. durch alte Rules) scheitert, trotzdem
+      // versuchen, den Zugang anzulegen — create validiert ohnehin das Token.
+      const accessSnap = await getDoc(accessRef).catch(() => null);
+      if (!accessSnap || !accessSnap.exists()) {
         await setDoc(accessRef, { uid: user.uid, tripId, token, createdAt: serverTimestamp() });
       }
     }
