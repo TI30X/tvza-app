@@ -1098,7 +1098,10 @@ button, input, select, textarea { font-family: inherit; }
 @media (max-width: 620px) {
   /* Tracker bars (Zurück + Titel + Icons): stay a clean, flush single row. */
   .header-inner { align-items: center; flex-direction: row; justify-content: space-between; gap: 6px; min-height: 54px; padding: 0 12px; }
-  .header-inner .page-title { flex: 1; text-align: center; }
+  /* Reset the desktop absolute-centering — otherwise .page-title stays
+     positioned (out of flex flow) and visually overlaps the back button
+     or icon buttons instead of sharing the row with them. */
+  .header-inner .page-title { position: static; transform: none; flex: 1; text-align: center; pointer-events: auto; }
   /* Dashboard bar (Marke + Benutzer-Chip) keeps its stacked layout. */
   .header-inner:has(.app-brand) { align-items: flex-start; flex-direction: column; justify-content: center; gap: 10px; padding: var(--s3) var(--s4); }
   .user-chip { align-self: flex-end; }
