@@ -522,6 +522,8 @@
       if(!keys.length){ box.innerHTML=`<p class="empty-hint">Keine kommenden Einträge. Füge einen Termin hinzu.</p>`; return; }
       box.innerHTML = keys.map(k=>{
         const items = map[k].map((e,i)=>{
+          const hasPage=(e.ref.planHtml||e.ref.planUrl);
+          const fullBtn = hasPage ? `<div style="margin-top:8px"><button class="pill" data-full-k="${k}" data-full-i="${i}" title="Programm als ganze Seite öffnen">Ganz öffnen ↗</button></div>` : '';
           if (e.kind==='trip' && e.stops && e.stops.length) {
             const rows = e.stops.map(s=>`<div class="prog-row"><span class="prog-time">${esc(s.time||'–')}</span><span class="prog-title">${esc(s.title)}</span>${s.notes?`<div class="prog-notes">${esc(s.notes)}</div>`:''}</div>`).join('');
             return `<div class="item-card" data-k="${k}" data-i="${i}" style="flex-direction:column;align-items:stretch">
@@ -530,15 +532,20 @@
                 <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">Termin${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
               </div>
               <div class="prog-list">${rows}</div>
+              ${fullBtn}
             </div>`;
           }
           return `<div class="item-card" data-k="${k}" data-i="${i}">
             <div class="item-bar" style="background:${e.color}"></div>
             <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-            <div class="item-meta">${e.kind==='trip'?'Termin':'Besonderer Tag'}${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div></div>`;
+            <div class="item-meta">${e.kind==='trip'?'Termin':'Besonderer Tag'}${e.ref.destination?' · '+esc(e.ref.destination):''}</div>${fullBtn}</div></div>`;
         }).join('');
         return `<div class="agenda-group"><div class="agenda-date">${fmtDateKey(k)}</div>${items}</div>`;
       }).join('');
+      box.querySelectorAll('[data-full-k]').forEach(b=>b.onclick=(ev)=>{
+        ev.stopPropagation();
+        const e=(map[b.dataset.fullK]||[])[+b.dataset.fullI]; if(e)openPlanFull(e.ref);
+      });
       box.querySelectorAll('.item-card').forEach(c=>c.onclick=()=>{
         const e=(map[c.dataset.k]||[])[+c.dataset.i]; if(!e)return;
         if(e.kind==='trip') { openTrip(e.ref.id); return; }
@@ -556,9 +563,10 @@
       const box=$('dayEvents');
       box.innerHTML = evs.length ? evs.map((e,i)=>{
         const hasPage=(e.ref.planHtml||e.ref.planUrl);
+        const fullBtn = hasPage ? `<button class="pill" data-full="${i}" title="Programm als ganze Seite öffnen">Ganz öffnen ↗</button>` : '';
         let act='';
-        if(e.kind==='trip'){ act=`<button class="pill primary" data-open-trip="${esc(e.ref.id)}">Öffnen</button>`; }
-        else { act=`<button class="pill" data-edit="${i}">Bearbeiten</button>`; if(hasPage)act=`<button class="pill primary" data-page="${i}">Infos</button>`+act; }
+        if(e.kind==='trip'){ act=fullBtn+`<button class="pill primary" data-open-trip="${esc(e.ref.id)}">Öffnen</button>`; }
+        else { act=`<button class="pill" data-edit="${i}">Bearbeiten</button>`; if(hasPage)act=fullBtn+`<button class="pill primary" data-page="${i}">Infos</button>`+act; }
         return `<div class="item-card"><div class="item-bar" style="background:${e.color}"></div>
           <div class="item-body"><div class="item-title">${esc(e.title)}</div>
           <div class="item-meta">${e.kind==='trip'?'Termin':'Besonderer Tag'}</div>
@@ -567,6 +575,7 @@
       box.querySelectorAll('[data-open-trip]').forEach(b=>b.onclick=()=>{closeDay();openTrip(b.dataset.openTrip);});
       box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.edit];closeDay();openDayForm(e.ref);});
       box.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.page];openViewer(e.title,e.ref.planHtml,e.ref.planUrl);});
+      box.querySelectorAll('[data-full]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.full];openPlanFull(e.ref);});
       $('dayBackdrop').classList.add('visible'); $('daySheet').classList.add('visible');
     }
     function closeDay(){ $('dayBackdrop').classList.remove('visible'); $('daySheet').classList.remove('visible'); }
@@ -718,7 +727,7 @@
           <div data-tb="paste"><textarea class="form-textarea" id="pHtml" rows="3" placeholder="HTML…">${esc(tr.planHtml||'')}</textarea></div>
           <div data-tb="upload" style="display:none"><label class="drop" id="pDrop"><span id="pDropText">HTML-Datei wählen</span><input type="file" id="pFile" accept=".html,.htm,text/html" hidden></label><p id="pChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
           <div data-tb="url" style="display:none"><input class="form-input" id="pUrl" type="url" placeholder="https://… (z.B. Claude-Link)" value="${esc(tr.planUrl||'')}"></div>
-          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="pSave" style="flex:1">Speichern</button>${(tr.planHtml||tr.planUrl)?`<button class="pill" id="pFull" title="Als ganze Seite in neuem Tab öffnen">Ganz öffnen ↗</button><button class="pill primary" id="pOpen">Öffnen</button>`:''}</div>
+          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="pSave" style="flex:1">Speichern</button>${(tr.planHtml||tr.planUrl)?`<button class="pill primary" id="pOpen">Öffnen</button>`:''}</div>
         </div>
 
         <div class="sub-card"><div class="sub-title">Dateien</div>
@@ -768,7 +777,6 @@
         renderTripDetail(tr,acts,files);
       };
       if($('pOpen')) $('pOpen').onclick=()=>openViewer(tr.name,tr.planHtml,tr.planUrl);
-      if($('pFull')) $('pFull').onclick=()=>openPlanFull(tr);
       // files (Firestore, free plan)
       let curFiles = files;
       const bindFiles=()=>{ $('fList').innerHTML=renderFileList(curFiles);
