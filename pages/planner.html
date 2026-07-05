@@ -64,6 +64,14 @@
     .item-meta { font-size:12px; color:var(--ink-soft); margin-top:2px; }
     .empty-hint { text-align:center; color:var(--ink-soft); font-size:14px; padding:30px 12px; }
 
+    /* Consolidated day-program rows in the list view — one row per
+       itinerary stop, grouped under the trip within that day's group. */
+    .prog-list { margin-top:10px; padding-left:16px; border-left:2px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+    .prog-row { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .prog-time { font-size:12px; font-weight:700; color:var(--ink-soft); min-width:42px; flex:0 0 auto; }
+    .prog-title { font-size:13.5px; font-weight:600; }
+    .prog-notes { flex-basis:100%; font-size:12px; color:var(--ink-soft); margin-top:1px; }
+
     .fab-row { display:flex; gap:10px; margin-bottom:16px; }
     .fab-row .pill { flex:1; text-align:center; padding:12px; }
 
@@ -448,6 +456,29 @@
       return map;
     }
 
+    /* ── Day-program map (list view only) ── same events as eventMap(), but
+       each trip also carries its itinerary stops for that specific day, so
+       the list view can show the actual consolidated program instead of
+       just the trip's name. Kept separate from eventMap() so the compact
+       month-grid chips are unaffected. ── */
+    function dayProgramMap() {
+      const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
+      days.forEach(s=>{ if(s.date) push(s.date,{kind:'day',color:s.color||COLORS[0],title:s.title||'Tag',ref:s}); });
+      trips.forEach(tr=>{
+        const keys = new Set();
+        if (tr.startDate) {
+          const end=tr.endDate||tr.startDate; let d=new Date(tr.startDate+'T00:00:00'); const last=new Date(end+'T00:00:00'); let g=0;
+          while(d<=last && g++<400){ keys.add(keyOf(d.getFullYear(),d.getMonth(),d.getDate())); d.setDate(d.getDate()+1); }
+        }
+        (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
+        keys.forEach(k=>{
+          const stops = (tr.itinerary||[]).filter(it=>it.date===k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+          push(k,{kind:'trip',color:TRIP_COLOR,title:tr.name||'Reise',ref:tr,stops});
+        });
+      });
+      return map;
+    }
+
     /* ── Calendar render ── */
     function renderCalendar() {
       $('monthTitle').textContent = `${MONTHS[viewM]} ${viewY}`;
@@ -474,15 +505,27 @@
 
     /* ── Agenda (list) render ── */
     function renderAgenda() {
-      const map = eventMap();
+      const map = dayProgramMap();
       const keys = Object.keys(map).filter(k=>k>=todayKey).sort();
       const box=$('agenda');
       if(!keys.length){ box.innerHTML=`<p class="empty-hint">Keine kommenden Einträge. Füge eine Reise oder einen besonderen Tag hinzu.</p>`; return; }
       box.innerHTML = keys.map(k=>{
-        const items = map[k].map((e,i)=>`<div class="item-card" data-k="${k}" data-i="${i}">
-          <div class="item-bar" style="background:${e.color}"></div>
-          <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-          <div class="item-meta">${e.kind==='trip'?'Reise':'Besonderer Tag'}${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div></div>`).join('');
+        const items = map[k].map((e,i)=>{
+          if (e.kind==='trip' && e.stops && e.stops.length) {
+            const rows = e.stops.map(s=>`<div class="prog-row"><span class="prog-time">${esc(s.time||'–')}</span><span class="prog-title">${esc(s.title)}</span>${s.notes?`<div class="prog-notes">${esc(s.notes)}</div>`:''}</div>`).join('');
+            return `<div class="item-card" data-k="${k}" data-i="${i}" style="flex-direction:column;align-items:stretch">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div class="item-bar" style="background:${e.color}"></div>
+                <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">Reise${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
+              </div>
+              <div class="prog-list">${rows}</div>
+            </div>`;
+          }
+          return `<div class="item-card" data-k="${k}" data-i="${i}">
+            <div class="item-bar" style="background:${e.color}"></div>
+            <div class="item-body"><div class="item-title">${esc(e.title)}</div>
+            <div class="item-meta">${e.kind==='trip'?'Reise':'Besonderer Tag'}${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div></div>`;
+        }).join('');
         return `<div class="agenda-group"><div class="agenda-date">${fmtDateKey(k)}</div>${items}</div>`;
       }).join('');
       box.querySelectorAll('.item-card').forEach(c=>c.onclick=()=>{
@@ -721,10 +764,11 @@
 
     /* ── Auto-import: pull day-by-day stops out of a pasted/uploaded
        itinerary HTML (the "stop card" template Claude produces) and fold
-       them straight into the trip's itinerary list. Walks time[datetime]
-       markers and .stop cards together in document order so a multi-day
-       itinerary (one <time> per day, followed by that day's stops) assigns
-       each stop the date of the nearest preceding marker. ── */
+       them straight into the trip's itinerary list. Different Claude
+       sessions style this template differently (h2 vs h3 titles, an ISO
+       <time datetime> vs a plain-text day label like "Today"/"Tomorrow" +
+       "Sunday, 5 July"), so both the title tag and the date marker are
+       detected with some flexibility rather than one fixed selector. ── */
     function parseTimeBadge(text) {
       if (!text) return '';
       const m = String(text).match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
@@ -737,24 +781,61 @@
       if (h > 23) return '';
       return `${String(h).padStart(2, '0')}:${min}`;
     }
+    function isoOf(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+    function extractDateFromText(text, todayRef) {
+      if (!text) return '';
+      const t = text.trim();
+      if (!t) return '';
+      if (/\btoday\b/i.test(t)) return isoOf(todayRef);
+      if (/\btomorrow\b/i.test(t)) { const d = new Date(todayRef); d.setDate(d.getDate() + 1); return isoOf(d); }
+      const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+      const mp = months.map(m => m.slice(0, 3) + '[a-z]*').join('|');
+      const re1 = new RegExp('\\b(\\d{1,2})\\s+(' + mp + ')(?:\\s+(\\d{4}))?\\b', 'i');
+      const re2 = new RegExp('\\b(' + mp + ')\\s+(\\d{1,2})(?:,?\\s+(\\d{4}))?\\b', 'i');
+      let day, monthName, year, m = t.match(re1);
+      if (m) { day = +m[1]; monthName = m[2]; year = m[3] ? +m[3] : null; }
+      else { m = t.match(re2); if (m) { monthName = m[1]; day = +m[2]; year = m[3] ? +m[3] : null; } }
+      if (!m) return '';
+      const mi = months.findIndex(mn => monthName.toLowerCase().startsWith(mn.slice(0, 3)));
+      if (mi < 0 || !day) return '';
+      let y = year || todayRef.getFullYear();
+      let d = new Date(y, mi, day);
+      const todayMid = new Date(todayRef.getFullYear(), todayRef.getMonth(), todayRef.getDate());
+      if (!year && d < todayMid && (todayMid - d) / 86400000 > 60) { y += 1; d = new Date(y, mi, day); }
+      return isoOf(d);
+    }
     function parseItineraryHtml(html) {
-      if (!html) return { date: '', items: [] };
+      if (!html) return { items: [] };
       let dom;
       try { dom = new DOMParser().parseFromString(html, 'text/html'); }
-      catch { return { date: '', items: [] }; }
-      const nodes = [...dom.querySelectorAll('time[datetime], .stop')];
+      catch { return { items: [] }; }
+      const today = new Date();
+      // Walk potential date markers (ISO <time>, any heading, or anything
+      // with "date" in its class) together with .stop cards in document
+      // order, so each stop gets the date of the nearest preceding marker
+      // that actually resolves to a real date.
+      const nodes = [...dom.querySelectorAll('time[datetime], h1, h2, h3, h4, [class*="date" i], .stop')];
       let currentDate = '';
       const items = [];
       for (const el of nodes) {
-        if (el.matches('time[datetime]')) { currentDate = (el.getAttribute('datetime') || '').slice(0, 10); continue; }
-        const title = el.querySelector('h2')?.textContent.trim() || '';
-        if (!title) continue;
-        const timeText = el.querySelector('.time-badge')?.textContent.trim() || '';
-        const address = el.querySelector('.card-address')?.textContent.trim().replace(/\s+/g, ' ') || '';
-        const desc = el.querySelector('.card p:not(.card-eyebrow):not(.card-address)')?.textContent.trim().replace(/\s+/g, ' ') || '';
-        const notes = [address, desc].filter(Boolean).join(' — ');
-        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-        items.push({ id, date: currentDate, time: parseTimeBadge(timeText), title, notes, autoImported: true });
+        if (el.matches('.stop')) {
+          const title = el.querySelector('h1, h2, h3, h4')?.textContent.trim() || '';
+          if (!title) continue;
+          const timeText = el.querySelector('.time-badge')?.textContent.trim() || '';
+          const address = el.querySelector('.card-address')?.textContent.trim().replace(/\s+/g, ' ') || '';
+          const desc = el.querySelector('.card p:not(.card-eyebrow):not(.card-address)')?.textContent.trim().replace(/\s+/g, ' ') || '';
+          const notes = [address, desc].filter(Boolean).join(' — ');
+          const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+          items.push({ id, date: currentDate, time: parseTimeBadge(timeText), title, notes, autoImported: true });
+          continue;
+        }
+        if (el.matches('time[datetime]')) {
+          const iso = (el.getAttribute('datetime') || '').slice(0, 10);
+          if (iso) currentDate = iso;
+          continue;
+        }
+        const iso = extractDateFromText(el.textContent, today);
+        if (iso) currentDate = iso;
       }
       return { items };
     }
