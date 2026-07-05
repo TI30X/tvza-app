@@ -15,7 +15,7 @@
   ).matches;
 
   // Single source of truth for the footer version shown on every page.
-  const APP_VERSION = "v.29.2.0";
+  const APP_VERSION = "v.29.4.0";
 
   function contentEl() {
     return document.querySelector("main, .main") || document.body;

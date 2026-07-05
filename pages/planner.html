@@ -224,12 +224,24 @@
     <div class="sheet-head"><span class="sheet-title" id="tripFormTitle">Neuer Termin</span>
       <button class="icon-pill" id="tripFormClose">✕</button></div>
     <div class="field"><label>Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" /></div>
-    <div class="field"><label>Ziel / Ort</label><input class="form-input" id="tDest" placeholder="Ort / Region (optional)" /></div>
+    <div class="field"><label>Ziel / Ort (optional)</label><input class="form-input" id="tDest" placeholder="Ort / Region — kann leer bleiben" /></div>
     <div class="row2">
       <div class="field"><label>Von</label><input class="form-input" id="tStart" type="date" /></div>
       <div class="field"><label>Bis (optional)</label><input class="form-input" id="tEnd" type="date" placeholder="leer = eintägig"></div>
     </div>
+    <div class="field"><label>Farbe</label><div class="swatches" id="tSwatch"></div></div>
     <div class="field"><label>Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
+    <div class="field">
+      <label>Programm / Info-Seite (optional)</label>
+      <div class="tabs" id="tpTabs">
+        <button class="tab active" data-tpane="paste">HTML</button>
+        <button class="tab" data-tpane="upload">Datei (.html)</button>
+        <button class="tab" data-tpane="url">Link</button>
+      </div>
+      <div data-tbody="paste"><textarea class="form-textarea" id="tpHtml" rows="4" placeholder="HTML hier einfügen — wird automatisch nach Tagen aufgeteilt…"></textarea></div>
+      <div data-tbody="upload" style="display:none"><label class="drop" id="tpDrop"><span id="tpDropText">HTML-Datei wählen</span><input type="file" id="tpFile" accept=".html,.htm,text/html" hidden /></label><p id="tpChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
+      <div data-tbody="url" style="display:none"><input class="form-input" id="tpUrl" type="url" placeholder="https://…"></div>
+    </div>
     <button class="btn btn-primary btn-block" id="tripSave">Speichern</button>
   </div>
 
@@ -449,7 +461,7 @@
           while(d<=last && g++<400){ keys.add(keyOf(d.getFullYear(),d.getMonth(),d.getDate())); d.setDate(d.getDate()+1); }
         }
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
-        keys.forEach(k=>push(k,{kind:'trip',color:TRIP_COLOR,title:tr.name||'Termin',ref:tr}));
+        keys.forEach(k=>push(k,{kind:'trip',color:tr.color||TRIP_COLOR,title:tr.name||'Termin',ref:tr}));
       });
       return map;
     }
@@ -471,7 +483,7 @@
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
         keys.forEach(k=>{
           const stops = (tr.itinerary||[]).filter(it=>it.date===k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-          push(k,{kind:'trip',color:TRIP_COLOR,title:tr.name||'Termin',ref:tr,stops});
+          push(k,{kind:'trip',color:tr.color||TRIP_COLOR,title:tr.name||'Termin',ref:tr,stops});
         });
       });
       return map;
@@ -559,12 +571,43 @@
     function closeDay(){ $('dayBackdrop').classList.remove('visible'); $('daySheet').classList.remove('visible'); }
 
     /* ── Trip form ── */
+    let newTripFileHtml = '';
+    let editTripItinerary = [];
+    let tripColor = TRIP_COLOR;
+    function buildTripSwatches(){
+      $('tSwatch').innerHTML = COLORS.map(c=>`<span class="swatch" data-c="${c}" style="background:${c}"></span>`).join('');
+      $('tSwatch').querySelectorAll('.swatch').forEach(s=>s.onclick=()=>{ tripColor=s.dataset.c; markTripSwatch(); });
+    }
+    function markTripSwatch(){ $('tSwatch').querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel', s.dataset.c===tripColor)); }
+    buildTripSwatches();
+    function setTripPlanPane(p){
+      document.querySelectorAll('#tpTabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.tpane===p));
+      document.querySelectorAll('#tripSheet [data-tbody]').forEach(b=>b.style.display = b.dataset.tbody===p ? '' : 'none');
+    }
+    document.querySelectorAll('#tpTabs .tab').forEach(t=>t.onclick=()=>setTripPlanPane(t.dataset.tpane));
+    if ($('tpFile')) $('tpFile').onchange = e => {
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>{ newTripFileHtml=String(r.result||''); $('tpChosen').textContent='✓ '+f.name; $('tpChosen').style.display=''; };
+      r.readAsText(f);
+    };
     function openTripForm(t){
       editTripId = t ? t.id : null;
       $('tripFormTitle').textContent = t ? 'Termin bearbeiten' : 'Neuer Termin';
       $('tName').value=t?.name||''; $('tDest').value=t?.destination||'';
       $('tStart').value=t?.startDate||(sheetKey||''); $('tEnd').value=t?.endDate||'';
       $('tNotes').value=t?.notes||'';
+      // Programm/Info-Seite: prefill from the existing Termin when editing, so
+      // this same field can also be used later to update the plan — same
+      // parser as the trip detail's own Plan section.
+      $('tpHtml').value = t?.planHtml || '';
+      $('tpUrl').value = t?.planUrl || '';
+      editTripItinerary = t?.itinerary || [];
+      newTripFileHtml = '';
+      $('tpChosen').style.display = 'none';
+      setTripPlanPane('paste');
+      tripColor = t?.color || TRIP_COLOR;
+      markTripSwatch();
       $('tripBackdrop').classList.add('visible'); $('tripSheet').classList.add('visible');
     }
     function closeTripForm(){ $('tripBackdrop').classList.remove('visible'); $('tripSheet').classList.remove('visible'); }
@@ -573,12 +616,33 @@
       const start=$('tStart').value;
       // "Bis" is optional — a Termin with no end date is simply a single-day
       // entry, so it still shows correctly everywhere dates are unioned.
-      const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start, notes:$('tNotes').value.trim() };
+      const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start, notes:$('tNotes').value.trim(), color:tripColor };
+
+      // Same auto-import as the trip detail's Plan section: paste/upload/link
+      // gets parsed into per-day, per-time stops right away.
+      const activePane = document.querySelector('#tpTabs .tab.active')?.dataset.tpane || 'paste';
+      let planHtml='', planUrl='';
+      if (activePane==='upload' && newTripFileHtml) planHtml = newTripFileHtml;
+      else if (activePane==='url') planUrl = $('tpUrl').value.trim();
+      else planHtml = $('tpHtml').value.trim();
+      data.planHtml = planHtml; data.planUrl = planUrl;
+      let itinerary = editTripId ? editTripItinerary : [];
+      if (planHtml) {
+        const { items } = parseItineraryHtml(planHtml);
+        if (items.length) {
+          const manual = itinerary.filter(it => !it.autoImported);
+          itinerary = [...manual, ...items];
+        }
+      }
+      data.itinerary = itinerary;
+
       $('tripSave').disabled=true;
       try{
+        let id = editTripId;
         if(editTripId) await updateDoc(doc(db,'trips',editTripId), data);
-        else await addDoc(collection(db,'trips'), { ...data, familyId:group.id, itinerary:[], createdBy:user.uid, createdAt:serverTimestamp() });
-        await reload(); closeTripForm();
+        else { const ref = await addDoc(collection(db,'trips'), { ...data, familyId:group.id, createdBy:user.uid, createdAt:serverTimestamp() }); id = ref.id; }
+        closeTripForm();
+        await openTrip(id);
       }catch(e){console.warn(e);alert('Speichern fehlgeschlagen.');}
       $('tripSave').disabled=false;
     };
@@ -602,7 +666,7 @@
       const v = $('tripDetail');
       v.innerHTML = `
         <button class="pill" id="tdBack">‹ Zurück</button>
-        <div class="grp-card" style="border-left:4px solid ${TRIP_COLOR};margin-top:12px">
+        <div class="grp-card" style="border-left:4px solid ${tr.color||TRIP_COLOR};margin-top:12px">
           <div class="grp-top"><span class="grp-name">${esc(tr.name)}</span>
             <button class="mini" id="tdEdit" title="Bearbeiten">✎</button></div>
           <div class="item-meta">${esc(tr.destination||'')}</div>
