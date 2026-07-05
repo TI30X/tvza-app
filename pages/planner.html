@@ -243,6 +243,7 @@
       <div data-tbody="url" style="display:none"><input class="form-input" id="tpUrl" type="url" placeholder="https://…"></div>
     </div>
     <button class="btn btn-primary btn-block" id="tripSave">Speichern</button>
+    <button class="btn btn-danger btn-block" id="tripFormDelete" style="display:none;margin-top:8px">Termin löschen</button>
   </div>
 
   <!-- Special day form sheet -->
@@ -608,9 +609,26 @@
       setTripPlanPane('paste');
       tripColor = t?.color || TRIP_COLOR;
       markTripSwatch();
+      // Delete lives here too now, not just at the bottom of the Termin's own
+      // page — only makes sense once something exists to delete.
+      $('tripFormDelete').style.display = t ? '' : 'none';
       $('tripBackdrop').classList.add('visible'); $('tripSheet').classList.add('visible');
     }
     function closeTripForm(){ $('tripBackdrop').classList.remove('visible'); $('tripSheet').classList.remove('visible'); }
+    $('tripFormDelete').onclick = async () => {
+      if (!editTripId) return;
+      if (!confirm('Diesen Termin löschen?')) return;
+      const id = editTripId;
+      try {
+        const aq = await getDocs(query(collection(db,'activities'), where('tripId','==',id)));
+        await Promise.all(aq.docs.map(d=>deleteDoc(d.ref)));
+        const fq = await loadAttachments(id);
+        await Promise.all(fq.map(f=>delAttachment(f.id).catch(()=>{})));
+        await deleteDoc(doc(db,'trips',id));
+        closeTripForm();
+        backToGroup();
+      } catch(e) { console.warn(e); alert('Löschen fehlgeschlagen.'); }
+    };
     $('tripSave').onclick = async () => {
       const name=$('tName').value.trim(); if(!name){alert('Bitte einen Titel eingeben.');return;}
       const start=$('tStart').value;
@@ -786,16 +804,31 @@
         if (!aq.docs.length) { list.innerHTML = '<p class="empty-hint" style="padding:10px">Noch keine Gäste.</p>'; return; }
         const rows = await Promise.all(aq.docs.map(async d => {
           const g = d.data();
-          let name = g.uid;
-          try { const p = await getDoc(doc(db,'guestProfiles',g.uid)); if (p.exists()) name = p.data().name || p.data().email || g.uid; } catch(e) {}
-          return { uid: g.uid, name, docId: d.id };
+          let name = g.uid, lastActiveAt = null;
+          try {
+            const p = await getDoc(doc(db,'guestProfiles',g.uid));
+            if (p.exists()) { name = p.data().name || p.data().email || g.uid; lastActiveAt = p.data().lastActiveAt || null; }
+          } catch(e) {}
+          return { uid: g.uid, name, docId: d.id, lastActiveAt };
         }));
-        list.innerHTML = rows.map(r => `
-          <div class="line">
-            <span class="l-main"><span class="l-title">${esc(r.name)}</span></span>
+        // Firestore can't auto-delete inactive guest accounts on its own (that
+        // needs a scheduled Cloud Function on the Blaze plan) — this "zuletzt
+        // aktiv" hint is the manual substitute: spot anyone past 30 days and
+        // remove them with the button below.
+        const dayMs = 86400000;
+        list.innerHTML = rows.map(r => {
+          let sub = 'noch nie aktiv';
+          if (r.lastActiveAt?.toDate) {
+            const days = Math.floor((Date.now() - r.lastActiveAt.toDate().getTime()) / dayMs);
+            sub = days <= 0 ? 'heute aktiv' : `vor ${days} Tag${days===1?'':'en'} aktiv`;
+          }
+          const stale = r.lastActiveAt?.toDate && (Date.now() - r.lastActiveAt.toDate().getTime()) / dayMs > 30;
+          return `<div class="line">
+            <span class="l-main"><span class="l-title">${esc(r.name)}</span><span class="l-sub"${stale?' style="color:var(--danger,#c0392b)"':''}>${stale?'⚠ ':''}${sub}</span></span>
             <button class="mini" data-gchat="${esc(r.uid)}" data-gname="${esc(r.name)}" title="Chat">💬</button>
             <button class="mini" data-gdel="${esc(r.docId)}" title="Entfernen">🗑</button>
-          </div>`).join('');
+          </div>`;
+        }).join('');
         list.querySelectorAll('[data-gchat]').forEach(b=>b.onclick=()=>{
           location.href = `messages.html?to=${encodeURIComponent(b.dataset.gchat)}&name=${encodeURIComponent(b.dataset.gname)}`;
         });

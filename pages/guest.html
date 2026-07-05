@@ -20,6 +20,13 @@
     .g-compose { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: end; margin-top: 10px; }
     .g-day { font-weight: 700; font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; margin: 14px 0 8px; }
     .g-day:first-child { margin-top: 0; }
+    .g-viewer { position: fixed; inset: 0; background: var(--surface); z-index: 200; display: none; flex-direction: column; }
+    .g-viewer.visible { display: flex; }
+    .g-viewer-bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .g-viewer-bar span { font-weight: 700; flex: 1; }
+    .g-viewer iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+    .g-viewer-bar .icon-pill { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border); border-radius: var(--r1); background: var(--surface); color: var(--ink); cursor: pointer; font-size: 18px; }
   </style>
 </head>
 <body>
@@ -35,23 +42,25 @@
 
       <div id="requestForm" style="display:none">
         <div class="form-card">
-          <p class="form-title">Willkommen!</p>
-          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:14px">
-            Gib deinen Namen und deine E-Mail-Adresse ein — du bekommst einen
-            Link zugeschickt, mit dem du den Reiseplan öffnen kannst. Kein
-            Passwort nötig.
+          <p class="form-title" id="authTitle">Willkommen!</p>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:14px" id="authSub">
+            Erstelle ein Konto mit E-Mail und Passwort, um den Reiseplan zu sehen.
           </p>
-          <div class="field"><label class="form-label">Dein Name</label><input id="gName" class="form-input" type="text" /></div>
-          <div class="field"><label class="form-label">E-Mail-Adresse</label><input id="gEmail" class="form-input" type="email" /></div>
-          <button id="requestBtn" class="btn btn-primary btn-block" style="margin-top:8px">Zugang anfordern</button>
-          <p id="requestStatus" style="font-size:12px;color:var(--danger,#c0392b);margin-top:8px"></p>
+          <div class="login-error" id="authErr" style="background:var(--accent-bg);color:var(--accent);font-size:13px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r1);margin-bottom:14px;display:none"></div>
+          <div class="field" id="gNameField"><label class="form-label">Dein Name</label><input id="gName" class="form-input" type="text" autocomplete="name" /></div>
+          <div class="field"><label class="form-label">E-Mail-Adresse</label><input id="gEmail" class="form-input" type="email" autocomplete="username" inputmode="email" autocapitalize="none" /></div>
+          <div class="field"><label class="form-label">Passwort</label><input id="gPass" class="form-input" type="password" placeholder="mind. 6 Zeichen" autocomplete="new-password" autocapitalize="none" /></div>
+          <button id="requestBtn" class="btn btn-primary btn-block" style="margin-top:8px">Konto erstellen</button>
+          <p class="switch-mode" style="text-align:center;font-size:13px;color:var(--ink-soft);margin-top:14px">
+            <span id="switchText">Schon ein Konto? </span><a id="switchLink" style="color:var(--accent);font-weight:700;cursor:pointer">Anmelden</a>
+          </p>
         </div>
       </div>
 
-      <div id="checkEmail" style="display:none">
+      <div id="wrongAccount" style="display:none">
         <div class="empty-state">
-          📧 Wir haben einen Link an <strong><span id="sentTo"></span></strong> geschickt.<br>
-          Öffne die E-Mail auf diesem Gerät und tippe auf den Link, um fortzufahren.
+          Auf diesem Gerät ist gerade ein Familienkonto angemeldet — dieser Link ist für Gäste gedacht.<br>
+          <button id="signOutBtn" class="btn btn-primary" style="margin-top:12px">Ausloggen &amp; als Gast anmelden</button>
         </div>
       </div>
 
@@ -83,40 +92,49 @@
     </footer>
   </div>
 
+  <div class="g-viewer" id="gViewer">
+    <div class="g-viewer-bar"><button class="icon-pill" id="gViewerClose">‹</button><span>Reiseplan</span></div>
+    <iframe id="gViewerFrame" sandbox="allow-same-origin allow-popups" referrerpolicy="no-referrer"></iframe>
+  </div>
+
   <script type="module">
     import { auth, db, escHtml } from '../assets/js/firebase-config.js';
     import {
-      doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, increment
+      doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, increment
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import {
-      sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged
+      signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     const $ = id => document.getElementById(id);
     const params = new URLSearchParams(location.search);
 
     // Trip/token travel via the URL on first open; stashed in localStorage so
-    // they survive the round-trip through the guest's email client (which may
-    // open the link in a different tab/context than the one that requested it).
+    // a guest can come back later without the full link.
     const tripId = params.get('trip') || localStorage.getItem('tvza.guestTrip') || '';
     const token  = params.get('token') || localStorage.getItem('tvza.guestToken') || '';
     if (params.get('trip'))  localStorage.setItem('tvza.guestTrip', tripId);
     if (params.get('token')) localStorage.setItem('tvza.guestToken', token);
 
     function show(id) {
-      ['loading', 'requestForm', 'checkEmail', 'invalidLink', 'dashboard']
+      ['loading', 'requestForm', 'wrongAccount', 'invalidLink', 'dashboard']
         .forEach(x => { $(x).style.display = x === id ? '' : 'none'; });
     }
 
-    async function ensureGuestAccess(user) {
+    async function ensureGuestAccess(user, name) {
       const profRef = doc(db, 'guestProfiles', user.uid);
       const profSnap = await getDoc(profRef);
       if (!profSnap.exists()) {
         await setDoc(profRef, {
           email: user.email || '',
-          name: localStorage.getItem('tvza.guestName') || user.email || 'Gast',
-          createdAt: serverTimestamp()
+          name: name || user.email || 'Gast',
+          createdAt: serverTimestamp(),
+          lastActiveAt: serverTimestamp()
         });
+      } else {
+        // Touch lastActiveAt on every return visit — this is what lets the
+        // family spot guests inactive 30+ days in the Gast-Zugang list.
+        await updateDoc(profRef, { lastActiveAt: serverTimestamp() }).catch(() => {});
       }
       const accessRef = doc(db, 'guestAccess', `${user.uid}_${tripId}`);
       const accessSnap = await getDoc(accessRef);
@@ -134,7 +152,14 @@
         <p class="form-title">${escHtml(trip.name || 'Reise')}</p>
         ${trip.destination ? `<p style="color:var(--ink-soft);font-size:14px">${escHtml(trip.destination)}</p>` : ''}
         ${trip.notes ? `<p style="margin-top:8px;font-size:14px">${escHtml(trip.notes)}</p>` : ''}
+        ${(trip.planHtml || trip.planUrl) ? `<button class="btn btn-primary btn-block" id="gViewOriginal" style="margin-top:12px">🎨 Original-Design ansehen</button>` : ''}
       `;
+      if ($('gViewOriginal')) $('gViewOriginal').onclick = () => {
+        const f = $('gViewerFrame');
+        if (trip.planUrl) { f.removeAttribute('srcdoc'); f.src = trip.planUrl; }
+        else { f.removeAttribute('src'); f.srcdoc = trip.planHtml || ''; }
+        $('gViewer').classList.add('visible');
+      };
 
       const itin = (trip.itinerary || []).slice()
         .sort((a, b) => ((a.date || '') + (a.time || '')).localeCompare((b.date || '') + (b.time || '')));
@@ -195,30 +220,53 @@
       });
     }
 
+    let mode = 'register'; // or 'login'
+    function applyMode() {
+      $('gNameField').style.display = mode === 'register' ? '' : 'none';
+      $('authTitle').textContent = mode === 'register' ? 'Willkommen!' : 'Willkommen zurück!';
+      $('authSub').textContent = mode === 'register'
+        ? 'Erstelle ein Konto mit E-Mail und Passwort, um den Reiseplan zu sehen.'
+        : 'Melde dich mit E-Mail und Passwort an.';
+      $('requestBtn').textContent = mode === 'register' ? 'Konto erstellen' : 'Anmelden';
+      $('switchText').textContent = mode === 'register' ? 'Schon ein Konto? ' : 'Noch kein Konto? ';
+      $('switchLink').textContent = mode === 'register' ? 'Anmelden' : 'Registrieren';
+      $('authErr').style.display = 'none';
+    }
+    $('switchLink').addEventListener('click', () => { mode = mode === 'register' ? 'login' : 'register'; applyMode(); });
+
+    function translateAuthError(code) {
+      const map = {
+        'auth/invalid-email':          'Ungültige E-Mail-Adresse.',
+        'auth/user-not-found':         'Kein Konto mit dieser E-Mail gefunden.',
+        'auth/wrong-password':         'Falsches Passwort.',
+        'auth/invalid-credential':     'E-Mail oder Passwort falsch.',
+        'auth/email-already-in-use':   'Diese E-Mail ist bereits registriert — versuch es mit Anmelden.',
+        'auth/weak-password':          'Passwort zu schwach (mind. 6 Zeichen).',
+        'auth/network-request-failed': 'Keine Internetverbindung.',
+      };
+      return map[code] || 'Fehler: ' + code;
+    }
+
     async function init() {
       if (!tripId || !token) { show('invalidLink'); return; }
-
-      if (isSignInWithEmailLink(auth, window.location.href)) {
-        let email = localStorage.getItem('tvza.guestEmail');
-        if (!email) email = window.prompt('Bitte bestätige deine E-Mail-Adresse:');
-        try {
-          const cred = await signInWithEmailLink(auth, email, window.location.href);
-          await ensureGuestAccess(cred.user);
-          history.replaceState({}, '', `${location.pathname}?trip=${tripId}`);
-          await loadDashboard(cred.user);
-        } catch (e) {
-          console.warn(e);
-          show('invalidLink');
-        }
-        return;
-      }
+      applyMode();
 
       onAuthStateChanged(auth, async user => {
         if (!user) { show('requestForm'); return; }
+        // This page shares its Firebase project with the family app — if a
+        // family member is already logged in on this device, don't quietly
+        // grant them "guest" status on their own trip. Family members can
+        // read their own users/ doc (Firestore rules), guests can't — a
+        // permission-denied here is itself the "you're a guest" signal, not
+        // an error, so it's handled separately from the real error path.
+        let isFamily = false;
+        try { isFamily = await getDoc(doc(db, 'users', user.uid)).then(s => s.exists()); }
+        catch (e) { isFamily = false; }
+        if (isFamily) { show('wrongAccount'); return; }
+
         try {
-          const accessSnap = await getDoc(doc(db, 'guestAccess', `${user.uid}_${tripId}`));
-          if (accessSnap.exists()) { await loadDashboard(user); return; }
-          await ensureGuestAccess(user);
+          const name = $('gName').value.trim() || localStorage.getItem('tvza.guestName') || '';
+          await ensureGuestAccess(user, name);
           await loadDashboard(user);
         } catch (e) {
           console.warn(e);
@@ -227,24 +275,30 @@
       });
     }
 
+    $('signOutBtn').addEventListener('click', async () => { await signOut(auth); location.reload(); });
+    $('gViewerClose').addEventListener('click', () => {
+      $('gViewer').classList.remove('visible');
+      const f = $('gViewerFrame'); f.removeAttribute('src'); f.removeAttribute('srcdoc');
+    });
+
     $('requestBtn').addEventListener('click', async () => {
       const name = $('gName').value.trim();
       const email = $('gEmail').value.trim();
-      if (!name || !email) { $('requestStatus').textContent = 'Bitte Name und E-Mail eingeben.'; return; }
+      const pass = $('gPass').value;
+      if (!email || !pass) { $('authErr').textContent = 'Bitte E-Mail und Passwort eingeben.'; $('authErr').style.display=''; return; }
+      if (mode === 'register' && !name) { $('authErr').textContent = 'Bitte deinen Namen eingeben.'; $('authErr').style.display=''; return; }
       $('requestBtn').disabled = true;
       try {
-        const actionCodeSettings = {
-          url: `${location.origin}${location.pathname}?trip=${tripId}&token=${token}`,
-          handleCodeInApp: true
-        };
-        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-        localStorage.setItem('tvza.guestEmail', email);
         localStorage.setItem('tvza.guestName', name);
-        $('sentTo').textContent = email;
-        show('checkEmail');
+        const cred = mode === 'register'
+          ? await createUserWithEmailAndPassword(auth, email, pass)
+          : await signInWithEmailAndPassword(auth, email, pass);
+        await ensureGuestAccess(cred.user, name);
+        await loadDashboard(cred.user);
       } catch (e) {
         console.warn(e);
-        $('requestStatus').textContent = 'Senden fehlgeschlagen — bitte E-Mail-Adresse prüfen.';
+        $('authErr').textContent = translateAuthError(e.code);
+        $('authErr').style.display = '';
         $('requestBtn').disabled = false;
       }
     });
