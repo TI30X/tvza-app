@@ -1,0 +1,6 @@
+# Keep line endings stable across Windows / OneDrive / Git.
+# Without this, every checkout rewrote whole files as CRLF and git
+# reported ~5900 changed lines that were pure noise.
+* text=auto eol=lf
+*.png binary
+*.svg text eol=lf
