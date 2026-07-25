@@ -28,6 +28,8 @@
   --tint-trip:   oklch(0.94 0.03 60);
   --tint-matura: oklch(0.94 0.03 300);
   --tint-watch:  oklch(0.93 0.035 165);
+  --tint-weather: oklch(0.93 0.04 230);
+  --tint-msg:     oklch(0.94 0.03 300);
 
   /* Stronger tracker hues (text, borders, fills) */
   --ski:    oklch(0.50 0.09 240);
@@ -35,22 +37,43 @@
   --trip:   oklch(0.55 0.10 60);
   --matura: oklch(0.50 0.09 300);
   --watch:  oklch(0.42 0.09 165);
+  --weather: oklch(0.45 0.11 235);
+  --msg:     oklch(0.45 0.12 300);
   --ski-deep:  oklch(0.40 0.08 240);
   --food-deep: oklch(0.40 0.08 145);
   --trip-deep: oklch(0.45 0.09 60);
   --matura-deep: oklch(0.45 0.12 300);
   --watch-deep: oklch(0.34 0.08 165);
+  --weather-deep: oklch(0.45 0.11 235);
+  --msg-deep:     oklch(0.45 0.12 300);
+
+  /* Kurs colours — Watchlist only */
+  --kurs-up:   oklch(0.58 0.13 150);
+  --kurs-down: oklch(0.58 0.17 25);
+
+  /* Wax colours — these name a physical thing, so they stay hex.
+     Declared here instead of inline in skitracker.html. */
+  --wax-blue:   #2563EB;
+  --wax-red:    #DC2626;
+  --wax-violet: #7C3AED;
+  --wax-yellow: #CA8A04;
+  --wax-green:  #16A34A;
 
   /* Space scale */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
 
-  /* Radius scale */
-  --r1: 8px; --r2: 12px; --r3: 16px;
+  /* Radius scale (§3) — exactly four steps, nothing in between.
+     --r1/--r2/--r3 stay as aliases so untouched pages keep rendering. */
+  --r-icon:  11px;   /* icon plate, nav entry, chart column */
+  --r-row:   14px;   /* row, tile, button */
+  --r-panel: 16px;   /* panel holding several blocks */
+  --r-pill:  999px;  /* pill, badge, avatar */
+  --r1: var(--r-icon); --r2: var(--r-row); --r3: var(--r-panel);
 
-  /* Shadows — flattened UI (no drop shadows around components) */
-  --shadow-sm: 0 0 0 0 transparent;
-  --shadow-md: 0 0 0 0 transparent;
-  --shadow-lg: 0 0 0 0 transparent;
+  /* No shadows (§3). Depth comes from --border alone. The three
+     --shadow-* variables were already transparent, so every rule that
+     pointed at them animated to nothing; both are gone now. The only
+     real shadow left is the drag clone in reorder mode. */
   --ring: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
 
   /* Typography */
@@ -65,8 +88,6 @@
   --text:         var(--ink);
   --text-muted:   var(--ink-soft);
   --text-faint:   oklch(0.60 0.01 250);
-  --shadow:       var(--shadow-sm);
-  --shadow-lg:    var(--shadow-md);
   --radius:       var(--r2);
   --radius-sm:    var(--r1);
   --radius-xs:    6px;
@@ -89,9 +110,6 @@
   --danger:    oklch(0.64 0.15 25);
   --danger-bg: oklch(0.28 0.06 25);
   --border:    oklch(0.34 0.006 250);
-  --shadow-sm: 0 0 0 0 transparent;
-  --shadow-md: 0 0 0 0 transparent;
-  --shadow-lg: 0 0 0 0 transparent;
 
   /* Tracker-Tints im Dark Mode abdunkeln, damit sie nicht "poppen" (gleiche Hues) */
   --tint-ski:    oklch(0.30 0.04 240);
@@ -99,11 +117,17 @@
   --tint-trip:   oklch(0.31 0.045 60);
   --tint-matura: oklch(0.30 0.04 300);
   --tint-watch:  oklch(0.30 0.045 165);
+  --tint-weather: oklch(0.30 0.045 230);
+  --tint-msg:     oklch(0.30 0.04 300);
   --ski-deep:  oklch(0.78 0.07 240);
   --food-deep: oklch(0.78 0.08 145);
   --trip-deep: oklch(0.80 0.09 60);
   --matura-deep: oklch(0.80 0.09 300);
   --watch-deep: oklch(0.80 0.09 165);
+  --weather-deep: oklch(0.80 0.09 230);
+  --msg-deep:     oklch(0.80 0.09 300);
+  --kurs-up:   oklch(0.72 0.13 150);
+  --kurs-down: oklch(0.70 0.15 25);
   --text-faint: oklch(0.58 0.01 250);
 }
 
@@ -305,7 +329,6 @@ button, input, select, textarea { font-family: inherit; }
   color: var(--trip-deep);
   border: 1px solid color-mix(in oklab, var(--trip) 30%, var(--border));
   border-radius: 999px;
-  box-shadow: var(--shadow-sm);
   text-align: center;
   padding: 7px 16px;
   font-size: var(--text-xs);
@@ -421,12 +444,15 @@ button, input, select, textarea { font-family: inherit; }
   transform: scale(1.015);
   z-index: 5;
 }
+/* The one real shadow in the app (§3): the clone you are dragging is
+   genuinely lifted off the page, so it is allowed to cast something. */
 .module-tile--dragging .card,
-.project-row--dragging {
-  box-shadow: var(--shadow-md);
+.project-row--dragging,
+.reorder-clone {
+  box-shadow: 0 12px 28px oklch(0 0 0 / 0.18);
 }
 .drag-over {
-  box-shadow: var(--shadow-md), inset 0 0 0 2px var(--accent) !important;
+  box-shadow: inset 0 0 0 2px var(--accent) !important;
 }
 .section--collapsed > :not(.section-head) { display: none !important; }
 
@@ -453,26 +479,22 @@ button, input, select, textarea { font-family: inherit; }
   background: var(--surface);
   border-radius: var(--r3);
   padding: 14px var(--s4);
-  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: var(--s2);
   border: 1px solid var(--border);
-  transition: transform 180ms cubic-bezier(.3,.7,.4,1), box-shadow 180ms ease, border-color 180ms ease;
+  transition: border-color 180ms ease;
   cursor: pointer;
 }
 /* faint top highlight gives cards a machined edge in dark mode */
 :root[data-theme="dark"] .card {
-  box-shadow: var(--shadow-sm), inset 0 1px 0 oklch(1 0 0 / 0.045);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.045);
 }
 
-.card:hover  { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: color-mix(in oklab, var(--ink-soft) 55%, var(--border)); }
+.card:hover  { border-color: var(--ink-soft); }
 .card:active { transform: scale(0.98); }
 
-.card--ski:hover,
-.card--food:hover,
-.card--watch:hover,
-.card--trip:hover { box-shadow: var(--shadow-md); }
+
 
 .card-icon {
   width: 40px;
@@ -497,14 +519,16 @@ button, input, select, textarea { font-family: inherit; }
 :root[data-theme="dark"] .card--dm .card-icon { background: oklch(0.30 0.05 300); color: oklch(0.82 0.10 300); }
 .dm-tile-badge { position: absolute; top: 10px; right: 10px; z-index: 2; min-width: 22px; height: 22px;
   padding: 0 6px; border-radius: 999px; background: oklch(0.55 0.20 25); color: #fff; font-size: 12px; font-weight: 700;
-  display: inline-flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
+  display: inline-flex; align-items: center; justify-content: center; }
 
 .card-content h3 { font-size: var(--text-base); font-weight: 700; }
 .card-content p  { font-size: var(--text-sm); color: var(--ink-soft); margin-top: 2px; }
 
 /* ─── Live tile content (compact footer, sized to fit narrow tiles) ─── */
-.tile-live { margin-top: auto; padding-top: 8px; font-size: var(--text-xs); line-height: 1.3; animation: tileLiveIn .35s ease; min-width: 0; }
+.tile-live { margin-top: auto; padding-top: 8px; font-size: var(--text-xs); line-height: 1.3;  min-width: 0; }
 .tile-live[hidden] { display: none; }
+/* Only the first appearance animates — a ticking price must not flicker. */
+.tile-live--first { animation: tileLiveIn .35s ease; }
 @keyframes tileLiveIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 
 /* progress-bar tiles (Maturaarbeit, Maturaarbeit-Tracker, Food) */
@@ -560,10 +584,9 @@ button, input, select, textarea { font-family: inherit; }
   display: flex;
   align-items: center;
   gap: var(--s3);
-  box-shadow: var(--shadow-sm);
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease;
 }
-.link-row:hover { transform: translateX(2px); box-shadow: var(--shadow-md); }
+.link-row:hover { border-color: var(--ink-soft); }
 
 .link-icon  { font-size: 22px; width: 34px; text-align: center; }
 .link-title { flex: 1; font-size: var(--text-base); font-weight: 700; min-width: 140px; }
@@ -599,7 +622,7 @@ button, input, select, textarea { font-family: inherit; }
   cursor: pointer;
   transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
 }
-.action-btn:hover { transform: translateY(-1px); background: var(--surface-2); }
+.action-btn:hover { background: var(--surface-2); }
 .action-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -622,7 +645,6 @@ button, input, select, textarea { font-family: inherit; }
   border: 1px solid var(--border);
   padding: 20px;
   margin-bottom: var(--s4);
-  box-shadow: var(--shadow-sm);
 }
 
 .form-title {
@@ -661,7 +683,7 @@ button, input, select, textarea { font-family: inherit; }
   font-size: 14px;
   color: var(--ink);
   background: var(--surface);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease;
   outline: none;
   -webkit-appearance: none;
 }
@@ -688,21 +710,14 @@ button, input, select, textarea { font-family: inherit; }
   font-weight: 700;
   cursor: pointer;
   border: none;
-  transition: background 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 .btn:active { transform: scale(0.97); }
-.btn-primary  {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 92%, white), var(--accent));
-  color: white;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 oklch(1 0 0 / 0.12);
-}
-.btn-primary:hover {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--accent-hover) 92%, white), var(--accent-hover));
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md), inset 0 1px 0 oklch(1 0 0 / 0.12);
-}
+.btn-primary  { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-hover); }
 :root[data-theme="dark"] .btn-primary { color: var(--brand-navy); }
-.btn-danger   { background: transparent; color: var(--accent); padding: 4px 8px; font-size: var(--text-xs); min-height: 44px; }
+.btn-danger   { background: transparent; color: var(--danger); padding: 4px 8px; font-size: var(--text-xs); min-height: 44px; }
+.btn-danger:hover { background: var(--danger-bg); }
 .btn-block    { width: 100%; }
 
 /* ─── Tabs ─── */
@@ -729,7 +744,7 @@ button, input, select, textarea { font-family: inherit; }
   font-weight: 500;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  transition: background 150ms ease, color 150ms ease;
   color: var(--ink-soft);
   user-select: none;
 }
@@ -739,7 +754,7 @@ button, input, select, textarea { font-family: inherit; }
   background: var(--surface);
   color: var(--ink);
   font-weight: 700;
-  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border);
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 
 /* ─── Item list ─── */
@@ -750,7 +765,6 @@ button, input, select, textarea { font-family: inherit; }
   border-radius: var(--r2);
   border: 1px solid var(--border);
   padding: var(--s3) var(--s4);
-  box-shadow: var(--shadow-sm);
   display: flex;
   align-items: flex-start;
   gap: var(--s3);
@@ -810,7 +824,10 @@ button, input, select, textarea { font-family: inherit; }
 .empty-text  { font-size: 14px; max-width: 320px; margin: 0 auto; line-height: 1.5; }
 
 /* ─── Spinner ─── */
-.spinner { text-align: center; padding: var(--s6); color: var(--ink-soft); font-size: 14px; }
+/* .spinner is retired: ui-fx.js swaps these hosts for skeletons, and the
+   text flashed as a second waiting state before it did. Kept as a hidden
+   hook so pages that still ship the markup don't show stray "Lade…". */
+.spinner { display: none; }
 
 /* ─── Section divider ─── */
 .divider { height: 1px; background: var(--border); margin: var(--s4) 0; }
@@ -840,13 +857,12 @@ button, input, select, textarea { font-family: inherit; }
   border-radius: var(--r3);
   border: 1px solid var(--border);
   padding: var(--s4);
-  box-shadow: var(--shadow-sm);
   margin-bottom: 10px;
   cursor: pointer;
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  transition: border-color 150ms ease;
   border-left: 3px solid var(--trip);
 }
-.trip-card:hover { transform: translateX(2px); box-shadow: var(--shadow-md); }
+.trip-card:hover { border-color: var(--ink-soft); }
 .trip-name { font-size: var(--text-base); font-weight: 700; }
 .trip-meta { font-size: var(--text-xs); color: var(--ink-soft); margin-top: var(--s1); }
 
@@ -883,7 +899,6 @@ button, input, select, textarea { font-family: inherit; }
   border: 1px solid var(--border);
   padding: var(--s5);
   width: 100%; max-width: 420px;
-  box-shadow: var(--shadow-lg);
   max-height: 90vh; overflow-y: auto;
   animation: modalIn 0.22s cubic-bezier(.2,.9,.3,1.05) both;
 }
@@ -953,7 +968,6 @@ button, input, select, textarea { font-family: inherit; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r1);
-  box-shadow: var(--shadow-md);
   z-index: 50; max-height: 200px; overflow-y: auto;
   display: none;
 }
@@ -1000,7 +1014,6 @@ button, input, select, textarea { font-family: inherit; }
   padding: 5px;
   font-size: 11px;
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
   display: flex; flex-direction: column; justify-content: space-between;
   transition: background 150ms ease;
 }
@@ -1047,7 +1060,6 @@ button, input, select, textarea { font-family: inherit; }
   border: 0;
   border-radius: var(--r3);
   padding: var(--s5) 26px;
-  box-shadow: var(--shadow-md);
 }
 .tvz-footer-logo {
   border-right: 1px solid rgba(255,255,255,0.24);
@@ -1087,7 +1099,6 @@ button, input, select, textarea { font-family: inherit; }
   border: 1px solid var(--border);
   border-radius: var(--r2);
   padding: var(--s3) 18px;
-  box-shadow: var(--shadow-sm);
 }
 .tvz-footer img { height: 30px; opacity: 0.72; }
 .tvz-footer span { font-size: 11px; color: var(--ink-soft); }
@@ -1138,10 +1149,10 @@ button, input, select, textarea { font-family: inherit; }
   box-shadow: 0 6px 20px oklch(0 0 0 / 0.24);
   -webkit-appearance: none;
   appearance: none;
-  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  transition: background 150ms ease, opacity 150ms ease;
 }
 .reorder-fab svg { display: block; }
-.reorder-fab:hover { transform: translateY(-1px); box-shadow: 0 8px 26px oklch(0 0 0 / 0.30); }
+.reorder-fab:hover { background: var(--accent-hover); }
 .reorder-fab:active { transform: scale(0.97); }
 body.reorder-editing .reorder-fab {
   opacity: 0;
@@ -1386,3 +1397,365 @@ body.reorder-editing .module-tile::after {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   BAUSATZ — the shared kit (§4) and the shell (§5)
+
+   Everything below is the redesign. Pages are migrated onto it one at
+   a time; until a page is migrated its old classes still work, because
+   the legacy aliases at the bottom of this file point the old names at
+   these same rules.
+
+   One breakpoint only: 900px. Below it the phone layout, above it the
+   laptop layout. No other breakpoints.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Bereich colour carrier ────────────────────────────────────────
+   A Bereich sets two locals; every component reads --tint for the
+   plate and --deep for the glyph. That is the whole colour contract:
+   never a surface, never text, never a border. */
+[data-bereich]            { --tint: var(--surface-2); --deep: var(--ink-soft); }
+[data-bereich="ski"]      { --tint: var(--tint-ski);     --deep: var(--ski-deep); }
+[data-bereich="food"]     { --tint: var(--tint-food);    --deep: var(--food-deep); }
+[data-bereich="trip"],
+[data-bereich="kalender"] { --tint: var(--tint-trip);    --deep: var(--trip-deep); }
+[data-bereich="matura"]   { --tint: var(--tint-matura);  --deep: var(--matura-deep); }
+[data-bereich="watch"]    { --tint: var(--tint-watch);   --deep: var(--watch-deep); }
+[data-bereich="weather"]  { --tint: var(--tint-weather); --deep: var(--weather-deep); }
+[data-bereich="msg"]      { --tint: var(--tint-msg);     --deep: var(--msg-deep); }
+
+/* ── 4.1 Zeile — the one row component ─────────────────────────────
+   Replaces .link-row, .item-card, .file-row, .grp-card, .pending-card. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  transition: border-color 150ms ease;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.row:hover      { border-color: var(--ink-soft); }   /* colour only, never movement */
+.row:active     { transform: scale(0.97); }
+.row--static    { cursor: default; }
+.row--static:hover { border-color: var(--border); }
+
+.row__icon {
+  flex: none;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-icon);
+  background: var(--tint, var(--surface-2));
+  color: var(--deep, var(--ink-soft));
+  font-size: 13px; font-weight: 800;      /* for the letter variant */
+}
+.row__icon svg { width: 18px; height: 18px; stroke-width: 1.8; }
+
+.row__body  { flex: 1; min-width: 0; }
+.row__title { font-size: 14px; font-weight: 700; line-height: 1.35; }
+.row__sub   {
+  font-size: 12px; font-weight: 400; color: var(--ink-soft); line-height: 1.4;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Right column — exactly one of these per row. */
+.row__end   { flex: none; display: flex; align-items: center; gap: 8px; }
+.row__chev  { width: 16px; height: 16px; color: var(--ink-soft); stroke-width: 1.8; }
+.row__num   { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.row__time  { font-size: 11px; font-weight: 700; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.row__badge {
+  min-width: 20px; height: 20px; padding: 0 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--danger); color: #fff;
+  font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.row__add {
+  width: 30px; height: 30px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-pill);
+  background: var(--accent); color: #fff; border: none; cursor: pointer;
+}
+.row__status {
+  padding: 0 10px; height: 24px;
+  display: inline-flex; align-items: center;
+  border-radius: var(--r-pill);
+  background: var(--surface-2); border: 1px solid var(--border);
+  font-size: 11px; font-weight: 800; color: var(--ink-soft);
+}
+
+/* Progress instead of a subtitle. */
+.row__bar {
+  margin-top: 6px; height: 5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.row__bar > i {
+  display: block; height: 100%;
+  background: var(--deep, var(--accent));
+  border-radius: var(--r-pill);
+  transition: width 300ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+
+/* A list of rows. */
+.rows { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── 4.2 Kachel — quick access ─────────────────────────────────────*/
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tile {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 11px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  transition: border-color 150ms ease;
+  cursor: pointer;
+  min-width: 0;
+}
+.tile:hover  { border-color: var(--ink-soft); }
+.tile:active { transform: scale(0.97); }
+.tile__icon {
+  width: 34px; height: 34px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-icon);
+  background: var(--tint, var(--surface-2));
+  color: var(--deep, var(--ink-soft));
+}
+.tile__icon svg { width: 18px; height: 18px; stroke-width: 1.8; }
+.tile__name {
+  font-size: 11px; font-weight: 700; text-align: center; line-height: 1.25;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tile__meta { display: none; }
+
+/* ── 4.3 Panel ─────────────────────────────────────────────────────*/
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  padding: 16px 18px;
+}
+.panel__big {
+  font-size: 30px; font-weight: 800; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.panel__grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  margin-top: 14px;
+}
+.panel__grid dt { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+.panel__grid dd { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ── Bereichsmarke — the small uppercase section label ─────────────*/
+.marke {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-soft);
+  margin-bottom: 10px;
+}
+
+/* ── 4.4 Knöpfe — three, final ─────────────────────────────────────*/
+.b {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 46px; padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--r-row);
+  font-size: 14px; font-weight: 700; font-family: inherit;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.b:active           { transform: scale(0.97); }
+.b--primary         { background: var(--accent); color: #fff; }
+.b--primary:hover   { background: var(--accent-hover); }
+.b--secondary       { background: var(--surface); border-color: var(--border); color: var(--ink); }
+.b--secondary:hover { border-color: var(--ink-soft); }
+.b--danger          { background: transparent; color: var(--danger); }
+.b--danger:hover    { background: var(--danger-bg); }
+.b--block           { width: 100%; }
+:root[data-theme="dark"] .b--primary { color: var(--brand-navy); }
+
+/* ── 4.5 Icons ─────────────────────────────────────────────────────
+   One set: viewBox 0 0 24 24, fill none, stroke currentColor. Emoji
+   used as a *function* symbol are replaced; emoji the user typed in
+   themselves stay, because there they are content. */
+.ic { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── 5.1 Kopf — same on every page ─────────────────────────────────*/
+.appbar {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--brand-gradient);
+  color: #fff;
+  padding-top: env(safe-area-inset-top);
+}
+.appbar__inner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px 16px;
+  max-width: 1160px; margin: 0 auto;
+}
+.appbar__greet   { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+.appbar__date    { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 3px; }
+.appbar__title   { flex: 1; text-align: center; font-size: 15px; font-weight: 700; }
+.appbar__spacer  { flex: 1; min-width: 0; }
+.appbar__btn {
+  width: 36px; height: 36px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: var(--r-icon);
+  background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;
+}
+.appbar__btn:active { transform: scale(0.97); }
+/* 3px Bereich stripe under the header of a Bereich page. */
+.appbar__accent { height: 3px; background: var(--tint, transparent); }
+
+.wx-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 32px; padding: 0 11px;
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,0.12); color: #fff;
+  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.wx-pill svg { width: 14px; height: 14px; }
+.avatar {
+  width: 32px; height: 32px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,0.12); color: #fff;
+  font-size: 12px; font-weight: 800; border: none; cursor: pointer;
+}
+
+/* ── 5.2 Navigation — four destinations ────────────────────────────*/
+.nav {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 9px 6px calc(9px + env(safe-area-inset-bottom));
+}
+.nav__item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  color: var(--ink-soft); font-size: 10px; font-weight: 700;
+  background: none; border: none; cursor: pointer; position: relative;
+}
+.nav__item svg { width: 21px; height: 21px; stroke-width: 1.9; }
+.nav__item.is-active { color: var(--accent); font-weight: 800; }
+.nav__dot {
+  position: absolute; top: -2px; right: 50%; margin-right: -14px;
+  width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--danger);
+}
+.nav__count { display: none; }
+.nav__section, .nav__bereiche, .nav__settings { display: none; }
+/* Keep the bottom bar from covering the last row of content. */
+.has-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+
+/* ── The one breakpoint: 900px ─────────────────────────────────────*/
+@media (min-width: 900px) {
+  .row      { padding: 14px 16px; gap: 14px; }
+  .row__bar { height: 6px; }
+  .panel    { padding: 20px 22px; }
+  .b        { min-height: 42px; }
+
+  /* Tiles go 2 × 2 and left-aligned, with room for a meta line. */
+  .tiles { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .tile  {
+    flex-direction: row; align-items: flex-start; justify-content: flex-start;
+    flex-wrap: wrap; gap: 12px; padding: 14px 16px; min-height: 104px;
+  }
+  .tile__icon { width: 36px; height: 36px; }
+  .tile__name { font-size: 14px; text-align: left; width: calc(100% - 48px); }
+  .tile__meta { display: block; width: 100%; font-size: 12px; color: var(--ink-soft); }
+
+  /* Navigation becomes a left rail. */
+  .nav {
+    position: fixed; top: 0; bottom: 0; left: 0; right: auto;
+    width: 248px;
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 18px 12px;
+    border-top: none; border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .nav__item {
+    flex-direction: row; justify-content: flex-start; gap: 12px;
+    padding: 10px 12px; border-radius: var(--r-icon);
+    font-size: 14px; font-weight: 700;
+  }
+  .nav__item.is-active { background: var(--accent-bg); color: var(--accent); }
+  .nav__dot   { display: none; }
+  .nav__count {
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px;
+    border-radius: var(--r-pill); background: var(--danger); color: #fff;
+    font-size: 11px; font-weight: 800;
+  }
+  /* Bereiche are listed open in the rail — one click instead of two. */
+  .nav__section  { display: block; margin: 18px 0 6px; padding: 0 12px; }
+  .nav__bereiche { display: flex; flex-direction: column; gap: 2px; }
+  .nav__bereich  {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: var(--r-icon);
+    font-size: 13px; font-weight: 700; color: var(--ink);
+  }
+  .nav__bereich:hover { background: var(--surface-2); }
+  .nav__bereich i {
+    width: 26px; height: 26px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    background: var(--tint, var(--surface-2)); color: var(--deep, var(--ink-soft));
+  }
+  .nav__bereich svg { width: 14px; height: 14px; }
+  .nav__settings { display: flex; margin-top: auto; }
+
+  /* Content sits beside the rail. */
+  .has-nav      { padding-bottom: 0; padding-left: 248px; }
+  .appbar       { padding-left: 248px; }
+  .appbar__inner{ padding: 30px 34px 22px; }
+  .wx-pill      { height: 34px; }
+  .shell__cols  {
+    display: grid; grid-template-columns: 1.35fr 1fr; gap: 26px;
+    max-width: 1160px; margin: 0 auto; padding: 0 34px 40px;
+  }
+}
+
+/* ── 8. Der Hinweis — the one proactive card ───────────────────────*/
+.hint {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--accent-bg);
+  border: 1px solid color-mix(in oklab, var(--accent) 18%, var(--border));
+  border-radius: var(--r-panel);
+  padding: 16px 18px;
+  animation: hintIn 200ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+.hint__from {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px; font-weight: 700; color: var(--accent); flex: none;
+}
+.hint__text { flex: 1; font-size: 15px; font-weight: 600; line-height: 1.5; }
+.hint__x {
+  width: 26px; height: 26px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: var(--r-pill);
+  background: transparent; color: var(--ink-soft); cursor: pointer;
+}
+.hint__x:hover { background: var(--surface-2); }
+@keyframes hintIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .hint { animation: none; } }
+
+/* ── Legacy aliases ────────────────────────────────────────────────
+   Five components did the job of one. Until each page is migrated,
+   the old names borrow the new row's look so nothing regresses. */
+.link-row, .item-card, .file-row, .grp-card, .pending-card {
+  border-radius: var(--r-row);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.link-row:hover, .item-card:hover, .file-row:hover,
+.grp-card:hover, .pending-card:hover { border-color: var(--ink-soft); }
+.pill, .mini { border-radius: var(--r-pill); }

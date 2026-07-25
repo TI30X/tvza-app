@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="de-CH" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TVZA — Bausatz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  /* Page furniture for the style guide only — not part of the kit. */
+  body { padding: 24px; }
+  .sg { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+  .sg h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .sg h2 { font-size: 15px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+           color: var(--ink-soft); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .sg section { display: flex; flex-direction: column; gap: 12px; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .sw { border: 1px solid var(--border); border-radius: var(--r-row); overflow: hidden; font-size: 11px; }
+  .sw i { display: block; height: 44px; }
+  .sw b { display: block; padding: 6px 8px; font-weight: 700; }
+  .frame { border: 1px solid var(--border); border-radius: var(--r-panel); padding: 16px; background: var(--bg); }
+  .note { font-size: 13px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="sg">
+
+  <div>
+    <h1>Bausatz</h1>
+    <p class="note">Schritt 1 der Übergabe — Tokens und Bauteile aus <code>assets/css/style.css</code>.
+      Diese Seite gehört nicht zur App; sie dient dem Abgleich mit der Design-Referenz.
+      <button class="b b--secondary" style="min-height:32px;margin-left:8px"
+        onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'light':'dark'">Modus wechseln</button>
+    </p>
+  </div>
+
+  <section>
+    <h2>Bereichsfarben</h2>
+    <div class="swatches">
+      <div class="sw" data-bereich="ski"><i style="background:var(--tint)"></i><b style="color:var(--deep)">Ski</b></div>
+      <div class="sw" data-bereich="food"><i style="background:var(--tint)"></i><b style="color:var(--deep)">Food</b></div>
+      <div class="sw" data-bereich="kalender"><i style="background:var(--tint)"></i><b style="color:var(--deep)">Kalender</b></div>
+      <div class="sw" data-bereich="matura"><i style="background:var(--tint)"></i><b style="color:var(--deep)">Maturaarbeit</b></div>
+      <div class="sw" data-bereich="watch"><i style="background:var(--tint)"></i><b style="color:var(--deep)">Watchlist</b></div>
+      <div class="sw" data-bereich="weather"><i style="background:var(--tint)"></i><b style="color:var(--deep)">Wetter</b></div>
+      <div class="sw" data-bereich="msg"><i style="background:var(--tint)"></i><b style="color:var(--deep)">Nachrichten</b></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Radien</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="frame" style="border-radius:var(--r-icon);width:120px;text-align:center;font-size:12px">--r-icon<br>11px</div>
+      <div class="frame" style="border-radius:var(--r-row);width:120px;text-align:center;font-size:12px">--r-row<br>14px</div>
+      <div class="frame" style="border-radius:var(--r-panel);width:120px;text-align:center;font-size:12px">--r-panel<br>16px</div>
+      <div class="frame" style="border-radius:var(--r-pill);width:120px;text-align:center;font-size:12px">--r-pill<br>999px</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Zeile — alle rechten Spalten</h2>
+    <div class="rows">
+
+      <div class="row" data-bereich="kalender">
+        <span class="row__icon"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+        <span class="row__body">
+          <span class="row__title">Grosseltern besuchen</span>
+          <span class="row__sub">Morgen, 14:00 · Vaduz</span>
+        </span>
+        <span class="row__end"><svg class="ic row__chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+      </div>
+
+      <div class="row" data-bereich="food">
+        <span class="row__icon">M</span>
+        <span class="row__body">
+          <span class="row__title">Mittagessen</span>
+          <span class="row__sub">Reis, Poulet, Salat</span>
+        </span>
+        <span class="row__end"><span class="row__num">642</span></span>
+      </div>
+
+      <div class="row" data-bereich="msg">
+        <span class="row__icon"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+        <span class="row__body">
+          <span class="row__title">Familie</span>
+          <span class="row__sub">Du: bin um 18:00 zurück</span>
+        </span>
+        <span class="row__end"><span class="row__time">17:04</span><span class="row__badge">3</span></span>
+      </div>
+
+      <div class="row" data-bereich="matura">
+        <span class="row__icon"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+        <span class="row__body">
+          <span class="row__title">Maturaarbeit</span>
+          <span class="row__bar"><i style="width:62%"></i></span>
+        </span>
+        <span class="row__end"><span class="row__num">62%</span></span>
+      </div>
+
+      <div class="row" data-bereich="ski">
+        <span class="row__icon"><svg class="ic" viewBox="0 0 24 24"><path d="M3 20h18M6 20V8l6-5 6 5v12"/></svg></span>
+        <span class="row__body">
+          <span class="row__title">Ski-Service</span>
+          <span class="row__sub">Vor 12 Tagen gewachst</span>
+        </span>
+        <span class="row__end"><span class="row__status">Fällig</span></span>
+      </div>
+
+      <div class="row" data-bereich="watch">
+        <span class="row__icon"><svg class="ic" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+        <span class="row__body">
+          <span class="row__title">Watchlist</span>
+          <span class="row__sub">6 Positionen</span>
+        </span>
+        <span class="row__end"><span class="row__num" style="color:var(--kurs-up)">+1,24%</span></span>
+      </div>
+
+      <div class="row row--static" data-bereich="food">
+        <span class="row__icon"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg></span>
+        <span class="row__body"><span class="row__title">Zwischenmahlzeit</span><span class="row__sub">Noch nichts erfasst</span></span>
+        <span class="row__end"><button class="row__add"><svg class="ic" viewBox="0 0 24 24" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg></button></span>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Kachel — Schnellzugriff</h2>
+    <div class="tiles">
+      <a class="tile" data-bereich="ski"><span class="tile__icon"><svg class="ic" viewBox="0 0 24 24"><path d="M3 20h18M6 20V8l6-5 6 5v12"/></svg></span><span class="tile__name">Ski</span><span class="tile__meta">Zuletzt vor 12 Tagen</span></a>
+      <a class="tile" data-bereich="food"><span class="tile__icon"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg></span><span class="tile__name">Food</span><span class="tile__meta">1 240 / 2 100 kcal</span></a>
+      <a class="tile" data-bereich="watch"><span class="tile__icon"><svg class="ic" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span><span class="tile__name">Watchlist</span><span class="tile__meta">+1,24 % heute</span></a>
+      <a class="tile" data-bereich="weather"><span class="tile__icon"><svg class="ic" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></span><span class="tile__name">Wetter</span><span class="tile__meta">Bewölkt, 14°</span></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Panel</h2>
+    <div class="panel" data-bereich="food">
+      <div class="marke">Tagesbilanz</div>
+      <div class="panel__big">1 240 kcal</div>
+      <div class="row__bar" style="height:8px;margin-top:10px"><i style="width:59%"></i></div>
+      <dl class="panel__grid">
+        <div><dt>Eiweiss</dt><dd>78 g</dd></div>
+        <div><dt>Fett</dt><dd>41 g</dd></div>
+        <div><dt>Kohlenhydrate</dt><dd>132 g</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section>
+    <h2>Knöpfe — drei, endgültig</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="b b--primary">Erfassen</button>
+      <button class="b b--secondary">Scannen</button>
+      <button class="b b--danger">Löschen</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Der Hinweis</h2>
+    <div class="hint">
+      <span class="hint__from">TvZ</span>
+      <span class="hint__text">In Malbun sind für Dienstag 12&nbsp;cm Neuschnee gemeldet — deine Ski sind seit 12 Tagen ohne Service.</span>
+      <button class="hint__x"><svg class="ic" viewBox="0 0 24 24" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kopf — Bereichsseite</h2>
+    <div style="border:1px solid var(--border);border-radius:var(--r-panel);overflow:hidden">
+      <div class="appbar" style="position:static" data-bereich="food">
+        <div class="appbar__inner">
+          <button class="appbar__btn"><svg class="ic" viewBox="0 0 24 24" width="18" height="18"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <span class="appbar__title">Food Tracker</span>
+          <button class="appbar__btn"><svg class="ic" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3.09V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 16.11 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+        </div>
+        <div class="appbar__accent"></div>
+      </div>
+      <div style="padding:16px"><p class="note">3 px Akzentstreifen in der Bereichsfläche direkt unter dem Kopf.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kopf — Tab-Seite</h2>
+    <div style="border:1px solid var(--border);border-radius:var(--r-panel);overflow:hidden">
+      <div class="appbar" style="position:static">
+        <div class="appbar__inner">
+          <div class="appbar__spacer">
+            <div class="appbar__greet">Guten Abend, Timo</div>
+            <div class="appbar__date">Sonntag, 26. Juli</div>
+          </div>
+          <span class="wx-pill"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>14°</span>
+          <button class="avatar">TZ</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

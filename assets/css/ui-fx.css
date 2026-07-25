@@ -105,23 +105,8 @@ main, .main {
    sweeps a soft highlight across — a clean "still loading" cue that
    never shifts layout. */
 .header { position: sticky; }              /* ensure ::after anchors to header */
-body.fx-loading .header::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 3px;
-  pointer-events: none;
-  background: linear-gradient(90deg,
-    transparent 0%, transparent 38%,
-    rgba(255, 255, 255, 0.9) 50%,
-    transparent 62%, transparent 100%);
-  background-size: 250% 100%;
-  animation: fx-loadbar 1.2s linear infinite;
-}
-@keyframes fx-loadbar {
-  0%   { background-position: 125% 0; }
-  100% { background-position: -25% 0; }
-}
+/* fx-loadbar removed (§9): it ran at the same time as the skeletons,
+   so one wait was drawn twice. The skeletons are the waiting state. */
 
 /* ── 4. Subtle tap/press feedback site-wide ─────────────────── */
 button:active,
