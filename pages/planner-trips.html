@@ -452,6 +452,7 @@
 
   <script type="module">
     import { db, requireAuth, wireOfflineBanner, escHtml } from '../assets/js/firebase-config.js';
+    import { parseItineraryHtml, groupByDay } from '../assets/js/itinerary.js';
     import {
       doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
       collection, addDoc, onSnapshot, serverTimestamp,
@@ -1522,14 +1523,6 @@
     /* ════════════════════════════════════════════════════════════
        Per-day itinerary
     ════════════════════════════════════════════════════════════ */
-    function fmtDay(dateStr) {
-      try {
-        return new Date(dateStr + 'T00:00:00')
-          .toLocaleDateString(LOCALE[langKey] || 'en-GB',
-            { weekday: 'long', day: 'numeric', month: 'short' });
-      } catch { return dateStr; }
-    }
-
     function renderItinerary(items) {
       const wrap = document.getElementById('itinList');
       if (!items || !items.length) {
@@ -1538,14 +1531,8 @@
           <p class="empty-text">${t('noItinerary')}</p></div>`;
         return;
       }
-      // group by date
-      const byDay = {};
-      items.forEach(it => { (byDay[it.date] = byDay[it.date] || []).push(it); });
-      const days = Object.keys(byDay).sort();
-
-      wrap.innerHTML = days.map((day, di) => {
-        const rows = byDay[day]
-          .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+      wrap.innerHTML = groupByDay(items).map((day, di) => {
+        const rows = day.items
           .map((it, ii) => `
             <div class="itin-item" style="--ii:${ii}">
               <div class="itin-time">${it.time || '–'}</div>
@@ -1556,7 +1543,7 @@
               <button class="itin-del" data-del-itin="${it.id}" title="Delete">✕</button>
             </div>`).join('');
         return `<div class="itin-day" style="--d:${di}">
-                  <div class="itin-day-head">🗓 ${fmtDay(day)}</div>
+                  <div class="itin-day-head">${escHtml(day.heading)}</div>
                   <div class="itin-line">${rows}</div>
                 </div>`;
       }).join('');
@@ -1594,61 +1581,8 @@
       renderTrips(cachedTrips);
     }
 
-    /* ════════════════════════════════════════════════════════════
-       Auto-import: pull day-by-day stops out of a pasted/uploaded
-       itinerary HTML (the "stop card" template Claude produces) and
-       fold them straight into the itinerary/schedule list.
-    ════════════════════════════════════════════════════════════ */
-    function parseTimeBadge(text) {
-      if (!text) return '';
-      const m = String(text).match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i);
-      if (!m) return '';
-      let h = parseInt(m[1], 10);
-      const min = m[2];
-      const ap = (m[3] || '').toLowerCase();
-      if (ap === 'pm' && h < 12) h += 12;
-      if (ap === 'am' && h === 12) h = 0;
-      if (h > 23) return '';
-      return `${String(h).padStart(2, '0')}:${min}`;
-    }
-
-    function parseItineraryHtml(html) {
-      if (!html) return { date: '', items: [] };
-      let dom;
-      try { dom = new DOMParser().parseFromString(html, 'text/html'); }
-      catch { return { date: '', items: [] }; }
-
-      // Walk time[datetime] markers and .stop cards together, in document
-      // order, so a multi-day itinerary (one <time datetime> per day,
-      // followed by that day's stops) assigns each stop the date of the
-      // nearest preceding marker — not just the very first date on the page.
-      const nodes = [...dom.querySelectorAll('time[datetime], .stop')];
-      let currentDate = '';
-      const items = [];
-      for (const el of nodes) {
-        if (el.matches('time[datetime]')) {
-          currentDate = (el.getAttribute('datetime') || '').slice(0, 10);
-          continue;
-        }
-        const title = el.querySelector('h2')?.textContent.trim() || '';
-        if (!title) continue;
-        const timeText = el.querySelector('.time-badge')?.textContent.trim() || '';
-        const address = el.querySelector('.card-address')?.textContent.trim().replace(/\s+/g, ' ') || '';
-        const desc = el.querySelector('.card p:not(.card-eyebrow):not(.card-address)')?.textContent.trim().replace(/\s+/g, ' ') || '';
-        const notes = [address, desc].filter(Boolean).join(' — ');
-        items.push({
-          id: randomToken(10),
-          date: currentDate,
-          time: parseTimeBadge(timeText),
-          title,
-          notes,
-          autoImported: true
-        });
-      }
-
-      const firstDate = items.find(it => it.date)?.date || '';
-      return { date: firstDate, items };
-    }
+    /* Auto-import lives in ../assets/js/itinerary.js. This page used to
+       carry its own copy, older and weaker than planner.html's. */
 
     /* ════════════════════════════════════════════════════════════
        Plan section — paste HTML / upload file / link URL
@@ -1741,7 +1675,7 @@
       let itinerary = currentTripData?.itinerary || [];
       let importedCount = 0;
       if (planHtml) {
-        const { items } = parseItineraryHtml(planHtml);
+        const { items } = parseItineraryHtml(planHtml, { baseDate: currentTripData?.startDate });
         importedCount = items.length;
         if (importedCount) {
           const manual = itinerary.filter(it => !it.autoImported);

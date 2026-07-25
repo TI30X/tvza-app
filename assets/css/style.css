@@ -1748,6 +1748,10 @@ body.reorder-editing .module-tile::after {
 }
 @media (prefers-reduced-motion: reduce) { .hint { animation: none; } }
 
+/* Day groups in the Planer programme list. */
+.itin-day + .itin-day { margin-top: 20px; }
+@media (min-width: 900px) { .itin-day + .itin-day { margin-top: 26px; } }
+
 /* ── Legacy aliases ────────────────────────────────────────────────
    Five components did the job of one. Until each page is migrated,
    the old names borrow the new row's look so nothing regresses. */
