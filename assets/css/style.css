@@ -176,6 +176,10 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ─── App shell ─── */
 .app { min-height: 100vh; display: flex; flex-direction: column; }
+/* dvh statt vh: auf dem Handy zieht sich die Browserleiste beim Scrollen
+   ein, 100vh rechnet aber mit der ausgefahrenen Leiste und schiebt
+   dadurch alles, was am unteren Rand sitzen soll, aus dem Bild. */
+@supports (min-height: 100dvh) { .app { min-height: 100dvh; } }
 
 /* Page entry animation */
 .main, .login-card {

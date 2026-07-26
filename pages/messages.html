@@ -19,7 +19,7 @@
     body.dm { --accent:#6b46c1; --accent-hover:#5a3aa6; --accent-bg:rgba(107,70,193,.14); }
     html[data-theme="dark"] body.dm { --accent:#b9a4ec; --accent-hover:#ccbdf2; --accent-bg:rgba(107,70,193,.26); }
     .dm .accent-bar--dm { background:linear-gradient(90deg,#3c2a73,#6b46c1 55%,#9a7fe6); height:4px; }
-    .dm .main { display:flex; flex-direction:column; gap:12px; }
+    .dm .main { display:flex; flex-direction:column; gap:12px; min-height:0; }
 
     /* conversation list */
     .dm-newbtn { display:flex; align-items:center; justify-content:center; gap:8px; }
@@ -40,13 +40,20 @@
     .dm-empty { border:1px dashed var(--border); border-radius:var(--r2); padding:22px 16px; text-align:center; color:var(--ink-soft); font-size:13px; }
 
     /* thread */
-    #threadView { display:none; flex-direction:column; gap:0; }
+    /* Der Verlauf nimmt den freien Platz, das Eingabefeld sitzt darum
+       immer am unteren Rand — auch in einer Unterhaltung ohne einzige
+       Nachricht. Vorher hatte der Verlauf eine feste Höhe von 50vh und
+       schob das Feld in die Bildschirmmitte. */
+    #threadView { display:none; flex-direction:column; gap:0; flex:1; min-height:0; }
     .dm-thread-head { display:flex; align-items:center; gap:10px; padding:4px 2px 10px; }
     .dm-thread-head .dm-ava { width:36px; height:36px; font-size:14px; }
     .dm-thread-name { font-weight:700; font-size:16px; }
     .dm-thread-back { background:none; border:0; cursor:pointer; color:var(--accent); font:inherit; font-weight:700;
       display:inline-flex; align-items:center; gap:4px; padding:6px 4px; }
-    .dm-msgs { display:flex; flex-direction:column; gap:7px; padding:12px 2px; min-height:50vh; max-height:62vh; overflow-y:auto; }
+    .dm-msgs { display:flex; flex-direction:column; gap:7px; padding:12px 2px; flex:1; min-height:0; overflow-y:auto; }
+    /* Eine leere Unterhaltung soll den Platz trotzdem füllen, damit der
+       Hinweis nicht am oberen Rand klebt. */
+    .dm-msgs .dm-empty { margin:auto; }
     .dm-day-sep { align-self:center; font-size:11px; color:var(--ink-soft); background:var(--surface-2); border:1px solid var(--border);
       border-radius: var(--r-pill); padding:2px 11px; margin:8px 0 2px; }
     .dm-bubble { max-width:80%; padding:8px 12px; border-radius: var(--r-panel); font-size:14px; line-height:1.4; word-wrap:break-word; white-space:pre-wrap; position:relative; }
@@ -230,8 +237,12 @@
     // länger sein als der Herzschlag: war es kürzer, blendete der
     // Indikator mitten im Schreiben aus und beim nächsten Signal wieder
     // ein, was wie zufälliges Flackern aussah.
+    // Ein "hat aufgehört" meldet der Browser nicht — es lässt sich nur
+    // daran erkennen, dass eine Weile nichts mehr kam. Dieses Fenster
+    // ist darum so kurz wie möglich gehalten: 1,2s nach dem letzten
+    // Anschlag gilt man als fertig, nicht erst nach mehreren Sekunden.
     const TYPING_BEAT_MS = 2000;
-    const TYPING_IDLE_MS = 3000;
+    const TYPING_IDLE_MS = 1200;
     const TYPING_AUTO_HIDE_MS = TYPING_BEAT_MS * 3;
     function showTyping(show, name) {
       const el = $('typingIndicator');
@@ -257,7 +268,14 @@
 
       if (msgUnsub) msgUnsub();
       msgUnsub = onSnapshot(query(collection(db, 'dms', cid, 'messages'), orderBy('createdAt', 'asc')), snap => {
-        renderMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderMessages(msgs);
+        /* Eine angekommene Nachricht beendet das Tippen — unabhängig
+           davon, welches der beiden Signale zuerst eintrifft. Sonst
+           stand der Indikator noch unter einer bereits gelesenen
+           Nachricht, bis das Flag nachkam. */
+        const last = msgs[msgs.length - 1];
+        if (last && last.sender === other) showTyping(false);
         // keep marking read while the thread is open
         if (!document.hidden) updateDoc(doc(db, 'dms', cid), { ['unread.' + me]: 0 }).catch(() => {});
       }, err => {
@@ -341,8 +359,11 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) stopTypingNow(); });
     input.addEventListener('input', () => {
       autoSize(); sendBtn.disabled = !input.value.trim();
-      if (input.value.trim()) pingTyping();
-      else stopTypingNow();   // Feld leergeräumt = nicht mehr am Schreiben
+      /* Jede Änderung zählt — Tippen wie Löschen. Vorher hing es am
+         Inhalt des Feldes: stand dort noch Text, galt man als
+         schreibend, und Löschen beendete den Zustand sofort. Gemeint
+         ist aber die Tätigkeit, nicht der Inhalt. */
+      pingTyping();
     });
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
@@ -371,7 +392,13 @@
           lastAt: serverTimestamp(),
           lastSender: me,
           unread: { [other]: increment(1), [me]: 0 },
-          ['typing.' + me]: false
+          /* Verschachteltes Objekt, KEIN Punktpfad: setDoc deutet Punkte
+             im Schlüssel nicht als Pfad, sondern legt ein Feld mit dem
+             Namen "typing.<uid>" an. Das echte typing.<uid> blieb darum
+             beim Senden auf true stehen — die Gegenseite sah "tippt…"
+             erst recht, nachdem die Nachricht schon da war. Mit merge
+             bleibt der Eintrag der anderen Person unberührt. */
+          typing: { [me]: false }
         }, { merge: true });
         await addDoc(collection(convRef, 'messages'), { text, sender: me, createdAt: serverTimestamp() });
       } catch (e) {
