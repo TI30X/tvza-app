@@ -1873,7 +1873,9 @@ body .dm-empty,
 body .wl-stat,          /* Watchlist */
 body .wl-market-note,
 body .wl-hint,
-body .wx-hero,          /* Wetter */
+/* .wx-hero und .deadline-box stehen bewusst NICHT hier: beide tragen
+   eine eigene farbige Fläche und weisse Schrift. Die Flächenfarbe
+   drüberzulegen hat genau das erzeugt — weiss auf weiss. */
 body .wx-card,
 body .wx-fact,
 body .wx-msg,
@@ -1888,8 +1890,7 @@ body .reminder-card,
 body .invite-strip,
 body .trip-card,
 body .meeting-card,     /* Maturaarbeit */
-body .pm-details,
-body .deadline-box {
+body .pm-details {
   border-radius: var(--r-row);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -1899,7 +1900,6 @@ body .deadline-box {
 /* Panels group several blocks, so they take the larger radius. */
 body .wx-hero,
 body .sub-card,
-body .deadline-box,
 body .pm-details {
   border-radius: var(--r-panel);
 }

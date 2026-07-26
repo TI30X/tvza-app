@@ -103,6 +103,76 @@ function mount(profile) {
   document.body.classList.add('has-nav');
 }
 
+/* ══ Konto-Menü auf den Bereichsseiten ══════════════════════════════
+   Die Startseite hat es im Markup; auf den acht Bereichsseiten standen
+   stattdessen ein Sonne/Mond-Knopf und teils ein Zahnrad nebeneinander.
+   Hier wird dasselbe Menü nachgerüstet — an einer Stelle statt in acht
+   Dateien.
+
+   Die alten Knöpfe bleiben im DOM und werden nur versteckt: jede
+   Seite hat eigene Handler daran hängen (foodtracker öffnet sein
+   Profil, watchlist seine Einstellungen). Der Menüeintrag löst den
+   Originalknopf per click() aus, statt seine Logik nachzubauen — so
+   kann hier nichts kaputtgehen, was vorher lief. */
+function mountAccountMenu(user, profile) {
+  const bar = document.querySelector('.appbar--bereich .appbar__end');
+  if (!bar || bar.querySelector('.acct')) return;
+
+  const theme = bar.querySelector('#themeToggle, [data-theme-toggle]');
+  const settings = bar.querySelector('#profileBtn, #settingsBtn');
+  [theme, settings].forEach(b => { if (b) b.hidden = true; });
+
+  const name = profile?.name || user.displayName || user.email || 'Konto';
+  const ini = (name.match(/\b\p{L}/gu) || ['·']).slice(0, 2).join('').toUpperCase();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'acct';
+  wrap.innerHTML = `
+    <button class="avatar" type="button" aria-haspopup="menu" aria-expanded="false" title="Konto"><span>${esc(ini)}</span></button>
+    <div class="acct__menu" role="menu" hidden>
+      <div class="acct__head">
+        <span class="acct__who">${esc(name)}</span>
+        <span class="acct__mail">${esc(user.email || '')}</span>
+      </div>
+      ${theme ? `<button class="acct__item" data-act="theme" type="button" role="menuitem">
+        <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
+        <span>Design</span></button>` : ''}
+      ${settings ? `<button class="acct__item" data-act="settings" type="button" role="menuitem">
+        <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Einstellungen</span></button>` : ''}
+      <button class="acct__item acct__item--danger" data-act="logout" type="button" role="menuitem">
+        <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+        <span>Abmelden</span></button>
+    </div>`;
+  bar.appendChild(wrap);
+
+  const btn = wrap.querySelector('.avatar');
+  const menu = wrap.querySelector('.acct__menu');
+  const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    menu.hidden = !menu.hidden;
+    btn.setAttribute('aria-expanded', String(!menu.hidden));
+  });
+  document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+  menu.addEventListener('click', async e => {
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (!act) return;
+    close();
+    if (act === 'theme')    theme.click();
+    if (act === 'settings') settings.click();
+    if (act === 'logout' && confirm('Abmelden?')) {
+      try { localStorage.removeItem('tvza-name'); } catch {}
+      const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      await signOut(auth);
+      location.href = base() + 'login.html';
+    }
+  });
+}
+
 /** Unread count: a dot on the phone, a number in the laptop rail. */
 export function setUnread(n) {
   n = Number(n) || 0;
@@ -120,5 +190,6 @@ if (!SKIP.includes(file)) {
     let profile = null;
     try { profile = await getProfile(user); } catch { /* rail just stays empty */ }
     mount(profile);
+    mountAccountMenu(user, profile);
   });
 }
