@@ -180,6 +180,14 @@ button, input, select, textarea { font-family: inherit; }
    ein, 100vh rechnet aber mit der ausgefahrenen Leiste und schiebt
    dadurch alles, was am unteren Rand sitzen soll, aus dem Bild. */
 @supports (min-height: 100dvh) { .app { min-height: 100dvh; } }
+/* Der Rumpf reserviert unten bereits Platz für die Navileiste. Ohne
+   diesen Abzug verlangt .app zusätzlich die volle Viewporthöhe, die
+   Seite wird um die Leistenhöhe zu lang, und was unten sitzen soll
+   verschwindet hinter der Leiste. */
+body.has-nav .app { min-height: calc(100vh - 64px - env(safe-area-inset-bottom, 0px)); }
+@supports (min-height: 100dvh) {
+  body.has-nav .app { min-height: calc(100dvh - 64px - env(safe-area-inset-bottom, 0px)); }
+}
 
 /* Page entry animation */
 .main, .login-card {
@@ -1813,7 +1821,9 @@ body.reorder-editing .module-tile::after {
 
   /* Content sits beside the rail; the header pulls itself back out over
      the full width (siehe oben). */
+  /* Am Laptop ist die Leiste links, der untere Rand also wieder frei. */
   .has-nav      { padding-bottom: 0; padding-left: 248px; }
+  body.has-nav .app { min-height: 100vh; }
   .shell__cols  {
     display: grid; grid-template-columns: 1.35fr 1fr; gap: 26px;
     max-width: 1160px; margin: 0 auto; padding: 0 34px 40px;
