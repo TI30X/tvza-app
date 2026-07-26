@@ -42,7 +42,7 @@
     /* ── Language selector ── */
     .lang-sel {
       font-size: 13px; font-family: inherit; cursor: pointer;
-      padding: 4px 6px; border-radius: 6px;
+      padding: 4px 6px; border-radius: var(--r-icon);
       border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.12);
       color: #fff; min-height: 36px;
       transition: background .15s ease, transform .15s ease;
@@ -56,7 +56,7 @@
     .pill-btn {
       position: relative; overflow: hidden;
       font-size: 11px; font-weight: 600; padding: 6px 12px;
-      border-radius: 999px; border: 1px solid var(--border);
+      border-radius: var(--r-pill); border: 1px solid var(--border);
       background: var(--surface-2); color: var(--ink);
       cursor: pointer; white-space: nowrap;
       display: inline-flex; align-items: center; gap: 4px;
@@ -87,7 +87,7 @@
     /* ── Invite / share strip ── */
     .invite-strip {
       display: flex; gap: 8px; align-items: center; margin-top: 12px;
-      padding: 9px 11px; border-radius: 10px;
+      padding: 9px 11px; border-radius: var(--r-icon);
       background: var(--surface-2); border: 1px solid var(--border);
       animation: popIn .3s ease both;
     }
@@ -97,7 +97,7 @@
     }
     .invite-strip button {
       font-size: 11px; font-weight: 700; padding: 6px 12px;
-      border-radius: 999px; border: 1px solid var(--accent);
+      border-radius: var(--r-pill); border: 1px solid var(--accent);
       background: var(--accent-bg); color: var(--accent); cursor: pointer; white-space: nowrap;
       transition: transform .12s ease, background .15s ease;
     }
@@ -128,7 +128,7 @@
     .reminder-item { font-size: 13px; color: var(--ink); padding: 4px 0;
                      display: flex; align-items: center; gap: 8px; animation: rowIn .35s ease both; }
     .reminder-item .when { margin-left: auto; font-weight: 700; font-size: 12px; color: var(--trip-deep);
-                           background: var(--surface); padding: 2px 9px; border-radius: 999px;
+                           background: var(--surface); padding: 2px 9px; border-radius: var(--r-pill);
                            border: 1px solid var(--trip); }
     .reminder-close { position: absolute; top: 10px; right: 12px; cursor: pointer;
                       color: var(--ink-soft); font-size: 16px; line-height: 1; background: none; border: none; }
@@ -140,7 +140,7 @@
       display: inline-flex; align-items: center; gap: 7px;
       font-size: 12px; font-weight: 700; letter-spacing: .03em;
       color: var(--trip-deep); background: var(--tint-trip);
-      padding: 4px 12px; border-radius: 999px; margin-bottom: 6px;
+      padding: 4px 12px; border-radius: var(--r-pill); margin-bottom: 6px;
     }
     .itin-line { position: relative; padding-left: 20px; }
     .itin-line::before {
@@ -150,7 +150,7 @@
     .itin-item {
       position: relative; padding: 8px 10px; margin-bottom: 7px;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--r-icon);
       display: flex; align-items: flex-start; gap: 10px;
       animation: rowIn .35s ease both; animation-delay: calc(var(--ii, 0) * 45ms);
       transition: transform .14s ease;

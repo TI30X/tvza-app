@@ -28,12 +28,12 @@
     /* Live "added so far" list inside the scanner */
     .scan-summary { margin: 10px 0 4px; }
     .scan-summary .ss-item { display:flex; justify-content:space-between; gap:10px;
-      font-size:13px; padding:6px 10px; border-radius:8px; background:var(--surface-2); margin-bottom:6px; }
+      font-size:13px; padding:6px 10px; border-radius: var(--r-icon); background:var(--surface-2); margin-bottom:6px; }
     .scan-summary .ss-item small { color:var(--ink-soft); }
     /* Lightweight toast */
     #toast { position: fixed; left: 50%; bottom: calc(20px + 64px + env(safe-area-inset-bottom,0px));
       transform: translateX(-50%) translateY(8px); background: var(--food, #2F9E44); color:#fff;
-      padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
+      padding: 10px 16px; border-radius: var(--r-pill); font-size: 14px; font-weight: 600;
       box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none;
       transition: opacity .18s ease, transform .18s ease; z-index: 1000; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }

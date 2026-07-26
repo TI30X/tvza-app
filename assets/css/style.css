@@ -1707,3 +1707,137 @@ body.reorder-editing .module-tile::after {
 .link-row:hover, .item-card:hover, .file-row:hover,
 .grp-card:hover, .pending-card:hover { border-color: var(--ink-soft); }
 .pill, .mini { border-radius: var(--r-pill); }
+
+/* ══════════════════════════════════════════════════════════════════
+   Angleichung der Seitenbauteile
+
+   Ten pages grew ten sets of row and card classes — .dm-conv, .wl-stat,
+   .wx-card, .grp-card, .item-card, .itin-item, .meeting-card, .line and
+   the rest. They do the same job as .row and .panel but each picked its
+   own radius, border and hover.
+
+   Rewriting every page's markup onto .row is the clean end state, but it
+   is ten separate rewrites of pages the family is using. This layer does
+   the visible half now: it takes over the *design* properties — radius,
+   border, surface, hover — and leaves each page's layout alone, so the
+   app is consistent without any page changing shape.
+
+   Each page's <style> comes after this file in the document, so these
+   rules carry a `body` prefix to win on specificity. Once a page is
+   migrated onto .row properly, its entry here can go.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Rows and cards → the .row / .panel treatment ──────────────────*/
+body .dm-conv,          /* Nachrichten */
+body .dm-empty,
+body .wl-stat,          /* Watchlist */
+body .wl-market-note,
+body .wl-hint,
+body .wx-hero,          /* Wetter */
+body .wx-card,
+body .wx-fact,
+body .wx-msg,
+body .grp-card,         /* Planer */
+body .item-card,
+body .sub-card,
+body .cell,
+body .file-row,
+body .pending-card,
+body .itin-item,        /* Reisen */
+body .reminder-card,
+body .invite-strip,
+body .trip-card,
+body .meeting-card,     /* Maturaarbeit */
+body .pm-details,
+body .deadline-box {
+  border-radius: var(--r-row);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+/* Panels group several blocks, so they take the larger radius. */
+body .wx-hero,
+body .sub-card,
+body .deadline-box,
+body .pm-details {
+  border-radius: var(--r-panel);
+}
+
+/* Hover changes colour, never position (§9). There is no hover on a
+   phone, and with no shadow there is nothing to lift into. */
+body .dm-conv:hover,
+body .item-card:hover,
+body .grp-card:hover,
+body .trip-card:hover,
+body .itin-item:hover,
+body .meeting-card:hover,
+body .file-row:hover,
+body .wl-stat:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--ink-soft);
+}
+
+/* ── Pills, chips and badges → --r-pill ────────────────────────────*/
+body .pill,
+body .mini,
+body .chip,
+body .pill-btn,
+body .wl-chip,
+body .wl-src-tag,
+body .wx-chip,
+body .dm-badge,
+body .role-badge,
+body .status-badge,
+body .date-pill,
+body .icon-pill {
+  border-radius: var(--r-pill);
+}
+
+/* ── Icon plates and avatars ───────────────────────────────────────*/
+body .dm-ava,
+body .card-icon,
+body .link-icon,
+body .mc-date {
+  border-radius: var(--r-icon);
+}
+/* An avatar is a circle, not a rounded square. */
+body .dm-ava { border-radius: var(--r-pill); }
+
+/* ── Segmented controls ────────────────────────────────────────────*/
+body .seg,
+body .wl-seg,
+body .wx-seg,
+body .wx-alt-seg,
+body .tabs {
+  border-radius: var(--r-row);
+}
+body .seg button,
+body .wl-seg button,
+body .wx-seg button,
+body .wx-alt-seg button {
+  border-radius: var(--r-icon);
+}
+
+/* ── Buttons that predate the three in §4.4 ────────────────────────*/
+body .reset-btn,
+body .pm-info-btn,
+body .lang-sel,
+body .action-btn {
+  border-radius: var(--r-row);
+  box-shadow: none;
+}
+body .reset-btn:hover,
+body .pm-info-btn:hover,
+body .action-btn:hover {
+  transform: none;
+}
+
+/* ── Inputs share one radius with everything else ──────────────────*/
+body .form-input,
+body .form-select,
+body .form-textarea,
+body .dm-compose textarea {
+  border-radius: var(--r-row);
+}
