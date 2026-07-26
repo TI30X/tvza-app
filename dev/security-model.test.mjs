@@ -90,6 +90,16 @@ test('personal reminders and imported calendar entries stay owner-scoped', async
   assert.doesNotMatch(calendarDays, /allow read, write: if isMember/);
 });
 
+test('uploaded calendar HTML cannot run with TVZA origin privileges', async () => {
+  const planner = await read('pages/planner.html');
+  assert.doesNotMatch(planner, /sandbox="[^"]*allow-same-origin/);
+  assert.match(planner, /function safeExternalUrl\(value\)/);
+  assert.match(planner, /\['http:','https:'\]\.includes\(parsed\.protocol\)/);
+  assert.match(planner, /function safePlanHtml\(html\)/);
+  assert.match(planner, /script,iframe,object,embed,form,base/);
+  assert.match(planner, /name\.startsWith\('on'\)/);
+});
+
 test('visible version and service-worker cache stay aligned', async () => {
   const [ui, sw] = await Promise.all([
     read('assets/js/ui-fx.js'),

@@ -13,8 +13,12 @@
 - 🔐 **Familien-Einladungen:** Neue Familienkonten brauchen einen 128-Bit-Code, den der Admin
   unter ⚙️ Einstellungen → „Admin · Familien-Einladungen" für eine bestimmte E-Mail erstellt.
   Ein Firebase-Login allein erhält keinen Zugriff auf Familiendaten.
-- 🗓️ **Kalender & Erinnerungen:** Moderne Monats- und Agendaansicht, persönliche Erinnerungen
-  sowie ICS-Import/-Export für Google Calendar, Outlook/Exchange, Apple und Samsung Calendar.
+- 🗓️ **Kalender & Erinnerungen:** Vertraute Ansichten für Tag, 3 Tage, Arbeitswoche, Woche,
+  Monat und Terminübersicht/Agenda. Nutzer wählen Google- oder Outlook-Darstellung, können
+  mehreren Gruppen gleichzeitig angehören und deren Kalender einzeln ein-/ausblenden.
+  Hochgeladene HTML-Pläne werden nach Datum/Uhrzeit in der Terminübersicht aufgeteilt; die
+  Originalseite bleibt zusätzlich öffnbar. Dazu kommen persönliche Erinnerungen und
+  ICS-Import/-Export für Google Calendar, Outlook/Exchange, Apple und Samsung Calendar.
 
 ## Datenmodell (Firestore)
 - `users/{uid}` — Profil inkl. `modules` (welche Module aktiv sind), `isTimo`, `isParent`.

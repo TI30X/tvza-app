@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/calendar.css" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -171,7 +172,7 @@
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=15" defer></script>
 </head>
-<body>
+<body class="planner-page">
   <div class="app">
     <div class="offline-banner" id="offlineBanner"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – Änderungen werden später synchronisiert</div>
 
@@ -207,79 +208,100 @@
 
       <!-- Group main -->
       <div id="groupView" style="display:none">
-        <div class="grp-card" id="grpCard"></div>
-
-        <div style="display:flex;justify-content:center;margin-bottom:6px">
-          <div class="seg">
-            <button id="segCal" class="active">📅 Monat</button>
-            <button id="segList">📋 Agenda</button>
-          </div>
-        </div>
-
-        <!-- Calendar view -->
-        <div id="calView">
-          <div class="toolbar">
-            <div style="display:flex;align-items:center;gap:4px">
-              <button class="icon-pill" id="prevBtn" aria-label="Zurück">‹</button>
-              <span class="month-title" id="monthTitle">—</span>
-              <button class="icon-pill" id="nextBtn" aria-label="Weiter">›</button>
+        <div class="calendar-layout">
+          <aside class="calendar-sidebar" aria-label="Kalender auswählen">
+            <button class="btn btn-primary btn-block" id="addTripBtn" type="button">+ Neuer Termin</button>
+            <div class="calendar-side-card" style="margin-top:12px">
+              <div class="calendar-side-title"><span>Meine Kalender</span></div>
+              <div id="calendarSources"><div class="spinner">Lade…</div></div>
+              <div class="calendar-side-actions">
+                <button class="pill" id="addGroupBtn" type="button">+ Gruppe hinzufügen</button>
+              </div>
             </div>
-            <button class="pill" id="todayBtn">Heute</button>
-            <span class="spacer"></span>
-            <button class="pill primary" id="calAddBtn">+</button>
-          </div>
-          <div class="weekdays"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
-          <div class="grid" id="grid"><div class="spinner" style="grid-column:1/-1">Lade…</div></div>
-          <div class="legend">
-            <span><i style="background:#d8761d"></i>Termine</span>
-            <span><i style="background:#7f77dd"></i>Persönlich</span>
-            <span><i style="background:#2f6fed"></i>Erinnerungen</span>
-          </div>
-        </div>
+            <details class="calendar-side-card group-manage-card" id="groupManager">
+              <summary>Ausgewählte Gruppe verwalten</summary>
+              <div id="grpCard"></div>
+            </details>
+          </aside>
 
-        <!-- List view -->
-        <div id="listView" style="display:none">
-          <div class="fab-row">
-            <button class="pill primary" id="addTripBtn">+ Termin</button>
-          </div>
-          <h2 class="section-title" style="font-size:15px;margin:6px 0 10px">Kommende Einträge</h2>
-          <div id="agenda"><div class="spinner">Lade…</div></div>
+          <section class="calendar-workspace" id="calendarWorkspace">
+            <div class="calendar-commandbar">
+              <div class="calendar-commandbar__nav">
+                <button class="icon-pill" id="prevBtn" aria-label="Vorheriger Zeitraum">‹</button>
+                <button class="icon-pill" id="nextBtn" aria-label="Nächster Zeitraum">›</button>
+              </div>
+              <button class="pill calendar-commandbar__today" id="todayBtn" type="button">Heute</button>
+              <h2 class="calendar-commandbar__title" id="monthTitle">—</h2>
+              <div class="calendar-commandbar__views">
+                <div class="view-picker">
+                  <button class="pill view-picker__button" id="viewPickerBtn" type="button" aria-haspopup="menu" aria-expanded="false">
+                    <span id="viewPickerLabel">Monat</span><span aria-hidden="true">⌄</span>
+                  </button>
+                  <div class="view-menu" id="viewMenu" role="menu" hidden>
+                    <button type="button" data-calendar-view="day">Tag</button>
+                    <button type="button" data-calendar-view="3day">3 Tage</button>
+                    <button type="button" data-calendar-view="workweek">Arbeitswoche</button>
+                    <button type="button" data-calendar-view="week">Woche</button>
+                    <button type="button" data-calendar-view="month">Monat</button>
+                    <button type="button" data-calendar-view="agenda" id="agendaViewOption">Terminübersicht</button>
+                  </div>
+                </div>
+                <button class="icon-pill" id="calendarSettingsBtn" type="button" aria-label="Kalenderdarstellung">
+                  <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+                </button>
+              </div>
+              <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">+ Neuer Termin</button>
+            </div>
+
+            <div class="calendar-mobile-sources" id="calendarMobileSources"></div>
+
+            <div class="calendar-stage">
+              <div class="calendar-view calendar-month" id="calView">
+                <div class="weekdays"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+                <div class="grid" id="grid"><div class="spinner" style="grid-column:1/-1">Lade…</div></div>
+              </div>
+
+              <div class="calendar-view" id="timeView" hidden>
+                <div class="time-calendar-wrap" id="timeCalendar"><div class="spinner">Lade…</div></div>
+              </div>
+
+              <div class="calendar-view calendar-agenda" id="listView" hidden>
+                <div id="agenda"><div class="spinner">Lade…</div></div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
-      <section class="planner-panel" id="reminderSection">
-        <div class="planner-section-head">
-          <div>
-            <p class="marke">Erinnerungen</p>
-            <h2>Was als Nächstes ansteht</h2>
+      <div class="calendar-below">
+        <section class="planner-panel" id="reminderSection">
+          <div class="planner-section-head">
+            <div>
+              <p class="marke">Erinnerungen</p>
+              <h2>Was als Nächstes ansteht</h2>
+            </div>
+            <button class="pill primary" id="addReminderBtn" type="button">+ Erinnerung</button>
           </div>
-          <button class="pill primary" id="addReminderBtn" type="button">+ Erinnerung</button>
-        </div>
-        <div class="reminder-list" id="reminderList"><div class="spinner">Lade…</div></div>
-      </section>
+          <div class="reminder-list" id="reminderList"><div class="spinner">Lade…</div></div>
+        </section>
 
-      <section class="planner-panel" id="calendarSync">
-        <div class="planner-section-head">
-          <div>
-            <p class="marke">Kalender abgleichen</p>
-            <h2>Mit deinen anderen Kalendern</h2>
+        <section class="planner-panel" id="calendarSync">
+          <div class="planner-section-head">
+            <div>
+              <p class="marke">Kalender abgleichen</p>
+              <h2>Mit anderen Kalendern</h2>
+            </div>
           </div>
-        </div>
-        <p class="sync-copy">Kalenderdateien im offenen ICS-Format funktionieren mit allen wichtigen Kalenderdiensten.</p>
-        <div class="provider-row" aria-label="Unterstützte Kalender">
-          <span class="provider-chip">Google Calendar</span>
-          <span class="provider-chip">Outlook / Exchange</span>
-          <span class="provider-chip">Apple Calendar</span>
-          <span class="provider-chip">Samsung Calendar</span>
-        </div>
-        <div class="sync-actions">
-          <button class="pill primary" id="calendarImportBtn" type="button">ICS importieren</button>
-          <button class="pill" id="calendarExportBtn" type="button">TVZA exportieren</button>
-          <input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden />
-        </div>
-        <p class="sync-status" id="calendarSyncStatus"></p>
-        <p class="sync-copy">Der ICS-Abgleich ist bewusst dateibasiert. Für eine automatische Zweiweg-Verbindung werden später Google-/Microsoft-OAuth und für Apple ein geschützter CalDAV-Dienst benötigt.</p>
-      </section>
+          <p class="sync-copy">ICS funktioniert mit Google, Outlook/Exchange, Apple und Samsung.</p>
+          <div class="sync-actions">
+            <button class="pill primary" id="calendarImportBtn" type="button">ICS importieren</button>
+            <button class="pill" id="calendarExportBtn" type="button">TVZA exportieren</button>
+            <input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden />
+          </div>
+          <p class="sync-status" id="calendarSyncStatus"></p>
+          <p class="sync-copy">Automatische Zweiweg-Synchronisierung benötigt später die geschützte Serververbindung.</p>
+        </section>
+      </div>
 
       <!-- Trip detail -->
       <div id="tripDetail" style="display:none"></div>
@@ -305,6 +327,7 @@
       <button class="icon-pill" id="tripFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="field"><label>Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" /></div>
     <div class="field"><label>Ziel / Ort (optional)</label><input class="form-input" id="tDest" placeholder="Ort / Region — kann leer bleiben" /></div>
+    <div class="field"><label>Kalender</label><select class="form-input" id="tGroup"></select></div>
     <div class="row2">
       <div class="field"><label>Von</label><input class="form-input" id="tStart" type="date" /></div>
       <div class="field"><label>Bis (optional)</label><input class="form-input" id="tEnd" type="date" placeholder="leer = eintägig"></div>
@@ -325,9 +348,51 @@
       <div data-tbody="paste"><textarea class="form-textarea" id="tpHtml" rows="4" placeholder="HTML hier einfügen — wird automatisch nach Tagen aufgeteilt…"></textarea></div>
       <div data-tbody="upload" style="display:none"><label class="drop" id="tpDrop"><span id="tpDropText">HTML-Datei wählen</span><input type="file" id="tpFile" accept=".html,.htm,text/html" hidden /></label><p id="tpChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
       <div data-tbody="url" style="display:none"><input class="form-input" id="tpUrl" type="url" placeholder="https://…"></div>
+      <p class="html-import-feedback" id="tpImportStatus">Erkannte Tage und Programmpunkte erscheinen automatisch in der Terminübersicht. Die Originalseite bleibt zusätzlich öffnbar; enthaltene Skripte werden aus Sicherheitsgründen nicht ausgeführt.</p>
     </div>
     <button class="btn btn-primary btn-block" id="tripSave">Speichern</button>
     <button class="btn btn-danger btn-block" id="tripFormDelete" style="display:none;margin-top:8px">Termin löschen</button>
+  </div>
+
+  <!-- Group create/join sheet -->
+  <div class="backdrop" id="groupBackdrop"></div>
+  <div class="sheet" id="groupSheet">
+    <div class="grip"></div>
+    <div class="sheet-head"><span class="sheet-title">Kalendergruppe hinzufügen</span>
+      <button class="icon-pill" id="groupSheetClose" aria-label="Schliessen">×</button></div>
+    <div class="grp-card">
+      <p class="sub-title">Neue Gruppe</p>
+      <div class="field"><input class="form-input" id="newGrpNameMore" type="text" placeholder="z.B. Familie, Verein oder Arbeit" /></div>
+      <button class="btn btn-primary btn-block" id="createMoreGrpBtn" type="button">Gruppe erstellen</button>
+    </div>
+    <div class="grp-card">
+      <p class="sub-title">Weiterer Gruppe beitreten</p>
+      <div class="field"><input class="form-input" id="joinGrpNameMore" type="text" placeholder="Gruppenname eingeben" /></div>
+      <button class="btn btn-secondary btn-block" id="joinMoreGrpBtn" type="button">Beitritt anfragen</button>
+      <p id="joinMoreStatus" style="font-size:12px;color:var(--ink-soft);margin-top:8px"></p>
+    </div>
+  </div>
+
+  <!-- Calendar style/setup sheet -->
+  <div class="backdrop" id="calendarSetupBackdrop"></div>
+  <div class="sheet calendar-setup-sheet" id="calendarSetupSheet">
+    <div class="grip"></div>
+    <div class="sheet-head"><span class="sheet-title">Wie soll sich dein Kalender anfühlen?</span>
+      <button class="icon-pill" id="calendarSetupClose" aria-label="Schliessen">×</button></div>
+    <p class="calendar-setup-copy">Wähle die Umgebung, die du bereits kennst. Du kannst dies jederzeit über „Darstellung“ ändern.</p>
+    <div class="calendar-style-options">
+      <button class="calendar-style-card" type="button" data-style="google">
+        <strong>Google Kalender</strong>
+        <span>Ruhige Flächen, runde Bedienelemente und „Terminübersicht“.</span>
+        <span class="calendar-style-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      </button>
+      <button class="calendar-style-card" type="button" data-style="outlook">
+        <strong>Outlook</strong>
+        <span>Kompakter, geradliniger und mit „Arbeitswoche“ als Start.</span>
+        <span class="calendar-style-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      </button>
+    </div>
+    <button class="btn btn-primary btn-block" id="calendarSetupSave" type="button">Übernehmen</button>
   </div>
 
   <!-- Reminder form sheet -->
@@ -382,13 +447,18 @@
   <div class="viewer" id="viewer">
     <div class="viewer-bar"><button class="icon-pill" id="viewerClose">‹</button><span class="vt" id="viewerTitle">Info</span>
       <a id="viewerFull" href="#" target="_blank" rel="noopener" class="pill" style="display:none">Ganz öffnen ↗</a></div>
-    <iframe id="viewerFrame" sandbox="allow-same-origin allow-popups allow-scripts" referrerpolicy="no-referrer"></iframe>
+    <iframe id="viewerFrame" sandbox="allow-popups" referrerpolicy="no-referrer"></iframe>
   </div>
 
   <script type="module">
     import { auth, db, app, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError } from '../assets/js/firebase-config.js';
     import { parseItineraryHtml, groupByDay } from '../assets/js/itinerary.js';
     import { buildCalendarIcs, parseCalendarIcs } from '../assets/js/calendar-interop.js';
+    import {
+      CALENDAR_VIEWS, CALENDAR_STYLES, addCalendarDays,
+      datesForCalendarView, moveCalendarAnchor, calendarRangeTitle,
+      normalizeCalendarPreference
+    } from '../assets/js/calendar-view.js';
     import {
       collection, addDoc, getDocs, getDoc, query, where, doc, updateDoc, deleteDoc,
       onSnapshot, serverTimestamp, arrayUnion, arrayRemove
@@ -427,10 +497,13 @@
     async function saveAttachment(parentId, scope, st){ return addDoc(collection(db,'attachments'), {parent:parentId, scope, name:st.name, type:st.type, size:st.size, dataUrl:st.dataUrl, by:user.uid, at:Date.now()}); }
     async function delAttachment(id){ return deleteDoc(doc(db,'attachments',id)); }
 
-    let user, profile, group = null, grpUnsub = null, reminderUnsub = null;
-    let trips = [], days = [], reminders = [];
-    let viewY = tdy.getFullYear(), viewM = tdy.getMonth();
-    let curView = 'cal';
+    const GROUP_COLORS = ['#7f77dd','#1a73e8','#1d9e75','#d8761d','#d4537e','#1d9e9e','#e24b4a'];
+    let user, profile, group = null, groups = [], groupsUnsub = null, reminderUnsub = null;
+    let trips = [], allTrips = [], days = [], reminders = [];
+    let visibleGroupIds = new Set(), showPersonal = true;
+    let anchorKey = todayKey, curView = 'month';
+    let calendarPreference = { style:'google', view:'month' };
+    let calendarPreferenceExists = false;
     let editTripId = null, editDayId = null, editReminderId = null, dayColor = COLORS[0], dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
     let pendingDayFiles = [], dayFiles = [];
 
@@ -440,17 +513,64 @@
       user = await requireAuth('../login.html');
       wireOfflineBanner();
       profile = await getProfile(user);
+      loadCalendarPreference();
       buildSwatches();
       wireUI();
       watchReminders();
-      await resolveGroup();
+      await resolveGroups();
+      if (!calendarPreferenceExists) setTimeout(() => openCalendarSetup(true), 180);
       if (location.hash === '#reminders') {
         setTimeout(() => $('reminderSection').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
       }
     }
 
-    /* ── Group membership ── */
-    async function resolveGroup() {
+    /* ── Calendar preferences ── */
+    const preferenceKey = () => `tvza-calendar-preference-${user.uid}`;
+    const sourceKey = () => `tvza-calendar-sources-${user.uid}`;
+    function loadCalendarPreference() {
+      let raw = {};
+      try {
+        const saved = localStorage.getItem(preferenceKey());
+        calendarPreferenceExists = !!saved;
+        raw = saved ? JSON.parse(saved) : {};
+      } catch {}
+      calendarPreference = normalizeCalendarPreference(raw);
+      curView = calendarPreference.view;
+      applyCalendarPreference();
+    }
+    function applyCalendarPreference() {
+      document.body.dataset.calendarStyle = calendarPreference.style;
+      $('agendaViewOption').textContent = CALENDAR_STYLES[calendarPreference.style].agendaLabel;
+      document.querySelectorAll('[data-style]').forEach(card =>
+        card.classList.toggle('is-selected', card.dataset.style === calendarPreference.style)
+      );
+      renderCurrentView();
+    }
+    function saveCalendarPreference() {
+      calendarPreference = normalizeCalendarPreference({ ...calendarPreference, view:curView });
+      try { localStorage.setItem(preferenceKey(), JSON.stringify(calendarPreference)); } catch {}
+      calendarPreferenceExists = true;
+      applyCalendarPreference();
+    }
+    function openCalendarSetup(firstRun = false) {
+      $('calendarSetupSheet').dataset.firstRun = String(firstRun);
+      $('calendarSetupClose').style.visibility = firstRun ? 'hidden' : '';
+      $('calendarSetupBackdrop').classList.add('visible');
+      $('calendarSetupSheet').classList.add('visible');
+    }
+    function closeCalendarSetup() {
+      $('calendarSetupBackdrop').classList.remove('visible');
+      $('calendarSetupSheet').classList.remove('visible');
+    }
+
+    /* ── Multiple calendar groups ── */
+    const groupColor = id => {
+      const hash = [...String(id||'')].reduce((value, char) => ((value * 31) + char.charCodeAt(0)) | 0, 0);
+      return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
+    };
+    const groupName = id => groups.find(item => item.id === id)?.name || 'Gruppe';
+
+    async function resolveGroups() {
       const params = new URLSearchParams(location.search);
       const invite = params.get('invite'), token = params.get('token');
       const userRef = doc(db, 'users', user.uid);
@@ -458,100 +578,228 @@
         try {
           const fs = await getDoc(doc(db,'families',invite));
           if (fs.exists()) {
-            const d = fs.data();
-            if (!(d.members||[]).includes(user.uid) && d.inviteToken === token) {
-              await updateDoc(doc(db,'families',invite), { members: arrayUnion(user.uid) });
-              await updateDoc(userRef, { familyId: invite, role:'member' });
-              profile.familyId = invite;
-            } else if ((d.members||[]).includes(user.uid)) { profile.familyId = invite; }
+            const data = fs.data();
+            if (!(data.members||[]).includes(user.uid) && data.inviteToken === token) {
+              await updateDoc(doc(db,'families',invite), { members:arrayUnion(user.uid) });
+              if (!profile.familyId) {
+                await updateDoc(userRef, { familyId:invite, role:'member' });
+                profile.familyId = invite;
+              }
+            }
           }
         } catch(e){ reportClientError('family-invite', e); }
         history.replaceState({}, '', location.pathname);
       }
-      if (profile.familyId) {
-        const fs = await getDoc(doc(db,'families',profile.familyId)).catch(()=>null);
-        if (fs && fs.exists() && (fs.data().members||[]).includes(user.uid)) { watchGroup(profile.familyId); return; }
-        await updateDoc(userRef, { familyId: null }).catch(()=>{}); profile.familyId = null;
-      }
-      showNoGroup();
+      watchGroups();
     }
-    function showNoGroup() { $('noGroup').style.display=''; $('groupView').style.display='none'; $('tripDetail').style.display='none'; }
-    function watchGroup(gid) {
-      if (grpUnsub) grpUnsub();
-      grpUnsub = onSnapshot(doc(db,'families',gid), async snap => {
-        if (!snap.exists()) { showNoGroup(); return; }
-        group = { id: snap.id, ...snap.data() };
-        if (!(group.members||[]).includes(user.uid)) { await updateDoc(doc(db,'users',user.uid),{familyId:null}).catch(()=>{}); showNoGroup(); return; }
-        $('noGroup').style.display='none'; $('groupView').style.display='';
-        renderGroupCard();
-        await reload();
+
+    function loadVisibleSources() {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(sourceKey()) || 'null'); } catch {}
+      const valid = new Set(groups.map(item => item.id));
+      const chosen = Array.isArray(saved?.groups) ? saved.groups.filter(id => valid.has(id)) : groups.map(item => item.id);
+      visibleGroupIds = new Set(chosen);
+      showPersonal = saved?.personal !== false;
+    }
+    function saveVisibleSources() {
+      try {
+        localStorage.setItem(sourceKey(), JSON.stringify({
+          personal:showPersonal,
+          groups:[...visibleGroupIds],
+          active:group?.id || ''
+        }));
+      } catch {}
+    }
+    function watchGroups() {
+      if (groupsUnsub) groupsUnsub();
+      groupsUnsub = onSnapshot(
+        query(collection(db,'families'), where('members','array-contains',user.uid)),
+        async snap => {
+          const previousActive = group?.id;
+          groups = snap.docs.map(item => ({ id:item.id, ...item.data() }))
+            .sort((a,b) => (a.name||'').localeCompare(b.name||''));
+          if (!groups.length) { group=null; showNoGroup(); return; }
+          loadVisibleSources();
+          let savedActive = '';
+          try { savedActive = JSON.parse(localStorage.getItem(sourceKey()) || '{}').active || ''; } catch {}
+          group = groups.find(item => item.id === previousActive)
+            || groups.find(item => item.id === savedActive)
+            || groups.find(item => item.id === profile.familyId)
+            || groups[0];
+          saveVisibleSources();
+          $('noGroup').style.display='none';
+          $('groupView').style.display='';
+          renderCalendarSources();
+          await renderGroupCard();
+          await reload();
+        },
+        error => {
+          reportClientError('calendar-groups-load', error);
+          showNoGroup();
+        }
+      );
+    }
+    function showNoGroup() {
+      $('noGroup').style.display='';
+      $('groupView').style.display='none';
+      $('tripDetail').style.display='none';
+    }
+
+    function renderCalendarSources() {
+      const personal = `
+        <button class="calendar-source-row${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:#7f77dd">
+          <span class="calendar-source-dot"></span><span>Persönlich &amp; Erinnerungen</span>
+        </button>`;
+      $('calendarSources').innerHTML = personal + groups.map(item => `
+        <button class="calendar-source-row${visibleGroupIds.has(item.id)?' is-visible':''}" type="button"
+          data-source-group="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
+          <span class="calendar-source-dot"></span><span>${esc(item.name||'Gruppe')}</span>
+          ${item.id===group?.id?'<small>aktiv</small>':''}
+        </button>`).join('');
+      $('calendarMobileSources').innerHTML = `
+        <button class="calendar-source-chip${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:#7f77dd">
+          <span class="calendar-source-dot"></span>Persönlich
+        </button>` + groups.map(item => `
+        <button class="calendar-source-chip${visibleGroupIds.has(item.id)?' is-visible':''}" type="button"
+          data-source-group="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
+          <span class="calendar-source-dot"></span>${esc(item.name||'Gruppe')}
+        </button>`).join('') + `
+        <button class="calendar-source-chip is-visible" id="mobileManageGroupsBtn" type="button" style="--source-color:var(--ink-soft)">
+          <svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+          Verwalten
+        </button>
+        <button class="calendar-source-chip is-visible" id="mobileAddGroupBtn" type="button" style="--source-color:var(--cal-accent)">+ Gruppe</button>`;
+
+      document.querySelectorAll('[data-source-personal]').forEach(button => button.onclick = () => {
+        showPersonal = !showPersonal;
+        saveVisibleSources();
+        renderCalendarSources();
+        renderCurrentView();
       });
+      document.querySelectorAll('[data-source-group]').forEach(button => button.onclick = () => {
+        const id = button.dataset.sourceGroup;
+        if (visibleGroupIds.has(id)) visibleGroupIds.delete(id); else visibleGroupIds.add(id);
+        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
+        saveVisibleSources();
+        renderCalendarSources();
+        renderCurrentView();
+      });
+      $('mobileManageGroupsBtn').onclick = openMobileGroupManager;
+      $('mobileAddGroupBtn').onclick = openGroupSheet;
     }
-    function isManager() { return [...(group?.managers||[]), group?.headUid].includes(user.uid); }
+
+    function isManager(target = group) { return !!target && [...(target.managers||[]), target.headUid].includes(user.uid); }
 
     async function renderGroupCard() {
+      if (!group) { $('grpCard').innerHTML=''; return; }
       const names = {};
       await Promise.all((group.members||[]).concat(group.pendingRequests||[]).map(async uid => {
-        try { const s = await getDoc(doc(db,'users',uid)); names[uid] = s.exists() ? (s.data().displayName || s.data().email || 'Mitglied') : 'Mitglied'; }
+        try { const snap = await getDoc(doc(db,'users',uid)); names[uid] = snap.exists() ? (snap.data().displayName || snap.data().email || 'Mitglied') : 'Mitglied'; }
         catch { names[uid] = 'Mitglied'; }
       }));
       const chips = (group.members||[]).map(uid =>
         `<span class="chip ${uid===user.uid?'me':''}">${esc(names[uid]||'?')}${[...(group.managers||[]),group.headUid].includes(uid)?' ★':''}</span>`).join('');
-      let pend = '';
+      let pending = '';
       if (isManager() && (group.pendingRequests||[]).length) {
-        pend = `<div style="margin-top:12px"><p class="sub-title">Anfragen</p>` +
+        pending = `<div style="margin-top:12px"><p class="sub-title">Anfragen</p>` +
           (group.pendingRequests||[]).map(uid =>
             `<div class="line"><span class="l-main"><span class="l-title">${esc(names[uid]||'?')}</span></span>
              <button class="pill primary" data-appr="${uid}">OK</button>
              <button class="pill" data-rej="${uid}">✕</button></div>`).join('') + `</div>`;
       }
       $('grpCard').innerHTML = `
-        <div class="grp-top"><span style="font-size:20px">👥</span><span class="grp-name">${esc(group.name||'Gruppe')}</span>
-          <button class="mini" id="leaveBtn" title="Verlassen">⎋</button></div>
+        ${groups.length>1?`<div class="field"><label>Gruppe</label><select class="form-input" id="manageGroupSelect">${groups.map(item=>`<option value="${esc(item.id)}"${item.id===group.id?' selected':''}>${esc(item.name||'Gruppe')}</option>`).join('')}</select></div>`:''}
+        <div class="grp-top"><span class="calendar-source-dot" style="--source-color:${groupColor(group.id)}"></span><span class="grp-name">${esc(group.name||'Gruppe')}</span>
+          <button class="mini" id="leaveBtn" title="Diese Gruppe verlassen">⎋</button></div>
         <div class="member-chips">${chips}</div>
-        ${pend}
+        ${pending}
         <div class="grp-actions">
-          <button class="pill" id="inviteBtn"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> Einladungslink</button>
-          <button class="pill" id="icsAllBtn"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Alle Termine (.ics)</button>
+          <button class="pill" id="inviteBtn">🔗 Einladungslink</button>
+          <button class="pill" id="icsAllBtn">⇩ Sichtbare Termine (.ics)</button>
         </div>
         <p id="inviteOut" style="font-size:11px;color:var(--ink-soft);margin-top:8px;display:none;word-break:break-all"></p>`;
       $('leaveBtn').onclick = leaveGroup;
       $('inviteBtn').onclick = showInvite;
       $('icsAllBtn').onclick = exportAllIcs;
-      $('grpCard').querySelectorAll('[data-appr]').forEach(b=>b.onclick=()=>approve(b.dataset.appr));
-      $('grpCard').querySelectorAll('[data-rej]').forEach(b=>b.onclick=()=>reject(b.dataset.rej));
+      if ($('manageGroupSelect')) $('manageGroupSelect').onchange = async event => {
+        group = groups.find(item => item.id === event.target.value) || group;
+        visibleGroupIds.add(group.id);
+        saveVisibleSources();
+        renderCalendarSources();
+        await renderGroupCard();
+      };
+      $('grpCard').querySelectorAll('[data-appr]').forEach(button => button.onclick=()=>approve(button.dataset.appr));
+      $('grpCard').querySelectorAll('[data-rej]').forEach(button => button.onclick=()=>reject(button.dataset.rej));
     }
-    async function approve(uid){ await updateDoc(doc(db,'families',group.id),{members:arrayUnion(uid),pendingRequests:arrayRemove(uid)}); await updateDoc(doc(db,'users',uid),{familyId:group.id,role:'member'}).catch(()=>{}); }
+    async function approve(uid){ await updateDoc(doc(db,'families',group.id),{members:arrayUnion(uid),pendingRequests:arrayRemove(uid)}); }
     async function reject(uid){ await updateDoc(doc(db,'families',group.id),{pendingRequests:arrayRemove(uid)}); }
-    async function leaveGroup(){ if(!confirm('Gruppe verlassen?'))return; await updateDoc(doc(db,'families',group.id),{members:arrayRemove(user.uid),managers:arrayRemove(user.uid)}).catch(()=>{}); await updateDoc(doc(db,'users',user.uid),{familyId:null}).catch(()=>{}); if(grpUnsub)grpUnsub(); group=null; showNoGroup(); }
+    async function leaveGroup(){
+      if(!group || !confirm(`„${group.name||'Gruppe'}“ verlassen?`))return;
+      const leavingId = group.id;
+      await updateDoc(doc(db,'families',leavingId),{members:arrayRemove(user.uid),managers:arrayRemove(user.uid)}).catch(()=>{});
+      if (profile.familyId === leavingId) {
+        const next = groups.find(item => item.id !== leavingId);
+        await updateDoc(doc(db,'users',user.uid),{familyId:next?.id||null,role:next?'member':profile.role}).catch(()=>{});
+        profile.familyId = next?.id || null;
+      }
+    }
     async function showInvite(){ let token=group.inviteToken; if(!token){ token=Math.random().toString(36).slice(2,10); await updateDoc(doc(db,'families',group.id),{inviteToken:token}).catch(()=>{}); group.inviteToken=token; } const url=`${location.origin}${location.pathname}?invite=${group.id}&token=${token}`; const out=$('inviteOut'); out.style.display=''; out.textContent=url; try{ await navigator.clipboard.writeText(url); out.textContent='✓ Kopiert: '+url; }catch{} }
 
     /* ── Create / join ── */
-    $('createGrpBtn').onclick = async () => {
-      const name = $('newGrpName').value.trim(); if(!name){ alert('Bitte einen Namen eingeben.'); return; }
+    async function createGroup(name) {
+      name = name.trim(); if(!name){ alert('Bitte einen Namen eingeben.'); return; }
       const token = Math.random().toString(36).slice(2,10);
       const ref = await addDoc(collection(db,'families'), { name, headUid:user.uid, managers:[user.uid], members:[user.uid], pendingRequests:[], inviteToken:token, createdAt:serverTimestamp() });
-      await updateDoc(doc(db,'users',user.uid), { familyId: ref.id, role:'manager' });
-      profile.familyId = ref.id; watchGroup(ref.id);
-    };
-    $('joinGrpBtn').onclick = async () => {
-      const name = $('joinGrpName').value.trim(); if(!name) return;
+      if (!profile.familyId) {
+        await updateDoc(doc(db,'users',user.uid), { familyId:ref.id, role:'manager' });
+        profile.familyId = ref.id;
+      }
+      closeGroupSheet();
+    }
+    async function joinGroup(name, statusEl) {
+      name = name.trim(); if(!name)return;
       const qs = await getDocs(query(collection(db,'families'), where('name','==',name)));
-      if (qs.empty){ $('joinStatus').textContent='Keine Gruppe mit diesem Namen gefunden.'; return; }
-      const g = qs.docs[0];
-      if ((g.data().members||[]).includes(user.uid)){ profile.familyId=g.id; watchGroup(g.id); return; }
-      await updateDoc(doc(db,'families',g.id), { pendingRequests: arrayUnion(user.uid) });
-      $('joinStatus').textContent='Anfrage gesendet — ein Gruppen-Manager muss dich bestätigen.';
-    };
+      if (qs.empty){ statusEl.textContent='Keine Gruppe mit diesem Namen gefunden.'; return; }
+      const candidate = qs.docs[0];
+      if ((candidate.data().members||[]).includes(user.uid)){ statusEl.textContent='Du bist bereits Mitglied dieser Gruppe.'; return; }
+      await updateDoc(doc(db,'families',candidate.id), { pendingRequests:arrayUnion(user.uid) });
+      statusEl.textContent='Anfrage gesendet — ein Gruppen-Manager muss dich bestätigen.';
+    }
+    function openMobileGroupManager(){
+      $('groupManager').open=true;
+      document.querySelector('.calendar-sidebar').classList.add('is-mobile-open');
+      $('groupBackdrop').classList.add('visible');
+    }
+    function openGroupSheet(){
+      document.querySelector('.calendar-sidebar').classList.remove('is-mobile-open');
+      $('groupBackdrop').classList.add('visible');
+      $('groupSheet').classList.add('visible');
+    }
+    function closeGroupSheet(){
+      $('groupBackdrop').classList.remove('visible');
+      $('groupSheet').classList.remove('visible');
+      document.querySelector('.calendar-sidebar').classList.remove('is-mobile-open');
+    }
+
+    $('createGrpBtn').onclick = () => createGroup($('newGrpName').value);
+    $('joinGrpBtn').onclick = () => joinGroup($('joinGrpName').value, $('joinStatus'));
+    $('createMoreGrpBtn').onclick = () => createGroup($('newGrpNameMore').value);
+    $('joinMoreGrpBtn').onclick = () => joinGroup($('joinGrpNameMore').value, $('joinMoreStatus'));
 
     /* ── Data load ── */
     async function reload() {
-      const t1 = group ? getDocs(query(collection(db,'trips'), where('familyId','==',group.id)))
-        .then(s=>{ trips = s.docs.map(d=>({id:d.id,...d.data()})); }).catch(e=>{reportClientError('calendar-trips-load',e);trips=[];}) : Promise.resolve();
+      const t1 = Promise.all(groups.map(item =>
+        getDocs(query(collection(db,'trips'), where('familyId','==',item.id)))
+          .then(snapshot => snapshot.docs.map(entry => ({id:entry.id,...entry.data()})))
+          .catch(error => { reportClientError('calendar-trips-load',error); return []; })
+      )).then(result => {
+        allTrips = result.flat();
+        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
+      });
       const t2 = getDocs(query(collection(db,'calendarDays'), where('ownerUid','==',user.uid)))
         .then(s=>{ days = s.docs.map(d=>({id:d.id,...d.data()})); }).catch(e=>{reportClientError('calendar-days-load',e);days=[];});
       await Promise.all([t1,t2]);
-      curView === 'cal' ? renderCalendar() : renderAgenda();
+      renderCurrentView();
     }
 
     /* ── Personal reminders ── */
@@ -565,7 +813,7 @@
             `${a.date||'9999'} ${a.time||''}`.localeCompare(`${b.date||'9999'} ${b.time||''}`)
           );
         renderReminders();
-        if (group) curView === 'cal' ? renderCalendar() : renderAgenda();
+        if (groups.length) renderCurrentView();
       }, () => {
         $('reminderList').innerHTML = '<p class="empty-hint">Erinnerungen konnten nicht geladen werden.</p>';
       });
@@ -641,16 +889,16 @@
     }
     function eventMap() {
       const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
-      days.forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
+      (showPersonal ? days : []).forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
         push(date, {
           kind:'day', color:item.color||COLORS[0], title:item.title||'Termin',
-          time:item.startTime||'', ref:item
+          time:item.startTime||'', sourceName:'Persönlich', ref:item
         })
       ));
-      reminders.filter(item => !item.completed && item.date).forEach(item =>
+      (showPersonal ? reminders : []).filter(item => !item.completed && item.date).forEach(item =>
         push(item.date, {
           kind:'reminder', color:'#2f6fed', title:item.title||'Erinnerung',
-          time:item.time||'', ref:item
+          time:item.time||'', sourceName:'Persönlich', ref:item
         })
       );
       trips.forEach(tr=>{
@@ -663,7 +911,7 @@
           while(d<=last && g++<400){ keys.add(keyOf(d.getFullYear(),d.getMonth(),d.getDate())); d.setDate(d.getDate()+1); }
         }
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
-        keys.forEach(k=>push(k,{kind:'trip',color:tr.color||TRIP_COLOR,title:tr.name||'Termin',time:tr.startTime||'',ref:tr}));
+        keys.forEach(k=>push(k,{kind:'trip',color:groupColor(tr.familyId),title:tr.name||'Termin',time:tr.startTime||'',sourceName:groupName(tr.familyId),ref:tr}));
       });
       return map;
     }
@@ -675,16 +923,16 @@
        month-grid chips are unaffected. ── */
     function dayProgramMap() {
       const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
-      days.forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
+      (showPersonal ? days : []).forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
         push(date, {
           kind:'day', color:item.color||COLORS[0], title:item.title||'Termin',
-          time:item.startTime||'', ref:item
+          time:item.startTime||'', sourceName:'Persönlich', ref:item
         })
       ));
-      reminders.filter(item => !item.completed && item.date).forEach(item =>
+      (showPersonal ? reminders : []).filter(item => !item.completed && item.date).forEach(item =>
         push(item.date, {
           kind:'reminder', color:'#2f6fed', title:item.title||'Erinnerung',
-          time:item.time||'', ref:item
+          time:item.time||'', sourceName:'Persönlich', ref:item
         })
       );
       trips.forEach(tr=>{
@@ -696,7 +944,7 @@
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
         keys.forEach(k=>{
           const stops = (tr.itinerary||[]).filter(it=>it.date===k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-          push(k,{kind:'trip',color:tr.color||TRIP_COLOR,title:tr.name||'Termin',time:tr.startTime||'',ref:tr,stops});
+          push(k,{kind:'trip',color:groupColor(tr.familyId),title:tr.name||'Termin',time:tr.startTime||'',sourceName:groupName(tr.familyId),ref:tr,stops});
         });
       });
       return map;
@@ -704,7 +952,8 @@
 
     /* ── Calendar render ── */
     function renderCalendar() {
-      $('monthTitle').textContent = `${MONTHS[viewM]} ${viewY}`;
+      const anchor = new Date(`${anchorKey}T00:00:00`);
+      const viewY = anchor.getFullYear(), viewM = anchor.getMonth();
       const map = eventMap();
       const first = new Date(viewY,viewM,1); const offset=(first.getDay()+6)%7;
       const dim = new Date(viewY,viewM+1,0).getDate(); const prev=new Date(viewY,viewM,0).getDate();
@@ -726,10 +975,124 @@
       }
     }
 
+    function minutesOf(time) {
+      const [hours, minutes] = String(time||'').split(':').map(Number);
+      return Number.isFinite(hours) ? Math.max(0, Math.min(1439, hours*60+(minutes||0))) : 0;
+    }
+    function openCalendarEvent(event) {
+      if(event.kind==='trip') { openTrip(event.ref.id); return; }
+      if(event.kind==='reminder') { openReminderForm(event.ref); return; }
+      openDayForm(event.ref);
+    }
+    function renderTimeView() {
+      const dates = datesForCalendarView(anchorKey, curView);
+      const program = dayProgramMap();
+      const hourHeight = parseFloat(getComputedStyle(document.body).getPropertyValue('--cal-hour')) || 44;
+      const renderedEvents = [];
+      const dayEvents = dates.map(date => {
+        const expanded = [];
+        for (const event of program[date] || []) {
+          expanded.push(event);
+          if (event.kind==='trip' && event.stops?.length) {
+            event.stops.forEach(stop => expanded.push({
+              ...event,
+              title:stop.title || event.title,
+              time:stop.time || '',
+              isStop:true,
+              stop
+            }));
+          }
+        }
+        return expanded;
+      });
+      const indexFor = event => {
+        renderedEvents.push(event);
+        return renderedEvents.length - 1;
+      };
+      const allDayCells = dayEvents.map(events => `
+        <div class="all-day-cell">${events.filter(event=>!event.time).map(event => `
+          <button class="all-day-event" type="button" data-time-event="${indexFor(event)}"
+            style="--event-color:${event.color}" title="${esc(event.sourceName||'')}">${esc(event.title)}</button>`).join('')}</div>`).join('');
+      const columns = dayEvents.map((events, dayIndex) => {
+        const date = new Date(`${dates[dayIndex]}T00:00:00`);
+        const timed = events.filter(event=>event.time);
+        const blocks = timed.map(event => {
+          const start = minutesOf(event.time);
+          const explicitEnd = event.isStop ? '' : event.ref.endTime;
+          let end = explicitEnd ? minutesOf(explicitEnd) : start + (event.isStop ? 45 : 60);
+          if (end <= start) end = start + 60;
+          const top = start/60*hourHeight;
+          const height = Math.max(26,(end-start)/60*hourHeight);
+          return `<button class="time-event" type="button" data-time-event="${indexFor(event)}"
+            style="--event-color:${event.color};top:${top}px;height:${height}px">
+            <strong>${esc(event.title)}</strong><span>${esc(event.time)}${event.sourceName?' · '+esc(event.sourceName):''}</span>
+          </button>`;
+        }).join('');
+        const now = dates[dayIndex]===todayKey
+          ? `<span class="time-now-line" style="top:${(tdy.getHours()*60+tdy.getMinutes())/60*hourHeight}px"></span>`
+          : '';
+        return `<div class="time-day-column${date.getDay()===0||date.getDay()===6?' is-weekend':''}" data-time-date="${dates[dayIndex]}">${blocks}${now}</div>`;
+      }).join('');
+      const headers = dates.map(date => {
+        const value = new Date(`${date}T00:00:00`);
+        return `<button class="time-day-head${date===todayKey?' is-today':''}" type="button" data-day-head="${date}">
+          <span>${value.toLocaleDateString('de-CH',{weekday:'short'})}</span><strong>${value.getDate()}</strong>
+        </button>`;
+      }).join('');
+      const hours = Array.from({length:24},(_,hour)=>`<span style="top:${hour*hourHeight}px">${pad(hour)}:00</span>`).join('');
+      $('timeCalendar').innerHTML = `<div class="time-calendar" style="--day-count:${dates.length}">
+        <div class="time-calendar__header"><div class="time-gutter"></div>${headers}</div>
+        <div class="time-calendar__all-day"><div class="all-day-label">ganztägig</div>${allDayCells}</div>
+        <div class="time-calendar__body"><div class="time-axis">${hours}</div>${columns}</div>
+      </div>`;
+      $('timeCalendar').querySelectorAll('[data-time-event]').forEach(button => button.onclick = event => {
+        event.stopPropagation();
+        openCalendarEvent(renderedEvents[+button.dataset.timeEvent]);
+      });
+      $('timeCalendar').querySelectorAll('[data-day-head]').forEach(button => button.onclick = () => {
+        anchorKey = button.dataset.dayHead;
+        setView('day');
+      });
+      $('timeCalendar').querySelectorAll('[data-time-date]').forEach(column => column.onclick = event => {
+        if (event.target !== column) return;
+        const rect = column.getBoundingClientRect();
+        const minute = Math.max(0,Math.min(23*60+45,Math.round(((event.clientY-rect.top)/hourHeight*60)/15)*15));
+        const endMinute = Math.min(23*60+59, minute+60);
+        sheetKey = column.dataset.timeDate;
+        openTripForm(null);
+        $('tStartTime').value = `${pad(Math.floor(minute/60))}:${pad(minute%60)}`;
+        $('tEndTime').value = `${pad(Math.floor(endMinute/60))}:${pad(endMinute%60)}`;
+      });
+      requestAnimationFrame(() => {
+        const wrap = $('timeCalendar');
+        const scrollHour = dates.includes(todayKey) ? Math.max(0,tdy.getHours()-2) : 7;
+        wrap.scrollTop = scrollHour*hourHeight;
+      });
+    }
+
+    function renderCurrentView() {
+      if (!$('calView')) return;
+      const isMonth = curView==='month', isAgenda = curView==='agenda';
+      $('calView').hidden = !isMonth;
+      $('timeView').hidden = isMonth || isAgenda;
+      $('listView').hidden = !isAgenda;
+      $('monthTitle').textContent = calendarRangeTitle(anchorKey,curView);
+      const option = CALENDAR_VIEWS.find(view=>view.key===curView);
+      const label = curView==='agenda' ? CALENDAR_STYLES[calendarPreference.style].agendaLabel : option?.label || 'Monat';
+      $('viewPickerLabel').textContent = label;
+      document.querySelectorAll('[data-calendar-view]').forEach(button =>
+        button.classList.toggle('is-active',button.dataset.calendarView===curView)
+      );
+      if (isMonth) renderCalendar();
+      else if (isAgenda) renderAgenda();
+      else renderTimeView();
+    }
+
     /* ── Agenda (list) render ── */
     function renderAgenda() {
       const map = dayProgramMap();
-      const keys = Object.keys(map).filter(k=>k>=todayKey).sort();
+      const from = anchorKey > todayKey ? anchorKey : todayKey;
+      const keys = Object.keys(map).filter(k=>k>=from).sort();
       const box=$('agenda');
       if(!keys.length){ box.innerHTML=`<p class="empty-hint">Keine kommenden Einträge. Füge einen Termin hinzu.</p>`; return; }
       box.innerHTML = keys.map(k=>{
@@ -741,17 +1104,21 @@
             return `<div class="item-card" data-k="${k}" data-i="${i}" style="flex-direction:column;align-items:stretch">
               <div style="display:flex;align-items:center;gap:12px">
                 <div class="item-bar" style="background:${e.color}"></div>
-                <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">${e.time?esc(e.time)+' · ':''}Termin${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
+                <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||'Termin')}${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
               </div>
               <div class="prog-list">${rows}</div>
+              <div class="plan-import-note">✓ ${e.stops.length} Programmpunkt${e.stops.length===1?'':'e'} aus der HTML-Seite in der Terminübersicht</div>
               ${fullBtn}
             </div>`;
           }
           const typeLabel = e.kind==='trip' ? 'Termin' : e.kind==='reminder' ? 'Erinnerung' : 'Persönlicher Termin';
+          const importNote = hasPage && e.kind==='trip'
+            ? `<div class="plan-import-note">ⓘ Originalseite vorhanden${(e.ref.itinerary||[]).some(item=>item.autoImported)?' · erkannte Punkte werden nach Uhrzeit gezeigt':' · keine einzelnen Programmpunkte erkannt'}</div>`
+            : '';
           return `<div class="item-card" data-k="${k}" data-i="${i}">
             <div class="item-bar" style="background:${e.color}"></div>
             <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-            <div class="item-meta">${e.time?esc(e.time)+' · ':''}${typeLabel}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}</div>${fullBtn}</div></div>`;
+            <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}</div>${importNote}${fullBtn}</div></div>`;
         }).join('');
         return `<div class="agenda-group"><div class="agenda-date">${fmtDateKey(k)}</div>${items}</div>`;
       }).join('');
@@ -792,7 +1159,7 @@
         const typeLabel=e.kind==='trip'?'Termin':e.kind==='reminder'?'Erinnerung':'Persönlicher Termin';
         return `<div class="item-card"><div class="item-bar" style="background:${e.color}"></div>
           <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-          <div class="item-meta">${e.time?esc(e.time)+' · ':''}${typeLabel}</div>
+          <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}</div>
           <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${act}</div></div></div>`;
       }).join('') : `<p class="empty-hint">Keine Einträge an diesem Tag.</p>`;
       box.querySelectorAll('[data-open-trip]').forEach(b=>b.onclick=()=>{closeDay();openTrip(b.dataset.openTrip);});
@@ -819,16 +1186,40 @@
       document.querySelectorAll('#tripSheet [data-tbody]').forEach(b=>b.style.display = b.dataset.tbody===p ? '' : 'none');
     }
     document.querySelectorAll('#tpTabs .tab').forEach(t=>t.onclick=()=>setTripPlanPane(t.dataset.tpane));
+    function describePlanHtml(html, baseDate = $('tStart').value) {
+      const status = $('tpImportStatus');
+      if (!html?.trim()) {
+        status.className='html-import-feedback';
+        status.textContent='Erkannte Tage und Programmpunkte erscheinen automatisch in der Terminübersicht. Die Originalseite bleibt zusätzlich öffnbar; Skripte werden nicht ausgeführt.';
+        return;
+      }
+      const parsed = parseItineraryHtml(html,{baseDate});
+      if (parsed.items.length) {
+        status.className='html-import-feedback is-good';
+        status.textContent=`✓ ${parsed.items.length} Programmpunkt${parsed.items.length===1?'':'e'} an ${parsed.days||1} Tag${parsed.days===1?'':'en'} erkannt — sie erscheinen in der Terminübersicht.`;
+      } else {
+        status.className='html-import-feedback is-warning';
+        status.textContent='Die Seite wird gespeichert und lässt sich öffnen, aber es wurden keine einzelnen Programmpunkte für die Terminübersicht erkannt.';
+      }
+    }
     if ($('tpFile')) $('tpFile').onchange = e => {
       const f=e.target.files[0]; if(!f) return;
       const r=new FileReader();
-      r.onload=()=>{ newTripFileHtml=String(r.result||''); $('tpChosen').textContent='✓ '+f.name; $('tpChosen').style.display=''; };
+      r.onload=()=>{
+        newTripFileHtml=String(r.result||'');
+        $('tpChosen').textContent='✓ '+f.name;
+        $('tpChosen').style.display='';
+        describePlanHtml(newTripFileHtml);
+      };
       r.readAsText(f);
     };
+    $('tpHtml').addEventListener('input',()=>describePlanHtml($('tpHtml').value));
     function openTripForm(t){
       editTripId = t ? t.id : null;
       $('tripFormTitle').textContent = t ? 'Termin bearbeiten' : 'Neuer Termin';
       $('tName').value=t?.name||''; $('tDest').value=t?.destination||'';
+      $('tGroup').innerHTML = groups.map(item=>`<option value="${esc(item.id)}">${esc(item.name||'Gruppe')}</option>`).join('');
+      $('tGroup').value=t?.familyId||group?.id||groups[0]?.id||'';
       $('tStart').value=t?.startDate||(sheetKey||''); $('tEnd').value=t?.endDate||'';
       $('tStartTime').value=t?.startTime||''; $('tEndTime').value=t?.endTime||'';
       $('tNotes').value=t?.notes||'';
@@ -840,6 +1231,7 @@
       editTripItinerary = t?.itinerary || [];
       newTripFileHtml = '';
       $('tpChosen').style.display = 'none';
+      describePlanHtml(t?.planHtml||'');
       setTripPlanPane('paste');
       tripColor = t?.color || TRIP_COLOR;
       markTripSwatch();
@@ -866,11 +1258,14 @@
     $('tripSave').onclick = async () => {
       const name=$('tName').value.trim(); if(!name){alert('Bitte einen Titel eingeben.');return;}
       const start=$('tStart').value;
+      if(!start){alert('Bitte ein Datum auswählen.');return;}
       // "Bis" is optional — a Termin with no end date is simply a single-day
       // entry, so it still shows correctly everywhere dates are unioned.
       const startTime=$('tStartTime').value, endTime=$('tEndTime').value;
       const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start,
-        startTime, endTime:endTime||startTime, notes:$('tNotes').value.trim(), color:tripColor };
+        startTime, endTime:endTime||startTime, notes:$('tNotes').value.trim(), color:tripColor,
+        familyId:$('tGroup').value };
+      if (!data.familyId) { alert('Bitte einen Kalender auswählen.'); return; }
 
       // Same auto-import as the trip detail's Plan section: paste/upload/link
       // gets parsed into per-day, per-time stops right away.
@@ -894,7 +1289,7 @@
       try{
         let id = editTripId;
         if(editTripId) await updateDoc(doc(db,'trips',editTripId), data);
-        else { const ref = await addDoc(collection(db,'trips'), { ...data, familyId:group.id, createdBy:user.uid, createdAt:serverTimestamp() }); id = ref.id; }
+        else { const ref = await addDoc(collection(db,'trips'), { ...data, createdBy:user.uid, createdAt:serverTimestamp() }); id = ref.id; }
         closeTripForm();
         await openTrip(id);
       }catch(e){reportClientError('calendar-trip-save',e);alert('Speichern fehlgeschlagen.');}
@@ -1212,11 +1607,41 @@
        page. One copy now, with tests. */
 
     /* ── Viewer ── */
-    // Open the actual plan HTML as a standalone full page in a new browser tab.
+    function safeExternalUrl(value) {
+      try {
+        const parsed = new URL(String(value||''));
+        return ['http:','https:'].includes(parsed.protocol) ? parsed.href : '';
+      } catch { return ''; }
+    }
+    function safePlanHtml(html) {
+      if (!html?.trim()) return '';
+      const parsed = new DOMParser().parseFromString(html,'text/html');
+      parsed.querySelectorAll('script,iframe,object,embed,form,base,meta[http-equiv="refresh"],link[rel="modulepreload"],link[rel="preload"]')
+        .forEach(element=>element.remove());
+      parsed.querySelectorAll('*').forEach(element=>{
+        [...element.attributes].forEach(attribute=>{
+          const name=attribute.name.toLowerCase(), value=attribute.value.trim();
+          if(name.startsWith('on') || name==='srcdoc') element.removeAttribute(attribute.name);
+          if(['href','src','xlink:href','action','formaction'].includes(name) && /^(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(value)) element.removeAttribute(attribute.name);
+          if(name==='style' && /expression\s*\(|url\s*\(\s*['"]?\s*javascript:/i.test(value)) element.removeAttribute(attribute.name);
+        });
+        if(element.tagName==='A'){
+          element.setAttribute('target','_blank');
+          element.setAttribute('rel','noopener noreferrer');
+        }
+      });
+      return '<!doctype html>'+parsed.documentElement.outerHTML;
+    }
+    // Open a cleaned copy, never the raw uploaded page under TVZA's origin.
     function openPlanFull(tr){
-      if(tr.planUrl){ window.open(tr.planUrl,'_blank','noopener'); return; }
+      if(tr.planUrl){
+        const url=safeExternalUrl(tr.planUrl);
+        if(url) window.open(url,'_blank','noopener');
+        else alert('Dieser Link kann aus Sicherheitsgründen nicht geöffnet werden.');
+        return;
+      }
       if(tr.planHtml && tr.planHtml.trim()){
-        const u=URL.createObjectURL(new Blob([tr.planHtml],{type:'text/html'}));
+        const u=URL.createObjectURL(new Blob([safePlanHtml(tr.planHtml)],{type:'text/html'}));
         window.open(u,'_blank','noopener');
         setTimeout(()=>URL.revokeObjectURL(u), 60000);
       }
@@ -1225,14 +1650,20 @@
     function clearViewerBlob(){ if(viewerBlobUrl){ URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl=null; } }
     function openViewer(title,html,url){ $('viewerTitle').textContent=title||'Info'; const f=$('viewerFrame'),full=$('viewerFull');
       clearViewerBlob();
-      if(url){ f.removeAttribute('srcdoc'); f.src=url; full.href=url; full.style.display=''; }
+      const safeUrl=safeExternalUrl(url);
+      if(safeUrl){
+        f.setAttribute('sandbox','allow-scripts allow-forms allow-popups');
+        f.removeAttribute('srcdoc'); f.src=safeUrl; full.href=safeUrl; full.style.display='';
+      }
       else {
+        f.setAttribute('sandbox','allow-popups');
         f.removeAttribute('src');
-        f.srcdoc = html || '<p style="font-family:sans-serif;padding:24px">Keine Infos.</p>';
+        const safeHtml = safePlanHtml(html) || '<p style="font-family:sans-serif;padding:24px">Keine Infos.</p>';
+        f.srcdoc = safeHtml;
         // Also expose a "fully open in a new tab" button for pasted/uploaded HTML
         // by turning it into a Blob URL (a raw srcdoc can't be opened on its own).
         if(html && html.trim()){
-          viewerBlobUrl = URL.createObjectURL(new Blob([html], {type:'text/html'}));
+          viewerBlobUrl = URL.createObjectURL(new Blob([safeHtml], {type:'text/html'}));
           full.href = viewerBlobUrl; full.style.display='';
         } else { full.removeAttribute('href'); full.style.display='none'; }
       }
@@ -1247,7 +1678,7 @@
           title:item.name,
           location:item.destination
         })),
-        ...days.map(item => ({
+        ...(showPersonal ? days : []).map(item => ({
           ...item,
           startDate:item.date,
           description:item.notes
@@ -1255,8 +1686,8 @@
       ];
       const body = buildCalendarIcs({
         events,
-        reminders,
-        calendarName:group?.name ? `${group.name} · TVZA` : 'TVZA'
+        reminders:showPersonal ? reminders : [],
+        calendarName:'TVZA · Sichtbare Kalender'
       });
       const blob = new Blob([body], { type:'text/calendar;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -1322,19 +1753,48 @@
     }
 
     /* ── View toggle + wiring ── */
-    function setView(v){ curView=v; $('segCal').classList.toggle('active',v==='cal'); $('segList').classList.toggle('active',v==='list');
-      $('calView').style.display=v==='cal'?'':'none'; $('listView').style.display=v==='list'?'':'none'; v==='cal'?renderCalendar():renderAgenda(); }
+    function setView(view) {
+      if (!CALENDAR_VIEWS.some(option=>option.key===view)) return;
+      curView=view;
+      calendarPreference.view=view;
+      saveCalendarPreference();
+      $('viewMenu').hidden=true;
+      $('viewPickerBtn').setAttribute('aria-expanded','false');
+    }
     function wireUI(){
-      $('segCal').onclick=()=>setView('cal'); $('segList').onclick=()=>setView('list');
-      $('prevBtn').onclick=()=>{viewM--;if(viewM<0){viewM=11;viewY--;}renderCalendar();};
-      $('nextBtn').onclick=()=>{viewM++;if(viewM>11){viewM=0;viewY++;}renderCalendar();};
-      $('todayBtn').onclick=()=>{viewY=tdy.getFullYear();viewM=tdy.getMonth();renderCalendar();};
+      $('viewPickerBtn').onclick=event=>{
+        event.stopPropagation();
+        $('viewMenu').hidden=!$('viewMenu').hidden;
+        $('viewPickerBtn').setAttribute('aria-expanded',String(!$('viewMenu').hidden));
+      };
+      document.querySelectorAll('[data-calendar-view]').forEach(button => button.onclick=()=>setView(button.dataset.calendarView));
+      document.addEventListener('click',event=>{
+        if(!event.target.closest('.view-picker')){
+          $('viewMenu').hidden=true;
+          $('viewPickerBtn').setAttribute('aria-expanded','false');
+        }
+      });
+      $('prevBtn').onclick=()=>{ anchorKey=moveCalendarAnchor(anchorKey,curView,-1); renderCurrentView(); };
+      $('nextBtn').onclick=()=>{ anchorKey=moveCalendarAnchor(anchorKey,curView,1); renderCurrentView(); };
+      $('todayBtn').onclick=()=>{ anchorKey=todayKey; renderCurrentView(); };
+      $('calendarSettingsBtn').onclick=()=>openCalendarSetup(false);
+      document.querySelectorAll('[data-style]').forEach(card=>card.onclick=()=>{
+        calendarPreference.style=card.dataset.style;
+        if ($('calendarSetupSheet').dataset.firstRun==='true') curView=CALENDAR_STYLES[calendarPreference.style].defaultView;
+        applyCalendarPreference();
+      });
+      $('calendarSetupSave').onclick=()=>{ saveCalendarPreference(); closeCalendarSetup(); };
+      $('calendarSetupClose').onclick=closeCalendarSetup;
+      $('calendarSetupBackdrop').onclick=()=>{ if(calendarPreferenceExists)closeCalendarSetup(); };
+      $('addGroupBtn').onclick=openGroupSheet;
+      $('groupBackdrop').onclick=closeGroupSheet;
+      $('groupSheetClose').onclick=closeGroupSheet;
       // One unified entry point: every new entry is a "Termin" (trip-shaped
       // record) — single-day or multi-day, both work the same way and get
       // itinerary parsing + guest sharing. Existing legacy "Besondere Tage"
       // (calendarDays docs) still render/edit fine, we just stopped creating new ones.
-      $('calAddBtn').onclick=()=>{ sheetKey=todayKey; openTripForm(null); };
-      $('addTripBtn').onclick=()=>{ sheetKey=null; openTripForm(null); };
+      $('calAddBtn').onclick=()=>{ sheetKey=anchorKey; openTripForm(null); };
+      $('addTripBtn').onclick=()=>{ sheetKey=anchorKey; openTripForm(null); };
       $('daySheetAdd').onclick=()=>{ closeDay(); openTripForm(null); };
       $('daySheetReminder').onclick=()=>{ const date=sheetKey; closeDay(); openReminderForm(null,date); };
       $('addReminderBtn').onclick=()=>openReminderForm();
@@ -1346,6 +1806,9 @@
       $('dayFormBackdrop').onclick=closeDayForm; $('dayFormClose').onclick=closeDayForm; $('viewerClose').onclick=closeViewer;
       document.addEventListener('keydown',e=>{ if(e.key!=='Escape')return;
         if($('viewer').classList.contains('visible'))closeViewer();
+        else if($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists)closeCalendarSetup();
+        else if($('groupSheet').classList.contains('visible'))closeGroupSheet();
+        else if(document.querySelector('.calendar-sidebar').classList.contains('is-mobile-open'))closeGroupSheet();
         else if($('reminderSheet').classList.contains('visible'))closeReminderForm();
         else if($('dayForm').classList.contains('visible'))closeDayForm();
         else if($('tripSheet').classList.contains('visible'))closeTripForm();

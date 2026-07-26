@@ -1718,6 +1718,8 @@
       const el = $('tileTrip'); if (!el) return;
       try {
         const candidates = [];
+        const familySnap = await getDocs(query(collection(db, 'families'), where('members','array-contains',uid)));
+        const familyIds = new Set(familySnap.docs.map(doc => doc.id));
         const daySnap = await getDocs(query(collection(db, 'calendarDays'), where('ownerUid','==',uid)));
         // Publish the raw entries for the Hinweis (§8). The birthday
         // pairing needs recurring ones; the data model has no such flag
@@ -1747,7 +1749,7 @@
           const tripSnap = await getDocs(collection(db, 'trips'));
           tripSnap.docs.forEach(d => {
             const x = d.data(); if (!x.startDate) return;
-            const mine = (profile.familyId && x.familyId === profile.familyId) || x.createdBy === uid;
+            const mine = familyIds.has(x.familyId) || x.createdBy === uid;
             if (!mine) return;
             // Bereits laufende Reisen (Start in der Vergangenheit, Ende noch nicht erreicht) zählen als "heute".
             const ongoing = x.startDate < todayStr && (!x.endDate || x.endDate >= todayStr);
