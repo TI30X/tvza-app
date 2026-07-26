@@ -1,9 +1,16 @@
-/* TVZA Service Worker v84 - offline-first
-   Begleitet App-Version v.30.0.0. Diese Zahl MUSS steigen, sobald sich
-   eine Datei aus SHELL ändert — sonst liefert der Cache alten Code aus
-   und die Familie sieht das Update nie. */
+/* TVZA Service Worker — offline-first
 
-const CACHE = 'tvza-v84';
+   ACHTUNG: CACHE muss bei JEDER Änderung an einer SHELL-Datei steigen.
+   HTML wird netzwerk-zuerst geholt, CSS und JS aber cache-zuerst. Wird
+   die Zahl vergessen, sieht man neues HTML mit altem Stylesheet — die
+   Seite ist dann halb aktualisiert und sieht kaputt aus, ohne dass am
+   Code etwas falsch wäre. Genau das ist zwischen v.30.0.0 und v.30.0.1
+   passiert.
+
+   Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
+   beide Zahlen nur noch gemeinsam wandern können. */
+
+const CACHE = 'tvza-v.30.0.1';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',

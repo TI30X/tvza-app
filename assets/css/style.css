@@ -132,6 +132,16 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Das hidden-Attribut sagt etwas über den Inhalt aus, nicht über die
+   Darstellung — es darf nicht davon abhängen, ob zufällig eine Klasse
+   display setzt. Genau das passierte an drei Stellen: .nav__count
+   zeigte eine leere rote Pille unter Nachrichten, obwohl nichts
+   ungelesen war, und die leeren Fortschrittsblöcke der Kacheln
+   (.tile-prog, .tile-live) nahmen Platz ein, bevor Daten da waren.
+   Der eine Ausrufer hier erspart denselben Fehler an jeder künftigen
+   Stelle. */
+[hidden] { display: none !important; }
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 
 body {
@@ -1749,13 +1759,9 @@ body.reorder-editing .module-tile::after {
   .nav__bereich svg { width: 14px; height: 14px; }
   .nav__settings { display: flex; margin-top: auto; }
 
-  /* Content sits beside the rail. The padding goes on <body>, so both
-     the new .appbar and the legacy .header — both sticky, both inside
-     the body's padding box — are offset by it. Putting it on .appbar as
-     well would offset that one twice. */
+  /* Content sits beside the rail; the header pulls itself back out over
+     the full width (siehe oben). */
   .has-nav      { padding-bottom: 0; padding-left: 248px; }
-  .appbar__inner{ padding: 30px 34px 22px; }
-  .wx-pill      { height: 34px; }
   .shell__cols  {
     display: grid; grid-template-columns: 1.35fr 1fr; gap: 26px;
     max-width: 1160px; margin: 0 auto; padding: 0 34px 40px;
