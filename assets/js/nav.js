@@ -103,6 +103,17 @@ function mount(profile) {
   document.body.classList.add('has-nav');
 }
 
+/* Initialen wie auf der Startseite: erster Buchstabe des Vornamens und
+   des letzten Namensteils. Vorher lief hier eine eigene Regel, die bei
+   fehlendem Namen auf die E-Mail zurückfiel — daraus wurde aus
+   tzanten@bluewin.ch ein "TB" statt "TZ". */
+export function initialsOf(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return '·';
+}
+
 /* ══ Konto-Menü auf den Bereichsseiten ══════════════════════════════
    Die Startseite hat es im Markup; auf den acht Bereichsseiten standen
    stattdessen ein Sonne/Mond-Knopf und teils ein Zahnrad nebeneinander.
@@ -118,12 +129,15 @@ function mountAccountMenu(user, profile) {
   const bar = document.querySelector('.appbar--bereich .appbar__end');
   if (!bar || bar.querySelector('.acct')) return;
 
+  /* Der Sonne/Mond-Knopf verschwindet: das Erscheinungsbild steht im
+     Einstellungsdialog unter "Erscheinungsbild". Ein seitenei­gener
+     Zahnradknopf (Food, Watchlist) bleibt sichtbar — der öffnet die
+     Einstellungen DIESER Seite, nicht die des Kontos. */
   const theme = bar.querySelector('#themeToggle, [data-theme-toggle]');
-  const settings = bar.querySelector('#profileBtn, #settingsBtn');
-  [theme, settings].forEach(b => { if (b) b.hidden = true; });
+  if (theme) theme.hidden = true;
 
-  const name = profile?.name || user.displayName || user.email || 'Konto';
-  const ini = (name.match(/\b\p{L}/gu) || ['·']).slice(0, 2).join('').toUpperCase();
+  const name = profile?.displayName || user.displayName || user.email || 'Konto';
+  const ini = initialsOf(name);
 
   const wrap = document.createElement('div');
   wrap.className = 'acct';
@@ -134,12 +148,9 @@ function mountAccountMenu(user, profile) {
         <span class="acct__who">${esc(name)}</span>
         <span class="acct__mail">${esc(user.email || '')}</span>
       </div>
-      ${theme ? `<button class="acct__item" data-act="theme" type="button" role="menuitem">
-        <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
-        <span>Design</span></button>` : ''}
-      ${settings ? `<button class="acct__item" data-act="settings" type="button" role="menuitem">
+      <button class="acct__item" data-act="settings" type="button" role="menuitem">
         <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Einstellungen</span></button>` : ''}
+        <span>Einstellungen</span></button>
       <button class="acct__item acct__item--danger" data-act="logout" type="button" role="menuitem">
         <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
         <span>Abmelden</span></button>
@@ -162,8 +173,7 @@ function mountAccountMenu(user, profile) {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
     close();
-    if (act === 'theme')    theme.click();
-    if (act === 'settings') settings.click();
+    if (act === 'settings') location.href = base() + 'index.html#settings';
     if (act === 'logout' && confirm('Abmelden?')) {
       try { localStorage.removeItem('tvza-name'); } catch {}
       const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
