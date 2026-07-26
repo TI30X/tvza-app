@@ -50,6 +50,7 @@
     } from '../assets/js/firebase-config.js';
     import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { mountShell, icon, ICONS } from '../assets/js/shell.js';
+    import { ownsTab } from '../assets/js/nav.js';
 
     const $ = id => document.getElementById(id);
 
@@ -98,7 +99,9 @@
         try { return JSON.parse(localStorage.getItem(`tvza.trackerTileOrder.${user.uid}`) || '[]'); }
         catch { return []; }
       })();
-      const keys = Object.keys(MODULES).filter(k => mods[k] && MODULES[k].page);
+      /* Kalender und Nachrichten haben einen eigenen Tab und stehen
+         darum nicht noch einmal hier (§6.4). */
+      const keys = Object.keys(MODULES).filter(k => mods[k] && MODULES[k].page && !ownsTab(k));
       keys.sort((a, b) => {
         const ia = stored.indexOf(a), ib = stored.indexOf(b);
         return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);

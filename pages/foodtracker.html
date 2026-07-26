@@ -20,7 +20,7 @@
        Food-Tracker bar should stay a single flush row that paints into
        the status-bar safe area. */
     .header { padding-top: env(safe-area-inset-top, 0px); }
-    @media (max-width: 620px) {
+    @media (max-width: 899px) {
       .header-inner .back-btn { flex: 0 0 auto; }
     }
     /* Quick-amount buttons: comfy tap targets */
@@ -34,7 +34,7 @@
     #toast { position: fixed; left: 50%; bottom: calc(20px + 64px + env(safe-area-inset-bottom,0px));
       transform: translateX(-50%) translateY(8px); background: var(--food, #2F9E44); color:#fff;
       padding: 10px 16px; border-radius: var(--r-pill); font-size: 14px; font-weight: 600;
-      box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none;
+      opacity: 0; pointer-events: none;
       transition: opacity .18s ease, transform .18s ease; z-index: 1000; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     /* Entry cards: tap to edit affordance */
@@ -175,7 +175,7 @@
   <div class="modal-backdrop" id="scanModal">
     <div class="modal">
       <div class="modal-title">Barcode scannen</div>
-      <div id="reader" style="width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:220px"></div>
+      <div id="reader" style="width:100%;border-radius:var(--r-row);overflow:hidden;background:#000;min-height:220px"></div>
       <p id="scanStatus" style="font-size:13px;color:var(--ink-soft);margin:10px 0 6px;text-align:center">Kamera wird gestartet…</p>
 
       <!-- Was bisher in dieser Mahlzeit erfasst wurde -->

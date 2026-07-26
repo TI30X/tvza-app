@@ -37,6 +37,15 @@ const TABS = [
   { id: 'bereiche',    label: 'Bereiche',    icon: 'bereiche',    href: 'pages/bereiche.html' },
 ];
 
+/* "Eine Sache, ein Ort" (§6.4): a Bereich that already owns one of the
+   four tabs must not be listed a second time — not in the Bereiche tab,
+   not in the laptop rail, not in the Schnellzugriff. Derived from TABS
+   rather than written out, so the two lists cannot drift apart when a
+   tab is added or its target changes. Today this covers trip (Kalender)
+   and dm (Nachrichten). */
+const TAB_HREFS = new Set(TABS.map(t => t.href));
+export const ownsTab = key => TAB_HREFS.has(MODULES[key]?.page);
+
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');
 
@@ -77,7 +86,7 @@ function mount(profile) {
      rendered — that is what the Bereiche tab is for. */
   const mods = profile ? enabledModules(profile) : {};
   const bereiche = Object.keys(MODULES)
-    .filter(k => mods[k] && MODULES[k].page)
+    .filter(k => mods[k] && MODULES[k].page && !ownsTab(k))
     .map(k => `
       <a class="nav__bereich" href="${b}${MODULES[k].page}" data-bereich="${BEREICH_OF[k] || ''}">
         <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i><span>${esc(MODULES[k].name)}</span>

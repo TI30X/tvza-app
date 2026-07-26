@@ -1,6 +1,9 @@
-/* TVZA Service Worker v83 - offline-first */
+/* TVZA Service Worker v84 - offline-first
+   Begleitet App-Version v.30.0.0. Diese Zahl MUSS steigen, sobald sich
+   eine Datei aus SHELL ändert — sonst liefert der Cache alten Code aus
+   und die Familie sieht das Update nie. */
 
-const CACHE = 'tvza-v83';
+const CACHE = 'tvza-v84';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
