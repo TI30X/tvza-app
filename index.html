@@ -40,7 +40,7 @@
   <div class="app">
 
     <div class="offline-banner" id="offlineBanner">
-      ✈️ Offline – Daten werden synchronisiert, sobald du wieder online bist
+      <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – Daten werden synchronisiert, sobald du wieder online bist
     </div>
 
     <header class="appbar">
@@ -454,6 +454,10 @@
       setTrackerTile('maturatracker', mods.maturatracker);
       document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
       const anyTracker = mods.ski || mods.food || mods.watch || mods.weather || mods.dm || mods.trip || mods.matura || mods.maturatracker;
+      // The chip may not have registered yet — it is a module too, and
+      // module order is document order. Record the wanted state either
+      // way; whichever runs second applies it.
+      window.tvzaWeatherWanted = !!mods.weather;
       if (window.tvzaWeatherChip) window.tvzaWeatherChip.setVisible(!!mods.weather);
       if (mods.dm) startDmBadge(); else stopDmBadge();
       document.getElementById('noModulesHint').style.display = anyTracker ? 'none' : '';
@@ -1252,33 +1256,14 @@
   </script>
 
   <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
-  <script>
+  <script type="module">
+  import { weatherIcon } from './assets/js/shell.js';
   (() => {
     const chip = document.getElementById('wxChip');
     if (!chip) return;
     const icEl = document.getElementById('wxChipIc');
     const tEl  = document.getElementById('wxChipTemp');
-    // SVG, not emoji (§4.5): the pill sits on the navy header and the
-    // glyph has to take that colour, which an emoji cannot.
-    const WX = {
-      sun:   '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
-      part:  '<path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><circle cx="10" cy="10" r="3.2"/><path d="M17.5 19H8a4 4 0 1 1 1.1-7.85A5 5 0 0 1 19 13a3 3 0 0 1-1.5 6z"/>',
-      cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
-      fog:   '<path d="M4 9h16M4 13h16M6 17h12"/>',
-      rain:  '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M8 20l-1 2M12 20l-1 2M16 20l-1 2"/>',
-      snow:  '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M8 21h.01M12 21h.01M16 21h.01"/>',
-      storm: '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M13 17l-2.5 4h4L12 24"/>',
-    };
-    const EMOJI = code => {
-      const k = code === 0 ? 'sun'
-        : (code === 1 || code === 2) ? 'part'
-        : code === 3 ? 'cloud'
-        : (code === 45 || code === 48) ? 'fog'
-        : (code >= 51 && code <= 67) || (code >= 80 && code <= 82) ? 'rain'
-        : (code >= 71 && code <= 77) || code === 85 || code === 86 ? 'snow'
-        : code >= 95 ? 'storm' : 'part';
-      return '<svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">' + WX[k] + '</svg>';
-    };
+    const EMOJI = code => weatherIcon(code, 14);
     const DEFAULT_LOC = { name:'Vaduz', latitude:47.141, longitude:9.521 };
     function getLoc() {
       try { const v = JSON.parse(localStorage.getItem('tvza-weather-loc') || 'null'); if (v && v.latitude != null) return v; } catch(e){}
@@ -1316,12 +1301,17 @@
         if (v) fetchChip();
       }
     };
+    // If the modules were resolved before this ran, apply that now.
+    if (window.tvzaWeatherWanted !== undefined) {
+      window.tvzaWeatherChip.setVisible(window.tvzaWeatherWanted);
+    }
   })();
   </script>
 
   <!-- ═══ Live dashboard tile content (weather, watchlist, matura, food, calendar) ═══ -->
   <script type="module">
   import { db, requireAuth, getFinnhubKey } from './assets/js/firebase-config.js';
+  import { weatherIcon } from './assets/js/shell.js';
   import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   (async () => {
@@ -1384,7 +1374,7 @@
     /* ── 2) Wetter: aktuelle Bedingung + Regenwahrscheinlichkeit (keine Temperatur) ── */
     (async function weather() {
       const el = $('tileWeather'); if (!el) return;
-      const EMOJI = c => c===0?'☀️':(c===1||c===2)?'🌤️':c===3?'☁️':(c===45||c===48)?'🌫️':(c>=51&&c<=67)?'🌧️':(c>=71&&c<=77)?'🌨️':(c>=80&&c<=82)?'🌦️':(c===85||c===86)?'❄️':c>=95?'⛈️':'⛅';
+      const EMOJI = c => weatherIcon(c, 15);
       const LABEL = c => c===0?'Klar':c===1?'Heiter':c===2?'Wolkig':c===3?'Bewölkt':(c===45||c===48)?'Nebel':(c>=51&&c<=57)?'Niesel':(c>=61&&c<=67)?'Regen':(c>=71&&c<=77)?'Schnee':(c>=80&&c<=82)?'Schauer':(c===85||c===86)?'Schnee':c>=95?'Gewitter':'Wechselnd';
       let loc = { latitude:47.141, longitude:9.521 };
       try { const v = JSON.parse(localStorage.getItem('tvza-weather-loc') || 'null'); if (v && v.latitude != null) loc = v; } catch (e) {}

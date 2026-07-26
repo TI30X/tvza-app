@@ -135,7 +135,7 @@
 </head>
 <body>
   <div class="app">
-    <div class="offline-banner" id="offlineBanner">✈️ Offline – Änderungen werden später synchronisiert</div>
+    <div class="offline-banner" id="offlineBanner"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – Änderungen werden später synchronisiert</div>
 
     <header class="appbar appbar--bereich" data-bereich="kalender">
       <div class="appbar__inner">
@@ -226,7 +226,7 @@
   <div class="sheet" id="tripSheet">
     <div class="grip"></div>
     <div class="sheet-head"><span class="sheet-title" id="tripFormTitle">Neuer Termin</span>
-      <button class="icon-pill" id="tripFormClose">✕</button></div>
+      <button class="icon-pill" id="tripFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="field"><label>Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" /></div>
     <div class="field"><label>Ziel / Ort (optional)</label><input class="form-input" id="tDest" placeholder="Ort / Region — kann leer bleiben" /></div>
     <div class="row2">
@@ -255,7 +255,7 @@
   <div class="sheet" id="dayForm">
     <div class="grip"></div>
     <div class="sheet-head"><span class="sheet-title" id="dayFormTitle">Besonderer Tag</span>
-      <button class="icon-pill" id="dayFormClose">✕</button></div>
+      <button class="icon-pill" id="dayFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="field"><label>Titel</label><input class="form-input" id="dTitle" placeholder="z.B. Geburtstag, Konzert…" /></div>
     <div class="field"><label>Datum</label><input class="form-input" id="dDate" type="date" /></div>
     <div class="field"><label>Farbe</label><div class="swatches" id="dSwatch"></div></div>
@@ -410,8 +410,8 @@
         <div class="member-chips">${chips}</div>
         ${pend}
         <div class="grp-actions">
-          <button class="pill" id="inviteBtn">🔗 Einladungslink</button>
-          <button class="pill" id="icsAllBtn">📥 Alle Termine (.ics)</button>
+          <button class="pill" id="inviteBtn"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> Einladungslink</button>
+          <button class="pill" id="icsAllBtn"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Alle Termine (.ics)</button>
         </div>
         <p id="inviteOut" style="font-size:11px;color:var(--ink-soft);margin-top:8px;display:none;word-break:break-all"></p>`;
       $('leaveBtn').onclick = leaveGroup;
@@ -712,7 +712,7 @@
           <div class="item-meta">${esc(tr.destination||'')}</div>
           <div class="item-meta">📅 ${dt}</div>
           ${tr.notes?`<p style="margin-top:8px;font-size:14px">${esc(tr.notes)}</p>`:''}
-          <div class="grp-actions"><button class="pill" id="tdIcs">📥 .ics</button></div>
+          <div class="grp-actions"><button class="pill" id="tdIcs"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> .ics</button></div>
         </div>
 
         <div class="sub-card"><div class="sub-title">Programm</div>
@@ -739,14 +739,14 @@
 
         <div class="sub-card"><div class="sub-title">Gast-Zugang</div>
           <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Teile diesen Link nur mit Personen, die den Plan sehen und mit euch chatten dürfen.</p>
-          <button class="btn btn-primary btn-block" id="gShare">🔗 Gast-Link erstellen &amp; kopieren</button>
+          <button class="btn btn-primary btn-block" id="gShare"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> Gast-Link erstellen &amp; kopieren</button>
           <div id="gList" style="margin-top:10px"><p class="empty-hint" style="padding:10px">Lade Gäste…</p></div>
         </div>
 
         <div class="sub-card"><div class="sub-title">Aufgaben</div>
           <input class="form-input" id="aName" placeholder="Aufgabe / Besorgung">
           <button class="btn btn-primary btn-block" id="aAdd" style="margin-top:8px">Hinzufügen</button>
-          <div id="aList" style="margin-top:10px">${acts.length?acts.map(a=>`<div class="line ${a.done?'done':''}"><span class="check ${a.done?'done':''}" data-tog="${a.id}" data-done="${a.done?1:0}">${a.done?'✓':''}</span><span class="l-main"><span class="l-title">${esc(a.name)}</span></span><button class="mini" data-adel="${a.id}">🗑</button></div>`).join(''):'<p class="empty-hint" style="padding:10px">Keine Aufgaben.</p>'}</div>
+          <div id="aList" style="margin-top:10px">${acts.length?acts.map(a=>`<div class="line ${a.done?'done':''}"><span class="check ${a.done?'done':''}" data-tog="${a.id}" data-done="${a.done?1:0}">${a.done?'✓':''}</span><span class="l-main"><span class="l-title">${esc(a.name)}</span></span><button class="mini" data-adel="${a.id}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join(''):'<p class="empty-hint" style="padding:10px">Keine Aufgaben.</p>'}</div>
         </div>
 
         <div class="sub-card"><div class="sub-title">Plan / Info-Seite</div>
@@ -870,7 +870,7 @@
           return `<div class="line">
             <span class="l-main"><span class="l-title">${esc(r.name)}</span><span class="l-sub"${stale?' style="color:var(--danger,#c0392b)"':''}>${stale?'⚠ ':''}${sub}</span></span>
             <button class="mini" data-gchat="${esc(r.uid)}" data-gname="${esc(r.name)}" title="Chat">💬</button>
-            <button class="mini" data-gdel="${esc(r.docId)}" title="Entfernen">🗑</button>
+            <button class="mini" data-gdel="${esc(r.docId)}" title="Entfernen" aria-label="Entfernen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
           </div>`;
         }).join('');
         list.querySelectorAll('[data-gchat]').forEach(b=>b.onclick=()=>{
@@ -890,7 +890,7 @@
         <span class="item-body"><span class="l-title" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span>
         <span class="l-sub">${(f.size/1024).toFixed(0)} KB</span></span>
         <button class="pill" data-fopen="${i}">Öffnen</button>
-        <button class="mini" data-fdel="${esc(f.id||'')}">🗑</button></div>`).join('');
+        <button class="mini" data-fdel="${esc(f.id||'')}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join('');
     }
     async function uploadFiles(parentId, scope, list, curFiles){
       const prog=$('fProg'); if(prog)prog.style.display='';
@@ -911,7 +911,7 @@
     function markSwatch(){ $('dSwatch').querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel',s.dataset.c===dayColor)); }
     function setDayPane(p){ dayPane=p; document.querySelectorAll('#dayForm .tab').forEach(t=>t.classList.toggle('active',t.dataset.pane===p)); document.querySelectorAll('#dayForm [data-body]').forEach(b=>b.style.display=b.dataset.body===p?'':'none'); }
     function bindDayFiles(){
-      const ex = dayFiles.map((f,i)=>`<div class="file-row"><span class="file-ic">${/image\//.test(f.type)?'🖼':'📄'}</span><span class="item-body"><span class="l-title" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span><span class="l-sub">${(f.size/1024).toFixed(0)} KB</span></span><button class="pill" data-dfo="${i}">Öffnen</button><button class="mini" data-dfd="${esc(f.id)}">🗑</button></div>`).join('');
+      const ex = dayFiles.map((f,i)=>`<div class="file-row"><span class="file-ic">${/image\//.test(f.type)?'🖼':'📄'}</span><span class="item-body"><span class="l-title" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span><span class="l-sub">${(f.size/1024).toFixed(0)} KB</span></span><button class="pill" data-dfo="${i}">Öffnen</button><button class="mini" data-dfd="${esc(f.id)}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join('');
       const st = pendingDayFiles.map(f=>`<div class="file-row"><span class="file-ic">📄</span><span class="item-body"><span class="l-title">${esc(f.name)}</span><span class="l-sub">wird beim Speichern hochgeladen</span></span></div>`).join('');
       $('dFileList').innerHTML = ex+st;
       $('dFileList').querySelectorAll('[data-dfo]').forEach(b=>b.onclick=()=>openStored(dayFiles[+b.dataset.dfo]));

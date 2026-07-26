@@ -457,7 +457,7 @@
     const I18N = {
       en: {
         title: 'Planner',
-        offline: '✈️ Offline – syncing later',
+        offline: '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – syncing later',
         back: 'Back',
         allTrips: 'All trips',
         noGroup: "You're not in a group yet.\nCreate one or join an existing group.",
@@ -540,7 +540,7 @@
       },
       de: {
         title: 'Planer',
-        offline: '✈️ Offline – wird später synchronisiert',
+        offline: '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – wird später synchronisiert',
         back: 'Zurück',
         allTrips: 'Alle Reisen',
         noGroup: 'Du bist noch in keiner Gruppe.\nErstelle eine oder tritt einer bei.',
@@ -623,7 +623,7 @@
       },
       nl: {
         title: 'Planner',
-        offline: '✈️ Offline – wordt later gesynchroniseerd',
+        offline: '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – wordt later gesynchroniseerd',
         back: 'Terug',
         allTrips: 'Alle reizen',
         noGroup: 'Je bent nog niet in een groep.\nMaak er een aan of sluit je aan.',
@@ -706,7 +706,7 @@
       },
       pl: {
         title: 'Planer',
-        offline: '✈️ Offline – zostanie zsynchronizowane',
+        offline: '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – zostanie zsynchronizowane',
         back: 'Wróć',
         allTrips: 'Wszystkie wycieczki',
         noGroup: 'Nie jesteś jeszcze w żadnej grupie.\nUtwórz ją lub dołącz do istniejącej.',
@@ -1265,7 +1265,7 @@
 
       wrap.innerHTML = `
         <div class="reminder-card">
-          <button class="reminder-close" id="dismissReminders" title="Dismiss">✕</button>
+          <button class="reminder-close" id="dismissReminders" title="Dismiss" aria-label="Dismiss"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
           <div class="reminder-head"><span class="reminder-bell">🔔</span> ${t('upcoming')}</div>
           ${soon.slice(0, 4).map((x, i) => `
             <div class="reminder-item" style="animation-delay:${i * 60}ms" data-rem-trip="${x.tr.id}">

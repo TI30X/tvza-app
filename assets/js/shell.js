@@ -49,6 +49,32 @@ export const ICONS = {
   sun:     '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
 };
 
+/* Weather glyphs, keyed off WMO codes. index.html needed these in two
+   separate places — the header pill and the dashboard tile — and had a
+   full emoji ternary in each. One set, one mapping. */
+export const WEATHER_GLYPHS = {
+  sun:   '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
+  part:  '<path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><circle cx="10" cy="10" r="3.2"/><path d="M17.5 19H8a4 4 0 1 1 1.1-7.85A5 5 0 0 1 19 13a3 3 0 0 1-1.5 6z"/>',
+  cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+  fog:   '<path d="M4 9h16M4 13h16M6 17h12"/>',
+  rain:  '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M8 20l-1 2M12 20l-1 2M16 20l-1 2"/>',
+  snow:  '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M8 21h.01M12 21h.01M16 21h.01"/>',
+  storm: '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M13 17l-2.5 4h4L12 24"/>',
+};
+
+/** WMO weather code -> inline SVG. */
+export function weatherIcon(code, size = 14) {
+  const c = Number(code);
+  const k = c === 0 ? 'sun'
+    : (c === 1 || c === 2) ? 'part'
+    : c === 3 ? 'cloud'
+    : (c === 45 || c === 48) ? 'fog'
+    : ((c >= 51 && c <= 67) || (c >= 80 && c <= 82)) ? 'rain'
+    : ((c >= 71 && c <= 77) || c === 85 || c === 86) ? 'snow'
+    : c >= 95 ? 'storm' : 'part';
+  return `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${WEATHER_GLYPHS[k]}</svg>`;
+}
+
 /** Inline SVG for one icon. */
 export function icon(name, size = 18) {
   const d = ICONS[name];
