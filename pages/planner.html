@@ -48,17 +48,17 @@
     .daynum { font-size:13px; font-weight:700; }
     .cell.today .daynum { color:var(--accent); }
     .chips { margin-top:auto; }
-    .evchip { display:block; max-width:100%; box-sizing:border-box; font-size:10px; line-height:1.3; border-radius:5px; padding:1px 4px; margin-top:2px; color:#fff;
+    .evchip { display:block; max-width:100%; box-sizing:border-box; font-size:10px; line-height:1.3; border-radius:var(--r-icon); padding:1px 4px; margin-top:2px; color:#fff;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .more { font-size:9px; color:var(--ink-soft); }
     .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; font-size:12px; color:var(--ink-soft); }
-    .legend i { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; }
+    .legend i { display:inline-block; width:9px; height:9px; border-radius:var(--r-pill); margin-right:5px; }
 
     .agenda-group { margin-bottom:18px; }
     .agenda-date { font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
     .item-card { display:flex; gap:12px; align-items:flex-start; background:var(--surface); border:1px solid var(--border);
       border-radius: var(--r-row); padding:13px; margin-bottom:9px; cursor:pointer; }
-    .item-bar { width:4px; align-self:stretch; border-radius:3px; flex:0 0 auto; }
+    .item-bar { width:4px; align-self:stretch; border-radius:var(--r-pill); flex:0 0 auto; }
     .item-body { flex:1; min-width:0; }
     .item-title { font-size:15px; font-weight:700; }
     .item-meta { font-size:12px; color:var(--ink-soft); margin-top:2px; }
@@ -78,21 +78,18 @@
     /* sheets */
     .backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; z-index:60; }
     .backdrop.visible { display:block; }
-    .sheet { position:fixed; left:0; right:0; bottom:0; z-index:61; background:var(--surface); border-radius:18px 18px 0 0;
+    .sheet { position:fixed; left:0; right:0; bottom:0; z-index:61; background:var(--surface); border-radius:var(--r-panel) var(--r-panel) 0 0;
       padding:18px 18px calc(22px + env(safe-area-inset-bottom)); max-height:88vh; overflow:auto;
       transform:translateY(100%); transition:transform .3s cubic-bezier(.22,.61,.36,1); max-width:680px; margin:0 auto; }
-    /* box-shadow only while open — otherwise the shadow (which extends
-       upward past the sheet's own top edge) bleeds back into the visible
-       viewport even when the sheet is translated fully off-screen. */
-    .sheet.visible { transform:translateY(0); box-shadow:0 -8px 30px rgba(0,0,0,.25); }
-    .grip { width:38px; height:4px; border-radius:2px; background:var(--border); margin:0 auto 12px; }
+    .sheet.visible { transform:translateY(0); }
+    .grip { width:38px; height:4px; border-radius:var(--r-pill); background:var(--border); margin:0 auto 12px; }
     .sheet-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; }
     .sheet-title { font-size:17px; font-weight:700; }
     .field { margin-bottom:12px; }
     .field label { display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:5px; }
     .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .swatches { display:flex; gap:9px; flex-wrap:wrap; }
-    .swatch { width:30px; height:30px; border-radius:50%; cursor:pointer; border:3px solid transparent; }
+    .swatch { width:30px; height:30px; border-radius:var(--r-pill); cursor:pointer; border:3px solid transparent; }
     .swatch.sel { border-color:var(--ink); }
     .tabs { display:flex; gap:6px; margin-bottom:8px; }
     .tab { flex:1; font:inherit; font-size:12px; font-weight:700; padding:8px; border-radius: var(--r-icon); border:1px solid var(--border);
@@ -117,7 +114,7 @@
     .file-row:first-child { border-top:0; }
     .file-ic { width:34px; height:34px; border-radius: var(--r-icon); background:var(--accent-bg); color:var(--accent);
       display:inline-flex; align-items:center; justify-content:center; font-size:16px; flex:0 0 auto; }
-    .progress { height:4px; background:var(--surface); border-radius:2px; overflow:hidden; margin-top:6px; }
+    .progress { height:4px; background:var(--surface); border-radius:var(--r-pill); overflow:hidden; margin-top:6px; }
     .progress i { display:block; height:100%; width:0; background:var(--accent); transition:width .2s ease; }
 
     .viewer { position:fixed; inset:0; background:var(--bg); display:none; z-index:80; flex-direction:column; }

@@ -42,7 +42,7 @@ main, .main {
   position: relative;
   overflow: hidden;
   background: var(--surface-2, rgba(128, 128, 128, 0.16));
-  border-radius: 8px;
+  border-radius: var(--r-icon, 11px);
 }
 /* moving sheen */
 .fx-skel::after {
@@ -73,7 +73,7 @@ main, .main {
   flex: 0 0 auto;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--r-row, 14px);
 }
 .fx-skel-lines {
   flex: 1 1 auto;
@@ -87,7 +87,7 @@ main, .main {
   flex: 0 0 auto;
   width: 58px;
   height: 26px;
-  border-radius: 999px;
+  border-radius: var(--r-pill, 999px);
 }
 
 /* ── 3. Content fade-in (skeleton → real content, once) ─────── */
