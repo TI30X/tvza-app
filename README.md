@@ -16,6 +16,9 @@
 - 🗓️ **Kalender & Erinnerungen:** Vertraute Ansichten für Tag, 3 Tage, Arbeitswoche, Woche,
   Monat und Terminübersicht/Agenda. Nutzer wählen Google- oder Outlook-Darstellung, können
   mehreren Gruppen gleichzeitig angehören und deren Kalender einzeln ein-/ausblenden.
+  Die Outlook-Darstellung ergänzt einen Mini-Monatsnavigator mit direkter Wochenwahl.
+  Farben gelten pro Kalender (inkl. Grün und Gelb), nicht mehr pro Einzeltermin; Gruppenleitungen
+  können Namen, Farbe, Mitglieder, Verwaltungsrollen und Einladungslinks verwalten.
   Hochgeladene HTML-Pläne werden nach Datum/Uhrzeit in der Terminübersicht aufgeteilt; die
   Originalseite bleibt zusätzlich öffnbar. Dazu kommen persönliche Erinnerungen und
   ICS-Import/-Export für Google Calendar, Outlook/Exchange, Apple und Samsung Calendar.

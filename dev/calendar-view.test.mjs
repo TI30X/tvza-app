@@ -4,6 +4,7 @@ import {
   datesForCalendarView,
   moveCalendarAnchor,
   calendarRangeTitle,
+  calendarColorInk,
   normalizeCalendarPreference,
 } from '../assets/js/calendar-view.js';
 
@@ -30,9 +31,12 @@ test('view title and preference fallback are stable', () => {
   assert.deepEqual(normalizeCalendarPreference({ style:'outlook' }), {
     style:'outlook',
     view:'workweek',
+    personalColor:'#7f77dd',
   });
-  assert.deepEqual(normalizeCalendarPreference({ style:'unknown', view:'nope' }), {
+  assert.deepEqual(normalizeCalendarPreference({ style:'unknown', view:'nope', personalColor:'#e0b52f' }), {
     style:'google',
     view:'month',
+    personalColor:'#e0b52f',
   });
+  assert.equal(calendarColorInk('#e0b52f'), '#342b00');
 });

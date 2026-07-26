@@ -26,6 +26,27 @@ export const CALENDAR_STYLES = {
   },
 };
 
+export const CALENDAR_COLORS = [
+  { value:'#7f77dd', label:'Violett', ink:'#ffffff' },
+  { value:'#2f6fed', label:'Blau', ink:'#ffffff' },
+  { value:'#1d9e75', label:'Grün', ink:'#ffffff' },
+  { value:'#e0b52f', label:'Gelb', ink:'#342b00' },
+  { value:'#d8761d', label:'Orange', ink:'#ffffff' },
+  { value:'#d4537e', label:'Pink', ink:'#ffffff' },
+  { value:'#1d9e9e', label:'Türkis', ink:'#ffffff' },
+  { value:'#777674', label:'Grau', ink:'#ffffff' },
+];
+
+export const DEFAULT_CALENDAR_COLOR = CALENDAR_COLORS[0].value;
+
+export function normalizeCalendarColor(value, fallback = DEFAULT_CALENDAR_COLOR) {
+  return CALENDAR_COLORS.some(color => color.value === value) ? value : fallback;
+}
+
+export function calendarColorInk(value) {
+  return CALENDAR_COLORS.find(color => color.value === value)?.ink || '#ffffff';
+}
+
 export function dateKey(value) {
   const date = value instanceof Date ? value : new Date(`${value}T00:00:00`);
   if (Number.isNaN(date.getTime())) return '';
@@ -107,5 +128,6 @@ export function normalizeCalendarPreference(raw = {}) {
   const style = CALENDAR_STYLES[raw.style] ? raw.style : 'google';
   const validViews = new Set(CALENDAR_VIEWS.map(view => view.key));
   const view = validViews.has(raw.view) ? raw.view : CALENDAR_STYLES[style].defaultView;
-  return { style, view };
+  const personalColor = normalizeCalendarColor(raw.personalColor);
+  return { style, view, personalColor };
 }

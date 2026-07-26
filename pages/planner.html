@@ -210,18 +210,18 @@
       <div id="groupView" style="display:none">
         <div class="calendar-layout">
           <aside class="calendar-sidebar" aria-label="Kalender auswählen">
+            <div class="calendar-side-card mini-calendar-card">
+              <div id="miniCalendars"></div>
+            </div>
             <button class="btn btn-primary btn-block" id="addTripBtn" type="button">+ Neuer Termin</button>
-            <div class="calendar-side-card" style="margin-top:12px">
+            <div class="calendar-side-card calendar-source-card">
               <div class="calendar-side-title"><span>Meine Kalender</span></div>
               <div id="calendarSources"><div class="spinner">Lade…</div></div>
               <div class="calendar-side-actions">
                 <button class="pill" id="addGroupBtn" type="button">+ Gruppe hinzufügen</button>
+                <button class="pill" id="manageGroupsBtn" type="button">Gruppen verwalten</button>
               </div>
             </div>
-            <details class="calendar-side-card group-manage-card" id="groupManager">
-              <summary>Ausgewählte Gruppe verwalten</summary>
-              <div id="grpCard"></div>
-            </details>
           </aside>
 
           <section class="calendar-workspace" id="calendarWorkspace">
@@ -235,7 +235,8 @@
               <div class="calendar-commandbar__views">
                 <div class="view-picker">
                   <button class="pill view-picker__button" id="viewPickerBtn" type="button" aria-haspopup="menu" aria-expanded="false">
-                    <span id="viewPickerLabel">Monat</span><span aria-hidden="true">⌄</span>
+                    <span id="viewPickerLabel">Monat</span>
+                    <svg class="ic view-picker__chevron" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
                   </button>
                   <div class="view-menu" id="viewMenu" role="menu" hidden>
                     <button type="button" data-calendar-view="day">Tag</button>
@@ -250,7 +251,10 @@
                   <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
                 </button>
               </div>
-              <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">+ Neuer Termin</button>
+              <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">
+                <span class="calendar-commandbar__plus" aria-hidden="true">+</span>
+                <span class="calendar-commandbar__create-label">Neuer Termin</span>
+              </button>
             </div>
 
             <div class="calendar-mobile-sources" id="calendarMobileSources"></div>
@@ -336,7 +340,6 @@
       <div class="field"><label>Startzeit (optional)</label><input class="form-input" id="tStartTime" type="time" /></div>
       <div class="field"><label>Endzeit (optional)</label><input class="form-input" id="tEndTime" type="time" /></div>
     </div>
-    <div class="field"><label>Farbe</label><div class="swatches" id="tSwatch"></div></div>
     <div class="field"><label>Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
     <div class="field">
       <label>Programm / Info-Seite (optional)</label>
@@ -373,6 +376,15 @@
     </div>
   </div>
 
+  <!-- Group management -->
+  <div class="backdrop" id="groupManageBackdrop"></div>
+  <div class="sheet group-management-sheet" id="groupManageSheet">
+    <div class="grip"></div>
+    <div class="sheet-head"><span class="sheet-title">Gruppen &amp; Familien verwalten</span>
+      <button class="icon-pill" id="groupManageClose" aria-label="Schliessen">×</button></div>
+    <div id="grpCard"></div>
+  </div>
+
   <!-- Calendar style/setup sheet -->
   <div class="backdrop" id="calendarSetupBackdrop"></div>
   <div class="sheet calendar-setup-sheet" id="calendarSetupSheet">
@@ -392,6 +404,11 @@
         <span class="calendar-style-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       </button>
     </div>
+    <fieldset class="calendar-color-setting">
+      <legend>Farbe für „Persönlich &amp; Erinnerungen“</legend>
+      <p>Termine übernehmen immer die Farbe ihres Kalenders.</p>
+      <div class="calendar-color-options" id="personalCalendarColors"></div>
+    </fieldset>
     <button class="btn btn-primary btn-block" id="calendarSetupSave" type="button">Übernehmen</button>
   </div>
 
@@ -419,7 +436,6 @@
       <button class="icon-pill" id="dayFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="field"><label>Titel</label><input class="form-input" id="dTitle" placeholder="z.B. Geburtstag, Konzert…" /></div>
     <div class="field"><label>Datum</label><input class="form-input" id="dDate" type="date" /></div>
-    <div class="field"><label>Farbe</label><div class="swatches" id="dSwatch"></div></div>
     <div class="field">
       <label>Info-Seite (optional)</label>
       <div class="tabs">
@@ -455,17 +471,16 @@
     import { parseItineraryHtml, groupByDay } from '../assets/js/itinerary.js';
     import { buildCalendarIcs, parseCalendarIcs } from '../assets/js/calendar-interop.js';
     import {
-      CALENDAR_VIEWS, CALENDAR_STYLES, addCalendarDays,
+      CALENDAR_VIEWS, CALENDAR_STYLES, CALENDAR_COLORS, DEFAULT_CALENDAR_COLOR,
+      addCalendarDays, startOfCalendarWeek,
       datesForCalendarView, moveCalendarAnchor, calendarRangeTitle,
-      normalizeCalendarPreference
+      normalizeCalendarColor, calendarColorInk, normalizeCalendarPreference
     } from '../assets/js/calendar-view.js';
     import {
       collection, addDoc, getDocs, getDoc, query, where, doc, updateDoc, deleteDoc,
       onSnapshot, serverTimestamp, arrayUnion, arrayRemove
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-    const COLORS = ['#7f77dd','#2f6fed','#1d9e75','#e24b4a','#d8761d','#d4537e','#1d9e9e','#888780'];
-    const TRIP_COLOR = '#d8761d';
     const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
     const WD = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 
@@ -497,14 +512,14 @@
     async function saveAttachment(parentId, scope, st){ return addDoc(collection(db,'attachments'), {parent:parentId, scope, name:st.name, type:st.type, size:st.size, dataUrl:st.dataUrl, by:user.uid, at:Date.now()}); }
     async function delAttachment(id){ return deleteDoc(doc(db,'attachments',id)); }
 
-    const GROUP_COLORS = ['#7f77dd','#1a73e8','#1d9e75','#d8761d','#d4537e','#1d9e9e','#e24b4a'];
+    const GROUP_COLORS = CALENDAR_COLORS.map(color => color.value);
     let user, profile, group = null, groups = [], groupsUnsub = null, reminderUnsub = null;
     let trips = [], allTrips = [], days = [], reminders = [];
     let visibleGroupIds = new Set(), showPersonal = true;
     let anchorKey = todayKey, curView = 'month';
-    let calendarPreference = { style:'google', view:'month' };
+    let calendarPreference = { style:'google', view:'month', personalColor:DEFAULT_CALENDAR_COLOR };
     let calendarPreferenceExists = false;
-    let editTripId = null, editDayId = null, editReminderId = null, dayColor = COLORS[0], dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
+    let editTripId = null, editDayId = null, editReminderId = null, dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
     let pendingDayFiles = [], dayFiles = [];
 
     init();
@@ -514,7 +529,6 @@
       wireOfflineBanner();
       profile = await getProfile(user);
       loadCalendarPreference();
-      buildSwatches();
       wireUI();
       watchReminders();
       await resolveGroups();
@@ -544,7 +558,27 @@
       document.querySelectorAll('[data-style]').forEach(card =>
         card.classList.toggle('is-selected', card.dataset.style === calendarPreference.style)
       );
+      renderPersonalColorOptions();
+      if (groups.length) renderCalendarSources();
       renderCurrentView();
+    }
+    function renderColorOptions(container, selected, dataAttribute, disabled = false) {
+      if (!container) return;
+      container.innerHTML = CALENDAR_COLORS.map(color => `
+        <button class="calendar-color${color.value===selected?' is-selected':''}" type="button"
+          ${dataAttribute}="${color.value}" style="--choice-color:${color.value};--choice-ink:${color.ink}"
+          aria-label="${color.label}" title="${color.label}"${disabled?' disabled':''}>
+          <span aria-hidden="true">${color.value===selected?'✓':''}</span>
+        </button>`).join('');
+    }
+    function renderPersonalColorOptions() {
+      renderColorOptions($('personalCalendarColors'), calendarPreference.personalColor, 'data-personal-color');
+      $('personalCalendarColors')?.querySelectorAll('[data-personal-color]').forEach(button => button.onclick = () => {
+        calendarPreference.personalColor = normalizeCalendarColor(button.dataset.personalColor);
+        renderPersonalColorOptions();
+        renderCalendarSources();
+        renderCurrentView();
+      });
     }
     function saveCalendarPreference() {
       calendarPreference = normalizeCalendarPreference({ ...calendarPreference, view:curView });
@@ -565,10 +599,14 @@
 
     /* ── Multiple calendar groups ── */
     const groupColor = id => {
+      const stored = groups.find(item => item.id === id)?.calendarColor;
+      if (CALENDAR_COLORS.some(color => color.value === stored)) return stored;
       const hash = [...String(id||'')].reduce((value, char) => ((value * 31) + char.charCodeAt(0)) | 0, 0);
       return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
     };
     const groupName = id => groups.find(item => item.id === id)?.name || 'Gruppe';
+    const personalCalendarColor = () => normalizeCalendarColor(calendarPreference.personalColor);
+    const eventColorVars = color => `--event-color:${normalizeCalendarColor(color)};--event-ink:${calendarColorInk(normalizeCalendarColor(color))}`;
 
     async function resolveGroups() {
       const params = new URLSearchParams(location.search);
@@ -645,19 +683,81 @@
       $('tripDetail').style.display='none';
     }
 
+    function isoWeekNumber(value) {
+      const date = new Date(`${value}T00:00:00`);
+      const utc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      utc.setUTCDate(utc.getUTCDate() + 4 - (utc.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+      return Math.ceil((((utc - yearStart) / 86400000) + 1) / 7);
+    }
+    function miniMonthHtml(offset, total) {
+      const base = new Date(`${anchorKey}T00:00:00`);
+      const month = new Date(base.getFullYear(), base.getMonth() + offset, 1);
+      const firstKey = keyOf(month.getFullYear(), month.getMonth(), 1);
+      const gridStart = startOfCalendarWeek(firstKey);
+      const activeDates = new Set(
+        ['day','3day','workweek','week'].includes(curView) ? datesForCalendarView(anchorKey,curView) : [anchorKey]
+      );
+      const rows = Array.from({length:6},(_,weekIndex)=>{
+        const weekStart = addCalendarDays(gridStart,weekIndex*7);
+        const daysHtml = Array.from({length:7},(_,dayIndex)=>{
+          const dateKey = addCalendarDays(weekStart,dayIndex);
+          const date = new Date(`${dateKey}T00:00:00`);
+          const outside = date.getMonth() !== month.getMonth();
+          return `<button class="mini-calendar-day${outside?' is-outside':''}${dateKey===todayKey?' is-today':''}${activeDates.has(dateKey)?' is-selected':''}"
+            type="button" data-mini-day="${dateKey}" aria-label="${fmtDateKey(dateKey)}">${date.getDate()}</button>`;
+        }).join('');
+        const selectedWeek = curView==='week' && startOfCalendarWeek(anchorKey)===weekStart;
+        return `<div class="mini-calendar-week${selectedWeek?' is-selected':''}">
+          <button type="button" class="mini-calendar-week__pick" data-mini-week="${weekStart}" title="Kalenderwoche ${isoWeekNumber(weekStart)} öffnen">W${isoWeekNumber(weekStart)}</button>
+          ${daysHtml}
+        </div>`;
+      }).join('');
+      return `<section class="mini-month">
+        <div class="mini-month__head">
+          ${offset===0?'<button type="button" data-mini-shift="-1" aria-label="Vorheriger Monat">‹</button>':'<span></span>'}
+          <strong>${month.toLocaleDateString('de-CH',{month:'long',year:'numeric'})}</strong>
+          ${offset===total-1?'<button type="button" data-mini-shift="1" aria-label="Nächster Monat">›</button>':'<span></span>'}
+        </div>
+        <div class="mini-calendar-weekdays"><span>KW</span><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+        ${rows}
+      </section>`;
+    }
+    function renderMiniCalendars() {
+      const container = $('miniCalendars');
+      if (!container) return;
+      const total = calendarPreference.style==='outlook' ? 2 : 1;
+      container.innerHTML = Array.from({length:total},(_,index)=>miniMonthHtml(index,total)).join('');
+      container.querySelectorAll('[data-mini-day]').forEach(button => button.onclick = () => {
+        anchorKey = button.dataset.miniDay;
+        renderCurrentView();
+      });
+      container.querySelectorAll('[data-mini-week]').forEach(button => button.onclick = () => {
+        anchorKey = button.dataset.miniWeek;
+        setView('week');
+      });
+      container.querySelectorAll('[data-mini-shift]').forEach(button => button.onclick = () => {
+        const date = new Date(`${anchorKey}T00:00:00`);
+        date.setMonth(date.getMonth() + Number(button.dataset.miniShift), 1);
+        anchorKey = keyOf(date.getFullYear(),date.getMonth(),date.getDate());
+        renderCurrentView();
+      });
+    }
+
     function renderCalendarSources() {
+      const personalColor = personalCalendarColor();
       const personal = `
-        <button class="calendar-source-row${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:#7f77dd">
+        <button class="calendar-source-row${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:${personalColor}">
           <span class="calendar-source-dot"></span><span>Persönlich &amp; Erinnerungen</span>
         </button>`;
       $('calendarSources').innerHTML = personal + groups.map(item => `
         <button class="calendar-source-row${visibleGroupIds.has(item.id)?' is-visible':''}" type="button"
           data-source-group="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
           <span class="calendar-source-dot"></span><span>${esc(item.name||'Gruppe')}</span>
-          ${item.id===group?.id?'<small>aktiv</small>':''}
+          ${item.id===group?.id?'<small>Standard</small>':''}
         </button>`).join('');
       $('calendarMobileSources').innerHTML = `
-        <button class="calendar-source-chip${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:#7f77dd">
+        <button class="calendar-source-chip${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:${personalColor}">
           <span class="calendar-source-dot"></span>Persönlich
         </button>` + groups.map(item => `
         <button class="calendar-source-chip${visibleGroupIds.has(item.id)?' is-visible':''}" type="button"
@@ -689,6 +789,18 @@
     }
 
     function isManager(target = group) { return !!target && [...(target.managers||[]), target.headUid].includes(user.uid); }
+    const isHead = (target = group) => !!target && target.headUid === user.uid;
+    function groupRole(uid) {
+      if (uid === group?.headUid) return 'Leitung';
+      if ((group?.managers||[]).includes(uid)) return 'Verwaltung';
+      return 'Mitglied';
+    }
+    function groupManageStatus(message, isError = false) {
+      const status = $('groupManageStatus');
+      if (!status) return;
+      status.textContent = message;
+      status.classList.toggle('is-error',isError);
+    }
 
     async function renderGroupCard() {
       if (!group) { $('grpCard').innerHTML=''; return; }
@@ -697,53 +809,173 @@
         try { const snap = await getDoc(doc(db,'users',uid)); names[uid] = snap.exists() ? (snap.data().displayName || snap.data().email || 'Mitglied') : 'Mitglied'; }
         catch { names[uid] = 'Mitglied'; }
       }));
-      const chips = (group.members||[]).map(uid =>
-        `<span class="chip ${uid===user.uid?'me':''}">${esc(names[uid]||'?')}${[...(group.managers||[]),group.headUid].includes(uid)?' ★':''}</span>`).join('');
+      const managerSet = new Set([...(group.managers||[]),group.headUid]);
+      const members = (group.members||[]).map(uid => {
+        const targetIsManager = managerSet.has(uid);
+        const canRemove = isManager() && uid!==user.uid && uid!==group.headUid && (isHead() || !targetIsManager);
+        const actions = [
+          isHead() && uid!==group.headUid
+            ? `<button class="group-member-action" type="button" data-toggle-manager="${uid}">${targetIsManager?'Verwaltung entziehen':'Zur Verwaltung machen'}</button>`
+            : '',
+          isHead() && uid!==user.uid
+            ? `<button class="group-member-action" type="button" data-transfer-head="${uid}">Leitung übertragen</button>`
+            : '',
+          canRemove
+            ? `<button class="group-member-action is-danger" type="button" data-remove-member="${uid}">Aus Gruppe entfernen</button>`
+            : ''
+        ].filter(Boolean).join('');
+        return `<div class="group-member-row">
+          <span class="group-member-avatar">${esc((names[uid]||'?').trim().charAt(0).toUpperCase())}</span>
+          <span class="group-member-copy"><strong>${esc(names[uid]||'Mitglied')}${uid===user.uid?' (du)':''}</strong><small>${groupRole(uid)}</small></span>
+          ${actions?`<details class="group-member-menu"><summary aria-label="Mitglied verwalten">•••</summary><div>${actions}</div></details>`:''}
+        </div>`;
+      }).join('');
       let pending = '';
       if (isManager() && (group.pendingRequests||[]).length) {
-        pending = `<div style="margin-top:12px"><p class="sub-title">Anfragen</p>` +
+        pending = `<section class="group-manage-section"><div class="group-manage-heading"><h3>Beitrittsanfragen</h3><span>${group.pendingRequests.length}</span></div>` +
           (group.pendingRequests||[]).map(uid =>
-            `<div class="line"><span class="l-main"><span class="l-title">${esc(names[uid]||'?')}</span></span>
-             <button class="pill primary" data-appr="${uid}">OK</button>
-             <button class="pill" data-rej="${uid}">✕</button></div>`).join('') + `</div>`;
+            `<div class="group-request-row"><span>${esc(names[uid]||'Mitglied')}</span>
+             <button class="pill primary" type="button" data-appr="${uid}">Annehmen</button>
+             <button class="pill" type="button" data-rej="${uid}">Ablehnen</button></div>`).join('') + `</section>`;
       }
+      const groupColorValue = groupColor(group.id);
+      const managerSettings = isManager() ? `
+        <section class="group-manage-section">
+          <div class="group-manage-heading"><h3>Gruppeneinstellungen</h3></div>
+          <div class="group-settings-grid">
+            <div class="field"><label for="groupRenameInput">Name</label>
+              <div class="group-inline-control"><input class="form-input" id="groupRenameInput" value="${esc(group.name||'')}" maxlength="80">
+              <button class="pill" id="groupRenameBtn" type="button">Speichern</button></div>
+            </div>
+            <div class="field"><label>Kalenderfarbe</label>
+              <div class="calendar-color-options" id="groupCalendarColors"></div>
+            </div>
+          </div>
+        </section>` : `
+        <section class="group-manage-section group-color-readonly">
+          <span class="calendar-source-dot" style="--source-color:${groupColorValue}"></span>
+          <span>Kalenderfarbe: ${esc(CALENDAR_COLORS.find(color=>color.value===groupColorValue)?.label||'Standard')}</span>
+        </section>`;
       $('grpCard').innerHTML = `
-        ${groups.length>1?`<div class="field"><label>Gruppe</label><select class="form-input" id="manageGroupSelect">${groups.map(item=>`<option value="${esc(item.id)}"${item.id===group.id?' selected':''}>${esc(item.name||'Gruppe')}</option>`).join('')}</select></div>`:''}
-        <div class="grp-top"><span class="calendar-source-dot" style="--source-color:${groupColor(group.id)}"></span><span class="grp-name">${esc(group.name||'Gruppe')}</span>
-          <button class="mini" id="leaveBtn" title="Diese Gruppe verlassen">⎋</button></div>
-        <div class="member-chips">${chips}</div>
-        ${pending}
-        <div class="grp-actions">
-          <button class="pill" id="inviteBtn">🔗 Einladungslink</button>
-          <button class="pill" id="icsAllBtn">⇩ Sichtbare Termine (.ics)</button>
+        <div class="group-manager-hero">
+          <div class="field"><label for="manageGroupSelect">Gewählte Gruppe / Standardkalender</label>
+            <select class="form-input" id="manageGroupSelect">${groups.map(item=>`<option value="${esc(item.id)}"${item.id===group.id?' selected':''}>${esc(item.name||'Gruppe')}</option>`).join('')}</select>
+          </div>
+          <div class="group-manager-title"><span class="calendar-source-dot" style="--source-color:${groupColorValue}"></span>
+            <div><strong>${esc(group.name||'Gruppe')}</strong><small>${(group.members||[]).length} Mitglied${(group.members||[]).length===1?'':'er'} · Du bist ${groupRole(user.uid).toLowerCase()}</small></div>
+          </div>
         </div>
-        <p id="inviteOut" style="font-size:11px;color:var(--ink-soft);margin-top:8px;display:none;word-break:break-all"></p>`;
+        ${managerSettings}
+        <section class="group-manage-section">
+          <div class="group-manage-heading"><h3>Mitglieder</h3><span>${(group.members||[]).length}</span></div>
+          <div class="group-member-list">${members}</div>
+        </section>
+        ${pending}
+        <section class="group-manage-section">
+          <div class="group-manage-heading"><h3>Teilen &amp; Daten</h3></div>
+          <div class="group-management-actions">
+            <button class="pill" id="inviteBtn" type="button">Einladungslink kopieren</button>
+            ${isManager()?'<button class="pill" id="resetInviteBtn" type="button">Link erneuern</button>':''}
+            <button class="pill" id="icsAllBtn" type="button">Sichtbare Termine exportieren</button>
+          </div>
+          <p id="inviteOut" class="group-invite-output"></p>
+        </section>
+        <div class="group-manager-footer">
+          <button class="group-leave-button" id="leaveBtn" type="button">Diese Gruppe verlassen</button>
+          <p class="group-manage-status" id="groupManageStatus" aria-live="polite"></p>
+        </div>`;
       $('leaveBtn').onclick = leaveGroup;
       $('inviteBtn').onclick = showInvite;
       $('icsAllBtn').onclick = exportAllIcs;
-      if ($('manageGroupSelect')) $('manageGroupSelect').onchange = async event => {
+      if ($('resetInviteBtn')) $('resetInviteBtn').onclick = resetInvite;
+      if ($('groupRenameBtn')) $('groupRenameBtn').onclick = renameGroup;
+      renderColorOptions($('groupCalendarColors'), groupColorValue, 'data-group-color');
+      $('groupCalendarColors')?.querySelectorAll('[data-group-color]').forEach(button => button.onclick = () => setGroupCalendarColor(button.dataset.groupColor));
+      $('manageGroupSelect').onchange = async event => {
         group = groups.find(item => item.id === event.target.value) || group;
         visibleGroupIds.add(group.id);
+        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
         saveVisibleSources();
         renderCalendarSources();
+        renderCurrentView();
         await renderGroupCard();
       };
       $('grpCard').querySelectorAll('[data-appr]').forEach(button => button.onclick=()=>approve(button.dataset.appr));
       $('grpCard').querySelectorAll('[data-rej]').forEach(button => button.onclick=()=>reject(button.dataset.rej));
+      $('grpCard').querySelectorAll('[data-toggle-manager]').forEach(button => button.onclick=()=>toggleGroupManager(button.dataset.toggleManager));
+      $('grpCard').querySelectorAll('[data-transfer-head]').forEach(button => button.onclick=()=>transferGroupHead(button.dataset.transferHead,names[button.dataset.transferHead]));
+      $('grpCard').querySelectorAll('[data-remove-member]').forEach(button => button.onclick=()=>removeGroupMember(button.dataset.removeMember,names[button.dataset.removeMember]));
     }
-    async function approve(uid){ await updateDoc(doc(db,'families',group.id),{members:arrayUnion(uid),pendingRequests:arrayRemove(uid)}); }
-    async function reject(uid){ await updateDoc(doc(db,'families',group.id),{pendingRequests:arrayRemove(uid)}); }
+    async function renameGroup() {
+      const name=$('groupRenameInput').value.trim();
+      if(!name){ groupManageStatus('Bitte einen Gruppennamen eingeben.',true); return; }
+      try { await updateDoc(doc(db,'families',group.id),{name}); }
+      catch(error){ reportClientError('calendar-group-rename',error); groupManageStatus('Der Name konnte nicht gespeichert werden.',true); }
+    }
+    async function setGroupCalendarColor(color) {
+      if(!isManager())return;
+      color=normalizeCalendarColor(color,groupColor(group.id));
+      try { await updateDoc(doc(db,'families',group.id),{calendarColor:color}); }
+      catch(error){ reportClientError('calendar-group-color',error); groupManageStatus('Die Kalenderfarbe konnte nicht gespeichert werden.',true); }
+    }
+    async function approve(uid){
+      try { await updateDoc(doc(db,'families',group.id),{members:arrayUnion(uid),pendingRequests:arrayRemove(uid)}); }
+      catch(error){ reportClientError('calendar-group-approve',error); groupManageStatus('Die Anfrage konnte nicht angenommen werden.',true); }
+    }
+    async function reject(uid){
+      try { await updateDoc(doc(db,'families',group.id),{pendingRequests:arrayRemove(uid)}); }
+      catch(error){ reportClientError('calendar-group-reject',error); groupManageStatus('Die Anfrage konnte nicht abgelehnt werden.',true); }
+    }
+    async function toggleGroupManager(uid) {
+      if(!isHead() || uid===group.headUid)return;
+      const managers=group.managers||[];
+      try {
+        await updateDoc(doc(db,'families',group.id),{
+          managers:managers.includes(uid)?arrayRemove(uid):arrayUnion(uid)
+        });
+      } catch(error){ reportClientError('calendar-group-manager',error); groupManageStatus('Die Rolle konnte nicht geändert werden.',true); }
+    }
+    async function transferGroupHead(uid,name) {
+      if(!isHead() || uid===user.uid || !confirm(`Leitung wirklich an „${name||'dieses Mitglied'}“ übertragen?`))return;
+      try { await updateDoc(doc(db,'families',group.id),{headUid:uid,managers:arrayUnion(uid)}); }
+      catch(error){ reportClientError('calendar-group-head-transfer',error); groupManageStatus('Die Leitung konnte nicht übertragen werden.',true); }
+    }
+    async function removeGroupMember(uid,name) {
+      if(!isManager() || uid===user.uid || uid===group.headUid || !confirm(`„${name||'Mitglied'}“ aus der Gruppe entfernen?`))return;
+      try { await updateDoc(doc(db,'families',group.id),{members:arrayRemove(uid),managers:arrayRemove(uid)}); }
+      catch(error){ reportClientError('calendar-group-member-remove',error); groupManageStatus('Das Mitglied konnte nicht entfernt werden.',true); }
+    }
     async function leaveGroup(){
+      if(group?.headUid===user.uid){ alert('Übertrage zuerst die Leitung an ein anderes Mitglied.'); return; }
       if(!group || !confirm(`„${group.name||'Gruppe'}“ verlassen?`))return;
       const leavingId = group.id;
-      await updateDoc(doc(db,'families',leavingId),{members:arrayRemove(user.uid),managers:arrayRemove(user.uid)}).catch(()=>{});
+      try { await updateDoc(doc(db,'families',leavingId),{members:arrayRemove(user.uid),managers:arrayRemove(user.uid)}); }
+      catch(error){ reportClientError('calendar-group-leave',error); groupManageStatus('Die Gruppe konnte nicht verlassen werden.',true); return; }
       if (profile.familyId === leavingId) {
         const next = groups.find(item => item.id !== leavingId);
         await updateDoc(doc(db,'users',user.uid),{familyId:next?.id||null,role:next?'member':profile.role}).catch(()=>{});
         profile.familyId = next?.id || null;
       }
+      closeGroupManager();
     }
-    async function showInvite(){ let token=group.inviteToken; if(!token){ token=Math.random().toString(36).slice(2,10); await updateDoc(doc(db,'families',group.id),{inviteToken:token}).catch(()=>{}); group.inviteToken=token; } const url=`${location.origin}${location.pathname}?invite=${group.id}&token=${token}`; const out=$('inviteOut'); out.style.display=''; out.textContent=url; try{ await navigator.clipboard.writeText(url); out.textContent='✓ Kopiert: '+url; }catch{} }
+    async function showInvite(){
+      let token=group.inviteToken;
+      if(!token){
+        token=Math.random().toString(36).slice(2,10);
+        try { await updateDoc(doc(db,'families',group.id),{inviteToken:token}); group.inviteToken=token; }
+        catch(error){ reportClientError('calendar-group-invite',error); groupManageStatus('Der Einladungslink konnte nicht erstellt werden.',true); return; }
+      }
+      const url=`${location.origin}${location.pathname}?invite=${group.id}&token=${token}`;
+      const out=$('inviteOut'); out.classList.add('is-visible'); out.textContent=url;
+      try{ await navigator.clipboard.writeText(url); out.textContent='✓ Link kopiert'; }
+      catch{ out.textContent='Link zum Kopieren: '+url; }
+    }
+    async function resetInvite(){
+      if(!isManager() || !confirm('Der bisherige Einladungslink funktioniert danach nicht mehr. Link erneuern?'))return;
+      const inviteToken=Math.random().toString(36).slice(2,10);
+      try { await updateDoc(doc(db,'families',group.id),{inviteToken}); group.inviteToken=inviteToken; await showInvite(); }
+      catch(error){ reportClientError('calendar-group-invite-reset',error); groupManageStatus('Der Link konnte nicht erneuert werden.',true); }
+    }
 
     /* ── Create / join ── */
     async function createGroup(name) {
@@ -765,20 +997,23 @@
       await updateDoc(doc(db,'families',candidate.id), { pendingRequests:arrayUnion(user.uid) });
       statusEl.textContent='Anfrage gesendet — ein Gruppen-Manager muss dich bestätigen.';
     }
-    function openMobileGroupManager(){
-      $('groupManager').open=true;
-      document.querySelector('.calendar-sidebar').classList.add('is-mobile-open');
-      $('groupBackdrop').classList.add('visible');
+    function openGroupManager(){
+      renderGroupCard();
+      $('groupManageBackdrop').classList.add('visible');
+      $('groupManageSheet').classList.add('visible');
+    }
+    const openMobileGroupManager = openGroupManager;
+    function closeGroupManager(){
+      $('groupManageBackdrop').classList.remove('visible');
+      $('groupManageSheet').classList.remove('visible');
     }
     function openGroupSheet(){
-      document.querySelector('.calendar-sidebar').classList.remove('is-mobile-open');
       $('groupBackdrop').classList.add('visible');
       $('groupSheet').classList.add('visible');
     }
     function closeGroupSheet(){
       $('groupBackdrop').classList.remove('visible');
       $('groupSheet').classList.remove('visible');
-      document.querySelector('.calendar-sidebar').classList.remove('is-mobile-open');
     }
 
     $('createGrpBtn').onclick = () => createGroup($('newGrpName').value);
@@ -891,13 +1126,13 @@
       const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
       (showPersonal ? days : []).forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
         push(date, {
-          kind:'day', color:item.color||COLORS[0], title:item.title||'Termin',
+          kind:'day', color:personalCalendarColor(), title:item.title||'Termin',
           time:item.startTime||'', sourceName:'Persönlich', ref:item
         })
       ));
       (showPersonal ? reminders : []).filter(item => !item.completed && item.date).forEach(item =>
         push(item.date, {
-          kind:'reminder', color:'#2f6fed', title:item.title||'Erinnerung',
+          kind:'reminder', color:personalCalendarColor(), title:item.title||'Erinnerung',
           time:item.time||'', sourceName:'Persönlich', ref:item
         })
       );
@@ -925,13 +1160,13 @@
       const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
       (showPersonal ? days : []).forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
         push(date, {
-          kind:'day', color:item.color||COLORS[0], title:item.title||'Termin',
+          kind:'day', color:personalCalendarColor(), title:item.title||'Termin',
           time:item.startTime||'', sourceName:'Persönlich', ref:item
         })
       ));
       (showPersonal ? reminders : []).filter(item => !item.completed && item.date).forEach(item =>
         push(item.date, {
-          kind:'reminder', color:'#2f6fed', title:item.title||'Erinnerung',
+          kind:'reminder', color:personalCalendarColor(), title:item.title||'Erinnerung',
           time:item.time||'', sourceName:'Persönlich', ref:item
         })
       );
@@ -967,7 +1202,7 @@
         const k=keyOf(y,m,dn); if(k===todayKey)cell.classList.add('today');
         const evs=map[k]||[];
         let inner=`<span class="daynum">${dn}</span>`;
-        if(evs.length){ const two=evs.slice(0,2).map(e=>`<span class="evchip" style="background:${e.color}">${e.time?`<b>${esc(e.time)}</b> `:''}${esc(e.title)}</span>`).join('');
+        if(evs.length){ const two=evs.slice(0,2).map(e=>`<span class="evchip" style="${eventColorVars(e.color)}">${e.time?`<b>${esc(e.time)}</b> `:''}${esc(e.title)}</span>`).join('');
           inner+=`<div class="chips">${two}${evs.length>2?`<span class="more">+${evs.length-2}</span>`:''}</div>`; }
         cell.innerHTML=inner;
         cell.onclick=()=>openDay(k,y,m,dn);
@@ -1012,7 +1247,7 @@
       const allDayCells = dayEvents.map(events => `
         <div class="all-day-cell">${events.filter(event=>!event.time).map(event => `
           <button class="all-day-event" type="button" data-time-event="${indexFor(event)}"
-            style="--event-color:${event.color}" title="${esc(event.sourceName||'')}">${esc(event.title)}</button>`).join('')}</div>`).join('');
+            style="${eventColorVars(event.color)}" title="${esc(event.sourceName||'')}">${esc(event.title)}</button>`).join('')}</div>`).join('');
       const columns = dayEvents.map((events, dayIndex) => {
         const date = new Date(`${dates[dayIndex]}T00:00:00`);
         const timed = events.filter(event=>event.time);
@@ -1024,7 +1259,7 @@
           const top = start/60*hourHeight;
           const height = Math.max(26,(end-start)/60*hourHeight);
           return `<button class="time-event" type="button" data-time-event="${indexFor(event)}"
-            style="--event-color:${event.color};top:${top}px;height:${height}px">
+            style="${eventColorVars(event.color)};top:${top}px;height:${height}px">
             <strong>${esc(event.title)}</strong><span>${esc(event.time)}${event.sourceName?' · '+esc(event.sourceName):''}</span>
           </button>`;
         }).join('');
@@ -1072,6 +1307,7 @@
 
     function renderCurrentView() {
       if (!$('calView')) return;
+      renderMiniCalendars();
       const isMonth = curView==='month', isAgenda = curView==='agenda';
       $('calView').hidden = !isMonth;
       $('timeView').hidden = isMonth || isAgenda;
@@ -1174,13 +1410,6 @@
     /* ── Trip form ── */
     let newTripFileHtml = '';
     let editTripItinerary = [];
-    let tripColor = TRIP_COLOR;
-    function buildTripSwatches(){
-      $('tSwatch').innerHTML = COLORS.map(c=>`<span class="swatch" data-c="${c}" style="background:${c}"></span>`).join('');
-      $('tSwatch').querySelectorAll('.swatch').forEach(s=>s.onclick=()=>{ tripColor=s.dataset.c; markTripSwatch(); });
-    }
-    function markTripSwatch(){ $('tSwatch').querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel', s.dataset.c===tripColor)); }
-    buildTripSwatches();
     function setTripPlanPane(p){
       document.querySelectorAll('#tpTabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.tpane===p));
       document.querySelectorAll('#tripSheet [data-tbody]').forEach(b=>b.style.display = b.dataset.tbody===p ? '' : 'none');
@@ -1233,8 +1462,6 @@
       $('tpChosen').style.display = 'none';
       describePlanHtml(t?.planHtml||'');
       setTripPlanPane('paste');
-      tripColor = t?.color || TRIP_COLOR;
-      markTripSwatch();
       // Delete lives here too now, not just at the bottom of the Termin's own
       // page — only makes sense once something exists to delete.
       $('tripFormDelete').style.display = t ? '' : 'none';
@@ -1263,7 +1490,7 @@
       // entry, so it still shows correctly everywhere dates are unioned.
       const startTime=$('tStartTime').value, endTime=$('tEndTime').value;
       const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start,
-        startTime, endTime:endTime||startTime, notes:$('tNotes').value.trim(), color:tripColor,
+        startTime, endTime:endTime||startTime, notes:$('tNotes').value.trim(),
         familyId:$('tGroup').value };
       if (!data.familyId) { alert('Bitte einen Kalender auswählen.'); return; }
 
@@ -1318,7 +1545,7 @@
       const v = $('tripDetail');
       v.innerHTML = `
         <button class="pill" id="tdBack">‹ Zurück</button>
-        <div class="grp-card" style="border-left:4px solid ${tr.color||TRIP_COLOR};margin-top:12px">
+        <div class="grp-card" style="border-left:4px solid ${groupColor(tr.familyId)};margin-top:12px">
           <div class="grp-top"><span class="grp-name">${esc(tr.name)}</span>
             <button class="mini" id="tdEdit" title="Bearbeiten">✎</button></div>
           <div class="item-meta">${esc(tr.destination||'')}</div>
@@ -1518,9 +1745,6 @@
       try{ await delAttachment(id); }catch(e){reportClientError('attachment-delete',e);} const i=curFiles.findIndex(f=>f.id===id); if(i>=0)curFiles.splice(i,1); rebind(); }
 
     /* ── Special day form ── */
-    function buildSwatches(){ $('dSwatch').innerHTML=COLORS.map(c=>`<span class="swatch" data-c="${c}" style="background:${c}"></span>`).join('');
-      $('dSwatch').querySelectorAll('.swatch').forEach(s=>s.onclick=()=>{dayColor=s.dataset.c;markSwatch();}); }
-    function markSwatch(){ $('dSwatch').querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel',s.dataset.c===dayColor)); }
     function setDayPane(p){ dayPane=p; document.querySelectorAll('#dayForm .tab').forEach(t=>t.classList.toggle('active',t.dataset.pane===p)); document.querySelectorAll('#dayForm [data-body]').forEach(b=>b.style.display=b.dataset.body===p?'':'none'); }
     function bindDayFiles(){
       const ex = dayFiles.map((f,i)=>`<div class="file-row"><span class="file-ic">${/image\//.test(f.type)?'🖼':'📄'}</span><span class="item-body"><span class="l-title" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span><span class="l-sub">${(f.size/1024).toFixed(0)} KB</span></span><button class="pill" data-dfo="${i}">Öffnen</button><button class="mini" data-dfd="${esc(f.id)}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join('');
@@ -1530,13 +1754,13 @@
       $('dFileList').querySelectorAll('[data-dfd]').forEach(b=>b.onclick=async()=>{ if(!confirm('Datei löschen?'))return; await delAttachment(b.dataset.dfd).catch(()=>{}); const i=dayFiles.findIndex(x=>x.id===b.dataset.dfd); if(i>=0)dayFiles.splice(i,1); bindDayFiles(); });
     }
     async function openDayForm(existing){
-      editDayId=existing?existing.id:null; dayColor=existing?(existing.color||COLORS[0]):COLORS[0]; dayUploadHtml=''; pendingDayFiles=[]; dayFiles=[];
+      editDayId=existing?existing.id:null; dayUploadHtml=''; pendingDayFiles=[]; dayFiles=[];
       $('dayFormTitle').textContent=existing?'Tag bearbeiten':'Besonderer Tag';
       $('dTitle').value=existing?.title||''; $('dDate').value=existing?.date||sheetKey||todayKey;
       $('dHtml').value=existing?.planHtml||''; $('dUrl').value=existing?.planUrl||''; $('dHtmlChosen').style.display='none';
       $('dFileList').innerHTML='';
       $('dayFormDelete').style.display=existing?'':'none';
-      setDayPane(existing?.planUrl&&!existing?.planHtml?'url':'paste'); markSwatch();
+      setDayPane(existing?.planUrl&&!existing?.planHtml?'url':'paste');
       $('dayFormBackdrop').classList.add('visible'); $('dayForm').classList.add('visible');
       if(existing){ dayFiles = await loadAttachments(existing.id); bindDayFiles(); }
     }
@@ -1546,7 +1770,7 @@
       if(!title){alert('Bitte einen Titel eingeben.');return;} if(!date){alert('Bitte ein Datum wählen.');return;}
       let planHtml='',planUrl='';
       if(dayPane==='upload'&&dayUploadHtml)planHtml=dayUploadHtml; else if(dayPane==='url')planUrl=$('dUrl').value.trim(); else planHtml=$('dHtml').value.trim();
-      const data={ownerUid:user.uid,title,date,color:dayColor,planHtml,planUrl};
+      const data={ownerUid:user.uid,title,date,planHtml,planUrl};
       $('dayFormSave').disabled=true;
       try{
         let id=editDayId;
@@ -1719,7 +1943,6 @@
             endTime:event.endTime,
             location:event.location,
             notes:event.description,
-            color:COLORS[0],
             source:'ics',
             externalUid:event.uid || '',
             updatedAt:serverTimestamp()
@@ -1787,8 +2010,11 @@
       $('calendarSetupClose').onclick=closeCalendarSetup;
       $('calendarSetupBackdrop').onclick=()=>{ if(calendarPreferenceExists)closeCalendarSetup(); };
       $('addGroupBtn').onclick=openGroupSheet;
+      $('manageGroupsBtn').onclick=openGroupManager;
       $('groupBackdrop').onclick=closeGroupSheet;
       $('groupSheetClose').onclick=closeGroupSheet;
+      $('groupManageBackdrop').onclick=closeGroupManager;
+      $('groupManageClose').onclick=closeGroupManager;
       // One unified entry point: every new entry is a "Termin" (trip-shaped
       // record) — single-day or multi-day, both work the same way and get
       // itinerary parsing + guest sharing. Existing legacy "Besondere Tage"
@@ -1807,8 +2033,8 @@
       document.addEventListener('keydown',e=>{ if(e.key!=='Escape')return;
         if($('viewer').classList.contains('visible'))closeViewer();
         else if($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists)closeCalendarSetup();
+        else if($('groupManageSheet').classList.contains('visible'))closeGroupManager();
         else if($('groupSheet').classList.contains('visible'))closeGroupSheet();
-        else if(document.querySelector('.calendar-sidebar').classList.contains('is-mobile-open'))closeGroupSheet();
         else if($('reminderSheet').classList.contains('visible'))closeReminderForm();
         else if($('dayForm').classList.contains('visible'))closeDayForm();
         else if($('tripSheet').classList.contains('visible'))closeTripForm();
@@ -1818,6 +2044,9 @@
       // sheet/viewer/trip detail is open, instead of jumping straight home.
       $('backBtn').addEventListener('click', e => {
         if ($('viewer').classList.contains('visible')) { e.preventDefault(); closeViewer(); return; }
+        if ($('groupManageSheet').classList.contains('visible')) { e.preventDefault(); closeGroupManager(); return; }
+        if ($('groupSheet').classList.contains('visible')) { e.preventDefault(); closeGroupSheet(); return; }
+        if ($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists) { e.preventDefault(); closeCalendarSetup(); return; }
         if ($('reminderSheet').classList.contains('visible')) { e.preventDefault(); closeReminderForm(); return; }
         if ($('dayForm').classList.contains('visible')) { e.preventDefault(); closeDayForm(); return; }
         if ($('tripSheet').classList.contains('visible')) { e.preventDefault(); closeTripForm(); return; }
