@@ -194,6 +194,19 @@ body.has-nav .app { min-height: calc(100vh - 64px - env(safe-area-inset-bottom, 
    fest darunter. Dafür braucht die Kette eine ECHTE Höhe — mit
    min-height wächst der Verlauf mit dem Inhalt weiter, das Feld
    wandert nach unten aus dem Bild und die Leiste deckt es zu. */
+/* Solange die Bildschirmtastatur offen ist, tritt die Navigation zur
+   Seite: sie würde sonst mit hochgeschoben und läge über dem
+   Eingabefeld. Der Platz, den sie unten reserviert, fällt mit ihr weg.
+   --kb ist die Höhe, die die Tastatur einnimmt (gesetzt in nav.js). */
+body.kb-open .nav { display: none; }
+body.kb-open.has-nav { padding-bottom: 0; }
+body.kb-open.has-nav .app { min-height: calc(100vh - var(--kb, 0px)); }
+body.dm-thread.kb-open .app { height: calc(100vh - var(--kb, 0px)); }
+@supports (height: 100dvh) {
+  body.kb-open.has-nav .app { min-height: calc(100dvh - var(--kb, 0px)); }
+  body.dm-thread.kb-open .app { height: calc(100dvh - var(--kb, 0px)); }
+}
+
 body.dm-thread { overflow: hidden; }
 /* Die Versionszeile haengt an .app und wuerde dem Eingabefeld im Thread
    Hoehe wegnehmen. Sie gehoert ans Ende einer scrollenden Seite. */

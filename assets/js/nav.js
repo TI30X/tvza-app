@@ -184,6 +184,27 @@ function mountAccountMenu(user, profile) {
   });
 }
 
+/* ══ Bildschirmtastatur ═════════════════════════════════════════════
+   Die Tastatur verkleinert am Handy nur den sichtbaren Ausschnitt, nicht
+   das Layout. Eine unten fest verankerte Leiste wird darum mit
+   hochgeschoben und legt sich über das Eingabefeld. Die visualViewport-
+   API meldet, wie viel Höhe die Tastatur wegnimmt; solange sie offen
+   ist, tritt die Navigation zur Seite — beim Schreiben braucht sie
+   ohnehin niemand. Fehlt die API, bleibt alles wie bisher. */
+function watchKeyboard() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const sync = () => {
+    const hidden = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    document.documentElement.style.setProperty('--kb', Math.round(hidden) + 'px');
+    // 80px Schwelle: kleine Schwankungen der Browserleiste sind keine Tastatur.
+    document.body.classList.toggle('kb-open', hidden > 80);
+  };
+  vv.addEventListener('resize', sync);
+  vv.addEventListener('scroll', sync);
+  sync();
+}
+
 /** Unread count: a dot on the phone, a number in the laptop rail. */
 export function setUnread(n) {
   n = Number(n) || 0;
@@ -218,5 +239,6 @@ if (!SKIP.includes(file)) {
     mount(profile);
     mountAccountMenu(user, profile);
     watchUnread(user);
+    watchKeyboard();
   });
 }
