@@ -6,7 +6,7 @@ import {
   getAuth, setPersistence, indexedDBLocalPersistence, browserLocalPersistence
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  collection, query, where, getDocs, getDoc, doc
+  collection, query, where, getDocs, getDoc, doc, setDoc, deleteDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -76,6 +76,14 @@ export function escHtml(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Keep backend details out of user-facing messages and avoid dumping full
+// Firebase error objects (which may contain paths and request metadata) into
+// the production console. Context + stable code is enough for diagnostics.
+export function reportClientError(context, error) {
+  const code = typeof error?.code === 'string' ? error.code : 'operation-failed';
+  console.warn(`[${context}] ${code}`);
+}
+
 /* ── Module-Registry (erweiterbar) ─────────────────
    Neue Module hier ergänzen — Dashboard, Einstellungen
    und Teilen ziehen sich automatisch daraus.            */
@@ -100,7 +108,7 @@ export async function getProfile(user) {
   try {
     const snap = await getDoc(doc(db, 'users', user.uid));
     return snap.exists() ? snap.data() : {};
-  } catch (e) { console.warn(e); return {}; }
+  } catch (e) { reportClientError('profile', e); return {}; }
 }
 
 // Admin-Freigabe eines Nutzers.
@@ -118,21 +126,44 @@ export function enabledModules(profile) {
 
 /* ── Teilen (Module mit anderen Nutzern) ──────────── */
 
-// Freigaben, die AN diese E-Mail gerichtet sind (mit mir geteilt).
+// Freigaben für das aktuell angemeldete Konto. Der Funktionsname bleibt aus
+// Kompatibilitätsgründen; die UID ist die sichere, eindeutige Identität.
 export async function sharesForEmail(email) {
-  if (!email) return [];
+  const uid = auth.currentUser?.uid;
+  if (!email || !uid) return [];
   try {
-    const qs = await getDocs(query(collection(db, 'shares'), where('targetEmail', '==', email.toLowerCase())));
+    const qs = await getDocs(query(collection(db, 'shares'), where('targetUid', '==', uid)));
     return qs.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) { console.warn(e); return []; }
+  } catch (e) { reportClientError('shares-received', e); return []; }
 }
 
 // Freigaben, die ICH (als Eigentümer) erstellt habe.
 export async function sharesByOwner(uid) {
   try {
     const qs = await getDocs(query(collection(db, 'shares'), where('ownerUid', '==', uid)));
-    return qs.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) { console.warn(e); return []; }
+    const shares = qs.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // v.30.4: Firestore can enforce view/edit only when a share has a
+    // deterministic id. Owners transparently migrate their older random-id
+    // shares the next time they open Einstellungen.
+    for (const share of shares) {
+      if (!share.targetUid || !share.module) continue;
+      const canonicalId = `${uid}__${share.targetUid}__${share.module}`;
+      if (share.id === canonicalId) continue;
+      const {
+        ownerUid, ownerName = '', module, targetUid,
+        targetEmail = '', targetName = '', role = 'view', createdAt = null
+      } = share;
+      await setDoc(doc(db, 'shares', canonicalId), {
+        ownerUid, ownerName, module, targetUid,
+        targetEmail, targetName, role, createdAt
+      });
+      await deleteDoc(doc(db, 'shares', share.id));
+      share.id = canonicalId;
+    }
+
+    return [...new Map(shares.map(s => [s.id, s])).values()];
+  } catch (e) { reportClientError('shares-owned', e); return []; }
 }
 
 // Welche Daten soll eine Tracker-Seite für `moduleKey` zeigen?

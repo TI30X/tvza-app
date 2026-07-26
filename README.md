@@ -10,15 +10,19 @@
 - 🤝 **Teilen mit Rechten:** Module (Ski, Food) können per E-Mail geteilt werden —
   wahlweise „Nur ansehen" oder „Bearbeiten" (⚙️ Einstellungen → Modul teilen).
   Geteilte Module erscheinen beim Empfänger unter „Mit mir geteilt".
-- 🔑 **Passwort-Dialog:** Eigener Dialog statt `prompt()` (Autokorrektur/Großschreibung aus) —
-  getippte Passwörter funktionieren jetzt zuverlässig auch auf Mobil.
+- 🔐 **Familien-Einladungen:** Neue Familienkonten brauchen einen 128-Bit-Code, den der Admin
+  unter ⚙️ Einstellungen → „Admin · Familien-Einladungen" für eine bestimmte E-Mail erstellt.
+  Ein Firebase-Login allein erhält keinen Zugriff auf Familiendaten.
 
 ## Datenmodell (Firestore)
 - `users/{uid}` — Profil inkl. `modules` (welche Module aktiv sind), `isTimo`, `isParent`.
 - `projects/{uid}/items/{id}` — eigene Projekte (privat + öffentlich-Flag).
 - `publicProjects/{ownerUid__projectId}` — **flacher**, von allen lesbarer Feed.
-  Felder: `ownerUid, ownerName, emoji, name, url, publicPassword, updatedAt`.
-- `shares/{id}` — Freigaben: `ownerUid, ownerName, module, targetEmail, role` (`view`/`edit`).
+  Felder: `ownerUid, ownerName, emoji, name, url, updatedAt`.
+  Öffentlich bedeutet absichtlich öffentlich; geheime URLs oder Passwörter gehören nicht hierhin.
+- `memberInvites/{code}` — Admin-erstellte Familien-Einladungen: `email, createdBy, createdAt`.
+- `shares/{ownerUid__targetUid__module}` — serverseitig prüfbare Freigaben:
+  `ownerUid, ownerName, module, targetUid, targetEmail, role` (`view`/`edit`).
 - `skitracker/{uid}/…`, `foodlog/{uid}/…`, `families`/`trips`/`activities` — wie bisher.
 - `customFoods/{id}` — vom Admin freigegebene Lebensmittel (`name, kcal, protein, carbs, fat, fibre, micros`).
   Werden im Food Tracker beim Start geladen und stehen dann allen in Suche & Scan zur Verfügung.
@@ -47,20 +51,23 @@
 Kopiere die komplette Datei `firestore.rules` (im Repo-Stamm) in die Firebase-Konsole
 (Firestore → Regeln) und klicke **Veröffentlichen**.
 
-> **Wichtig (Privatsphäre der Nachrichten):** Die alte globale Regel
+> **Wichtig:** Die alte globale Regel
 > `match /{document=**} { allow read, write … }` wurde entfernt und durch
-> **explizite Regeln pro Sammlung** ersetzt. Das ist nötig, weil Firestore Zugriff
-> gewährt, sobald *irgendeine* Regel passt — eine Catch-all-Regel würde die strikte
-> `dms`-Regel aushebeln und Nachrichten für alle lesbar machen. Alle bisherigen
-> Sammlungen bleiben für angemeldete Nutzer offen (Familien-Vertrauensmodell);
-> nur `dms/{convId}` (+ `messages`) ist auf die zwei Teilnehmer beschränkt.
+> **explizite Regeln pro Sammlung** ersetzt. Mitgliedschaft braucht ein `users/{uid}`-Profil,
+> neue Profile brauchen einen Admin-Einladungscode, Admin-Felder sind geschützt und
+> Tracker-Freigaben werden serverseitig als `view` oder `edit` geprüft.
 >
 > Falls künftig eine **neue** Sammlung dazukommt, muss sie in `firestore.rules`
 > ergänzt werden — sonst wird der Zugriff standardmässig verweigert.
 
-### 2. Module für bestehende Nutzer
-Neue Nutzer bekommen automatisch alle Module. Bestehende Konten ohne `modules`-Feld
-sehen ebenfalls alle Module (Standard) und können in ⚙️ Einstellungen abwählen.
+### 2. Neue Familienmitglieder einladen
+1. Admin öffnet ⚙️ Einstellungen → „Admin · Familien-Einladungen".
+2. E-Mail eintragen, Einladung erstellen und den kopierten Code privat senden.
+3. Die eingeladene Person wählt auf `login.html` „Registrieren" und verwendet exakt
+   diese E-Mail plus Code.
+
+Bestehende Nutzer brauchen nichts zu tun. Neue Nutzer starten mit Kalender, Watchlist,
+Food, Wetter und Nachrichten; weitere Module schaltet der Admin frei.
 
 ### 3. Timos Skis weiterhin für Eltern sichtbar
 Zwei Wege:
@@ -71,7 +78,8 @@ Zwei Wege:
 
 ### 4. Fertig
 - `config/tvza` mit Timos UID wird automatisch angelegt, sobald Timo die App öffnet.
-- Projekte öffentlich machen: 🔒/🌐 Knopf neben jedem Projekt, optional mit Passwort.
+- Projekte öffentlich machen: 🔒/🌐 Knopf neben jedem Projekt. Alles im öffentlichen Feed
+  ist ohne Anmeldung zugänglich.
 - Öffentliche Seite: https://ti30x.github.io/tvza-app/public.html
 
 ## Push

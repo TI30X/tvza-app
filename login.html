@@ -83,6 +83,13 @@
           <input class="form-input" id="fName" name="name" type="text" placeholder="z.B. Timo" autocomplete="name" />
         </div>
 
+        <div class="form-group" id="inviteGroup" style="display:none">
+          <label class="form-label" for="fInvite">Einladungscode</label>
+          <input class="form-input" id="fInvite" name="invite" type="text"
+                 placeholder="Code aus deiner Familieneinladung"
+                 autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" />
+        </div>
+
         <div class="form-group">
           <label class="form-label" for="fEmail">E-Mail</label>
           <input class="form-input" id="fEmail" name="email" type="email" placeholder="deine@email.com" autocomplete="username" inputmode="email" autocapitalize="none" />
@@ -108,26 +115,33 @@
   <script type="module">
     import { auth, db, DEFAULT_MODULES } from './assets/js/firebase-config.js';
     import {
-      signInWithEmailAndPassword, createUserWithEmailAndPassword
+      signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      deleteUser, signOut
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
-      doc, setDoc, serverTimestamp
+      doc, getDoc, setDoc, serverTimestamp
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     // Already logged in? Go straight to the hub.
+    let authActionInProgress = false;
     auth.onAuthStateChanged(user => {
-      if (user) window.location.href = 'index.html';
+      if (user && !authActionInProgress) window.location.href = 'index.html';
     });
 
     let mode = 'login'; // or 'register'
 
     const $ = id => document.getElementById(id);
+    if (new URLSearchParams(location.search).get('reason') === 'membership') {
+      showErr('Dieses Konto hat keinen Familienzugang. Bitte verwende eine Einladung.');
+      history.replaceState(null, '', location.pathname);
+    }
 
     $('switchLink').addEventListener('click', () => {
       mode = mode === 'login' ? 'register' : 'login';
       $('nameGroup').style.display = mode === 'register' ? '' : 'none';
+      $('inviteGroup').style.display = mode === 'register' ? '' : 'none';
       $('subTitle').textContent = mode === 'register'
-        ? 'Konto erstellen — einmalig, dann bleibst du angemeldet.'
+        ? 'Familienkonto mit Einladungscode erstellen.'
         : 'Willkommen zurück! Melde dich an.';
       $('submitBtn').textContent = mode === 'register' ? 'Registrieren' : 'Anmelden';
       $('switchText').firstChild.textContent = mode === 'register' ? 'Schon ein Konto? ' : 'Noch kein Konto? ';
@@ -139,17 +153,22 @@
     function showErr(msg) { $('errBox').textContent = msg; $('errBox').classList.add('visible'); }
     function hideErr()    { $('errBox').classList.remove('visible'); }
 
-    function translateError(code) {
-      const map = {
-        'auth/invalid-email':          'Ungültige E-Mail-Adresse.',
-        'auth/user-not-found':         'Kein Konto mit dieser E-Mail gefunden.',
-        'auth/wrong-password':         'Falsches Passwort.',
-        'auth/invalid-credential':     'E-Mail oder Passwort falsch.',
-        'auth/email-already-in-use':   'Diese E-Mail ist bereits registriert.',
-        'auth/weak-password':          'Passwort zu schwach (mind. 6 Zeichen).',
-        'auth/network-request-failed': 'Keine Internetverbindung. Für die erste Anmeldung brauchst du Internet.',
-      };
-      return map[code] || 'Fehler: ' + code;
+    function translateError(code, action) {
+      if (code === 'auth/network-request-failed' || code === 'unavailable') {
+        return 'Keine Internetverbindung. Bitte versuche es erneut.';
+      }
+      if (code === 'auth/weak-password') {
+        return 'Bitte verwende ein Passwort mit mindestens 6 Zeichen.';
+      }
+      if (action === 'register' && code === 'permission-denied') {
+        return 'Dieser Einladungscode passt nicht zu dieser E-Mail.';
+      }
+      if (action === 'register') {
+        return 'Konto konnte nicht erstellt werden. Prüfe Einladung, E-Mail und Passwort.';
+      }
+      // One message for every credential failure prevents account enumeration
+      // and never exposes Firebase error codes.
+      return 'Anmeldung nicht möglich. Prüfe E-Mail und Passwort.';
     }
 
     $('loginForm').addEventListener('submit', async (e) => {
@@ -158,16 +177,21 @@
       const email = $('fEmail').value.trim();
       const pass  = $('fPass').value;
       const name  = $('fName').value.trim();
+      const inviteCode = $('fInvite').value.trim();
 
       if (!email || !pass) { showErr('Bitte E-Mail und Passwort eingeben.'); return; }
       if (mode === 'register' && !name) { showErr('Bitte deinen Namen eingeben.'); return; }
+      if (mode === 'register' && !inviteCode) { showErr('Bitte den Einladungscode eingeben.'); return; }
 
       $('submitBtn').disabled = true;
       $('submitBtn').textContent = 'Bitte warten…';
+      authActionInProgress = true;
+      let createdUser = null;
 
       try {
         if (mode === 'register') {
           const cred = await createUserWithEmailAndPassword(auth, email, pass);
+          createdUser = cred.user;
           await setDoc(doc(db, 'users', cred.user.uid), {
             displayName: name,
             email: email.toLowerCase(),
@@ -176,15 +200,25 @@
             isTimo: false,
             allowedModules: { ...DEFAULT_MODULES },
             modules: { ...DEFAULT_MODULES },
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            inviteCode
           });
         } else {
-          await signInWithEmailAndPassword(auth, email, pass);
+          const cred = await signInWithEmailAndPassword(auth, email, pass);
+          const profile = await getDoc(doc(db, 'users', cred.user.uid));
+          if (!profile.exists()) {
+            await signOut(auth);
+            throw { code: 'membership-required' };
+          }
         }
         sessionStorage.setItem('tvza-just-logged-in', '1'); // Welcome-Animation auslösen
         window.location.href = 'index.html';
       } catch (err) {
-        showErr(translateError(err.code));
+        // If profile creation is rejected, remove the just-created Auth account
+        // so the invited person can correct the code and try again.
+        if (createdUser) await deleteUser(createdUser).catch(() => {});
+        authActionInProgress = false;
+        showErr(translateError(err?.code, mode));
         $('submitBtn').disabled = false;
         $('submitBtn').textContent = mode === 'register' ? 'Registrieren' : 'Anmelden';
       }

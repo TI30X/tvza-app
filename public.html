@@ -169,23 +169,6 @@
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
     }
-    /* Passwort-Dialog (ersetzt natives prompt — behebt Tipp-Problem auf Mobil) */
-    .pw-backdrop { position: fixed; inset: 0; background: oklch(0 0 0 / 0.45); display: none;
-      align-items: center; justify-content: center; padding: 20px; z-index: 50; }
-    .pw-backdrop.visible { display: flex; }
-    .pw-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; width: 100%; max-width: 360px; }
-    .pw-card h3 { font-size: 16px; margin-bottom: 4px; }
-    .pw-card p { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
-    .pw-input { width: 100%; font-family: inherit; font-size: 16px; padding: 11px 12px;
-      border: 1px solid var(--border); border-radius: var(--r1); background: var(--surface-2); color: var(--ink); }
-    .pw-input:focus { outline: none; border-color: var(--accent); }
-    .pw-err { color: var(--accent); font-size: 12px; margin-top: 8px; display: none; }
-    .pw-err.visible { display: block; }
-    .pw-actions { display: flex; gap: 8px; margin-top: 16px; }
-    .pw-btn { flex: 1; font-family: inherit; font-size: 14px; font-weight: 700; padding: 10px;
-      border-radius: var(--r1); cursor: pointer; border: 1px solid var(--border); }
-    .pw-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .pw-btn-secondary { background: var(--surface-2); color: var(--ink); }
   </style>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
   <script src="assets/js/ui-fx.js?v=15" defer></script>
@@ -226,26 +209,10 @@
       <div class="tvz-footer-copy">
         <strong>TVZA · Webprojekte</strong>
         <span>Eine öffentliche Projektübersicht von TvZ.</span>
-        <p>Einige Projekte sind frei zugänglich, andere werden erst nach Eingabe des Projektpassworts geöffnet.</p>
+        <p>Alle hier aufgeführten Projekte sind bewusst öffentlich freigegeben.</p>
       </div>
     </div>
   </footer>
-
-  <!-- Passwort-Dialog -->
-  <div class="pw-backdrop" id="pwModal">
-    <div class="pw-card">
-      <h3 id="pwTitle">Passwort eingeben</h3>
-      <p id="pwSub">Dieses Projekt ist passwortgeschützt.</p>
-      <input class="pw-input" id="pwInput" type="text" inputmode="text"
-             autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
-             placeholder="Projektpasswort" />
-      <div class="pw-err" id="pwErr">Falsches Passwort.</div>
-      <div class="pw-actions">
-        <button class="pw-btn pw-btn-secondary" id="pwCancel">Abbrechen</button>
-        <button class="pw-btn pw-btn-primary" id="pwOk">Öffnen</button>
-      </div>
-    </div>
-  </div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -269,54 +236,12 @@
     const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     // Theme-Umschalter (#themeToggle) wird automatisch von theme.js verkabelt.
 
-    const ICON_LOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`;
-
     // Anmelden-Button: angemeldet → "Zur App", sonst → "Anmelden"
     onAuthStateChanged(auth, u => {
       const btn = document.getElementById('authBtn');
       if (u) { btn.textContent = 'Zur App →'; btn.href = 'index.html'; }
       else   { btn.textContent = 'Anmelden';  btn.href = 'login.html'; }
     });
-
-    /* ── Eigener Passwort-Dialog (statt prompt) ──────────
-       Behebt das Problem, dass auf Mobil getippte Passwörter
-       durch Autokorrektur/Großschreibung nicht passten.      */
-    const pwModal = document.getElementById('pwModal');
-    const pwInput = document.getElementById('pwInput');
-    const pwErr   = document.getElementById('pwErr');
-    let pwResolve = null;
-
-    function askPassword() {
-      return new Promise(resolve => {
-        pwResolve = resolve;
-        pwInput.value = '';
-        pwErr.classList.remove('visible');
-        pwModal.classList.add('visible');
-        setTimeout(() => pwInput.focus(), 50);
-      });
-    }
-    function closePw(val) { pwModal.classList.remove('visible'); const r = pwResolve; pwResolve = null; r && r(val); }
-    document.getElementById('pwCancel').addEventListener('click', () => closePw(null));
-    document.getElementById('pwOk').addEventListener('click', () => closePw(pwInput.value));
-    pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') closePw(pwInput.value); });
-    pwModal.addEventListener('click', e => { if (e.target === pwModal) closePw(null); });
-
-    async function openProtected(project) {
-      // Wiederholt fragen, bis korrekt oder abgebrochen.
-      while (true) {
-        const entered = await askPassword();
-        if (entered === null) return;                 // abgebrochen
-        if (entered.trim() === String(project.publicPassword).trim()) {
-          window.open(project.url, '_blank', 'noopener');
-          return;
-        }
-        // falsch → Fehler zeigen und erneut fragen
-        pwInput.value = '';
-        pwErr.classList.add('visible');
-        pwModal.classList.add('visible');
-        setTimeout(() => pwInput.focus(), 50);
-      }
-    }
 
     async function load() {
       const list = document.getElementById('list');
@@ -334,20 +259,19 @@
         list.innerHTML = items.map(p => `
           <button class="proj" type="button" data-id="${esc(p.id)}">
             <span class="proj-emoji">${esc(p.emoji || '🔗')}</span>
-            <span class="proj-name">${esc(p.name)}<small class="proj-meta">${p.ownerName ? esc(p.ownerName) + ' · ' : ''}${p.publicPassword ? 'Mit Passwort geschützt' : 'Ohne Passwort öffentlich'}</small></span>
-            <span class="proj-arrow">${p.publicPassword ? ICON_LOCK : '↗'}</span>
+            <span class="proj-name">${esc(p.name)}<small class="proj-meta">${p.ownerName ? esc(p.ownerName) + ' · ' : ''}Öffentlich</small></span>
+            <span class="proj-arrow">↗</span>
           </button>`).join('');
 
         list.querySelectorAll('[data-id]').forEach(btn => {
           btn.addEventListener('click', () => {
             const project = items.find(item => item.id === btn.dataset.id);
             if (!project) return;
-            if (String(project.publicPassword || '').trim()) openProtected(project);
-            else window.open(project.url, '_blank', 'noopener');
+            window.open(project.url, '_blank', 'noopener');
           });
         });
       } catch (err) {
-        console.warn(err);
+        console.warn('[public-projects] load-failed');
         list.innerHTML = '<div class="empty">Projekte konnten nicht geladen werden.</div>';
       }
     }

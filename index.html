@@ -26,10 +26,6 @@
     .settings-divider { border:0; border-top:1px solid var(--border); margin:18px 0; }
     .radio-row { display:flex; gap:14px; align-items:center; font-size:14px; }
     .radio-row label { display:flex; gap:6px; align-items:center; cursor:pointer; }
-    /* Passwort-Dialog */
-    .pw-input { width:100%; font-family:inherit; font-size:16px; padding:11px 12px;
-      border:1px solid var(--border); border-radius:var(--r1); background:var(--surface-2); color:var(--ink); }
-    .pw-input:focus { outline:none; border-color:var(--accent); }
   </style>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
   <script src="assets/js/ui-fx.js?v=15" defer></script>
@@ -253,10 +249,6 @@
         <label class="form-label" for="pUrl">URL</label>
         <input class="form-input" id="pUrl" type="url" placeholder="https://..." />
       </div>
-      <div class="form-group">
-        <label class="form-label" for="pPassword">Optionales Veröffentlichungs-Passwort</label>
-        <input class="form-input" id="pPassword" type="text" placeholder="Leer lassen = ohne Passwort öffentlich" />
-      </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" id="modalCancel">Abbrechen</button>
         <button class="btn btn-primary" id="modalSave">Speichern</button>
@@ -317,6 +309,19 @@
       <div id="adminSection" style="display:none">
         <hr class="settings-divider" />
         <section class="settings-section">
+          <p class="settings-section-title">Admin · Familien-Einladungen</p>
+          <p class="form-hint">Erstelle einen einmaligen Code und sende E-Mail und Code nur an die eingeladene Person.</p>
+          <div class="form-group">
+            <label class="form-label" for="memberInviteEmail">E-Mail</label>
+            <input class="form-input" id="memberInviteEmail" type="email"
+                   placeholder="person@beispiel.ch" inputmode="email"
+                   autocapitalize="none" autocorrect="off" />
+          </div>
+          <button class="btn btn-primary btn-block" id="memberInviteCreate">Einladung erstellen</button>
+          <div id="memberInviteList"></div>
+        </section>
+        <hr class="settings-divider" />
+        <section class="settings-section">
           <p class="settings-section-title">Admin · Benutzer verwalten</p>
           <div id="adminUsers"><div class="spinner">Lade…</div></div>
         </section>
@@ -329,27 +334,11 @@
     </div>
   </div>
 
-  <!-- Password modal (for opening protected public projects) -->
-  <div class="modal-backdrop" id="pwModal">
-    <div class="modal">
-      <div class="modal-title">Passwort eingeben</div>
-      <div class="form-group">
-        <input class="pw-input" id="pwInput" type="text" inputmode="text"
-               autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
-               placeholder="Projektpasswort" />
-        <p id="pwErr" style="display:none;color:var(--accent);font-size:12px;margin-top:8px">Falsches Passwort.</p>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="pwCancel">Abbrechen</button>
-        <button class="btn btn-primary" id="pwOk">Öffnen</button>
-      </div>
-    </div>
-  </div>
-
   <script type="module">
     import {
       auth, db, requireAuth, wireOfflineBanner, escHtml,
-      MODULES, allowedModules, enabledModules, getProfile, sharesForEmail, sharesByOwner
+      MODULES, allowedModules, enabledModules, getProfile, sharesForEmail,
+      sharesByOwner, reportClientError
     } from './assets/js/firebase-config.js';
     import { signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
@@ -385,16 +374,21 @@
     let profile = await getProfile(user);
 
     // Selbstheilung: Vor v.29.8.0 konnte die Gast-Seite ein echtes
-    // Familienkonto fälschlich als Gast markieren (guestProfiles/{uid}).
-    // Die Firestore-Regeln blockieren dann das Lesen des eigenen Profils —
-    // Symptom: „Hallo, du" statt Name und ein leeres Standard-Dashboard.
-    // Ein Familienkonto (users/{uid} existiert) darf laut Regeln seinen
-    // eigenen Gast-Eintrag löschen; danach Profil erneut laden.
-    if (!Object.keys(profile).length) {
+    // Familienkonto zusätzlich als Gast markieren. Ein vorhandenes
+    // users/{uid}-Profil beweist die Mitgliedschaft; der falsche Gast-Eintrag
+    // darf dann laut Regeln entfernt werden.
+    if (Object.keys(profile).length) {
       try {
-        await deleteDoc(doc(db, 'guestProfiles', user.uid));
-        profile = await getProfile(user);
-      } catch (e) { console.warn('guest self-heal', e); }
+        const guest = await getDoc(doc(db, 'guestProfiles', user.uid));
+        if (guest.exists()) await deleteDoc(guest.ref);
+      } catch (e) { reportClientError('guest-self-heal', e); }
+    }
+    if (!Object.keys(profile).length) {
+      await signOut(auth).catch(() => {});
+      window.location.replace('login.html?reason=membership');
+      // Stop this module while navigation completes; otherwise restricted
+      // queries below would flash an empty dashboard.
+      await new Promise(() => {});
     }
 
     const name = profile.displayName || 'du';
@@ -717,7 +711,7 @@
       setTimeout(() => {
         d.clone.remove();
         item.classList.remove('reorder-placeholder');
-        try { d.cfg.commit(); } catch (e) { console.warn(e); }
+        try { d.cfg.commit(); } catch (e) { reportClientError('reorder', e); }
       }, 230);
     }
 
@@ -850,7 +844,11 @@
       settingsModal.classList.add('visible');
       loadAppUsers().then(() => {
         renderUserSuggestions();
-        if (profile.isTimo === true) { renderAdminUsers(); renderFoodRequests(); }
+        if (profile.isTimo === true) {
+          renderMemberInvites();
+          renderAdminUsers();
+          renderFoodRequests();
+        }
       });
     }
     document.getElementById('acctSettings').addEventListener('click', () => { closeAcct(); openSettings(); });
@@ -873,7 +871,7 @@
           .sort((a, b) => String(a.displayName || a.email).localeCompare(String(b.displayName || b.email), 'de-CH'));
         appUsersLoaded = true;
       } catch (e) {
-        console.warn(e);
+        reportClientError('users-load', e);
         appUsers = [];
       }
       return appUsers;
@@ -950,7 +948,8 @@
       const role = document.querySelector('input[name="shareRole"]:checked').value;
       if (!target) { alert('Bitte eine Person aus den Vorschlägen auswählen.'); return; }
       if (target.uid === user.uid) { alert('Du kannst nicht mit dir selbst teilen.'); return; }
-      await addDoc(collection(db, 'shares'), {
+      const shareId = `${user.uid}__${target.uid}__${moduleKey}`;
+      await setDoc(doc(db, 'shares', shareId), {
         ownerUid: user.uid, ownerName, module: moduleKey,
         targetUid: target.uid, targetEmail: target.email.toLowerCase(), targetName: target.displayName || '',
         role,
@@ -981,6 +980,83 @@
         renderMyShares();
       }));
     }
+
+    /* ════ Admin · family invitations ═══════════════════════════ */
+    function newInviteCode() {
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function renderMemberInvites() {
+      if (profile.isTimo !== true) return;
+      const wrap = document.getElementById('memberInviteList');
+      try {
+        const snap = await getDocs(collection(db, 'memberInvites'));
+        const invites = snap.docs.map(d => ({ code: d.id, ...d.data() }))
+          .sort((a, b) => String(a.email || '').localeCompare(String(b.email || ''), 'de-CH'));
+        if (!invites.length) {
+          wrap.innerHTML = '<p class="form-hint" style="margin-top:10px">Keine offenen Einladungen.</p>';
+          return;
+        }
+        wrap.innerHTML = '<div class="rows" style="margin-top:10px">' + invites.map(invite => `
+          <div class="row">
+            <span class="row__body">
+              <span class="row__title">${escHtml(invite.email || 'Ohne E-Mail')}</span>
+              <span class="row__sub">${escHtml(invite.code)}</span>
+            </span>
+            <span class="row__end">
+              <button class="b" data-invite-copy="${escHtml(invite.code)}" type="button">Kopieren</button>
+              <button class="b b--danger" data-invite-delete="${escHtml(invite.code)}" type="button">Entfernen</button>
+            </span>
+          </div>`).join('') + '</div>';
+        wrap.querySelectorAll('[data-invite-copy]').forEach(btn => btn.addEventListener('click', async () => {
+          const invite = invites.find(x => x.code === btn.dataset.inviteCopy);
+          if (!invite) return;
+          const text = `TVZA-Einladung\nE-Mail: ${invite.email}\nCode: ${invite.code}`;
+          try {
+            await navigator.clipboard.writeText(text);
+            btn.textContent = 'Kopiert';
+          } catch {
+            window.prompt('Einladung kopieren:', text);
+          }
+        }));
+        wrap.querySelectorAll('[data-invite-delete]').forEach(btn => btn.addEventListener('click', async () => {
+          if (!confirm('Einladung entfernen?')) return;
+          await deleteDoc(doc(db, 'memberInvites', btn.dataset.inviteDelete));
+          renderMemberInvites();
+        }));
+      } catch (error) {
+        reportClientError('member-invites', error);
+        wrap.innerHTML = '<p class="form-hint" style="margin-top:10px">Einladungen konnten nicht geladen werden.</p>';
+      }
+    }
+
+    document.getElementById('memberInviteCreate').addEventListener('click', async () => {
+      const input = document.getElementById('memberInviteEmail');
+      const email = input.value.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        alert('Bitte eine gültige E-Mail-Adresse eingeben.');
+        return;
+      }
+      const btn = document.getElementById('memberInviteCreate');
+      btn.disabled = true;
+      try {
+        let code = newInviteCode();
+        while ((await getDoc(doc(db, 'memberInvites', code))).exists()) code = newInviteCode();
+        await setDoc(doc(db, 'memberInvites', code), {
+          email,
+          createdBy: user.uid,
+          createdAt: serverTimestamp()
+        });
+        input.value = '';
+        await renderMemberInvites();
+      } catch (error) {
+        reportClientError('member-invite-create', error);
+        alert('Einladung konnte nicht erstellt werden.');
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     async function renderAdminUsers() {
       if (profile.isTimo !== true) return;
@@ -1158,11 +1234,34 @@
     const pubDoc = id => doc(db, 'publicProjects', `${user.uid}__${id}`);
     let editingId = null;
     let latestProjects = [];
+    const repairedPublicProjects = new Set();
 
     onSnapshot(query(projCol, orderBy('createdAt', 'asc')), snap => {
       latestProjects = sortProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       renderProjects(latestProjects);
+      latestProjects.filter(p => p.isPublic).forEach(repairPublicProject);
     });
+
+    async function repairPublicProject(project) {
+      if (repairedPublicProjects.has(project.id)) return;
+      repairedPublicProjects.add(project.id);
+      try {
+        const ref = pubDoc(project.id);
+        const existing = await getDoc(ref);
+        if (!existing.exists() || !('publicPassword' in existing.data())) return;
+        await setDoc(ref, {
+          ownerUid: user.uid,
+          ownerName,
+          emoji: project.emoji || '🔗',
+          name: project.name,
+          url: project.url,
+          updatedAt: serverTimestamp()
+        });
+      } catch (error) {
+        repairedPublicProjects.delete(project.id);
+        reportClientError('public-project-repair', error);
+      }
+    }
 
     function sortProjects(items) {
       return [...items].sort((a, b) => {
@@ -1197,29 +1296,26 @@
         return;
       }
       items = sortProjects(items);
-      wrap.innerHTML = items.map(p => {
-        const isProtected = !!(p.publicPassword || '').trim();
-        return `
+      wrap.innerHTML = items.map(p => `
         <div class="link-row project-row" data-project-row="${p.id}">
           <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
           <a class="link-title" href="${escHtml(p.url)}" target="_blank" rel="noopener">
             <span>${escHtml(p.name)}</span>
-            <small>${p.isPublic ? (isProtected ? 'Öffentlich mit Passwort' : 'Öffentlich ohne Passwort') : 'Privat'}</small>
+            <small>${p.isPublic ? 'Öffentlich' : 'Privat'}</small>
           </a>
           <div class="project-actions">
             <button class="action-btn ${p.isPublic ? 'action-btn--public' : ''}" data-pub="${p.id}" data-ispub="${p.isPublic ? '1':''}" title="${p.isPublic ? 'Veröffentlichung beenden' : 'Projekt veröffentlichen'}">
-              <span>${p.isPublic ? (isProtected ? ICON_LOCK : ICON_GLOBE) : ICON_LOCK}</span>
+              <span>${p.isPublic ? ICON_GLOBE : ICON_LOCK}</span>
               <b>${p.isPublic ? 'Öffentlich' : 'Privat'}</b>
             </button>
-            <button class="action-btn" data-edit="${p.id}" data-emoji="${escHtml(p.emoji||'')}" data-name="${escHtml(p.name)}" data-url="${escHtml(p.url)}" data-password="${escHtml(p.publicPassword || '')}" title="Projekt bearbeiten">
+            <button class="action-btn" data-edit="${p.id}" data-emoji="${escHtml(p.emoji||'')}" data-name="${escHtml(p.name)}" data-url="${escHtml(p.url)}" title="Projekt bearbeiten">
               <span>${ICON_PENCIL}</span><b>Bearbeiten</b>
             </button>
             <button class="action-btn action-btn--danger" data-del="${p.id}" title="Projekt löschen">
               <span>${ICON_CLOSE}</span><b>Löschen</b>
             </button>
           </div>
-        </div>`;
-      }).join('');
+        </div>`).join('');
 
       wrap.querySelectorAll('[data-del]').forEach(b =>
         b.addEventListener('click', async () => {
@@ -1231,7 +1327,7 @@
 
       wrap.querySelectorAll('[data-edit]').forEach(b =>
         b.addEventListener('click', () => openModal({
-          id: b.dataset.edit, emoji: b.dataset.emoji, name: b.dataset.name, url: b.dataset.url, publicPassword: b.dataset.password
+          id: b.dataset.edit, emoji: b.dataset.emoji, name: b.dataset.name, url: b.dataset.url
         })));
 
       wrap.querySelectorAll('[data-pub]').forEach(b =>
@@ -1239,12 +1335,11 @@
           const id = b.dataset.pub;
           const p = items.find(x => x.id === id);
           const makePublic = !b.dataset.ispub;
-          let publicPassword = (p.publicPassword || '').trim();
-          if (makePublic) publicPassword = prompt('Optionales Passwort für dieses öffentliche Projekt. Leer lassen = ohne Passwort veröffentlichen:', publicPassword)?.trim() || '';
-          await updateDoc(doc(projCol, id), { isPublic: makePublic, publicPassword });
+          await updateDoc(doc(projCol, id), { isPublic: makePublic });
           if (makePublic) {
             await setDoc(pubDoc(id), {
-              ownerUid: user.uid, ownerName, emoji: p.emoji || '🔗', name: p.name, url: p.url, publicPassword, updatedAt: serverTimestamp()
+              ownerUid: user.uid, ownerName, emoji: p.emoji || '🔗',
+              name: p.name, url: p.url, updatedAt: serverTimestamp()
             });
           } else {
             await deleteDoc(pubDoc(id)).catch(() => {});
@@ -1260,7 +1355,6 @@
       document.getElementById('pEmoji').value = p?.emoji || '';
       document.getElementById('pName').value  = p?.name  || '';
       document.getElementById('pUrl').value   = p?.url   || '';
-      document.getElementById('pPassword').value = p?.publicPassword || '';
       modal.classList.add('visible');
     }
     document.getElementById('addProjectBtn').addEventListener('click', () => openModal());
@@ -1271,45 +1365,29 @@
       const emoji = document.getElementById('pEmoji').value.trim() || '🔗';
       const pname = document.getElementById('pName').value.trim();
       let   url   = document.getElementById('pUrl').value.trim();
-      const publicPassword = document.getElementById('pPassword').value.trim();
       if (!pname || !url) { alert('Bitte Name und URL eingeben.'); return; }
       if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
       if (editingId) {
-        await updateDoc(doc(projCol, editingId), { emoji, name: pname, url, publicPassword });
+        await updateDoc(doc(projCol, editingId), { emoji, name: pname, url });
         const pubSnap = await getDoc(pubDoc(editingId)).catch(() => null);
-        if (pubSnap?.exists()) await setDoc(pubDoc(editingId), { ownerUid: user.uid, ownerName, emoji, name: pname, url, publicPassword, updatedAt: serverTimestamp() });
+        if (pubSnap?.exists()) {
+          // Replacement write also scrubs legacy publicPassword fields.
+          await setDoc(pubDoc(editingId), {
+            ownerUid: user.uid, ownerName, emoji, name: pname,
+            url, updatedAt: serverTimestamp()
+          });
+        }
       } else {
-        await addDoc(projCol, { emoji, name: pname, url, publicPassword, isPublic: false, sortOrder: latestProjects.length, createdAt: serverTimestamp() });
+        await addDoc(projCol, {
+          emoji, name: pname, url, isPublic: false,
+          sortOrder: latestProjects.length, createdAt: serverTimestamp()
+        });
       }
       modal.classList.remove('visible');
     });
 
     /* ════ Globaler öffentlicher Feed ════════════ */
-    const pwModal = document.getElementById('pwModal');
-    const pwInput = document.getElementById('pwInput');
-    const pwErr   = document.getElementById('pwErr');
-    let pwResolve = null;
-    function askPassword() {
-      return new Promise(resolve => {
-        pwResolve = resolve; pwInput.value = ''; pwErr.style.display = 'none';
-        pwModal.classList.add('visible'); setTimeout(() => pwInput.focus(), 50);
-      });
-    }
-    function closePw(val) { pwModal.classList.remove('visible'); const r = pwResolve; pwResolve = null; r && r(val); }
-    document.getElementById('pwCancel').addEventListener('click', () => closePw(null));
-    document.getElementById('pwOk').addEventListener('click', () => closePw(pwInput.value));
-    pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') closePw(pwInput.value); });
-    pwModal.addEventListener('click', e => { if (e.target === pwModal) closePw(null); });
-    async function openProtected(p) {
-      while (true) {
-        const entered = await askPassword();
-        if (entered === null) return;
-        if (entered.trim() === String(p.publicPassword).trim()) { window.open(p.url, '_blank', 'noopener'); return; }
-        pwInput.value = ''; pwErr.style.display = ''; pwModal.classList.add('visible'); setTimeout(() => pwInput.focus(), 50);
-      }
-    }
-
     let unsubPublicFeed = null;
     function watchPublicFeed() {
       if (unsubPublicFeed || !enabledModules(profile).publicProjects) return;
@@ -1318,20 +1396,16 @@
           .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
         const wrap = document.getElementById('publicFeedList');
         if (!items.length) { wrap.innerHTML = '<div class="empty-state" style="padding:24px"><p class="empty-text">Noch keine öffentlichen Projekte.</p></div>'; return; }
-        wrap.innerHTML = items.map(p => {
-          const isProtected = !!(p.publicPassword || '').trim();
-          return `
+        wrap.innerHTML = items.map(p => `
           <button class="link-row" type="button" data-open="${escHtml(p.id)}" style="width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit">
             <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
-            <span class="link-title"><span>${escHtml(p.name)}</span><small>${p.ownerName ? escHtml(p.ownerName) + ' · ' : ''}${isProtected ? 'Mit Passwort' : 'Öffentlich'}</small></span>
-            <span class="link-icon">${isProtected ? ICON_LOCK : '↗'}</span>
-          </button>`;
-        }).join('');
+            <span class="link-title"><span>${escHtml(p.name)}</span><small>${p.ownerName ? escHtml(p.ownerName) + ' · ' : ''}Öffentlich</small></span>
+            <span class="link-icon">↗</span>
+          </button>`).join('');
         wrap.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
           const p = items.find(x => x.id === b.dataset.open);
           if (!p) return;
-          if (String(p.publicPassword || '').trim()) openProtected(p);
-          else window.open(p.url, '_blank', 'noopener');
+          window.open(p.url, '_blank', 'noopener');
         }));
       });
     }

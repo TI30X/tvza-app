@@ -21,6 +21,15 @@ node itinerary.test.mjs
 node hints.test.mjs
 ```
 
+Die statischen Sicherheits-Invarianten laufen ebenfalls ohne Installation:
+
+```bash
+node --test security-model.test.mjs
+```
+
+Sie verhindern versehentliches Wiederöffnen der Registrierung, globale
+Mitglieder-Schreibrechte, öffentliche Projektpasswörter und rohe Backend-Fehlercodes.
+
 33 Tests. Der interessante Teil eines Hinweises ist der Fall, in dem er
 **nicht** erscheint — die meisten Tests prüfen deshalb auf `null`: keine
 Historie, kein Regen, frisch gewachste Ski, zwei Geburtstage

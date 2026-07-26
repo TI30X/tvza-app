@@ -237,34 +237,32 @@
     $('switchLink').addEventListener('click', () => { mode = mode === 'register' ? 'login' : 'register'; applyMode(); });
 
     function translateAuthError(code) {
-      const map = {
-        'auth/invalid-email':          'Ungültige E-Mail-Adresse.',
-        'auth/user-not-found':         'Kein Konto mit dieser E-Mail gefunden.',
-        'auth/wrong-password':         'Falsches Passwort.',
-        'auth/invalid-credential':     'E-Mail oder Passwort falsch.',
-        'auth/email-already-in-use':   'Diese E-Mail ist bereits registriert — versuch es mit Anmelden.',
-        'auth/weak-password':          'Passwort zu schwach (mind. 6 Zeichen).',
-        'auth/network-request-failed': 'Keine Internetverbindung.',
-      };
-      return map[code] || 'Fehler: ' + code;
+      if (code === 'auth/network-request-failed' || code === 'unavailable') {
+        return 'Keine Internetverbindung. Bitte versuche es erneut.';
+      }
+      if (code === 'auth/weak-password') {
+        return 'Bitte verwende ein Passwort mit mindestens 6 Zeichen.';
+      }
+      if (mode === 'register') {
+        return 'Gastkonto konnte nicht erstellt werden. Prüfe E-Mail und Passwort.';
+      }
+      return 'Anmeldung nicht möglich. Prüfe E-Mail und Passwort.';
     }
 
-    // This page shares its Firebase project with the family app — signing in
-    // here with a real family email/password must NOT tag that account as a
-    // "guest" (that would break isMember() for them everywhere else in the
-    // app). Family members can read their own users/ doc per the Firestore
-    // rules, guests can't — a permission-denied here IS the "you're a guest"
-    // signal, not an error, so it's handled separately from the real error path.
+    // A family account has a users/{uid} profile created through an invitation.
+    // A Firebase Auth login without that profile is not a family member.
     async function isFamilyAccount(uid) {
       try { return await getDoc(doc(db, 'users', uid)).then(s => s.exists()); }
       catch (e) { return false; }
     }
 
+    let guestAuthInProgress = false;
     async function init() {
       if (!tripId || !token) { show('invalidLink'); return; }
       applyMode();
 
       onAuthStateChanged(auth, async user => {
+        if (guestAuthInProgress) return;
         if (!user) { show('requestForm'); return; }
         if (await isFamilyAccount(user.uid)) { show('wrongAccount'); return; }
 
@@ -273,7 +271,6 @@
           await ensureGuestAccess(user, name);
           await loadDashboard(user);
         } catch (e) {
-          console.warn(e);
           show('requestForm');
         }
       });
@@ -292,6 +289,7 @@
       if (!email || !pass) { $('authErr').textContent = 'Bitte E-Mail und Passwort eingeben.'; $('authErr').style.display=''; return; }
       if (mode === 'register' && !name) { $('authErr').textContent = 'Bitte deinen Namen eingeben.'; $('authErr').style.display=''; return; }
       $('requestBtn').disabled = true;
+      guestAuthInProgress = true;
       try {
         localStorage.setItem('tvza.guestName', name);
         const cred = mode === 'register'
@@ -304,10 +302,11 @@
         await ensureGuestAccess(cred.user, name);
         await loadDashboard(cred.user);
       } catch (e) {
-        console.warn(e);
         $('authErr').textContent = translateAuthError(e.code);
         $('authErr').style.display = '';
         $('requestBtn').disabled = false;
+      } finally {
+        guestAuthInProgress = false;
       }
     });
 

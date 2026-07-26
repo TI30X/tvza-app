@@ -2,147 +2,360 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() { return request.auth != null; }
+    function signedIn() {
+      return request.auth != null;
+    }
 
-    // ── Gäste (Guests) ───────────────────────────────────────────
-    // Ein Account ist ein "Gast", sobald für seine uid ein
-    // guestProfiles/{uid}-Dokument existiert. Dieses Dokument darf
-    // ausschliesslich der Account selbst EINMALIG anlegen (create scheitert,
-    // falls es schon existiert) — damit kann sich niemand nachträglich
-    // selbst zum Gast machen oder wieder "entgasten".
-    // isMember() = angemeldet UND kein Gast → das ist exakt der bisherige
-    // Vertrauenskreis (Familie), unverändert für alle bestehenden Accounts.
-    function isGuest()  { return signedIn() && exists(/databases/$(database)/documents/guestProfiles/$(request.auth.uid)); }
-    function isMember() { return signedIn() && !isGuest(); }
+    function hasProfile() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
 
-    // Zugriff auf EINE bestimmte Reise als Gast: setzt ein
-    // guestAccess/{uid}_{tripId}-Dokument voraus (siehe unten).
+    function isGuest() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/guestProfiles/$(request.auth.uid));
+    }
+
+    // A Firebase login alone is not membership. A member needs a users/{uid}
+    // profile created through an admin invitation and must not be a guest.
+    function isMember() {
+      return hasProfile() && !isGuest();
+    }
+
+    function isAdmin() {
+      return isMember()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isTimo == true;
+    }
+
+    function authHasEmail() {
+      return signedIn() && 'email' in request.auth.token;
+    }
+
+    function inviteIsValid(data) {
+      return authHasEmail()
+        && data.inviteCode is string
+        && exists(/databases/$(database)/documents/memberInvites/$(data.inviteCode))
+        && get(/databases/$(database)/documents/memberInvites/$(data.inviteCode)).data.email
+          == request.auth.token.email.lower();
+    }
+
+    function managesFamily(familyId) {
+      return isMember()
+        && familyId is string
+        && exists(/databases/$(database)/documents/families/$(familyId))
+        && (
+          get(/databases/$(database)/documents/families/$(familyId)).data.headUid == request.auth.uid
+          || request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.managers
+        );
+    }
+
+    function shareId(ownerUid, targetUid, moduleKey) {
+      return ownerUid + '__' + targetUid + '__' + moduleKey;
+    }
+
+    function hasModuleShare(ownerUid, moduleKey) {
+      return isMember()
+        && exists(/databases/$(database)/documents/shares/$(shareId(ownerUid, request.auth.uid, moduleKey)));
+    }
+
+    function canEditModule(ownerUid, moduleKey) {
+      return hasModuleShare(ownerUid, moduleKey)
+        && get(/databases/$(database)/documents/shares/$(shareId(ownerUid, request.auth.uid, moduleKey))).data.role == 'edit';
+    }
+
+    function isLegacyParentOf(ownerUid) {
+      return isMember()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isParent == true
+        && exists(/databases/$(database)/documents/users/$(ownerUid))
+        && get(/databases/$(database)/documents/users/$(ownerUid)).data.isTimo == true;
+    }
+
     function hasGuestAccess(tripId) {
-      return signedIn() && exists(/databases/$(database)/documents/guestAccess/$(request.auth.uid + '_' + tripId));
+      return signedIn()
+        && exists(/databases/$(database)/documents/guestAccess/$(request.auth.uid + '_' + tripId));
     }
 
-    match /guestProfiles/{uid} {
-      allow read:   if signedIn() && (request.auth.uid == uid || isMember());
-      allow create: if signedIn() && request.auth.uid == uid
-                      && !exists(/databases/$(database)/documents/guestProfiles/$(uid));
-      allow update: if signedIn() && request.auth.uid == uid;
-      // Familie kann einen Gast jederzeit entfernen. Zusätzlich: ein Account,
-      // der ein users/{uid}-Dokument besitzt (= echtes Familienmitglied), darf
-      // seinen EIGENEN guestProfiles-Eintrag löschen — Selbstheilung für
-      // Accounts, die vor v.29.8.0 fälschlich als Gast markiert wurden.
-      // Echte Gäste haben kein users/-Dokument und können sich damit
-      // weiterhin nicht selbst "entgasten".
-      allow delete: if isMember()
-                      || (signedIn() && request.auth.uid == uid
-                          && exists(/databases/$(database)/documents/users/$(uid)));
+    // ── Family membership and invitations ───────────────────────
+    match /memberInvites/{code} {
+      allow read, create, update, delete: if isAdmin();
     }
 
-    // Ein Dokument pro (Gast, Reise). docId MUSS "<uid>_<tripId>" sein.
-    // Die Erstellung ist nur erlaubt, wenn das im Dokument mitgeschickte
-    // "token" mit trips/{tripId}.guestToken übereinstimmt — dieses Token
-    // wird von der Familie beim Erstellen eines Gast-Links gesetzt/erneuert.
-    match /guestAccess/{docId} {
-      // get: auch für noch NICHT existierende Dokumente erlauben (resource ist
-      // dann null → resource.data würde die Regel crashen und alles blockieren).
-      // Ein Gast prüft vor dem Anlegen per get, ob sein Eintrag schon existiert —
-      // die docId beginnt mit der eigenen uid, das reicht als Autorisierung
-      // (uids enthalten keinen Unterstrich).
-      allow get:    if signedIn() && (isMember() || docId.split('_')[0] == request.auth.uid);
-      allow list:   if isMember();
+    match /users/{uid} {
+      // A guest may check whether their own family profile exists. Listing
+      // profiles remains family-only.
+      allow get: if signedIn() && request.auth.uid == uid || isMember();
+      allow list: if isMember();
+
+      // New family profiles require a high-entropy code created by an admin.
       allow create: if signedIn()
-                      && request.resource.data.uid == request.auth.uid
-                      && docId == (request.resource.data.uid + '_' + request.resource.data.tripId)
-                      && exists(/databases/$(database)/documents/trips/$(request.resource.data.tripId))
-                      && request.resource.data.token == get(/databases/$(database)/documents/trips/$(request.resource.data.tripId)).data.guestToken;
-      allow update: if false; // unveränderliche Berechtigung — zum Widerrufen löschen
+                    && request.auth.uid == uid
+                    && inviteIsValid(request.resource.data)
+                    && request.resource.data.email == request.auth.token.email.lower()
+                    && request.resource.data.role == 'member'
+                    && request.resource.data.isTimo == false
+                    && request.resource.data.familyId == null
+                    && request.resource.data.keys().hasOnly([
+                      'displayName', 'email', 'familyId', 'role', 'isTimo',
+                      'allowedModules', 'modules', 'createdAt', 'inviteCode'
+                    ]);
+
+      // Members may change only their own preferences and planner membership.
+      // Admin/module flags and the account email are server-controlled.
+      allow update: if isAdmin()
+                    || (
+                      isMember()
+                      && request.auth.uid == uid
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['displayName', 'modules', 'projectsSeeded', 'familyId', 'role'])
+                    )
+                    || (
+                      isMember()
+                      && request.auth.uid != uid
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['familyId', 'role'])
+                      && managesFamily(request.resource.data.familyId)
+                    );
+      allow delete: if isAdmin();
+    }
+
+    // ── Guests ───────────────────────────────────────────────────
+    match /guestProfiles/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isMember());
+      allow create: if signedIn()
+                    && request.auth.uid == uid
+                    && !exists(/databases/$(database)/documents/users/$(uid))
+                    && !exists(/databases/$(database)/documents/guestProfiles/$(uid))
+                    && request.resource.data.keys().hasOnly([
+                      'email', 'name', 'createdAt', 'lastActiveAt'
+                    ]);
+      allow update: if signedIn()
+                    && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['name', 'lastActiveAt']);
+      allow delete: if isMember()
+                    || (signedIn() && request.auth.uid == uid
+                        && exists(/databases/$(database)/documents/users/$(uid)));
+    }
+
+    match /guestAccess/{docId} {
+      allow get: if signedIn()
+                 && (isMember() || docId.split('_')[0] == request.auth.uid);
+      allow list: if isMember();
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && docId == (request.resource.data.uid + '_' + request.resource.data.tripId)
+                    && request.resource.data.keys().hasOnly([
+                      'uid', 'tripId', 'token', 'createdAt'
+                    ])
+                    && exists(/databases/$(database)/documents/trips/$(request.resource.data.tripId))
+                    && request.resource.data.token
+                      == get(/databases/$(database)/documents/trips/$(request.resource.data.tripId)).data.guestToken;
+      allow update: if false;
       allow delete: if isMember();
     }
 
-    // Sichtbarkeits-Tracking: wer (welcher Gast) hat welche Reise wann
-    // angeschaut. Nur die Familie darf das lesen; nur Gäste dürfen für
-    // sich selbst neue Einträge anlegen (append-only, keine Änderung/Löschung).
     match /tripViews/{viewId} {
-      allow read:   if isMember();
-      allow create: if signedIn() && isGuest()
-                      && request.resource.data.guestUid == request.auth.uid
-                      && hasGuestAccess(request.resource.data.tripId);
+      allow read: if isMember();
+      allow create: if signedIn()
+                    && isGuest()
+                    && request.resource.data.guestUid == request.auth.uid
+                    && request.resource.data.keys().hasOnly([
+                      'tripId', 'guestUid', 'viewedAt'
+                    ])
+                    && hasGuestAccess(request.resource.data.tripId);
       allow update, delete: if false;
     }
 
-    // ── Direktnachrichten (PRIVAT) ──────────────────────────────
-    // Nur die beiden Teilnehmer dürfen eine Unterhaltung + ihre
-    // Nachrichten lesen/schreiben. convId = "<uidA>__<uidB>" (sortiert).
-    // Unverändert: ein Gast-uid darf hier genau wie jede andere uid als
-    // Teilnehmer stehen, sobald ein Familienmitglied die DM mit ihm anlegt —
-    // Chat mit Gästen funktioniert also ohne Änderung an dieser Regel.
+    // ── Direct messages ──────────────────────────────────────────
     match /dms/{convId} {
-      allow read:   if signedIn() && request.auth.uid in resource.data.participants;
+      allow read: if signedIn()
+                  && request.auth.uid in resource.data.participants;
       allow create: if signedIn()
-                      && request.auth.uid in request.resource.data.participants
-                      && request.resource.data.participants.size() == 2;
+                    && request.auth.uid in request.resource.data.participants
+                    && request.resource.data.participants.size() == 2
+                    && request.resource.data.participants[0]
+                      != request.resource.data.participants[1]
+                    && convId == (
+                      request.resource.data.participants[0] + '__'
+                      + request.resource.data.participants[1]
+                    );
       allow update: if signedIn()
-                      && request.auth.uid in resource.data.participants
-                      && request.resource.data.participants == resource.data.participants;
+                    && request.auth.uid in resource.data.participants
+                    && request.resource.data.participants == resource.data.participants
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly([
+                        'participantNames', 'lastMessage', 'lastAt', 'lastSender',
+                        'unread', 'lastRead', 'typing'
+                      ]);
       allow delete: if false;
 
       match /messages/{msgId} {
-        allow read:   if signedIn()
-                        && request.auth.uid in get(/databases/$(database)/documents/dms/$(convId)).data.participants;
+        allow read: if signedIn()
+                    && request.auth.uid in get(
+                      /databases/$(database)/documents/dms/$(convId)
+                    ).data.participants;
         allow create: if signedIn()
-                        && request.auth.uid == request.resource.data.sender
-                        && request.auth.uid in get(/databases/$(database)/documents/dms/$(convId)).data.participants;
+                      && request.auth.uid == request.resource.data.sender
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 4000
+                      && request.resource.data.keys().hasOnly([
+                        'text', 'sender', 'createdAt'
+                      ])
+                      && request.auth.uid in get(
+                        /databases/$(database)/documents/dms/$(convId)
+                      ).data.participants;
         allow update, delete: if false;
       }
     }
 
-    // ── Gemeinsamer öffentlicher Projekt-Feed (flach) ──
-    // Jeder darf lesen; nur der Eigentümer schreibt seine eigenen Einträge.
+    // ── Public project feed ──────────────────────────────────────
+    // Public means public. No password or secret URL is stored here.
     match /publicProjects/{docId} {
       allow read: if true;
-      allow create: if signedIn() && request.auth.uid == request.resource.data.ownerUid;
-      allow update: if signedIn() && request.auth.uid == resource.data.ownerUid;
-      allow delete: if signedIn() && request.auth.uid == resource.data.ownerUid;
+      allow create: if isMember()
+                    && request.auth.uid == request.resource.data.ownerUid
+                    && docId.split('__')[0] == request.auth.uid
+                    && request.resource.data.url is string
+                    && request.resource.data.url.lower().matches('https?://.*')
+                    && request.resource.data.keys().hasOnly([
+                      'ownerUid', 'ownerName', 'emoji', 'name', 'url', 'updatedAt'
+                    ]);
+      allow update: if isMember()
+                    && request.auth.uid == resource.data.ownerUid
+                    && request.resource.data.ownerUid == resource.data.ownerUid
+                    && docId.split('__')[0] == request.auth.uid
+                    && request.resource.data.url is string
+                    && request.resource.data.url.lower().matches('https?://.*')
+                    && request.resource.data.keys().hasOnly([
+                      'ownerUid', 'ownerName', 'emoji', 'name', 'url', 'updatedAt'
+                    ]);
+      allow delete: if isMember()
+                    && request.auth.uid == resource.data.ownerUid;
     }
 
-    // ── Config (timoUid) — öffentlich lesbar für public.html ──
     match /config/{docId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if isAdmin();
     }
 
-    // ── Freigaben (Module teilen) ──
-    match /shares/{id} { allow read, write: if isMember(); }
+    // ── Module sharing ───────────────────────────────────────────
+    // Canonical id: <ownerUid>__<targetUid>__<module>.
+    match /shares/{id} {
+      allow read: if isMember()
+                  && (
+                    resource.data.ownerUid == request.auth.uid
+                    || resource.data.targetUid == request.auth.uid
+                    || isAdmin()
+                  );
+      allow create: if isMember()
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.targetUid != request.auth.uid
+                    && id == shareId(
+                      request.resource.data.ownerUid,
+                      request.resource.data.targetUid,
+                      request.resource.data.module
+                    )
+                    && request.resource.data.module in ['ski', 'food', 'watch']
+                    && request.resource.data.role in ['view', 'edit']
+                    && request.resource.data.keys().hasOnly([
+                      'ownerUid', 'ownerName', 'module', 'targetUid',
+                      'targetEmail', 'targetName', 'role', 'createdAt'
+                    ]);
+      allow update: if isMember()
+                    && request.auth.uid == resource.data.ownerUid
+                    && request.resource.data.ownerUid == resource.data.ownerUid
+                    && request.resource.data.targetUid == resource.data.targetUid
+                    && request.resource.data.module == resource.data.module
+                    && id == shareId(
+                      resource.data.ownerUid,
+                      resource.data.targetUid,
+                      resource.data.module
+                    )
+                    && request.resource.data.role in ['view', 'edit'];
+      allow delete: if isMember()
+                    && (request.auth.uid == resource.data.ownerUid || isAdmin());
+    }
 
-    // ── Geteilte API-Keys (z.B. Finnhub) ──
-    // Nur lesbar für angemeldete Nutzer; Schreiben nur über die Firebase-Konsole
-    // (nie vom Client), damit der Key nicht versehentlich überschrieben wird.
-    match /secrets/{id} { allow read: if signedIn(); allow write: if false; }
+    // ── Per-user data ────────────────────────────────────────────
+    match /projects/{ownerUid}/{p=**} {
+      allow read, write: if isMember() && request.auth.uid == ownerUid;
+    }
 
-    // ── Übrige App-Daten: Familien-Vertrauensmodell ──
-    // Alle Mitglieder (isMember(), also NICHT Gäste) dürfen lesen/schreiben,
-    // exakt wie bisher — für bestehende Accounts ändert sich nichts.
-    // Diese Sammlungen sind bewusst einzeln aufgeführt, damit die
-    // strikte dms-Regel oben NICHT von einer globalen Catch-all-Regel
-    // ausgehebelt wird (Firestore gewährt Zugriff, sobald EINE Regel passt).
-    match /users/{p=**}      { allow read, write: if isMember(); }
-    match /projects/{p=**}   { allow read, write: if isMember(); }
-    match /skitracker/{p=**} { allow read, write: if isMember(); }
-    match /foodlog/{p=**}    { allow read, write: if isMember(); }
-    match /watchlist/{p=**}  { allow read, write: if isMember(); }
-    match /customFoods/{id}  { allow read, write: if isMember(); }
-    match /foodRequests/{id} { allow read, write: if isMember(); }
+    match /skitracker/{ownerUid}/{p=**} {
+      allow read: if isMember()
+                  && (
+                    request.auth.uid == ownerUid
+                    || hasModuleShare(ownerUid, 'ski')
+                    || isLegacyParentOf(ownerUid)
+                  );
+      allow write: if isMember()
+                   && (
+                     request.auth.uid == ownerUid
+                     || canEditModule(ownerUid, 'ski')
+                   );
+    }
+
+    match /foodlog/{ownerUid}/{p=**} {
+      allow read: if isMember()
+                  && (
+                    request.auth.uid == ownerUid
+                    || hasModuleShare(ownerUid, 'food')
+                  );
+      allow write: if isMember()
+                   && (
+                     request.auth.uid == ownerUid
+                     || canEditModule(ownerUid, 'food')
+                   );
+    }
+
+    match /watchlist/{ownerUid}/{p=**} {
+      allow read: if isMember()
+                  && (
+                    request.auth.uid == ownerUid
+                    || hasModuleShare(ownerUid, 'watch')
+                  );
+      allow write: if isMember()
+                   && (
+                     request.auth.uid == ownerUid
+                     || canEditModule(ownerUid, 'watch')
+                   );
+    }
+
+    // ── Shared family data ───────────────────────────────────────
+    match /customFoods/{id} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+
+    match /foodRequests/{id} {
+      allow read: if isAdmin()
+                  || (
+                    isMember()
+                    && resource.data.requestedByEmail == request.auth.token.email.lower()
+                  );
+      allow create: if isMember()
+                    && request.resource.data.requestedByEmail
+                      == request.auth.token.email.lower();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /secrets/{id} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+
     match /families/{id}     { allow read, write: if isMember(); }
     match /activities/{id}   { allow read, write: if isMember(); }
     match /calendarDays/{id} { allow read, write: if isMember(); }
     match /attachments/{id}  { allow read, write: if isMember(); }
 
-    // Reisen: Mitglieder wie bisher voll, Gäste nur lesend und nur für die
-    // Reise(n), für die ihnen explizit Zugriff gewährt wurde (guestAccess).
     match /trips/{tripId} {
-      allow read:  if isMember() || hasGuestAccess(tripId);
+      allow read: if isMember() || hasGuestAccess(tripId);
       allow write: if isMember();
     }
 
-    // Alles andere ist standardmässig verweigert.
+    // Everything else is denied by default.
   }
 }

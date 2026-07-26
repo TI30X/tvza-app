@@ -155,8 +155,7 @@
             bereich: 'kalender',
             iconKey: 'publicProjects',
             title: p.name || 'Projekt',
-            sub: (p.ownerName ? p.ownerName + ' · ' : '') +
-                 (String(p.publicPassword || '').trim() ? 'Mit Passwort' : 'Öffentlich'),
+            sub: (p.ownerName ? p.ownerName + ' · ' : '') + 'Öffentlich',
           })).join('');
           // The project emoji is content the user typed, so it stays.
           [...$('listPublic').children].forEach((el, i) => {
@@ -166,7 +165,7 @@
               if (url) window.open(url, '_blank', 'noopener');
             };
           });
-        }, e => console.warn(e));
+        }, () => console.warn('[public-projects] listen-failed'));
       }
 
       /* The module switches still live in the Einstellungen dialog on

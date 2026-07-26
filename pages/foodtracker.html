@@ -823,7 +823,7 @@
           barcode: reqExtra.barcode || '',
           brand: reqExtra.brand || '',
           requestedByUid: user.uid,
-          requestedByEmail: user.email || '',
+          requestedByEmail: (user.email || '').toLowerCase(),
           status: 'pending',
           createdAt: serverTimestamp(),
         });
