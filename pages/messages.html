@@ -382,6 +382,12 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
     sendBtn.addEventListener('click', send);
+    /* Ein Knopfdruck nimmt dem Textfeld sonst den Fokus: die Tastatur
+       fährt ein und sofort wieder aus, weil unten neu fokussiert wird.
+       Das Unterdrücken des Standardverhaltens beim Antippen lässt den
+       Fokus im Feld, die Tastatur bleibt einfach stehen. */
+    sendBtn.addEventListener('pointerdown', e => e.preventDefault());
+    sendBtn.addEventListener('mousedown', e => e.preventDefault());
 
     let sending = false;
     async function send() {
@@ -419,7 +425,10 @@
         alert('Nachricht konnte nicht gesendet werden.');
         input.value = text; autoSize();
       } finally {
-        sending = false; sendBtn.disabled = !input.value.trim(); input.focus();
+        sending = false; sendBtn.disabled = !input.value.trim();
+        // Nur zurückholen, wenn der Fokus tatsächlich weg ist — ein
+        // unnötiges focus() ist genau das, was die Tastatur neu aufruft.
+        if (document.activeElement !== input) input.focus();
       }
     }
 

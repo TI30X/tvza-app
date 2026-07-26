@@ -192,16 +192,22 @@ function mountAccountMenu(user, profile) {
    ist, tritt die Navigation zur Seite — beim Schreiben braucht sie
    ohnehin niemand. Fehlt die API, bleibt alles wie bisher. */
 function watchKeyboard() {
-  const vv = window.visualViewport;
-  if (!vv) return;
-  const sync = () => {
-    const hidden = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-    document.documentElement.style.setProperty('--kb', Math.round(hidden) + 'px');
-    // 80px Schwelle: kleine Schwankungen der Browserleiste sind keine Tastatur.
-    document.body.classList.toggle('kb-open', hidden > 80);
-  };
-  vv.addEventListener('resize', sync);
-  vv.addEventListener('scroll', sync);
+  /* Nicht über die Viewporthöhe messen: mit
+     interactive-widget=resizes-content schrumpft das Layout mit, die
+     gemessene Überlappung ist dann null und die Tastatur bliebe
+     unerkannt. Der verlässliche Hinweis ist der Fokus in einem
+     Schreibfeld — den gibt es genau dann, wenn die Tastatur offen ist. */
+  const writable = el => !!el && (
+    el.tagName === 'TEXTAREA' ||
+    el.isContentEditable ||
+    (el.tagName === 'INPUT' &&
+      !/^(button|submit|reset|checkbox|radio|file|range|color|image)$/i.test(el.type || 'text'))
+  );
+  const sync = () => document.body.classList.toggle('kb-open', writable(document.activeElement));
+  document.addEventListener('focusin', sync);
+  // Kurz warten: beim Wechsel zwischen zwei Feldern liegt der Fokus
+  // einen Moment nirgends, das darf die Leiste nicht aufblitzen lassen.
+  document.addEventListener('focusout', () => setTimeout(sync, 80));
   sync();
 }
 

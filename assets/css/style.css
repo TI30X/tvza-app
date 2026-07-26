@@ -194,17 +194,22 @@ body.has-nav .app { min-height: calc(100vh - 64px - env(safe-area-inset-bottom, 
    fest darunter. Dafür braucht die Kette eine ECHTE Höhe — mit
    min-height wächst der Verlauf mit dem Inhalt weiter, das Feld
    wandert nach unten aus dem Bild und die Leiste deckt es zu. */
-/* Solange die Bildschirmtastatur offen ist, tritt die Navigation zur
-   Seite: sie würde sonst mit hochgeschoben und läge über dem
-   Eingabefeld. Der Platz, den sie unten reserviert, fällt mit ihr weg.
-   --kb ist die Höhe, die die Tastatur einnimmt (gesetzt in nav.js). */
-body.kb-open .nav { display: none; }
-body.kb-open.has-nav { padding-bottom: 0; }
-body.kb-open.has-nav .app { min-height: calc(100vh - var(--kb, 0px)); }
-body.dm-thread.kb-open .app { height: calc(100vh - var(--kb, 0px)); }
-@supports (height: 100dvh) {
-  body.kb-open.has-nav .app { min-height: calc(100dvh - var(--kb, 0px)); }
-  body.dm-thread.kb-open .app { height: calc(100dvh - var(--kb, 0px)); }
+/* Am Handy verschwindet die Tab-Leiste in zwei Fällen: in einer offenen
+   Unterhaltung — dort führt der Zurück-Pfeil heraus, die Tabs sind
+   überflüssig und stehen nur zwischen Eingabefeld und Tastatur — und
+   überall dort, wo gerade in ein Feld geschrieben wird. Am Laptop liegt
+   die Leiste links und stört nie, darum nur unterhalb von 900px. */
+@media (max-width: 899px) {
+  body.dm-thread .nav,
+  body.kb-open .nav { display: none; }
+  body.dm-thread.has-nav,
+  body.kb-open.has-nav { padding-bottom: 0; }
+  body.dm-thread.has-nav .app { height: 100vh; }
+  body.kb-open.has-nav .app { min-height: 100vh; }
+  @supports (height: 100dvh) {
+    body.dm-thread.has-nav .app { height: 100dvh; }
+    body.kb-open.has-nav .app { min-height: 100dvh; }
+  }
 }
 
 body.dm-thread { overflow: hidden; }
