@@ -1131,7 +1131,8 @@ button, input, select, textarea { font-family: inherit; }
 .reorder-fab {
   position: fixed;
   right: 18px;
-  bottom: 18px;
+  /* Clear of the navigation bar (§5.2), which owns the bottom edge. */
+  bottom: calc(18px + 64px + env(safe-area-inset-bottom, 0px));
   z-index: 1150;
   display: inline-flex;
   align-items: center;
@@ -1655,6 +1656,9 @@ body.reorder-editing .module-tile::after {
 
 /* ── The one breakpoint: 900px ─────────────────────────────────────*/
 @media (min-width: 900px) {
+  /* The bar becomes a left rail, so the bottom edge is free again. */
+  .reorder-fab { bottom: 18px; }
+
   .row      { padding: 14px 16px; gap: 14px; }
   .row__bar { height: 6px; }
   .panel    { padding: 20px 22px; }
@@ -1710,9 +1714,11 @@ body.reorder-editing .module-tile::after {
   .nav__bereich svg { width: 14px; height: 14px; }
   .nav__settings { display: flex; margin-top: auto; }
 
-  /* Content sits beside the rail. */
+  /* Content sits beside the rail. The padding goes on <body>, so both
+     the new .appbar and the legacy .header — both sticky, both inside
+     the body's padding box — are offset by it. Putting it on .appbar as
+     well would offset that one twice. */
   .has-nav      { padding-bottom: 0; padding-left: 248px; }
-  .appbar       { padding-left: 248px; }
   .appbar__inner{ padding: 30px 34px 22px; }
   .wx-pill      { height: 34px; }
   .shell__cols  {
