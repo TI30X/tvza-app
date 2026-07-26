@@ -221,11 +221,18 @@
     let activeOther = null, activeName = '', msgUnsub = null;
     let convUnsub = null, typingHideTimer = null;
     // Reine Boolean-Flag statt Zeitstempel-Vergleich: ein Vergleich von serverTimestamp()
-    // gegen das lokale Date.now() ist anfällig für Uhrzeit-Drift zwischen den Geräten
-    // (der Indikator könnte dann nie verschwinden oder gar nicht erst erscheinen).
-    // Stattdessen: "typing.<uid> = true/false", und JEDE Seite blendet nach eigener,
-    // lokal gemessener Zeit ohne neues Signal automatisch wieder aus.
-    const TYPING_AUTO_HIDE_MS = 4000;
+    // gegen das lokale Date.now() ist anfällig für Uhrzeit-Drift zwischen den Geräten.
+    //
+    // Die Gegenseite hält "true" per Herzschlag alle TYPING_BEAT_MS wach,
+    // solange wirklich getippt wird. Dieses Netz hier fängt nur den Fall
+    // ab, dass sie verschwindet, ohne "false" schreiben zu können — also
+    // Verbindungsabbruch oder hart geschlossener Tab. Es muss deutlich
+    // länger sein als der Herzschlag: war es kürzer, blendete der
+    // Indikator mitten im Schreiben aus und beim nächsten Signal wieder
+    // ein, was wie zufälliges Flackern aussah.
+    const TYPING_BEAT_MS = 2000;
+    const TYPING_IDLE_MS = 3000;
+    const TYPING_AUTO_HIDE_MS = TYPING_BEAT_MS * 3;
     function showTyping(show, name) {
       const el = $('typingIndicator');
       if (typingHideTimer) { clearTimeout(typingHideTimer); typingHideTimer = null; }
@@ -272,9 +279,9 @@
       if (msgUnsub) { msgUnsub(); msgUnsub = null; }
       if (convUnsub) { convUnsub(); convUnsub = null; }
       if (typingHideTimer) { clearTimeout(typingHideTimer); typingHideTimer = null; }
-      // Eigenen Tipp-Status zurücksetzen, falls man mitten im Schreiben den Thread verlässt.
-      if (activeOther) updateDoc(doc(db, 'dms', convId(me, activeOther)), { ['typing.' + me]: false }).catch(() => {});
-      if (stopTypingTimer) { clearTimeout(stopTypingTimer); stopTypingTimer = null; }
+      // Eigenen Tipp-Status zurücksetzen, falls man mitten im Schreiben
+      // den Thread verlässt — muss vor activeOther = null laufen.
+      stopTypingNow();
       activeOther = null;
       $('threadView').style.display = 'none';
       $('listView').style.display = '';
@@ -298,24 +305,44 @@
 
     /* ════ Compose / send ════ */
     const input = $('msgInput'), sendBtn = $('sendBtn');
-    let stopTypingTimer = null, typingOn = false;
+    let stopTypingTimer = null, typingOn = false, typingBeatTimer = null;
     function autoSize() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
-    function setTyping(on) {
+    function writeTyping(on) {
       if (!activeOther) return;
-      typingOn = on;
       updateDoc(doc(db, 'dms', convId(me, activeOther)), { ['typing.' + me]: on }).catch(() => {});
+    }
+    /* "true" wird wiederholt geschrieben, solange getippt wird. Jeder
+       dieser Schreibvorgänge löst drüben einen Snapshot aus und setzt
+       dort das Ausblende-Netz zurück. Ohne diesen Herzschlag stand das
+       Flag zwar korrekt auf true, es kam aber kein neues Signal an — und
+       der Indikator verschwand nach wenigen Sekunden, obwohl die andere
+       Person noch schrieb. Geschrieben wird nur während des Tippens. */
+    function setTyping(on) {
+      typingOn = on;
+      if (typingBeatTimer) { clearInterval(typingBeatTimer); typingBeatTimer = null; }
+      writeTyping(on);
+      if (on) typingBeatTimer = setInterval(() => writeTyping(true), TYPING_BEAT_MS);
+    }
+    function stopTypingNow() {
+      if (stopTypingTimer) { clearTimeout(stopTypingTimer); stopTypingTimer = null; }
+      if (typingOn) setTyping(false);
+      else if (typingBeatTimer) { clearInterval(typingBeatTimer); typingBeatTimer = null; }
     }
     function pingTyping() {
       if (!activeOther) return;
-      if (!typingOn) setTyping(true); // sofort "true" setzen, dann nicht mehr bei jedem Tastendruck schreiben
+      if (!typingOn) setTyping(true);
       if (stopTypingTimer) clearTimeout(stopTypingTimer);
-      // Nach 3s ohne weiteren Tastendruck gilt man als "fertig getippt".
-      stopTypingTimer = setTimeout(() => setTyping(false), 3000);
+      // Nach TYPING_IDLE_MS ohne weiteren Tastendruck gilt man als fertig.
+      stopTypingTimer = setTimeout(() => setTyping(false), TYPING_IDLE_MS);
     }
+    /* Tab schliessen oder wegwechseln, ohne den Thread zu verlassen:
+       ohne das bliebe drüben ein "true" stehen, bis das Netz greift. */
+    window.addEventListener('pagehide', stopTypingNow);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stopTypingNow(); });
     input.addEventListener('input', () => {
       autoSize(); sendBtn.disabled = !input.value.trim();
       if (input.value.trim()) pingTyping();
-      else if (typingOn) { if (stopTypingTimer) clearTimeout(stopTypingTimer); setTyping(false); }
+      else stopTypingNow();   // Feld leergeräumt = nicht mehr am Schreiben
     });
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
@@ -327,7 +354,10 @@
       const text = input.value.trim();
       if (!text || !activeOther || sending) return;
       sending = true; sendBtn.disabled = true;
+      // Herzschlag anhalten, bevor gesendet wird — sonst schreibt er
+      // gleich nach dem "false" der Nachricht wieder ein "true".
       if (stopTypingTimer) { clearTimeout(stopTypingTimer); stopTypingTimer = null; }
+      if (typingBeatTimer) { clearInterval(typingBeatTimer); typingBeatTimer = null; }
       typingOn = false;
       const other = activeOther;
       const cid = convId(me, other);
