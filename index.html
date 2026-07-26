@@ -358,6 +358,7 @@
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { ownsTab } from './assets/js/nav.js';
     import { ICONS, icon } from './assets/js/shell.js';
+    import { initialsOf } from './assets/js/nav.js';
 
     /* Modulschlüssel → Bereichsfarbe. Wie in nav.js ausgeschrieben,
        weil die beiden nicht deckungsgleich sind. */
@@ -401,12 +402,7 @@
     document.getElementById('userName').textContent = name;
     // Avatar initials (§5.1) — replaces the .user-chip that spelled the
     // whole name out beside an arrow.
-    {
-      const parts = String(profile.displayName || '').trim().split(/\s+/).filter(Boolean);
-      const ini = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0]
-                : parts.length === 1 ? parts[0].slice(0, 2) : '\u00b7';
-      document.getElementById('userInitials').textContent = ini.toUpperCase();
-    }
+    document.getElementById('userInitials').textContent = initialsOf(profile.displayName);
     try { localStorage.setItem('tvza-name', profile.displayName || ''); } catch (e) {}
     try { window.dispatchEvent(new CustomEvent('tvza-name', { detail: profile.displayName || '' })); } catch (e) {}
     let appUsers = [];
@@ -1011,30 +1007,30 @@
         const allowed = allowedModules(u);
         const enabledCount = Object.values(allowed).filter(Boolean).length;
         return `
-        <details class="link-row" data-admin-user="${escHtml(u.uid)}" style="display:block;padding:0">
-          <summary style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;list-style:none">
-            <span class="row__icon">${u.isTimo
-              ? '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m12 3 2.6 5.7 6.4.7-4.7 4.3 1.3 6.3L12 17l-5.6 3 1.3-6.3L3 9.4l6.4-.7z"/></svg>'
-              : '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>'}</span>
-            <span class="link-title" style="flex:1">
-              <span>${escHtml(u.displayName || 'Ohne Name')}</span>
-              <small>${escHtml(u.email || '')}</small>
+        <details class="admin-user" data-admin-user="${escHtml(u.uid)}">
+          <summary class="row admin-user__head">
+            <span class="avatar avatar--ink">${escHtml(initialsOf(u.displayName))}</span>
+            <span class="row__body">
+              <span class="row__title">${escHtml(u.displayName || 'Ohne Name')}</span>
+              <span class="row__sub">${escHtml(u.email || '')}</span>
             </span>
-            <span class="role-badge">${u.isTimo ? 'Admin' : enabledCount + ' Module'}</span>
+            <span class="row__end"><span class="role-badge">${u.isTimo ? 'Admin' : enabledCount + ' Module'}</span></span>
           </summary>
-          <div style="padding:0 14px 14px 54px">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:12px">
+          <div class="admin-user__body">
+            <div class="admin-mods">
               ${Object.values(MODULES).map(m => `
-                <label style="font-size:13px;display:flex;align-items:center;gap:8px">
+                <label class="admin-mod" data-bereich="${BEREICH_OF[m.key] || ''}">
                   <input type="checkbox" data-admin-allowed="${m.key}" ${allowed[m.key] ? 'checked' : ''} />
+                  <span class="admin-mod__icon">${icon(ICONS[m.key] ? m.key : 'bereiche', 15)}</span>
                   <span>${escHtml(m.name)}</span>
                 </label>`).join('')}
-              <label style="font-size:13px;display:flex;align-items:center;gap:8px;font-weight:700">
+              <label class="admin-mod admin-mod--admin">
                 <input type="checkbox" data-admin-timo ${u.isTimo ? 'checked' : ''} />
+                <span class="admin-mod__icon"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m12 3 2.6 5.7 6.4.7-4.7 4.3 1.3 6.3L12 17l-5.6 3 1.3-6.3L3 9.4l6.4-.7z"/></svg></span>
                 <span>Admin</span>
               </label>
             </div>
-            <button class="btn btn-primary" data-admin-save="${escHtml(u.uid)}" style="padding:9px 12px">Speichern</button>
+            <button class="b b--primary" data-admin-save="${escHtml(u.uid)}">Speichern</button>
           </div>
         </details>`;
       }).join('');
