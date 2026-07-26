@@ -985,12 +985,17 @@
       const wrap = document.getElementById('myShares');
       const shares = await sharesByOwner(user.uid);
       if (!shares.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch nichts geteilt.</p>'; return; }
-      wrap.innerHTML = '<p class="form-label" style="margin-bottom:8px">Von mir geteilt</p>' + shares.map(s => `
-        <div class="link-row">
-          <span class="link-icon">${MODULES[s.module]?.emoji || '🔗'}</span>
-          <span class="link-title"><span>${escHtml(MODULES[s.module]?.name || s.module)}</span><small>${escHtml(s.targetName || s.targetEmail)} · ${s.role === 'edit' ? 'Bearbeiten' : 'Nur ansehen'}</small></span>
-          <button class="action-btn action-btn--danger" data-unshare="${s.id}" title="Freigabe entfernen"><span>${ICON_CLOSE}</span><b>Entfernen</b></button>
-        </div>`).join('');
+      wrap.innerHTML = '<p class="marke" style="margin-bottom:8px">Von mir geteilt</p><div class="rows">' + shares.map(s => `
+        <div class="row" data-bereich="${BEREICH_OF[s.module] || ''}">
+          <span class="row__icon">${icon(ICONS[s.module] ? s.module : 'bereiche', 18)}</span>
+          <span class="row__body">
+            <span class="row__title">${escHtml(MODULES[s.module]?.name || s.module)}</span>
+            <span class="row__sub">${escHtml(s.targetName || s.targetEmail)} · ${s.role === 'edit' ? 'Bearbeiten' : 'Nur ansehen'}</span>
+          </span>
+          <span class="row__end">
+            <button class="b b--danger" data-unshare="${s.id}" title="Freigabe entfernen">Entfernen</button>
+          </span>
+        </div>`).join('') + '</div>';
       wrap.querySelectorAll('[data-unshare]').forEach(b => b.addEventListener('click', async () => {
         await deleteDoc(doc(db, 'shares', b.dataset.unshare)).catch(console.warn);
         renderMyShares();
@@ -1008,7 +1013,9 @@
         return `
         <details class="link-row" data-admin-user="${escHtml(u.uid)}" style="display:block;padding:0">
           <summary style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;list-style:none">
-            <span class="link-icon">${u.isTimo ? '★' : '👤'}</span>
+            <span class="row__icon">${u.isTimo
+              ? '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="m12 3 2.6 5.7 6.4.7-4.7 4.3 1.3 6.3L12 17l-5.6 3 1.3-6.3L3 9.4l6.4-.7z"/></svg>'
+              : '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>'}</span>
             <span class="link-title" style="flex:1">
               <span>${escHtml(u.displayName || 'Ohne Name')}</span>
               <small>${escHtml(u.email || '')}</small>
@@ -1020,7 +1027,7 @@
               ${Object.values(MODULES).map(m => `
                 <label style="font-size:13px;display:flex;align-items:center;gap:8px">
                   <input type="checkbox" data-admin-allowed="${m.key}" ${allowed[m.key] ? 'checked' : ''} />
-                  <span>${m.emoji} ${escHtml(m.name)}</span>
+                  <span>${escHtml(m.name)}</span>
                 </label>`).join('')}
               <label style="font-size:13px;display:flex;align-items:center;gap:8px;font-weight:700">
                 <input type="checkbox" data-admin-timo ${u.isTimo ? 'checked' : ''} />
@@ -1067,7 +1074,7 @@
       } catch (e) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Konnte nicht laden.</p>'; return; }
 
       if (badge) { badge.style.display = reqs.length ? '' : 'none'; badge.textContent = reqs.length + ' offen'; }
-      if (!reqs.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Keine offenen Anfragen 🎉</p>'; return; }
+      if (!reqs.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Keine offenen Anfragen.</p>'; return; }
 
       const field = (k, ph) => `<label style="font-size:12px;color:var(--ink-soft)">${ph}<input class="form-input" data-f="${k}" type="number" step="0.1" min="0" style="margin-top:2px" /></label>`;
       wrap.innerHTML = reqs.map(r => `
@@ -1154,10 +1161,13 @@
         if (!m || !m.page) return '';
         const href = `${m.page}?owner=${encodeURIComponent(s.ownerUid)}`;
         return `
-        <a class="link-row" href="${href}">
-          <span class="link-icon">${m.emoji}</span>
-          <span class="link-title"><span>${escHtml(m.name)}${s.ownerName ? ' · ' + escHtml(s.ownerName) : ''}</span><small>Geteilt mit dir</small></span>
-          <span class="role-badge">${s.role === 'edit' ? 'Bearbeiten' : 'Ansehen'}</span>
+        <a class="row" href="${href}" data-bereich="${BEREICH_OF[s.module] || ''}">
+          <span class="row__icon">${icon(ICONS[s.module] ? s.module : 'bereiche', 18)}</span>
+          <span class="row__body">
+            <span class="row__title">${escHtml(m.name)}${s.ownerName ? ' · ' + escHtml(s.ownerName) : ''}</span>
+            <span class="row__sub">Geteilt mit dir</span>
+          </span>
+          <span class="row__end"><span class="role-badge">${s.role === 'edit' ? 'Bearbeiten' : 'Ansehen'}</span></span>
         </a>`;
       }).join('');
       applyOverviewLayout();
