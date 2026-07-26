@@ -60,14 +60,27 @@
 
     <main class="main">
 
-      <!-- Trackers -->
+      <!-- Der proaktive Hinweis (§8). Stays empty unless two sources
+           together say something; an empty slot renders nothing. -->
+      <div id="hintSlot"></div>
+
+      <!-- Heute (§6.1): at most five rows, and never a Nachrichten row —
+           that has its own tab, and "eine Sache, ein Ort" (§6.4) says a
+           thing with a tab does not also appear here. -->
+      <section class="section" id="heuteSection" hidden>
+        <div class="marke">Heute</div>
+        <div class="rows" id="heuteList"></div>
+      </section>
+
+      <!-- Schnellzugriff (§6.1): the first four active Bereiche in the
+           order the user already had. The rest live in the Bereiche tab. -->
       <section class="section" id="trackerSection" data-overview-section="tracker">
         <div class="section-head">
           <button class="overview-toggle" type="button" data-section-toggle="tracker" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title">Tracker</h2>
+          <h2 class="section-title">Schnellzugriff</h2>
           <button class="overview-drag" type="button" draggable="true" data-section-drag="tracker" title="Bereich ziehen"></button>
         </div>
-        <div class="card-grid" id="trackerGrid">
+        <div class="card-grid card-grid--quick" id="trackerGrid">
 
           <div class="module-tile" data-tracker-tile="ski">
             <a href="pages/skitracker.html" class="card card--ski" id="cardSki" draggable="false" style="display:none">
@@ -141,7 +154,7 @@
       </section>
 
       <!-- Shared with me -->
-      <section class="section" id="sharedSection" data-overview-section="shared" style="display:none">
+      <section class="section" id="sharedSection" data-overview-section="shared" hidden style="display:none">
         <div class="section-head">
           <button class="overview-toggle" type="button" data-section-toggle="shared" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
           <h2 class="section-title">Mit mir geteilt</h2>
@@ -424,6 +437,10 @@
       const tile = document.querySelector(`[data-tracker-tile="${key}"]`);
       const link = tile?.querySelector('.card');
       if (!tile || !link) return;
+      // Record whether the module is on; which four are actually shown on
+      // Start is applyQuickAccess's decision, so the two never fight over
+      // style.display.
+      tile.dataset.enabled = enabled ? '1' : '0';
       tile.style.display = enabled ? '' : 'none';
       link.style.display = enabled ? '' : 'none';
     }
@@ -434,6 +451,36 @@
         const tile = document.querySelector(`[data-tracker-tile="${id}"]`);
         if (tile) grid.appendChild(tile);
       });
+    }
+
+    /* §6.1: Schnellzugriff is four tiles. The order is the one the user
+       already has in tvza.trackerTileOrder, so nothing is set up again
+       and nobody is asked (§7) — the first four active entries win. The
+       rest are not lost; they are the Bereiche tab, one tap away.
+       Nachrichten never takes a slot: it has its own tab (§6.4). */
+    const QUICK_SLOTS = 4;
+    function applyQuickAccess() {
+      const active = trackerTileOrder.filter(id => {
+        if (id === 'dm') return false;
+        const tile = document.querySelector(`[data-tracker-tile="${id}"]`);
+        return tile && tile.dataset.enabled === '1';
+      });
+      const shown = new Set(active.slice(0, QUICK_SLOTS));
+      document.querySelectorAll('[data-tracker-tile]').forEach(tile => {
+        const on = shown.has(tile.dataset.trackerTile);
+        tile.style.display = on ? '' : 'none';
+        const link = tile.querySelector('.card');
+        if (link) link.style.display = on ? '' : 'none';
+      });
+      // While arranging, show everything so a tile can be swapped in.
+      if (document.body.classList.contains('reorder-editing')) {
+        document.querySelectorAll('[data-tracker-tile]').forEach(tile => {
+          if (tile.dataset.enabled === '1') {
+            tile.style.display = '';
+            const l = tile.querySelector('.card'); if (l) l.style.display = '';
+          }
+        });
+      }
     }
 
     const h = new Date().getHours();
@@ -462,6 +509,7 @@
       if (mods.dm) startDmBadge(); else stopDmBadge();
       document.getElementById('noModulesHint').style.display = anyTracker ? 'none' : '';
       applyTrackerTileOrder();
+      applyQuickAccess();
       applyOverviewLayout();
     }
 
@@ -712,6 +760,10 @@
       editModeBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       editModeBtn.querySelector('.edit-label').textContent = on ? 'Fertig' : 'Anordnen';
       if (!on && drag) endDrag();
+      // Arranging shows every active Bereich so one can be dragged into
+      // the four Schnellzugriff slots (§7: the same gesture, now for the
+      // quick access too); leaving trims it back to four.
+      if (typeof applyQuickAccess === 'function') applyQuickAccess();
     }
     editModeBtn.addEventListener('click', () => setReorderEditing(!reorderEditing));
     document.getElementById('reorderHintDone').addEventListener('click', () => setReorderEditing(false));
@@ -1312,6 +1364,7 @@
   <script type="module">
   import { db, requireAuth, getFinnhubKey } from './assets/js/firebase-config.js';
   import { weatherIcon } from './assets/js/shell.js';
+  import { chooseHint, renderHint, markShown, dismissHint } from './assets/js/hints.js';
   import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   (async () => {
@@ -1324,6 +1377,45 @@
     const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
     const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
+    /* ── Heute (§6.1) ────────────────────────────────────────────────
+       At most five rows, built from the data this module already loads
+       for the tiles — nothing is fetched a second time. Order is fixed
+       so the list does not reshuffle as the async sections land.
+
+       Nachrichten is deliberately absent: it has its own tab, and §6.4
+       says a thing with a tab does not also appear here. The unread
+       count reaches you through the dot on the bar instead. */
+    const HEUTE_ORDER = ['cal', 'food', 'matura', 'watch', 'ski'];
+    const heuteRows = new Map();
+
+    function pushHeute(key, row) {
+      if (!row) return;
+      heuteRows.set(key, row);
+      renderHeute();
+    }
+
+    function renderHeute() {
+      const list = $('heuteList'), sec = $('heuteSection');
+      if (!list || !sec) return;
+      const rows = HEUTE_ORDER.filter(k => heuteRows.has(k)).map(k => heuteRows.get(k)).slice(0, 5);
+      // Rule §8.2 applies here too: nothing worth saying, nothing shown.
+      if (!rows.length) { sec.hidden = true; return; }
+      sec.hidden = false;
+      list.innerHTML = rows.map(r => `
+        <a class="row" href="${esc(r.href)}" data-bereich="${esc(r.bereich)}">
+          <span class="row__icon">${r.icon}</span>
+          <span class="row__body">
+            <span class="row__title">${esc(r.title)}</span>
+            ${r.bar != null
+              ? `<span class="row__bar"><i style="width:${Math.max(0, Math.min(100, r.bar))}%"></i></span>`
+              : r.sub ? `<span class="row__sub">${esc(r.sub)}</span>` : ''}
+          </span>
+          <span class="row__end">${r.end
+            ? `<span class="row__num"${r.tone ? ` style="color:var(--kurs-${r.tone})"` : ''}>${esc(r.end)}</span>`
+            : `<svg class="ic row__chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>`}</span>
+        </a>`).join('');
+    }
+
     /* ── 1) Maturaarbeit: Fortschritt + Abgabe-Countdown (localStorage) ── */
     /* Jede Kachel spiegelt den Gesamtfortschritt ihres eigenen Moduls wider:
        tileMatura ← matura_v3 (Maturaarbeit-Modul), tileMaturaTracker ← matura_tracker (Tracker-Modul). */
@@ -1335,6 +1427,19 @@
         el.innerHTML = `<div class="tl-head"><span class="tl-pct">${pct}%</span>${meta}</div><div class="tl-bar"><div class="tl-fill"></div></div>`;
         show(el);
         requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
+        // Only the Maturaarbeit module earns the Heute row; the Tracker
+        // is the same work counted twice and would read as two entries.
+        if (idn === 'tileMatura') {
+          window.tvzaMaturaPct = pct;
+          pushHeute('matura', {
+            href: 'pages/maturaarbeit.html', bereich: 'matura',
+            icon: '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+            title: days == null ? 'Maturaarbeit'
+                 : days === 0 ? 'Maturaarbeit — Abgabe heute'
+                 : `Maturaarbeit — noch ${days} Tage`,
+            bar: pct, end: pct + ' %',
+          });
+        }
       };
 
       // Tracker-Modul (pages/maturaarbeit-tracker.html) → matura_tracker_<uid>_summary
@@ -1424,6 +1529,18 @@
         el.innerHTML = `<div class="tk-quote"><div class="tk-top"><span class="tk-sym">${esc(q.sym)}</span>${dpHtml(q.dp)}</div><span class="tk-px">${q.px}</span></div>`;
       };
       render(); show(el);
+      const moved = list.filter(q => q.dp != null);
+      if (moved.length) {
+        const lead = moved.reduce((a, b) => Math.abs(b.dp) > Math.abs(a.dp) ? b : a);
+        pushHeute('watch', {
+          href: 'pages/watchlist.html', bereich: 'watch',
+          icon: '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+          title: lead.sym,
+          sub: moved.length > 1 ? `${moved.length} Positionen` : 'Watchlist',
+          end: `${lead.dp >= 0 ? '+' : ''}${lead.dp.toFixed(2)} %`,
+          tone: lead.dp >= 0 ? 'up' : 'down',
+        });
+      }
       if (list.length > 1) setInterval(() => { el.classList.add('swap'); setTimeout(() => { idx = (idx + 1) % list.length; render(); el.classList.remove('swap'); }, 350); }, 3600);
     })();
 
@@ -1436,13 +1553,26 @@
         total = Math.round(total);
         let target = null;
         try { const ps = await getDoc(doc(db, 'foodlog', uid, 'meta', 'profile')); if (ps.exists()) { const p = ps.data(); if (p.weight) { let b = p.weight * 30; if (p.goal === 'abnehmen') b -= 300; if (p.goal === 'zunehmen') b += 300; target = Math.round(b / 10) * 10; } } } catch (e) {}
+        const FOOD_ICON = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>';
         if (target) {
           const pct = Math.min(100, Math.round(total / target * 100));
           el.innerHTML = `<div class="tl-head"><span class="tl-pct">${total.toLocaleString('de-CH')}</span><span class="tl-meta">/ ${target.toLocaleString('de-CH')} kcal</span></div><div class="tl-bar"><div class="tl-fill"></div></div>`;
           show(el); requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
+          const left = target - total;
+          pushHeute('food', {
+            href: 'pages/foodtracker.html', bereich: 'food', icon: FOOD_ICON,
+            title: left > 0 ? `Noch ${left.toLocaleString('de-CH')} kcal übrig` : 'Tagesziel erreicht',
+            bar: pct,
+            end: total.toLocaleString('de-CH'),
+          });
         } else {
           el.innerHTML = `<div class="tile-status"><span class="st-main">${total.toLocaleString('de-CH')}</span><span class="st-sub">kcal heute</span></div>`;
           show(el);
+          if (total > 0) pushHeute('food', {
+            href: 'pages/foodtracker.html', bereich: 'food', icon: FOOD_ICON,
+            title: 'Heute erfasst', sub: 'Kein Tagesziel hinterlegt',
+            end: total.toLocaleString('de-CH'),
+          });
         }
       } catch (e) {}
     })();
@@ -1453,6 +1583,12 @@
       try {
         const candidates = [];
         const daySnap = await getDocs(query(collection(db, 'calendarDays'), where('ownerUid','==',uid)));
+        // Publish the raw entries for the Hinweis (§8). The birthday
+        // pairing needs recurring ones; the data model has no such flag
+        // yet, so nothing is inferred and that hint simply stays quiet
+        // until one exists. Everything else here is a plain appointment.
+        window.tvzaCalendarEntries = daySnap.docs.map(d => d.data());
+        window.tvzaRecurringEvents = window.tvzaCalendarEntries.filter(x => x && x.recurring === true);
         daySnap.docs.forEach(d => { const x = d.data(); if (x.date && x.date >= todayStr) candidates.push({ date: x.date, title: x.title || 'Termin' }); });
         try {
           // Alle Reisen holen (Firestore-Regeln erlauben das ohnehin allen angemeldeten
@@ -1483,6 +1619,11 @@
         else when = `in ${Math.round(days / 30)} Monaten`;
         el.innerHTML = `<span class="tp-when">${when}</span><span class="tp-what">${esc(ev.title)}</span>`;
         show(el);
+        pushHeute('cal', {
+          href: 'pages/planner.html', bereich: 'kalender',
+          icon: '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+          title: ev.title, sub: when,
+        });
       } catch (e) { console.warn('[cal tile]', e); }
     })();
 
@@ -1520,8 +1661,48 @@
         const sub = lastDate ? `zuletzt ${fmtDM(lastDate)}` : 'Keine Wartung';
         el.innerHTML = `<span class="st-main">${n} Ski</span><span class="st-sub">${sub}</span>`;
         show(el);
+        const days = lastDate
+          ? Math.round((Date.now() - new Date(lastDate + 'T00:00:00')) / 86400000) : null;
+        window.tvzaSkiServiceDays = days;
+        pushHeute('ski', {
+          href: 'pages/skitracker.html', bereich: 'ski',
+          icon: '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg>',
+          title: n === 1 ? 'Ski-Service' : `Ski-Service (${n} Paar)`,
+          sub: days == null ? 'Noch keine Wartung erfasst'
+             : days === 0 ? 'Heute gewachst'
+             : `Vor ${days} Tagen gewachst`,
+        });
       } catch (e) {}
     })();
+
+    /* ── Der Hinweis (§8) ────────────────────────────────────────────
+       Runs after the sections above have had a chance to report, and
+       only ever combines two of them. If nothing lines up it renders
+       nothing at all — an empty card would be worse than silence. */
+    setTimeout(() => {
+      try {
+        const slot = $('hintSlot'); if (!slot) return;
+        const cal = heuteRows.get('cal');
+        const sources = {
+          // Kalender × Wetter needs the hourly forecast, which only the
+          // Wetter page fetches; until that is shared this pair stays
+          // quiet rather than guessing.
+          nextEvent: null, forecast: null,
+          snow: window.tvzaMountainSnow || null,
+          daysSinceService: window.tvzaSkiServiceDays,
+          events: window.tvzaRecurringEvents || null,
+          matura: window.tvzaMaturaSummary || null,
+          maturaDue: window.tvzaMaturaDue || null,
+        };
+        const hint = chooseHint(sources, uid);
+        if (!hint) return;
+        slot.appendChild(renderHint(hint, {
+          onDismiss: t => dismissHint(uid, t, 'today'),
+          onLater:   t => dismissHint(uid, t, 'later'),
+        }));
+        markShown(uid);
+      } catch (e) { console.warn('[hint]', e); }
+    }, 1200);
   })();
   </script>
   <script type="module" src="./assets/js/nav.js?v=1"></script>
