@@ -48,7 +48,8 @@ test('calendar actions use aligned icons and compact calendars remain readable',
     read('assets/css/calendar.css'),
   ]);
   assert.doesNotMatch(planner, />\+\s*(?:Neuer Termin|Erinnerung|Termin|Gruppe)/);
-  assert.match(planner, /class="ic calendar-action-icon/);
+  assert.match(planner, /class="calendar-action-icon/);
+  assert.match(css, /\.calendar-action-icon::before,[\s\S]*top:50%;[\s\S]*left:50%/);
   assert.match(css, /\.mini-calendar-day,[\s\S]*font-size:12px/);
   assert.match(css, /\.calendar-month \.evchip \{[\s\S]*font-size:12px/);
 });
