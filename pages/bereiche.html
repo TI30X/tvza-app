@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <link rel="icon" href="../assets/icons/icon-192.png" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script src="../assets/js/theme.js"></script>
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=15" defer></script>
+  <title>Bereiche — TVZA</title>
+  <!-- No <style> block. Everything on this page comes from the kit in
+       assets/css/style.css — that is the point of the redesign. -->
+</head>
+<body class="app">
+
+  <div class="offline-banner" id="offlineBanner" hidden>Offline — Änderungen werden später gespeichert.</div>
+
+  <main class="main" id="main">
+    <section class="section" id="secMine">
+      <div class="marke">Meine Bereiche</div>
+      <div class="rows" id="listMine"><div class="spinner" data-fx-rows="4">Lade…</div></div>
+    </section>
+
+    <section class="section" id="secShared" hidden>
+      <div class="marke">Mit mir geteilt</div>
+      <div class="rows" id="listShared"></div>
+    </section>
+
+    <section class="section" id="secPublic" hidden>
+      <div class="marke">Öffentliche Projekte</div>
+      <div class="rows" id="listPublic"></div>
+    </section>
+
+    <section class="section">
+      <button class="b b--secondary b--block" id="manageBtn">Bereiche verwalten</button>
+    </section>
+  </main>
+
+  <script type="module">
+    import {
+      auth, db, requireAuth, wireOfflineBanner, escHtml,
+      MODULES, enabledModules, getProfile, sharesForEmail
+    } from '../assets/js/firebase-config.js';
+    import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { mountShell, icon, ICONS } from '../assets/js/shell.js';
+
+    const $ = id => document.getElementById(id);
+
+    /* Same mapping the shell uses: a module key is not always a Bereich
+       colour key, so it is spelled out rather than guessed. */
+    const BEREICH_OF = {
+      ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
+      trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura',
+      publicProjects: 'kalender',
+    };
+
+    /* One row, built from the kit. Used by all three sections so they
+       cannot drift apart the way the old five row classes did. */
+    function row({ href, bereich, iconKey, title, sub, end, onClick }) {
+      const tag = href ? 'a' : 'button';
+      const attrs = href ? `href="${escHtml(href)}"` : 'type="button"';
+      return `
+        <${tag} class="row" ${attrs} data-bereich="${escHtml(bereich || '')}">
+          <span class="row__icon">${icon(ICONS[iconKey] ? iconKey : 'bereiche', 18)}</span>
+          <span class="row__body">
+            <span class="row__title">${escHtml(title)}</span>
+            ${sub ? `<span class="row__sub">${escHtml(sub)}</span>` : ''}
+          </span>
+          <span class="row__end">${end || `<svg class="ic row__chev" viewBox="0 0 24 24">${ICONS.chevron}</svg>`}</span>
+        </${tag}>`;
+    }
+
+    requireAuth('../login.html').then(async user => {
+      wireOfflineBanner();
+      const profile = await getProfile(user);
+      const mods = enabledModules(profile);
+
+      mountShell({
+        variant: 'bereich',
+        title: 'Alle Bereiche',
+        backHref: '../index.html',
+        profile,
+        onSettings: () => { location.href = '../index.html#settings'; },
+      });
+
+      /* ── Meine Bereiche ─────────────────────────────────────────
+         Order follows tvza.trackerTileOrder, the key the app already
+         uses, so nobody has to set anything up again (§7). The key is
+         read but never written here. */
+      const stored = (() => {
+        try { return JSON.parse(localStorage.getItem(`tvza.trackerTileOrder.${user.uid}`) || '[]'); }
+        catch { return []; }
+      })();
+      const keys = Object.keys(MODULES).filter(k => mods[k] && MODULES[k].page);
+      keys.sort((a, b) => {
+        const ia = stored.indexOf(a), ib = stored.indexOf(b);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+
+      $('listMine').innerHTML = keys.length
+        ? keys.map(k => row({
+            href: `../${MODULES[k].page}`,
+            bereich: BEREICH_OF[k],
+            iconKey: k,
+            title: MODULES[k].name,
+            sub: MODULES[k].sub,
+          })).join('')
+        : '<p class="empty-hint" style="padding:12px">Noch keine Bereiche freigeschaltet.</p>';
+
+      /* ── Mit mir geteilt ────────────────────────────────────────*/
+      const shares = await sharesForEmail(user.email);
+      if (shares.length) {
+        const html = shares.map(s => {
+          const m = MODULES[s.module];
+          if (!m || !m.page) return '';
+          return row({
+            href: `../${m.page}?owner=${encodeURIComponent(s.ownerUid)}`,
+            bereich: BEREICH_OF[s.module],
+            iconKey: s.module,
+            title: m.name + (s.ownerName ? ' · ' + s.ownerName : ''),
+            sub: 'Geteilt mit dir',
+            end: `<span class="row__status">${s.role === 'edit' ? 'Bearbeiten' : 'Ansehen'}</span>`,
+          });
+        }).join('');
+        if (html.trim()) { $('listShared').innerHTML = html; $('secShared').hidden = false; }
+      }
+
+      /* ── Öffentliche Projekte ───────────────────────────────────*/
+      if (mods.publicProjects) {
+        onSnapshot(collection(db, 'publicProjects'), snap => {
+          const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
+          if (!items.length) { $('secPublic').hidden = true; return; }
+          $('secPublic').hidden = false;
+          $('listPublic').innerHTML = items.map(p => row({
+            bereich: 'kalender',
+            iconKey: 'publicProjects',
+            title: p.name || 'Projekt',
+            sub: (p.ownerName ? p.ownerName + ' · ' : '') +
+                 (String(p.publicPassword || '').trim() ? 'Mit Passwort' : 'Öffentlich'),
+          })).join('');
+          // The project emoji is content the user typed, so it stays.
+          [...$('listPublic').children].forEach((el, i) => {
+            if (items[i]?.emoji) el.querySelector('.row__icon').textContent = items[i].emoji;
+            el.onclick = () => {
+              const url = items[i]?.url;
+              if (url) window.open(url, '_blank', 'noopener');
+            };
+          });
+        }, e => console.warn(e));
+      }
+
+      /* The module switches still live in the Einstellungen dialog on
+         the start page; this button is the way to them. */
+      $('manageBtn').onclick = () => { location.href = '../index.html#settings'; };
+    });
+  </script>
+</body>
+</html>

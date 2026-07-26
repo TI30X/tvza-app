@@ -116,14 +116,13 @@
     }
     .proj {
       background: var(--surface); border-radius: var(--r2); padding: 18px;
-      display: flex; align-items: center; gap: 14px;
-      box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 14px; border: 1px solid var(--border);
       margin-bottom: 10px; text-decoration: none; color: inherit;
       font-family: inherit; font-size: inherit;
-      transition: transform 150ms ease, box-shadow 150ms ease;
+      transition: transform 150ms ease;
       width: 100%; min-height: 44px; cursor: pointer; text-align: left;
     }
-    .proj:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .proj:hover { border-color: var(--ink-soft); }
     .proj-emoji { font-size: 30px; }
     .proj-name { flex: 1; font-size: 15px; font-weight: 700; }
     .proj-arrow { color: var(--ink-soft); font-size: 18px; display: inline-flex; align-items: center; }
@@ -139,7 +138,7 @@
       width: 100%; max-width: 680px; display: grid; grid-template-columns: 120px 1fr;
       align-items: center; gap: 22px; text-align: left; background: var(--brand-gradient); color: white;
       border: 0;
-      border-radius: var(--r2); padding: 24px 26px; box-shadow: var(--shadow-sm);
+      border-radius: var(--r2); padding: 24px 26px;
     }
     .tvz-footer-logo { border-right: 1px solid rgba(255,255,255,0.24); padding-right: 20px; }
     .tvz-footer-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 32px; font-weight: 700; line-height: 1; color: white; text-shadow: none; }
@@ -174,8 +173,7 @@
     .pw-backdrop { position: fixed; inset: 0; background: oklch(0 0 0 / 0.45); display: none;
       align-items: center; justify-content: center; padding: 20px; z-index: 50; }
     .pw-backdrop.visible { display: flex; }
-    .pw-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2);
-      box-shadow: var(--shadow-md); padding: 22px; width: 100%; max-width: 360px; }
+    .pw-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 22px; width: 100%; max-width: 360px; }
     .pw-card h3 { font-size: 16px; margin-bottom: 4px; }
     .pw-card p { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
     .pw-input { width: 100%; font-family: inherit; font-size: 16px; padding: 11px 12px;
