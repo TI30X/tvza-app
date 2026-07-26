@@ -402,6 +402,8 @@
     let appUsersLoaded = false;
     const overviewSectionDefaults = ['tracker', 'shared', 'projects', 'public'];
     const trackerTileDefaults = ['ski', 'food', 'watch', 'weather', 'dm', 'trip', 'matura', 'maturatracker'];
+    const quickAccessExcluded = new Set(['dm', 'watch', 'trip']);
+    let reorderEditing = false;
 
     function storedOrder(key, defaults) {
       try {
@@ -476,12 +478,16 @@
        Position direkt gegen eine bisher sichtbare ausgetauscht. */
     function applyQuickAccess() {
       const tiles = [...document.querySelectorAll('[data-tracker-tile]')];
-      const enabledTiles = tiles.filter(tile => tile.dataset.enabled === '1');
-      const quickTiles = new Set(enabledTiles.slice(0, 4));
+      const eligibleTiles = tiles.filter(tile =>
+        tile.dataset.enabled === '1' &&
+        !quickAccessExcluded.has(tile.dataset.trackerTile)
+      );
+      const quickTiles = new Set(eligibleTiles.slice(0, 4));
 
       tiles.forEach(tile => {
-        const enabled = tile.dataset.enabled === '1';
-        const visible = enabled && (reorderEditing || quickTiles.has(tile));
+        const eligible = tile.dataset.enabled === '1' &&
+          !quickAccessExcluded.has(tile.dataset.trackerTile);
+        const visible = eligible && (reorderEditing || quickTiles.has(tile));
         tile.style.display = visible ? '' : 'none';
         tile.setAttribute('aria-hidden', visible ? 'false' : 'true');
         const link = tile.querySelector('.card');
@@ -506,7 +512,7 @@
       setTrackerTile('matura', mods.matura);
       setTrackerTile('maturatracker', mods.maturatracker);
       document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
-      const anyTracker = mods.ski || mods.food || mods.watch || mods.weather || mods.dm || mods.trip || mods.matura || mods.maturatracker;
+      const anyTracker = mods.ski || mods.food || mods.weather || mods.matura || mods.maturatracker;
       // The chip may not have registered yet — it is a module too, and
       // module order is document order. Record the wanted state either
       // way; whichever runs second applies it.
@@ -560,7 +566,6 @@
        open tiles and swipes scroll the page. Inside edit mode a lifted
        clone follows the finger and the remaining items glide into their
        new spots (FLIP) instead of jumping. */
-    let reorderEditing = false;
     const sortables = [];
     let drag = null;   // active drag
     let cand = null;   // press, before threshold

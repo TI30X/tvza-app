@@ -5,6 +5,7 @@ Nothing in here ships as part of the app — no page links to it.
 | Datei | Zweck |
 | --- | --- |
 | `bausatz.html` | Style guide. Every component from §4/§5 of the handoff on one page, in both modes. Open it in a browser to compare against `TVZA Redesign.dc.html`. |
+| `dashboard.test.mjs` | Prüft den Vierer-Schnellzugriff, dessen Ausschlüsse und die Initialisierungsreihenfolge. |
 | `itinerary.test.mjs` | Tests for `assets/js/itinerary.js`. |
 
 ## Tests laufen lassen
@@ -25,6 +26,12 @@ Die statischen Sicherheits-Invarianten laufen ebenfalls ohne Installation:
 
 ```bash
 node --test security-model.test.mjs
+```
+
+Der Dashboard-Regressionstest läuft ebenfalls ohne Installation:
+
+```bash
+node --test dashboard.test.mjs
 ```
 
 Sie verhindern versehentliches Wiederöffnen der Registrierung, globale
