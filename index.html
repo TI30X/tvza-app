@@ -345,7 +345,6 @@
       doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
       deleteDoc, serverTimestamp, query, orderBy, where, getDocs
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { ownsTab } from './assets/js/nav.js';
     import { ICONS, icon } from './assets/js/shell.js';
     import { initialsOf } from './assets/js/nav.js';
 
@@ -470,20 +469,23 @@
       });
     }
 
-    /* Schnellzugriff zeigt ALLE freigeschalteten Bereiche, nicht die
-       ersten vier. Die Deckelung stammt aus §6.1 des Entwurfs; sie führte
-       dazu, dass der Bereiche-Tab mehr Einträge hatte als die Startseite
-       — dieselbe Liste an zwei Orten, unterschiedlich lang. Die
-       Reihenfolge bleibt die aus tvza.trackerTileOrder, es wird also
-       weiterhin nichts neu eingerichtet (§7).
-       Was einen eigenen Tab hat, steht hier nicht (§6.4) — also weder
-       Nachrichten noch Kalender. */
+    /* Im Alltag sind nur die ersten vier aktivierten Kacheln sichtbar.
+       Im Anpassungsmodus erscheinen alle aktivierten Kacheln; durch ihre
+       Reihenfolge bestimmt der Nutzer, welche vier im Schnellzugriff
+       bleiben. So wird eine Kachel durch Verschieben über die vierte
+       Position direkt gegen eine bisher sichtbare ausgetauscht. */
     function applyQuickAccess() {
-      document.querySelectorAll('[data-tracker-tile]').forEach(tile => {
-        const on = tile.dataset.enabled === '1' && !ownsTab(tile.dataset.trackerTile);
-        tile.style.display = on ? '' : 'none';
+      const tiles = [...document.querySelectorAll('[data-tracker-tile]')];
+      const enabledTiles = tiles.filter(tile => tile.dataset.enabled === '1');
+      const quickTiles = new Set(enabledTiles.slice(0, 4));
+
+      tiles.forEach(tile => {
+        const enabled = tile.dataset.enabled === '1';
+        const visible = enabled && (reorderEditing || quickTiles.has(tile));
+        tile.style.display = visible ? '' : 'none';
+        tile.setAttribute('aria-hidden', visible ? 'false' : 'true');
         const link = tile.querySelector('.card');
-        if (link) link.style.display = on ? '' : 'none';
+        if (link) link.style.display = visible ? '' : 'none';
       });
     }
 
