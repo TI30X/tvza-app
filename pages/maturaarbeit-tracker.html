@@ -34,10 +34,6 @@ body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; backgr
 /* ── TILE WRAP ── */
 .tile{ max-width:560px; margin:24px auto; padding:0 16px 48px; }
 
-/* ── BACK LINK ── */
-.tvza-back{ display:inline-flex; align-items:center; gap:6px; color:var(--muted); text-decoration:none; font-size:.8rem; font-weight:600; margin-bottom:14px; padding:6px 12px; border:1px solid var(--border); border-radius: var(--r-icon); background:var(--card); transition:background .15s,color .15s; }
-.tvza-back:hover{ background:var(--bg); color:var(--text); }
-.tvza-back svg{ width:15px; height:15px; }
 
 /* ── HEADER ── */
 .tile-head{ background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460); color:#fff; border-radius:16px 16px 0 0; padding:22px 24px 20px; }
@@ -140,12 +136,20 @@ body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; backgr
   <script src="../assets/js/ui-fx.js?v=15" defer></script>
 </head>
 <body>
-<div class="tile">
 
-  <a href="../index.html" class="tvza-back">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    Zurück zu TVZA
-  </a>
+<header class="appbar appbar--bereich" data-bereich="matura">
+  <div class="appbar__inner">
+    <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="appbar__title">Maturaarbeit-Tracker</span>
+    <span class="appbar__end">
+      <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+    </span>
+  </div>
+  <div class="appbar__accent"></div>
+</header>
+
+<main class="main">
+<div class="tile">
 
   <div class="tile-head">
     <div class="th-top">
@@ -354,5 +358,6 @@ window.startTracker(user.uid, user.displayName || user.email || 'Schüler:in');
 </script>
   <script type="module" src="../assets/js/notifications.js?v=2"></script>
   <script type="module" src="../assets/js/nav.js?v=1"></script>
+</main>
 </body>
 </html>
