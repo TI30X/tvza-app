@@ -284,7 +284,7 @@
 
       <section class="settings-section">
         <p class="settings-section-title">Module</p>
-        <div id="moduleToggles"></div>
+        <div class="rows" id="moduleToggles"></div>
         <div class="modal-actions">
           <button class="btn btn-primary btn-block" id="modulesSave">Module speichern</button>
         </div>
@@ -357,6 +357,15 @@
       deleteDoc, serverTimestamp, query, orderBy, where, getDocs
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { ownsTab } from './assets/js/nav.js';
+    import { ICONS, icon } from './assets/js/shell.js';
+
+    /* Modulschlüssel → Bereichsfarbe. Wie in nav.js ausgeschrieben,
+       weil die beiden nicht deckungsgleich sind. */
+    const BEREICH_OF = {
+      ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
+      trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura',
+      publicProjects: 'kalender',
+    };
 
     wireOfflineBanner();
 
@@ -921,10 +930,15 @@
         return;
       }
       document.getElementById('moduleToggles').innerHTML = availableModules.map(m => `
-        <label class="link-row" style="cursor:pointer;gap:12px">
-          <input type="checkbox" data-mod="${m.key}" ${mods[m.key] ? 'checked' : ''} style="width:18px;height:18px" />
-          <span class="link-icon">${m.emoji}</span>
-          <span class="link-title"><span>${escHtml(m.name)}</span><small>${escHtml(m.sub)}</small></span>
+        <label class="row row--check" data-bereich="${BEREICH_OF[m.key] || ''}">
+          <span class="row__icon">${icon(ICONS[m.key] ? m.key : 'bereiche', 18)}</span>
+          <span class="row__body">
+            <span class="row__title">${escHtml(m.name)}</span>
+            <span class="row__sub">${escHtml(m.sub)}</span>
+          </span>
+          <span class="row__end">
+            <input type="checkbox" data-mod="${m.key}" ${mods[m.key] ? 'checked' : ''} />
+          </span>
         </label>`).join('');
     }
 
