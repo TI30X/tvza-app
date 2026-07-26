@@ -476,37 +476,21 @@
       });
     }
 
-    /* §6.1: Schnellzugriff is four tiles. The order is the one the user
-       already has in tvza.trackerTileOrder, so nothing is set up again
-       and nobody is asked (§7) — the first four active entries win. The
-       rest are not lost; they are the Bereiche tab, one tap away.
-       Was einen eigenen Tab hat, belegt hier keinen Platz (§6.4) —
-       also weder Nachrichten noch Kalender. */
-    const QUICK_SLOTS = 4;
+    /* Schnellzugriff zeigt ALLE freigeschalteten Bereiche, nicht die
+       ersten vier. Die Deckelung stammt aus §6.1 des Entwurfs; sie führte
+       dazu, dass der Bereiche-Tab mehr Einträge hatte als die Startseite
+       — dieselbe Liste an zwei Orten, unterschiedlich lang. Die
+       Reihenfolge bleibt die aus tvza.trackerTileOrder, es wird also
+       weiterhin nichts neu eingerichtet (§7).
+       Was einen eigenen Tab hat, steht hier nicht (§6.4) — also weder
+       Nachrichten noch Kalender. */
     function applyQuickAccess() {
-      const active = trackerTileOrder.filter(id => {
-        if (ownsTab(id)) return false;
-        const tile = document.querySelector(`[data-tracker-tile="${id}"]`);
-        return tile && tile.dataset.enabled === '1';
-      });
-      const shown = new Set(active.slice(0, QUICK_SLOTS));
       document.querySelectorAll('[data-tracker-tile]').forEach(tile => {
-        const on = shown.has(tile.dataset.trackerTile);
+        const on = tile.dataset.enabled === '1' && !ownsTab(tile.dataset.trackerTile);
         tile.style.display = on ? '' : 'none';
         const link = tile.querySelector('.card');
         if (link) link.style.display = on ? '' : 'none';
       });
-      // While arranging, show everything that may take a slot — but not
-      // the Bereiche that own a tab, or one could drag in a tile that
-      // applyQuickAccess would filter straight back out.
-      if (document.body.classList.contains('reorder-editing')) {
-        document.querySelectorAll('[data-tracker-tile]').forEach(tile => {
-          if (tile.dataset.enabled === '1' && !ownsTab(tile.dataset.trackerTile)) {
-            tile.style.display = '';
-            const l = tile.querySelector('.card'); if (l) l.style.display = '';
-          }
-        });
-      }
     }
 
     const h = new Date().getHours();
@@ -1775,6 +1759,6 @@
     }, 1200);
   })();
   </script>
-  <script type="module" src="./assets/js/nav.js?v=1"></script>
+  <script type="module" src="./assets/js/nav.js"></script>
 </body>
 </html>

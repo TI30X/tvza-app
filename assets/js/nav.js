@@ -38,14 +38,12 @@ const TABS = [
   { id: 'bereiche',    label: 'Bereiche',    icon: 'bereiche',    href: 'pages/bereiche.html' },
 ];
 
-/* "Eine Sache, ein Ort" (§6.4): a Bereich that already owns one of the
-   four tabs must not be listed a second time — not in the Bereiche tab,
-   not in the laptop rail, not in the Schnellzugriff. Derived from TABS
-   rather than written out, so the two lists cannot drift apart when a
-   tab is added or its target changes. Today this covers trip (Kalender)
-   and dm (Nachrichten). */
-const TAB_HREFS = new Set(TABS.map(t => t.href));
-export const ownsTab = key => TAB_HREFS.has(MODULES[key]?.page);
+/* Die Regel "eine Sache, ein Ort" (§6.4) liegt in shell.js, weil beide
+   Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
+   weitergereicht, damit index.html und bereiche.html sie wie bisher
+   von nav.js beziehen können. */
+export { ownsTab } from './shell.js';
+import { ownsTab } from './shell.js';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');

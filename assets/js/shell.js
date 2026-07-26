@@ -99,6 +99,16 @@ const TABS = [
   { id: 'bereiche',    label: 'Bereiche',    icon: 'bereiche',    href: 'pages/bereiche.html' },
 ];
 
+/* "Eine Sache, ein Ort" (§6.4): ein Bereich, der schon einen der vier
+   Tabs besitzt, darf nicht zusätzlich in der Bereichsliste stehen.
+   Die Regel wohnt hier, weil shell.js und nav.js beide eine Leiste
+   bauen — vorher hatte nur nav.js den Filter, und die Bereiche-Seite
+   (die mountShell benutzt) zeigte darum Kalender und Nachrichten
+   doppelt, die Startseite nicht. Aus TABS abgeleitet, damit die Listen
+   nicht auseinanderlaufen. */
+const TAB_HREFS = new Set(TABS.map(t => t.href));
+export const ownsTab = key => TAB_HREFS.has(MODULES[key]?.page);
+
 /* Pages sit either at the root or in /pages/, so links need a prefix. */
 function base() {
   return location.pathname.includes('/pages/') ? '../' : './';
@@ -185,7 +195,7 @@ export function mountShell(o = {}) {
      at all — the Bereiche tab is the way there. */
   const mods = o.profile ? enabledModules(o.profile) : {};
   const bereiche = Object.keys(MODULES)
-    .filter(k => mods[k] && MODULES[k].page)
+    .filter(k => mods[k] && MODULES[k].page && !ownsTab(k))
     .map(k => {
       const m = MODULES[k];
       return `<a class="nav__bereich" href="${b}${m.page}" data-bereich="${BEREICH_OF[k] || ''}">
