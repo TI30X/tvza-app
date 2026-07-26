@@ -54,3 +54,17 @@ test('calendar actions use aligned icons and compact calendars remain readable',
   assert.match(css, /\.mini-calendar-day,[\s\S]*font-size:12px/);
   assert.match(css, /\.calendar-month \.evchip \{[\s\S]*font-size:12px/);
 });
+
+test('group people use consistent initial avatars in lists and requests', async () => {
+  const [planner, css] = await Promise.all([
+    read('pages/planner.html'),
+    read('assets/css/calendar.css'),
+  ]);
+
+  assert.match(planner, /function personInitials\(name\)/);
+  assert.match(planner, /function personAvatar\(name, uid/);
+  assert.match(planner, /group-avatar-stack/);
+  assert.match(planner, /group-request-copy/);
+  assert.match(css, /--person-bg/);
+  assert.match(css, /\.group-member-avatar--stacked/);
+});

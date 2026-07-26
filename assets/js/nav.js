@@ -24,6 +24,7 @@ import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ICONS, icon, areaModuleKeys } from './shell.js';
+import { mountSettingsLayer } from './settings-layer.js';
 
 const BEREICH_OF = {
   ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
@@ -85,10 +86,16 @@ function mount(profile) {
      rendered — that is what the Bereiche tab is for. */
   const currentFile = location.pathname.split('/').pop() || 'index.html';
   const bereiche = areaModuleKeys(profile)
-    .map(k => `
-      <a class="nav__bereich${MODULES[k].page.split('/').pop() === currentFile ? ' is-active' : ''}" href="${b}${MODULES[k].page}" data-bereich="${BEREICH_OF[k] || ''}">
-        <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i><span>${esc(MODULES[k].name)}</span>
-      </a>`).join('');
+    .map(k => {
+      const isCurrent = MODULES[k].page.split('/').pop() === currentFile;
+      return `
+        <a class="nav__bereich${isCurrent ? ' is-active' : ''}" href="${b}${MODULES[k].page}"
+           data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
+          <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
+          <span class="nav__bereich-name">${esc(MODULES[k].name)}</span>
+          ${isCurrent ? '<span class="nav__current">Aktuell</span>' : ''}
+        </a>`;
+    }).join('');
 
   const nav = document.createElement('nav');
   nav.className = 'nav';
@@ -99,6 +106,10 @@ function mount(profile) {
 
   document.body.appendChild(nav);
   document.body.classList.add('has-nav');
+  nav.addEventListener('click', event => {
+    if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
+  });
+  primeNavigation(profile, nav);
 }
 
 /* Initialen wie auf der Startseite: erster Buchstabe des Vornamens und
@@ -110,6 +121,36 @@ export function initialsOf(name) {
   if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return '·';
+}
+
+/* The pages remain deliberately small and independent, but the next
+   destination can still be ready before it is clicked. Browsers that
+   support cross-document view transitions use the matching CSS in
+   style.css; the prefetch is a harmless speed-up for all others. */
+function primeNavigation(profile, nav) {
+  const b = base();
+  const prefetched = new Set(
+    [...document.querySelectorAll('link[data-tvza-prefetch]')]
+      .map(link => link.dataset.tvzaPrefetch)
+  );
+  const hrefs = [
+    ...TABS.map(tab => b + tab.href),
+    ...areaModuleKeys(profile).map(key => b + MODULES[key].page),
+  ];
+  const warm = href => {
+    if (!href || prefetched.has(href)) return;
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.as = 'document';
+    link.href = href;
+    link.dataset.tvzaPrefetch = href;
+    link.fetchPriority = 'low';
+    document.head.appendChild(link);
+    prefetched.add(href);
+  };
+  [...new Set(hrefs)].forEach(warm);
+  nav.addEventListener('pointerover', event => warm(event.target.closest('a[href]')?.getAttribute('href')));
+  nav.addEventListener('focusin', event => warm(event.target.closest('a[href]')?.getAttribute('href')));
 }
 
 /* ══ Konto-Menü auf den Bereichsseiten ══════════════════════════════
@@ -157,6 +198,7 @@ function mountAccountMenu(user, profile) {
 
   const btn = wrap.querySelector('.avatar');
   const menu = wrap.querySelector('.acct__menu');
+  const settingsLayer = mountSettingsLayer();
   const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
 
   btn.addEventListener('click', e => {
@@ -171,7 +213,7 @@ function mountAccountMenu(user, profile) {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
     close();
-    if (act === 'settings') location.href = base() + 'index.html#settings';
+    if (act === 'settings') settingsLayer.open();
     if (act === 'logout' && confirm('Abmelden?')) {
       try { localStorage.removeItem('tvza-name'); } catch {}
       const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
@@ -243,5 +285,11 @@ if (!SKIP.includes(file)) {
     mountAccountMenu(user, profile);
     watchUnread(user);
     watchKeyboard();
+    window.addEventListener('tvza-modules-change', event => {
+      if (!event.detail || typeof event.detail !== 'object') return;
+      profile.modules = event.detail;
+      document.querySelector('.nav')?.remove();
+      mount(profile);
+    });
   });
 }

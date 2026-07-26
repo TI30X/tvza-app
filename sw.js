@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.30.7.0';
+const CACHE = 'tvza-v.30.8.0';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -35,6 +35,7 @@ const SHELL = [
   './assets/js/calendar-interop.js',
   './assets/js/calendar-view.js',
   './assets/js/shell.js',
+  './assets/js/settings-layer.js',
   './assets/js/hints.js',
   './assets/js/nav.js',
   './pages/bereiche.html',

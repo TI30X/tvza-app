@@ -505,6 +505,23 @@
     const tdy = new Date(); const todayKey = keyOf(tdy.getFullYear(), tdy.getMonth(), tdy.getDate());
     const fmtDateKey = k => { if(!k) return ''; const [y,m,d]=k.split('-').map(Number); const dt=new Date(y,m-1,d); return `${WD[dt.getDay()].slice(0,2)}, ${d}. ${MONTHS[m-1]}`; };
     const esc = s => escHtml(s);
+    const PERSON_COLORS = [
+      ['#dcecff','#174a88'], ['#e4f4e8','#27613b'], ['#f4e5ff','#63358a'],
+      ['#fff0d7','#7b4c10'], ['#ffe2e8','#85334b'], ['#dff5f3','#17635d']
+    ];
+    function personInitials(name) {
+      const clean = String(name||'').trim().replace(/@.*$/,'');
+      const parts = clean.split(/[\s._-]+/).filter(Boolean);
+      if (parts.length > 1) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+      return parts.length ? parts[0].slice(0,2).toUpperCase() : '·';
+    }
+    function personAvatar(name, uid, extraClass = '') {
+      const hash = [...String(uid||name||'')].reduce((sum,char)=>sum+char.charCodeAt(0),0);
+      const [background, ink] = PERSON_COLORS[hash % PERSON_COLORS.length];
+      return `<span class="group-member-avatar${extraClass?' '+extraClass:''}"
+        style="--person-bg:${background};--person-ink:${ink}"
+        title="${esc(name||'Mitglied')}" aria-label="${esc(name||'Mitglied')}">${esc(personInitials(name))}</span>`;
+    }
 
     /* ── Files on the FREE plan: stored in Firestore (no Cloud Storage / Blaze).
        Images are downscaled+compressed so they fit. Big files → use the Link tab. */
@@ -843,7 +860,7 @@
             : ''
         ].filter(Boolean).join('');
         return `<div class="group-member-row">
-          <span class="group-member-avatar">${esc((names[uid]||'?').trim().charAt(0).toUpperCase())}</span>
+          ${personAvatar(names[uid]||'Mitglied',uid)}
           <span class="group-member-copy"><strong>${esc(names[uid]||'Mitglied')}${uid===user.uid?' (du)':''}</strong><small>${groupRole(uid)}</small></span>
           ${actions?`<details class="group-member-menu"><summary aria-label="Mitglied verwalten">•••</summary><div>${actions}</div></details>`:''}
         </div>`;
@@ -852,7 +869,8 @@
       if (isManager() && (group.pendingRequests||[]).length) {
         pending = `<section class="group-manage-section"><div class="group-manage-heading"><h3>Beitrittsanfragen</h3><span>${group.pendingRequests.length}</span></div>` +
           (group.pendingRequests||[]).map(uid =>
-            `<div class="group-request-row"><span>${esc(names[uid]||'Mitglied')}</span>
+            `<div class="group-request-row">${personAvatar(names[uid]||'Mitglied',uid)}
+             <span class="group-request-copy">${esc(names[uid]||'Mitglied')}</span>
              <button class="pill primary" type="button" data-appr="${uid}">Annehmen</button>
              <button class="pill" type="button" data-rej="${uid}">Ablehnen</button></div>`).join('') + `</section>`;
       }
@@ -881,6 +899,10 @@
           </div>
           <div class="group-manager-title"><span class="calendar-source-dot" style="--source-color:${groupColorValue}"></span>
             <div><strong>${esc(group.name||'Gruppe')}</strong><small>${(group.members||[]).length} Mitglied${(group.members||[]).length===1?'':'er'} · Du bist ${groupRole(user.uid).toLowerCase()}</small></div>
+            <div class="group-avatar-stack" aria-label="Mitglieder">
+              ${(group.members||[]).slice(0,4).map(uid=>personAvatar(names[uid]||'Mitglied',uid,'group-member-avatar--stacked')).join('')}
+              ${(group.members||[]).length>4?`<span class="group-avatar-more" title="${(group.members||[]).length-4} weitere">+${(group.members||[]).length-4}</span>`:''}
+            </div>
           </div>
         </div>
         ${managerSettings}

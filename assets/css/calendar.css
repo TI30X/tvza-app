@@ -688,9 +688,34 @@
   place-items:center;
   flex:none;
   border-radius:50%;
-  background:var(--surface-2);
-  color:var(--ink);
+  border:1px solid color-mix(in oklab, var(--person-ink, var(--ink)) 18%, transparent);
+  background:var(--person-bg, var(--surface-2));
+  color:var(--person-ink, var(--ink));
   font-size:12px;
+  font-weight:800;
+}
+.group-avatar-stack {
+  display:flex;
+  flex:none;
+  align-items:center;
+  margin-left:auto;
+  padding-left:10px;
+}
+.group-member-avatar--stacked,
+.group-avatar-more {
+  width:30px;
+  height:30px;
+  box-shadow:0 0 0 2px var(--surface);
+}
+.group-member-avatar--stacked + .group-member-avatar--stacked,
+.group-avatar-more { margin-left:-7px; }
+.group-avatar-more {
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:var(--surface-2);
+  color:var(--ink-soft);
+  font-size:10px;
   font-weight:800;
 }
 .group-member-copy { min-width:0; flex:1; }
@@ -739,7 +764,7 @@
 .group-member-action:hover { background:var(--surface-2); }
 .group-member-action.is-danger { color:var(--danger); }
 .group-request-row { display:flex; align-items:center; gap:8px; padding:7px 0; }
-.group-request-row > span { min-width:0; flex:1; font-size:13px; font-weight:700; }
+.group-request-copy { min-width:0; flex:1; font-size:13px; font-weight:700; }
 .group-management-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .group-invite-output {
   display:none;

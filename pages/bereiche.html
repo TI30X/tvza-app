@@ -59,6 +59,7 @@
     } from '../assets/js/firebase-config.js';
     import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { mountShell, icon, ICONS, areaModuleKeys } from '../assets/js/shell.js';
+    import { openSettingsLayer } from '../assets/js/settings-layer.js';
 
     const $ = id => document.getElementById(id);
 
@@ -96,7 +97,7 @@
         title: 'Alle Bereiche',
         backHref: '../index.html',
         profile,
-        onSettings: () => { location.href = '../index.html#settings'; },
+        onSettings: openSettingsLayer,
       });
 
       /* Genau dieselbe Quelle und Reihenfolge wie die Desktop-Seitenleiste.
@@ -156,9 +157,7 @@
         }, () => console.warn('[public-projects] listen-failed'));
       }
 
-      /* The module switches still live in the Einstellungen dialog on
-         the start page; this button is the way to them. */
-      $('manageBtn').onclick = () => { location.href = '../index.html#settings'; };
+      $('manageBtn').onclick = openSettingsLayer;
     });
   </script>
 </body>

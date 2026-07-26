@@ -12,6 +12,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script>
+    if (window.parent !== window && new URLSearchParams(location.search).get('embed') === 'settings') {
+      document.documentElement.classList.add('settings-embed');
+    }
+  </script>
   <script src="assets/js/theme.js?v=3"></script>
   <link rel="stylesheet" href="assets/css/style.css?v=5" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
@@ -355,6 +360,15 @@
       trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura',
       publicProjects: 'kalender',
     };
+    const PERSON_AVATAR_COLORS = [
+      ['#dcecff','#174a88'], ['#e4f4e8','#27613b'], ['#f4e5ff','#63358a'],
+      ['#fff0d7','#7b4c10'], ['#ffe2e8','#85334b'], ['#dff5f3','#17635d']
+    ];
+    function personAvatarStyle(identity) {
+      const hash = [...String(identity||'')].reduce((sum,char)=>sum+char.charCodeAt(0),0);
+      const [background, ink] = PERSON_AVATAR_COLORS[hash % PERSON_AVATAR_COLORS.length];
+      return `--tint:${background};--deep:${ink}`;
+    }
 
     wireOfflineBanner();
 
@@ -843,6 +857,22 @@
 
     /* ════ Einstellungen / Module ════════════════ */
     const settingsModal = document.getElementById('settingsModal');
+    const embeddedSettings = window.parent !== window &&
+      new URLSearchParams(location.search).get('embed') === 'settings';
+    const tellSettingsParent = message => {
+      if (embeddedSettings) {
+        window.parent.postMessage(message, location.origin === 'null' ? '*' : location.origin);
+      }
+    };
+    if (embeddedSettings) {
+      window.addEventListener('tvza-theme-change', event => {
+        tellSettingsParent({ type:'tvza-settings-theme', mode:event.detail?.mode || 'auto' });
+      });
+    }
+    function closeSettings() {
+      settingsModal.classList.remove('visible');
+      tellSettingsParent({ type:'tvza-settings-close' });
+    }
     function openSettings() {
       renderModuleToggles();
       renderShareModuleOptions();
@@ -866,8 +896,8 @@
       history.replaceState(null, '', location.pathname + location.search);
       openSettings();
     }
-    document.getElementById('settingsClose').addEventListener('click', () => settingsModal.classList.remove('visible'));
-    settingsModal.addEventListener('click', e => { if (e.target === settingsModal) settingsModal.classList.remove('visible'); });
+    document.getElementById('settingsClose').addEventListener('click', closeSettings);
+    settingsModal.addEventListener('click', e => { if (e.target === settingsModal) closeSettings(); });
 
     async function loadAppUsers(force = false) {
       if (appUsersLoaded && !force) return appUsers;
@@ -936,7 +966,8 @@
       profile.modules = modules;
       applyModules();
       syncPublicFeed();
-      settingsModal.classList.remove('visible');
+      tellSettingsParent({ type:'tvza-settings-modules', modules });
+      closeSettings();
     });
 
     /* ════ Teilen ════════════════════════════════ */
@@ -973,10 +1004,10 @@
       if (!shares.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch nichts geteilt.</p>'; return; }
       wrap.innerHTML = '<p class="marke" style="margin-bottom:8px">Von mir geteilt</p><div class="rows">' + shares.map(s => `
         <div class="row" data-bereich="${BEREICH_OF[s.module] || ''}">
-          <span class="row__icon">${icon(ICONS[s.module] ? s.module : 'bereiche', 18)}</span>
+          <span class="avatar avatar--ink" style="${personAvatarStyle(s.targetUid||s.targetEmail)}">${escHtml(initialsOf(s.targetName||s.targetEmail))}</span>
           <span class="row__body">
-            <span class="row__title">${escHtml(MODULES[s.module]?.name || s.module)}</span>
-            <span class="row__sub">${escHtml(s.targetName || s.targetEmail)} · ${s.role === 'edit' ? 'Bearbeiten' : 'Nur ansehen'}</span>
+            <span class="row__title">${escHtml(s.targetName || s.targetEmail)}</span>
+            <span class="row__sub">${escHtml(MODULES[s.module]?.name || s.module)} · ${s.role === 'edit' ? 'Bearbeiten' : 'Nur ansehen'}</span>
           </span>
           <span class="row__end">
             <button class="b b--danger" data-unshare="${s.id}" title="Freigabe entfernen">Entfernen</button>
@@ -1007,6 +1038,7 @@
         }
         wrap.innerHTML = '<div class="rows" style="margin-top:10px">' + invites.map(invite => `
           <div class="row">
+            <span class="avatar avatar--ink" style="${personAvatarStyle(invite.email)}">${escHtml(initialsOf(invite.email))}</span>
             <span class="row__body">
               <span class="row__title">${escHtml(invite.email || 'Ohne E-Mail')}</span>
               <span class="row__sub">${escHtml(invite.code)}</span>
@@ -1076,7 +1108,7 @@
         return `
         <details class="admin-user" data-admin-user="${escHtml(u.uid)}">
           <summary class="row admin-user__head">
-            <span class="avatar avatar--ink">${escHtml(initialsOf(u.displayName))}</span>
+            <span class="avatar avatar--ink" style="${personAvatarStyle(u.uid||u.email)}">${escHtml(initialsOf(u.displayName||u.email))}</span>
             <span class="row__body">
               <span class="row__title">${escHtml(u.displayName || 'Ohne Name')}</span>
               <span class="row__sub">${escHtml(u.email || '')}</span>
@@ -1225,10 +1257,10 @@
         const href = `${m.page}?owner=${encodeURIComponent(s.ownerUid)}`;
         return `
         <a class="row" href="${href}" data-bereich="${BEREICH_OF[s.module] || ''}">
-          <span class="row__icon">${icon(ICONS[s.module] ? s.module : 'bereiche', 18)}</span>
+          <span class="avatar avatar--ink" style="${personAvatarStyle(s.ownerUid||s.ownerName)}">${escHtml(initialsOf(s.ownerName||'Geteilt'))}</span>
           <span class="row__body">
-            <span class="row__title">${escHtml(m.name)}${s.ownerName ? ' · ' + escHtml(s.ownerName) : ''}</span>
-            <span class="row__sub">Geteilt mit dir</span>
+            <span class="row__title">${escHtml(s.ownerName || 'Geteilt')}</span>
+            <span class="row__sub">${escHtml(m.name)} · Mit dir geteilt</span>
           </span>
           <span class="row__end"><span class="role-badge">${s.role === 'edit' ? 'Bearbeiten' : 'Ansehen'}</span></span>
         </a>`;

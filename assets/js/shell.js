@@ -204,8 +204,12 @@ export function mountShell(o = {}) {
     .map(k => {
       const m = MODULES[k];
       const moduleFile = m.page.split('/').pop();
-      return `<a class="nav__bereich${moduleFile === currentFile ? ' is-active' : ''}" href="${b}${m.page}" data-bereich="${BEREICH_OF[k] || ''}">
-                <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i><span>${esc(m.name)}</span>
+      const isCurrent = moduleFile === currentFile;
+      return `<a class="nav__bereich${isCurrent ? ' is-active' : ''}" href="${b}${m.page}"
+                 data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
+                <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
+                <span class="nav__bereich-name">${esc(m.name)}</span>
+                ${isCurrent ? '<span class="nav__current">Aktuell</span>' : ''}
               </a>`;
     }).join('');
 
@@ -217,6 +221,9 @@ export function mountShell(o = {}) {
 
   document.body.appendChild(nav);
   document.body.classList.add('has-nav');
+  nav.addEventListener('click', event => {
+    if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
+  });
 
   /* ── Wiring ─────────────────────────────────────────────────── */
   const backBtn = document.getElementById('shellBack');
