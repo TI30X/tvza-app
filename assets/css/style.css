@@ -189,6 +189,23 @@ body.has-nav .app { min-height: calc(100vh - 64px - env(safe-area-inset-bottom, 
   body.has-nav .app { min-height: calc(100dvh - 64px - env(safe-area-inset-bottom, 0px)); }
 }
 
+/* Ein offener Nachrichten-Thread ist eine feste Fläche statt einer
+   scrollenden Seite: nur der Verlauf scrollt, das Eingabefeld steht
+   fest darunter. Dafür braucht die Kette eine ECHTE Höhe — mit
+   min-height wächst der Verlauf mit dem Inhalt weiter, das Feld
+   wandert nach unten aus dem Bild und die Leiste deckt es zu. */
+body.dm-thread { overflow: hidden; }
+/* Die Versionszeile haengt an .app und wuerde dem Eingabefeld im Thread
+   Hoehe wegnehmen. Sie gehoert ans Ende einer scrollenden Seite. */
+body.dm-thread .fx-version { display: none; }
+body.dm-thread .app {
+  height: calc(100vh - 64px - env(safe-area-inset-bottom, 0px));
+  min-height: 0;
+}
+@supports (height: 100dvh) {
+  body.dm-thread .app { height: calc(100dvh - 64px - env(safe-area-inset-bottom, 0px)); }
+}
+
 /* Page entry animation */
 .main, .login-card {
   animation: fadeIn 0.2s ease both;
@@ -1823,7 +1840,12 @@ body.reorder-editing .module-tile::after {
      the full width (siehe oben). */
   /* Am Laptop ist die Leiste links, der untere Rand also wieder frei. */
   .has-nav      { padding-bottom: 0; padding-left: 248px; }
-  body.has-nav .app { min-height: 100vh; }
+  body.has-nav .app  { min-height: 100vh; }
+  body.dm-thread .app { height: 100vh; }
+  @supports (height: 100dvh) {
+    body.has-nav .app  { min-height: 100dvh; }
+    body.dm-thread .app { height: 100dvh; }
+  }
   .shell__cols  {
     display: grid; grid-template-columns: 1.35fr 1fr; gap: 26px;
     max-width: 1160px; margin: 0 auto; padding: 0 34px 40px;
