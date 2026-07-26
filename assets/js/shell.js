@@ -108,7 +108,7 @@ function base() {
 function activeTab() {
   const f = location.pathname.split('/').pop() || 'index.html';
   if (f === '' || f === 'index.html') return 'start';
-  if (f === 'planner.html' || f === 'planner-trips.html') return 'kalender';
+  if (f === 'planner.html') return 'kalender';
   if (f === 'messages.html') return 'nachrichten';
   return 'bereiche';   // every Bereich page belongs under Bereiche
 }

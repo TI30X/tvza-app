@@ -1,11 +1,9 @@
 /* ══════════════════════════════════════════════════════════════════
-   Itinerary parser — one copy, shared by planner.html and
-   planner-trips.html.
+   Itinerary parser.
 
-   Both pages used to carry their own `parseItineraryHtml`, and the two
-   had drifted apart: the planner-trips copy only ever looked at
-   `<time datetime>` markers and `<h2>` titles, so a plan written any
-   other way produced nothing at all. This module is the single copy.
+   This logic existed twice — once in planner.html and once in the
+   unreachable planner-trips.html — and the two copies had drifted
+   apart. Both are gone; this module is the only copy.
 
    What goes wrong when an uploaded plan collapses into one day:
 
