@@ -136,10 +136,11 @@ body{ font-family: var(--font-ui); background:var(--bg); color:var(--text); min-
   .meetings-row{ grid-template-columns:repeat(2,1fr); }
 }
 </style>
+  <link rel="stylesheet" href="../assets/css/matura.css" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=15" defer></script>
 </head>
-<body>
+<body class="matura-page matura-tracker-page" data-bereich="matura">
 
 <header class="appbar appbar--bereich" data-bereich="matura">
   <div class="appbar__inner">
@@ -152,60 +153,84 @@ body{ font-family: var(--font-ui); background:var(--bg); color:var(--text); min-
   <div class="appbar__accent"></div>
 </header>
 
-<main class="main">
-<div class="tile">
+<main class="main tracker-main">
+  <section class="matura-hero tracker-hero panel" aria-labelledby="tracker-title">
+    <div class="matura-hero__top">
+      <div class="matura-hero__copy">
+        <div class="marke">Fokussierte Aufgabenansicht</div>
+        <h1 id="tracker-title">Maturaarbeit-Tracker</h1>
+        <p>Betreuung Herr Diriwächter · dieselben Vorgaben für alle</p>
+      </div>
+      <a class="b b--secondary matura-view-link" href="maturaarbeit.html">
+        <span>Detailübersicht</span>
+        <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+    <div class="matura-hero__metrics">
+      <label class="matura-metric deadline-box" for="deadline-input">
+        <span class="matura-metric__label">Abgabe in</span>
+        <strong class="matura-metric__value days" id="days-el">–</strong>
+        <span class="matura-metric__meta">Tagen</span>
+        <input type="date" id="deadline-input" aria-label="Abgabedatum">
+      </label>
+      <div class="matura-progress-card global-prog">
+        <div class="matura-progress-card__head">
+          <span>Gesamtfortschritt</span>
+          <strong id="gp-pct">0 %</strong>
+        </div>
+        <div class="matura-progress-track gp-bar-bg" role="progressbar" aria-label="Gesamtfortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <i class="gp-bar-fill" id="gp-fill"></i>
+        </div>
+        <p id="tracker-progress-summary">Noch keine Aufgaben erledigt.</p>
+      </div>
+    </div>
+  </section>
 
-  <div class="tile-head">
-    <div class="th-top">
-      <div class="tvz-mark">
-        <span class="tvz-letters">TvZ</span>
-        <span class="tvz-name">Maturaarbeit</span>
+  <div class="tracker-layout">
+    <div class="tracker-primary">
+      <div class="matura-callout matura-callout--focus faden-note">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c4-1 7-4 8-8M7 5c2 0 4 2 4 4M15 3c3 2 5 5 5 9a8 8 0 01-8 8"/></svg>
+        <span><strong>Roter Faden:</strong> Die Leitfrage muss Einleitung, Hauptteil und Fazit verbinden. Prüfe sie bei jeder Besprechung erneut.</span>
       </div>
-      <div class="th-title">
-        <h1>Maturaarbeit – Tracker</h1>
-        <p class="sub">Betreuung Herr Diriwächter · gleiche Vorgaben für alle</p>
-      </div>
+
+      <section class="matura-section-card" aria-labelledby="tracker-phases-title">
+        <div class="matura-section-head">
+          <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19V5M4 12h16M8 8l-4 4 4 4"/></svg></span>
+          <div><h2 id="tracker-phases-title">Phasen und Meilensteine</h2><p>Arbeite die vier Etappen in deinem eigenen Tempo ab.</p></div>
+        </div>
+        <div class="phases" id="phases"></div>
+      </section>
+
+      <section class="matura-section-card" aria-labelledby="tracker-rules-title">
+        <div class="matura-section-head">
+          <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+          <div><h2 id="tracker-rules-title">Verbindliche Vorgaben</h2><p>Formale Pflichten, die vor der Abgabe kontrolliert werden müssen.</p></div>
+        </div>
+        <div class="sp-row"><div class="sp-bar"><div class="sp-fill" id="sp-vorgaben"></div></div><div class="sp-lbl" id="sl-vorgaben">0/0</div></div>
+        <div class="checklist" id="cl-vorgaben"></div>
+      </section>
     </div>
-    <div class="th-stats">
-      <div class="deadline-box">
-        <div class="days" id="days-el">–</div>
-        <div class="dlabel">Tage bis Abgabe</div>
-        <input type="date" id="deadline-input">
-      </div>
-      <div class="global-prog">
-        <div class="gp-row"><span>Gesamtfortschritt</span><span id="gp-pct">0 %</span></div>
-        <div class="gp-bar-bg"><div class="gp-bar-fill" id="gp-fill"></div></div>
-      </div>
-    </div>
+
+    <aside class="tracker-sidebar">
+      <section class="matura-section-card" aria-labelledby="tracker-meetings-title">
+        <div class="matura-section-head">
+          <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9.5 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
+          <div><h2 id="tracker-meetings-title">Besprechungen</h2><p>Vier Kontrollpunkte mit der Betreuung.</p></div>
+          <span class="bt-badge" id="meet-badge">0 / 4</span>
+        </div>
+        <div class="meetings-row" id="meetings-row"></div>
+        <div class="matura-callout meetings-note">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <span>Zeitplan, Protokolle und Ergebnisse mitbringen. Fragen vorher mailen.</span>
+        </div>
+      </section>
+    </aside>
   </div>
 
-  <div class="tile-body">
-
-    <div class="faden-note">
-      🧵 <b>Roter Faden:</b> Eine klare Leitfrage zieht sich durch die ganze Arbeit – Einleitung, Hauptteil und Fazit nehmen aufeinander Bezug. Bei jeder Besprechung mit Herrn Diriwächter prüfen, ob der Faden noch trägt.
-    </div>
-
-    <div class="block">
-      <div class="block-title">🤝 Besprechungen mit Herrn Diriwächter <span class="bt-badge" id="meet-badge">0 / 4</span></div>
-      <div class="meetings-row" id="meetings-row"></div>
-      <div class="meetings-note">📋 Zu jedem Termin: Zeitplan, Protokolle und aktuelle Ergebnisse mitbringen. Fragen vorab per Mail schicken.</div>
-    </div>
-
-    <div class="block">
-      <div class="block-title">🗺 Phasen & Meilensteine <span class="bt-badge">Klicken zum Auf-/Zuklappen</span></div>
-      <div class="phases" id="phases"></div>
-    </div>
-
-    <div class="block">
-      <div class="block-title">✅ Verbindliche Vorgaben</div>
-      <div class="sp-row"><div class="sp-bar"><div class="sp-fill" id="sp-vorgaben"></div></div><div class="sp-lbl" id="sl-vorgaben">0/0</div></div>
-      <div class="checklist" id="cl-vorgaben"></div>
-    </div>
-
-    <button class="reset-btn" onclick="resetAll()"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Alle Häkchen zurücksetzen</button>
+  <div class="matura-footer-actions">
+    <button class="b b--danger matura-reset" type="button" onclick="resetAll()"><svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Fortschritt zurücksetzen</button>
     <div class="who-line" id="who-line">Angemeldet: …</div>
   </div>
-</div>
 
 <script>
 // ── STANDARD-VORGABEN (für alle gleich) ──────────────────────────────
@@ -249,18 +274,25 @@ const vorgaben = [
 let KEY = null;
 let state = {};
 const openPhases = new Set();
-function save(){ if(KEY) localStorage.setItem(KEY, JSON.stringify(state)); }
+const trackerTagLabels={pflicht:'Pflicht',inhalt:'Inhalt',format:'Format'};
+function save(){
+  if(!KEY) return;
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){ console.warn('[matura-tracker-storage] save-failed'); }
+}
 
 // ── RENDER MEETINGS ────────────────────────────────────────────────
 function renderMeetings(){
   const labels=['Thema & Fragestellung','Zwischenbilanz','Inhaltl. Feedback','Letzte Rückfragen'];
   document.getElementById('meetings-row').innerHTML = labels.map((lab,i)=>{
     const n=i+1, done=!!state['meeting_'+n];
-    return `<div class="meeting-card ${done?'done':''}" onclick="toggleMeeting(${n})">
-      <div class="mc-num">${n}</div>
-      <div class="mc-label">${lab}</div>
-      <div class="mc-icon">${done?'✅':'🤝'}</div>
-      <input type="date" class="mc-date" value="${state['meeting_'+n+'_d']||''}" onclick="event.stopPropagation()" onchange="setMeetDate(${n},this.value)">
+    const storedDate=String(state['meeting_'+n+'_d']||'');
+    const safeDate=/^\d{4}-\d{2}-\d{2}$/.test(storedDate)?storedDate:'';
+    return `<div class="meeting-card ${done?'done':''}" role="checkbox" tabindex="0" aria-checked="${done}" onclick="toggleMeeting(${n})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMeeting(${n})}">
+      <span class="mc-status-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${done?'<path d="M5 12l4 4L19 6"/>':'<circle cx="12" cy="12" r="8"/>'}</svg></span>
+      <span class="mc-num">Gespräch ${n}</span>
+      <span class="mc-label">${lab}</span>
+      <input type="date" class="mc-date" value="${safeDate}" aria-label="Datum für Gespräch ${n}" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="setMeetDate(${n},this.value)">
     </div>`;
   }).join('');
   const md=[1,2,3,4].filter(n=>state['meeting_'+n]).length;
@@ -275,17 +307,17 @@ function renderPhases(){
     const done=p.items.filter(i=>state[i.id]).length;
     const open=openPhases.has(pi);
     const items=p.items.map(it=>`
-      <div class="check-item ${state[it.id]?'checked':''}" onclick="toggleItem('${it.id}')">
+      <div class="check-item ${state[it.id]?'checked':''}" role="checkbox" tabindex="0" aria-checked="${!!state[it.id]}" onclick="toggleItem('${it.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleItem('${it.id}')}">
         <div class="custom-check"></div>
         <div class="ch-body"><div class="ch-main">${it.text}</div>${it.desc?`<div class="ch-desc">${it.desc}</div>`:''}</div>
       </div>`).join('');
     return `<div class="phase ${p.cls}">
-      <div class="phase-head" onclick="togglePhase(${pi})">
-        <div class="phase-stripe"></div>
-        <div class="ph-body"><div class="ph-top"><span class="ph-num">${p.num}</span><span class="ph-title">${p.title}</span></div>
-          <div class="ph-count">${done}/${p.items.length} erledigt</div></div>
-        <div class="phase-toggle">${open?'▲':'▼'}</div>
-      </div>
+      <button type="button" class="phase-head" onclick="togglePhase(${pi})" aria-expanded="${open}">
+        <span class="phase-stripe"></span>
+        <span class="ph-body"><span class="ph-top"><span class="ph-num">${p.num}</span><span class="ph-title">${p.title}</span></span>
+          <span class="ph-count">${done}/${p.items.length} erledigt</span></span>
+        <span class="phase-toggle" aria-hidden="true"><svg class="ic${open?' is-open':''}" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
+      </button>
       <div class="phase-list ${open?'open':''}"><div class="checklist">${items}</div></div>
     </div>`;
   }).join('');
@@ -296,10 +328,10 @@ function toggleItem(id){ state[id]=!state[id]; save(); renderPhases(); renderGlo
 // ── RENDER VORGABEN ────────────────────────────────────────────────
 function renderVorgaben(){
   document.getElementById('cl-vorgaben').innerHTML = vorgaben.map(it=>`
-    <div class="check-item ${state[it.id]?'checked':''}" onclick="toggleItem('${it.id}')">
+    <div class="check-item ${state[it.id]?'checked':''}" role="checkbox" tabindex="0" aria-checked="${!!state[it.id]}" onclick="toggleItem('${it.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleItem('${it.id}')}">
       <div class="custom-check"></div>
       <div class="ch-body"><div class="ch-main">${it.text}</div>${it.desc?`<div class="ch-desc">${it.desc}</div>`:''}</div>
-      <span class="ch-tag tag-${it.tag}">${it.tag}</span>
+      <span class="ch-tag tag-${it.tag}">${trackerTagLabels[it.tag]||it.tag}</span>
     </div>`).join('');
   const done=vorgaben.filter(i=>state[i.id]).length;
   document.getElementById('sp-vorgaben').style.width = Math.round(done/vorgaben.length*100)+'%';
@@ -309,11 +341,11 @@ function renderVorgaben(){
 // ── DEADLINE + GLOBAL PROGRESS ─────────────────────────────────────
 function renderDeadline(){
   const el=document.getElementById('days-el');
-  if(!state.deadline){ el.textContent='–'; el.className='days'; return; }
+  if(!state.deadline){ el.textContent='–'; el.className='matura-metric__value days'; return; }
   const today=new Date(); today.setHours(0,0,0,0);
   const diff=Math.ceil((new Date(state.deadline)-today)/86400000);
-  el.textContent = diff>0?diff:0;
-  el.className='days '+(diff<60?'urgent':diff<150?'warn':'ok');
+  el.textContent = Math.max(0,diff);
+  el.className='matura-metric__value days '+(diff<60?'urgent':diff<150?'warn':'ok');
 }
 function allIds(){
   return [...phases.flatMap(p=>p.items.map(i=>i.id)), ...vorgaben.map(i=>i.id), 'meeting_1','meeting_2','meeting_3','meeting_4'];
@@ -323,6 +355,8 @@ function renderGlobal(){
   const pct=Math.round(done/ids.length*100);
   document.getElementById('gp-fill').style.width=pct+'%';
   document.getElementById('gp-pct').textContent=pct+' %';
+  document.getElementById('tracker-progress-summary').textContent=`${done} von ${ids.length} Punkten erledigt`;
+  document.querySelector('.matura-progress-track')?.setAttribute('aria-valuenow',String(pct));
   renderVorgaben();
   // Persist a compact summary so the dashboard tile can show progress + countdown.
   try {
@@ -336,6 +370,7 @@ function renderGlobal(){
 function resetAll(){
   if(confirm('Alle Häkchen, Termine und das Abgabedatum zurücksetzen?')){
     state={}; save(); document.getElementById('deadline-input').value='';
+    openPhases.clear(); openPhases.add(0);
     renderAll();
   }
 }
@@ -345,10 +380,20 @@ function renderAll(){ renderMeetings(); renderPhases(); renderVorgaben(); render
 // ── START (nach Login aufgerufen, eigener Speicher pro Schüler) ─────
 function startTracker(uid, label){
   KEY = 'matura_tracker_' + uid;
-  state = JSON.parse(localStorage.getItem(KEY) || '{}');
+  try{
+    const parsed=JSON.parse(localStorage.getItem(KEY) || '{}');
+    state=parsed && typeof parsed==='object' && !Array.isArray(parsed)?parsed:{};
+  }catch(e){
+    state={};
+    console.warn('[matura-tracker-storage] invalid-local-state');
+  }
+  if(!state.deadline) state.deadline='2026-08-17';
+  openPhases.clear();
+  const firstOpen=phases.findIndex(p=>p.items.some(item=>!state[item.id]));
+  openPhases.add(firstOpen>=0?firstOpen:phases.length-1);
   const di=document.getElementById('deadline-input');
   di.value=state.deadline||'';
-  di.onchange=()=>{ state.deadline=di.value; save(); renderDeadline(); };
+  di.onchange=()=>{ state.deadline=di.value; save(); renderDeadline(); renderGlobal(); };
   document.getElementById('who-line').textContent = 'Angemeldet: ' + (label || 'Schüler:in');
   renderAll();
 }

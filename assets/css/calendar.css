@@ -78,27 +78,6 @@
   justify-content:center;
   gap:7px;
 }
-.calendar-action-icon {
-  position:relative;
-  display:block;
-  width:16px;
-  height:16px;
-  flex:0 0 16px;
-  margin:0;
-}
-.calendar-action-icon::before,
-.calendar-action-icon::after {
-  content:"";
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:72%;
-  height:1.8px;
-  border-radius:var(--r-pill);
-  background:currentColor;
-  transform:translate(-50%,-50%);
-}
-.calendar-action-icon::after { transform:translate(-50%,-50%) rotate(90deg); }
 .calendar-commandbar__nav {
   grid-area:nav;
   display:flex;

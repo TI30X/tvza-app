@@ -1,0 +1,1272 @@
+/* TVZA Maturaarbeit
+   Gemeinsame Oberfläche für Status- und Aufgabenansicht. */
+
+body.matura-page {
+  --bg: oklch(0.985 0.004 95);
+  --border: oklch(0.88 0.005 95);
+  --card: var(--surface);
+  --text: var(--ink);
+  --muted: var(--ink-soft);
+  --matura-track: var(--surface-2);
+  --status-good: oklch(0.42 0.11 150);
+  --status-good-bg: oklch(0.95 0.025 150);
+  --status-warn: oklch(0.48 0.12 70);
+  --status-warn-bg: oklch(0.96 0.025 70);
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] body.matura-page {
+  --bg: oklch(0.16 0.006 250);
+  --border: oklch(0.34 0.006 250);
+  --status-good: oklch(0.78 0.09 150);
+  --status-good-bg: oklch(0.27 0.035 150);
+  --status-warn: oklch(0.82 0.09 75);
+  --status-warn-bg: oklch(0.28 0.035 75);
+}
+
+.matura-page > .appbar {
+  padding: env(safe-area-inset-top) 0 0;
+  background: var(--brand-gradient);
+  color: #fff;
+}
+
+.matura-page h1,
+.matura-page h2,
+.matura-page p {
+  margin: 0;
+}
+
+.matura-page button,
+.matura-page input {
+  font: inherit;
+}
+
+.matura-page .page-layout {
+  width: min(100%, 1160px);
+  margin: 0 auto;
+  padding: 24px 18px 60px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 24px;
+}
+
+.matura-page .matura-main,
+.matura-page .tracker-main {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.matura-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.matura-page .panel,
+.matura-page .matura-section-card,
+.matura-page .sb-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.matura-page .matura-hero {
+  padding: 22px;
+  border-radius: var(--r-panel);
+}
+
+.matura-hero__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.matura-hero__copy {
+  min-width: 0;
+}
+
+.matura-hero__copy .marke {
+  margin-bottom: 8px;
+}
+
+.matura-hero__copy h1 {
+  max-width: 760px;
+  color: var(--ink);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+.matura-hero__copy p {
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.matura-page .matura-view-link {
+  flex: none;
+  min-height: 42px;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.matura-hero__metrics {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.55fr) minmax(260px, 1.45fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.matura-page .matura-metric,
+.matura-page .matura-progress-card {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+
+.matura-page .matura-metric {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 2px 12px;
+  padding: 16px 18px;
+}
+
+.matura-metric__label {
+  align-self: start;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.matura-page .matura-metric__value {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  color: var(--ink);
+  font-size: 34px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.matura-metric__meta {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.matura-page .days.urgent { color: var(--danger); }
+.matura-page .days.warn { color: var(--status-warn); }
+.matura-page .days.ok { color: var(--status-good); }
+
+.matura-page .matura-progress-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px 18px;
+}
+
+.matura-progress-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.matura-progress-card__head strong {
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.matura-progress-track,
+.matura-page .gp-bar-bg {
+  display: block;
+  height: 9px;
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+}
+
+.matura-progress-track > i,
+.matura-page .gp-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--matura-deep);
+  transition: width 300ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+
+.matura-progress-card p {
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.matura-page .cat-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.matura-page .cat-pill {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+}
+
+.matura-page .cp-icon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-icon);
+  background: var(--tint-matura);
+  color: var(--matura-deep);
+}
+
+.matura-page .cp-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.matura-page .cp-info {
+  min-width: 0;
+}
+
+.matura-page .cp-name {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matura-page .cp-count {
+  margin-top: 1px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.matura-page .cp-bar {
+  height: 5px;
+  margin-top: 5px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+
+.matura-page .cp-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--matura-deep);
+}
+
+.matura-page .matura-section-card {
+  padding: 20px 22px;
+  border-radius: var(--r-panel);
+}
+
+.matura-section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.matura-section-head > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.matura-section-head h2 {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.matura-section-head p {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.matura-section-icon {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-icon);
+  background: var(--tint-matura);
+  color: var(--matura-deep);
+}
+
+.matura-section-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.matura-page .ct-badge,
+.matura-page .bt-badge {
+  min-height: 24px;
+  margin-left: auto;
+  padding: 3px 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Phasen */
+.matura-page .phases {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.matura-page .phase {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  opacity: 1;
+}
+
+.matura-page .phase.current-phase {
+  border-color: var(--accent);
+}
+
+.matura-page .phase.done-phase {
+  opacity: 1;
+}
+
+.matura-page .phase-header,
+.matura-page .phase-head {
+  width: 100%;
+  min-height: 68px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 3px minmax(0, 1fr) 44px;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.matura-page .phase-header:hover,
+.matura-page .phase-head:hover {
+  background: var(--surface-2);
+}
+
+.matura-page .phase-stripe {
+  width: 3px;
+  height: 100%;
+  background: var(--tint-matura);
+}
+
+.matura-page .current-phase .phase-stripe {
+  background: var(--accent);
+}
+
+.matura-page .ph-body {
+  display: block;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
+.matura-page .ph-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.matura-page .ph-num {
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.matura-page .current-phase .ph-num {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.matura-page .ph-title {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.matura-page .ph-dates,
+.matura-page .ph-desc,
+.matura-page .ph-count {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.matura-page .ph-dates,
+.matura-page .ph-count {
+  margin-top: 4px;
+}
+
+.matura-page .ph-desc {
+  margin-top: 5px;
+}
+
+.matura-page .phase-toggle {
+  width: 44px;
+  height: 44px;
+  align-self: center;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+}
+
+.matura-page .phase-toggle svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 160ms ease;
+}
+
+.matura-page .phase-toggle svg.is-open {
+  transform: rotate(180deg);
+}
+
+.matura-page .phase-body,
+.matura-page .phase-list {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.matura-page .phase-list:not(.open),
+.matura-page .phase-body:not(.open) {
+  display: none;
+}
+
+.matura-page .here-banner {
+  margin: 0 0 10px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid color-mix(in oklab, var(--accent) 22%, var(--border));
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.matura-page .here-banner svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--accent);
+}
+
+.matura-page .holiday-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.matura-page .htag {
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.matura-page .phase-milestones,
+.matura-page .checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.matura-page .pm-item,
+.matura-page .check-item {
+  min-height: 48px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.matura-page .check-item {
+  cursor: pointer;
+}
+
+.matura-page .pm-item:hover,
+.matura-page .check-item:hover {
+  border-color: var(--ink-soft);
+  background: var(--surface);
+}
+
+.matura-page .pm-dot,
+.matura-page .custom-check {
+  width: 22px;
+  height: 22px;
+  margin-top: 0;
+  flex: none;
+  display: inline-grid;
+  place-content: center;
+  border: 2px solid color-mix(in oklab, var(--ink-soft) 60%, var(--border));
+  border-radius: var(--r-icon);
+  background: var(--surface);
+  color: #fff;
+}
+
+.matura-page .pm-dot {
+  cursor: pointer;
+}
+
+.matura-page .pm-dot.done,
+.matura-page .check-item.checked .custom-check {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.matura-page .custom-check::after {
+  content: "";
+  width: 11px;
+  height: 11px;
+  clip-path: polygon(14% 45%, 0 60%, 40% 100%, 100% 22%, 85% 8%, 38% 71%);
+  background: #fff;
+  transform: scale(0);
+  transition: transform 140ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+
+.matura-page .check-item.checked .custom-check::after {
+  content: "";
+  transform: scale(1);
+}
+
+.matura-page .pm-dot.done::after {
+  content: "";
+  width: 11px;
+  height: 11px;
+  clip-path: polygon(14% 45%, 0 60%, 40% 100%, 100% 22%, 85% 8%, 38% 71%);
+  background: #fff;
+}
+
+.matura-page .pm-dot.overdue {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.matura-page .pm-text,
+.matura-page .ch-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.matura-page .pm-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.matura-page .pm-title,
+.matura-page .ch-main {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.matura-page .pm-title {
+  flex: 1 1 220px;
+  cursor: pointer;
+}
+
+.matura-page .check-item.checked .ch-main {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.matura-page .pm-sub,
+.matura-page .ch-desc {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.matura-page .pm-date-tag,
+.matura-page .overdue-tag,
+.matura-page .ch-tag {
+  min-height: 24px;
+  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.matura-page .overdue-tag,
+.matura-page .tag-pflicht {
+  border-color: color-mix(in oklab, var(--danger) 28%, var(--border));
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.matura-page .tag-inhalt,
+.matura-page .tag-format,
+.matura-page .tag-abgabe {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.matura-page .pm-info-btn {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.matura-page .pm-info-btn:hover,
+.matura-page .pm-info-btn.open {
+  border-color: var(--ink-soft);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.matura-page .pm-details {
+  margin-top: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+
+.matura-page .pmd-label {
+  margin-bottom: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.matura-page .pmd-text {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.matura-page .pmd-tip {
+  margin-top: 2px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in oklab, var(--accent) 20%, var(--border));
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+/* Fortschritt und Besprechungen */
+.matura-page .section-prog-row,
+.matura-page .sp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.matura-page .sp-bar {
+  height: 8px;
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+
+.matura-page .sp-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--matura-deep);
+}
+
+.matura-page .sp-lbl {
+  min-width: 38px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.matura-page .meetings-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.matura-page .meeting-card {
+  min-height: 112px;
+  padding: 13px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+  cursor: pointer;
+}
+
+.matura-page .meeting-card:hover {
+  border-color: var(--ink-soft);
+  background: var(--surface);
+}
+
+.matura-page .meeting-card.done {
+  border-color: color-mix(in oklab, var(--status-good) 45%, var(--border));
+  background: var(--status-good-bg);
+}
+
+.matura-page .mc-status-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+
+.matura-page .meeting-card.done .mc-status-icon {
+  border-color: transparent;
+  background: var(--status-good);
+  color: #fff;
+}
+
+.matura-page .mc-status-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.matura-page .mc-num {
+  margin-top: 7px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.matura-page .meeting-card.done .mc-num {
+  color: var(--ink);
+}
+
+.matura-page .mc-label {
+  margin-top: 5px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.matura-page .mc-date {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 10px;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] .matura-page .mc-date,
+:root[data-theme="dark"] .matura-page #deadline-input {
+  color-scheme: dark;
+}
+
+.matura-page .matura-callout {
+  margin-top: 12px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.matura-page .matura-callout:empty {
+  display: none;
+}
+
+.matura-page .matura-callout svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  color: var(--ink-soft);
+}
+
+.matura-page .matura-callout--danger {
+  border-color: color-mix(in oklab, var(--danger) 30%, var(--border));
+  background: var(--danger-bg);
+  color: var(--ink);
+}
+
+.matura-page .matura-callout--danger svg {
+  color: var(--danger);
+}
+
+.matura-page .matura-callout--focus {
+  margin: 0;
+  border-color: color-mix(in oklab, var(--accent) 20%, var(--border));
+  background: var(--surface);
+}
+
+.matura-page .matura-callout--focus svg {
+  color: var(--accent);
+}
+
+/* Bewertungsraster */
+.matura-page .points-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.matura-page .pc {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+
+.matura-page .pc-title {
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.matura-page .pc-row,
+.matura-page .pc-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.matura-page .pc-row {
+  padding: 4px 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.matura-page .pc-row .pts {
+  color: var(--ink);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.matura-page .pc-total {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Status-Seitenleiste */
+.matura-page .sidebar {
+  position: sticky;
+  top: 78px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.matura-page .sb-card {
+  overflow: hidden;
+  padding: 16px;
+  border-radius: var(--r-panel);
+}
+
+.matura-page .sb-title {
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.matura-page .sb-title.red { color: var(--danger); }
+.matura-page .sb-title.orange { color: var(--status-warn); }
+.matura-page .sb-title.blue,
+.matura-page .sb-title.green { color: var(--ink); }
+
+.matura-page .sb-item {
+  margin: 0 0 6px;
+  padding: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+
+.matura-page .sb-item:last-child {
+  margin-bottom: 0;
+}
+
+.matura-page .sb-item.red {
+  border-color: color-mix(in oklab, var(--danger) 28%, var(--border));
+  background: var(--danger-bg);
+}
+
+.matura-page .sb-item.orange {
+  border-color: color-mix(in oklab, var(--status-warn) 28%, var(--border));
+  background: var(--status-warn-bg);
+}
+
+.matura-page .sb-item.blue,
+.matura-page .sb-item.green {
+  background: var(--surface-2);
+}
+
+.matura-page .sb-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  flex: none;
+  border-radius: var(--r-pill);
+  background: var(--ink-soft);
+}
+
+.matura-page .sb-dot.red { background: var(--danger); }
+.matura-page .sb-dot.orange { background: var(--status-warn); }
+.matura-page .sb-dot.blue { background: var(--accent); }
+.matura-page .sb-dot.green { background: var(--status-good); }
+
+.matura-page .sb-text {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.matura-page .sb-sub {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.matura-page .sb-empty {
+  padding: 8px 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.matura-page .sb-more {
+  padding: 7px 2px 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.matura-page .sb-meet-row {
+  display: flex;
+  gap: 5px;
+}
+
+.matura-page .sb-meet-pip {
+  height: 7px;
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+
+.matura-page .sb-meet-pip.done {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.matura-page .sb-meet-label {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.matura-page .matura-reset {
+  align-self: center;
+  min-height: 44px;
+}
+
+/* Aufgabenansicht */
+.matura-page .tracker-main {
+  width: min(100%, 1160px);
+  margin: 0 auto;
+  padding: 24px 18px 60px;
+}
+
+.matura-page .tracker-hero {
+  max-width: none;
+}
+
+.matura-page .deadline-box {
+  cursor: default;
+}
+
+.matura-page .deadline-box #deadline-input {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.matura-page .tracker-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  align-items: start;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.matura-page .tracker-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.matura-page .tracker-sidebar {
+  position: sticky;
+  top: 78px;
+}
+
+.matura-tracker-page .tracker-sidebar .meetings-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.matura-tracker-page .tracker-sidebar .meeting-card {
+  min-height: 0;
+  padding: 12px 8px;
+}
+
+.matura-tracker-page .tracker-sidebar .mc-date {
+  min-height: 36px;
+}
+
+.matura-page .matura-footer-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.matura-page .who-line {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+@media (max-width: 899px) {
+  .matura-page .page-layout,
+  .matura-page .tracker-main {
+    padding: 18px 18px 52px;
+  }
+
+  .matura-page .page-layout,
+  .matura-page .tracker-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .matura-page .sidebar,
+  .matura-page .tracker-sidebar {
+    position: static;
+  }
+
+  .matura-page .matura-hero,
+  .matura-page .matura-section-card {
+    padding: 16px 18px;
+  }
+
+  .matura-hero__top {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .matura-page .matura-view-link {
+    width: 100%;
+  }
+
+  .matura-hero__copy h1 {
+    font-size: 24px;
+  }
+
+  .matura-hero__metrics {
+    grid-template-columns: 1fr;
+    margin-top: 18px;
+  }
+
+  .matura-page .cat-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .matura-page .meetings-row,
+  .matura-tracker-page .tracker-sidebar .meetings-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .matura-page .points-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .matura-section-head {
+    align-items: flex-start;
+  }
+
+  .matura-page .ph-desc {
+    display: none;
+  }
+
+  .matura-page .phase-header,
+  .matura-page .phase-head {
+    min-height: 64px;
+  }
+
+  .matura-page .pm-title {
+    flex-basis: 160px;
+  }
+
+  .matura-page .check-item {
+    flex-wrap: wrap;
+  }
+
+  .matura-page .check-item .ch-tag {
+    margin-left: 33px;
+  }
+}

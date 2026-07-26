@@ -12,6 +12,7 @@ Nothing in here ships as part of the app — no page links to it.
 | `html-module-syntax.test.mjs` | Prüft die eingebetteten JavaScript-Module der geänderten HTML-Seiten. |
 | `navigation.test.mjs` | Prüft die gemeinsame Bereiche-/Sidebar-Reihenfolge und die Desktop-Navigation. |
 | `itinerary.test.mjs` | Tests for `assets/js/itinerary.js`. |
+| `matura-ui.test.mjs` | Prüft beide Maturaarbeit-Ansichten, Kontrast, Phasenlogik und das einheitliche Plus. |
 
 ## Tests laufen lassen
 
@@ -49,6 +50,12 @@ Die Navigation läuft ebenfalls ohne Installation:
 
 ```bash
 node --test navigation.test.mjs
+```
+
+Die beiden Maturaarbeit-Ansichten und die gemeinsamen Plus-Symbole:
+
+```bash
+node --test matura-ui.test.mjs
 ```
 
 Die eingebetteten Module werden mit Nodes VM-Prüfung getestet:

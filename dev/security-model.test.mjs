@@ -68,6 +68,8 @@ test('production pages do not expose raw backend errors', async () => {
     'pages/messages.html',
     'pages/weather.html',
     'pages/watchlist.html',
+    'pages/maturaarbeit.html',
+    'pages/maturaarbeit-tracker.html',
     'assets/js/firebase-config.js',
     'assets/js/notifications.js',
   ].map(read));

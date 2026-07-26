@@ -1626,6 +1626,37 @@ body.reorder-editing .module-tile::after {
    themselves stay, because there they are content. */
 .ic { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
+/* Ein einziges Plus für alle Aktionen. Die Balken werden als Prozent
+   der festen 16-px-Fläche gezeichnet; 12.5 % sind exakt 2 px und
+   vermeiden die weicheren 1.8-px-Halbpixel mancher früherer Varianten. */
+.ui-plus,
+.calendar-action-icon {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin: 0;
+}
+.ui-plus::before,
+.ui-plus::after,
+.calendar-action-icon::before,
+.calendar-action-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 75%;
+  height: 12.5%;
+  border-radius: var(--r-pill);
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+.ui-plus::after,
+.calendar-action-icon::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
 /* ── 5.1 Kopf — same on every page ─────────────────────────────────*/
 .appbar {
   position: sticky; top: 0; z-index: 40;

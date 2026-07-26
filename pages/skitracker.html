@@ -63,7 +63,7 @@
             </div>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" id="saveSkiBtn" style="flex:1">+ Speichern</button>
+            <button class="btn btn-primary" id="saveSkiBtn" style="flex:1"><span class="ui-plus" aria-hidden="true"></span><span>Speichern</span></button>
             <button class="btn btn-secondary" id="cancelEditBtn" style="display:none">Abbrechen</button>
           </div>
         </div>
@@ -126,7 +126,7 @@
             <input class="form-input" id="logNotes" type="text" placeholder="z.B. für Rennen vorbereitet" />
           </div>
 
-          <button class="btn btn-primary btn-block" id="addLogBtn">+ Eintrag speichern</button>
+          <button class="btn btn-primary btn-block" id="addLogBtn"><span class="ui-plus" aria-hidden="true"></span><span>Eintrag speichern</span></button>
         </div>
 
         <h2 class="section-title">Protokoll</h2>
@@ -292,7 +292,7 @@
       document.getElementById('skiNum').value = '';
       setSeg('segDisziplin', '');
       document.getElementById('skiFormTitle').textContent = 'Ski hinzufügen';
-      document.getElementById('saveSkiBtn').textContent = '+ Speichern';
+      document.getElementById('saveSkiBtn').innerHTML = '<span class="ui-plus" aria-hidden="true"></span><span>Speichern</span>';
       document.getElementById('cancelEditBtn').style.display = 'none';
     }
 
