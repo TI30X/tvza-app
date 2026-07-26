@@ -1040,6 +1040,11 @@ button, input, select, textarea { font-family: inherit; }
   transition: background 150ms ease, opacity 150ms ease;
 }
 .reorder-fab svg { display: block; }
+/* Solange ein Dialog offen ist, gehört der Vordergrund dem Dialog. Der
+   Knopf schwebte sonst über den Einstellungen und liess sich dort
+   anklicken, obwohl er nichts mit ihnen zu tun hat. */
+body:has(.modal-backdrop.visible) .reorder-fab,
+body:has(.modal-backdrop.show) .reorder-fab { display: none; }
 .reorder-fab:hover { background: var(--accent-hover); }
 .reorder-fab:active { transform: scale(0.97); }
 body.reorder-editing .reorder-fab {
@@ -1351,15 +1356,48 @@ body.reorder-editing .module-tile::after {
 }
 .row__icon svg { width: 18px; height: 18px; stroke-width: 1.8; }
 
+/* Diese drei sind <span>, also von Haus aus inline. Ohne display:block
+   verwirft der Browser Höhe und margin am Balken und ignoriert
+   overflow/text-overflow am Untertitel — der Balken blieb dadurch eine
+   haarfeine Linie ohne Füllung. */
 .row__body  { flex: 1; min-width: 0; }
-.row__title { font-size: 14px; font-weight: 700; line-height: 1.35; }
+.row__title { display: block; font-size: 14px; font-weight: 700; line-height: 1.35; }
 .row__sub   {
+  display: block;
   font-size: 12px; font-weight: 400; color: var(--ink-soft); line-height: 1.4;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 /* Right column — exactly one of these per row. */
 .row__end   { flex: none; display: flex; align-items: center; gap: 8px; }
+
+/* Zeile als Schalter (Modul-Liste in den Einstellungen). Gleiche Zeile
+   wie überall, rechts ein Kästchen statt Chevron — statt eigener
+   Klassen mit Emoji und System-Checkbox. */
+.row--check { cursor: pointer; user-select: none; }
+.row--check input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  width: 22px; height: 22px; flex: none; margin: 0;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-icon);
+  background: var(--surface);
+  cursor: pointer;
+  display: inline-grid; place-content: center;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.row--check input[type="checkbox"]::after {
+  content: ""; width: 11px; height: 11px;
+  clip-path: polygon(14% 45%, 0 60%, 40% 100%, 100% 22%, 85% 8%, 38% 71%);
+  background: #fff; transform: scale(0);
+  transition: transform 140ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+.row--check input[type="checkbox"]:checked {
+  background: var(--accent); border-color: var(--accent);
+}
+.row--check input[type="checkbox"]:checked::after { transform: scale(1); }
+.row--check input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
 .row__chev  { width: 16px; height: 16px; color: var(--ink-soft); stroke-width: 1.8; }
 .row__num   { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .row__time  { font-size: 11px; font-weight: 700; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
@@ -1386,6 +1424,7 @@ body.reorder-editing .module-tile::after {
 
 /* Progress instead of a subtitle. */
 .row__bar {
+  display: block;
   margin-top: 6px; height: 5px;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -1429,6 +1468,13 @@ body.reorder-editing .module-tile::after {
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .tile__meta { display: none; }
+/* Die Metazeile lief über die Kachel hinaus, sobald der Text länger war
+   als die Spalte breit ist — sie kürzt jetzt, statt zu überlaufen. */
+.tile__meta, .tile-live {
+  min-width: 0; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tile-prog { white-space: normal; }
 
 /* ── 4.3 Panel ─────────────────────────────────────────────────────*/
 .panel {
@@ -1625,11 +1671,47 @@ body.reorder-editing .module-tile::after {
   }
   .tile__icon { width: 36px; height: 36px; }
   .tile__name { font-size: 14px; text-align: left; width: calc(100% - 48px); }
-  .tile__meta { display: block; width: 100%; font-size: 12px; color: var(--ink-soft); }
+  .tile__meta {
+    display: block; width: 100%; min-width: 0;
+    font-size: 12px; color: var(--ink-soft);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
-  /* Navigation becomes a left rail. */
+  /* Kopfzeile spannt über die volle Breite, die Leiste beginnt darunter
+     (Mockup, Runde 4). Der Rumpf trägt padding-left:248px für den
+     Inhalt — die Kopfzeile zieht sich da wieder heraus, statt neben der
+     Leiste zu beginnen und den Farbverlauf abzuschneiden. */
+  .appbar {
+    margin-left: -248px;
+    width: calc(100% + 248px);
+    z-index: 50;
+  }
+  .appbar__inner {
+    max-width: none; margin: 0;
+    height: 64px; padding: 0 26px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  /* Wortzeichen und Trennstrich links, nur auf den Tab-Seiten — auf
+     einer Bereichsseite ist das Raster für den zentrierten Titel da. */
+  .appbar:not(.appbar--bereich) .appbar__inner::before {
+    content: "TvZ";
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 24px; font-weight: 700; line-height: 1;
+    padding-right: 16px;
+    border-right: 1px solid rgba(255,255,255,0.2);
+    align-self: center;
+    flex: none;
+  }
+  /* Begrüssung und Datum stehen nebeneinander, nicht gestapelt. */
+  .appbar__spacer { display: flex; align-items: baseline; gap: 14px; }
+  .appbar__greet  { font-size: 15px; font-weight: 700; }
+  .appbar__date   { font-size: 13px; margin-top: 0; color: rgba(255,255,255,0.66); flex: none; }
+  .wx-pill        { height: 34px; padding: 0 13px; font-size: 13px; }
+  .avatar         { width: 34px; height: 34px; }
+
+  /* Navigation becomes a left rail, below the header. */
   .nav {
-    position: fixed; top: 0; bottom: 0; left: 0; right: auto;
+    position: fixed; top: 64px; bottom: 0; left: 0; right: auto;
     width: 248px;
     display: flex; flex-direction: column; gap: 2px;
     padding: 18px 12px;
