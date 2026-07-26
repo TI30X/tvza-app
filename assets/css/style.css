@@ -1048,7 +1048,14 @@ body.reorder-editing .reorder-fab {
   transform: translateY(12px);
 }
 @media (max-width: 899px) {
-  .reorder-fab { right: 14px; bottom: 14px; padding: 0 16px; min-height: 46px; }
+  /* Keep clear of the navigation bar, which owns the bottom edge —
+     without the bar's height the button lands on top of it. */
+  .reorder-fab {
+    right: 14px;
+    bottom: calc(14px + 64px + env(safe-area-inset-bottom, 0px));
+    padding: 0 16px;
+    min-height: 46px;
+  }
 }
 
 /* ── Settings menu layout — even vertical rhythm ── */
@@ -1483,13 +1490,25 @@ body.reorder-editing .module-tile::after {
 }
 .appbar .back-btn, .appbar__btn, .appbar .avatar { color: #fff; }
 .appbar__inner {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 18px 16px;
+  display: flex; align-items: center; gap: clamp(8px, 2.5vw, 12px);
+  padding: clamp(10px, 3vw, 14px) clamp(14px, 4.5vw, 18px) clamp(12px, 3.5vw, 16px);
   max-width: 1160px; margin: 0 auto;
 }
-.appbar__greet   { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
-.appbar__date    { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 3px; }
-.appbar__title   { text-align: center; font-size: 15px; font-weight: 700;
+/* Die Begrüssung bleibt auf einer Zeile: sie skaliert mit der
+   Viewportbreite statt auf einer festen Grösse zu bestehen und
+   umzubrechen, und kürzt im Notfall mit Auslassungspunkten. So kostet
+   der Kopf auf einem schmalen Gerät nicht zwei Zeilen Höhe. */
+.appbar__greet {
+  font-size: clamp(17px, 5.2vw, 26px);
+  font-weight: 800; letter-spacing: -0.02em; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.appbar__date {
+  font-size: clamp(11px, 3.2vw, 13px);
+  color: rgba(255,255,255,0.7); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.appbar__title   { text-align: center; font-size: clamp(14px, 4vw, 15px); font-weight: 700;
                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Bereich header: back on the left, buttons on the right, title truly
    centred. A plain flex row would push the title off-centre whenever the
@@ -1508,20 +1527,61 @@ body.reorder-editing .module-tile::after {
 .appbar__accent { height: 3px; background: var(--tint, transparent); }
 
 .wx-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  height: 32px; padding: 0 11px;
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  height: clamp(28px, 8vw, 32px); padding: 0 clamp(8px, 2.8vw, 11px);
   border-radius: var(--r-pill);
   background: rgba(255,255,255,0.12); color: #fff;
-  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: clamp(12px, 3.4vw, 13px); font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .wx-pill svg { width: 14px; height: 14px; }
 .avatar {
-  width: 32px; height: 32px; flex: none;
+  width: clamp(28px, 8vw, 32px); height: clamp(28px, 8vw, 32px); flex: none;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: var(--r-pill);
   background: rgba(255,255,255,0.12); color: #fff;
   font-size: 12px; font-weight: 800; border: none; cursor: pointer;
 }
+
+/* ─── Konto-Menü ───
+   Einstellungen und Abmelden hängen am Avatar statt als eigene Knöpfe
+   in der Kopfzeile zu stehen. Das Menü selbst gehört zur Fläche, nicht
+   zum Farbverlauf — also Flächenfarbe und Rahmen, kein Schatten. */
+.acct { position: relative; flex: none; }
+.acct__menu {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  min-width: 208px; max-width: min(78vw, 280px);
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  color: var(--ink);
+  z-index: 120;
+}
+.acct__menu[hidden] { display: none; }
+.acct__head {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 9px 10px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 5px;
+}
+.acct__who  { font-size: 14px; font-weight: 700; }
+.acct__mail {
+  font-size: 12px; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.acct__item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px; min-height: 44px;
+  border: none; background: none; cursor: pointer;
+  border-radius: var(--r-icon);
+  font: 700 14px/1 inherit; color: var(--ink); text-align: left;
+}
+.acct__item svg { flex: none; fill: none; stroke: currentColor; stroke-width: 1.8;
+                  stroke-linecap: round; stroke-linejoin: round; }
+.acct__item:hover { background: var(--surface-2); }
+.acct__item:active { transform: scale(0.97); }
+.acct__item--danger { color: var(--danger); }
+.acct__item--danger:hover { background: var(--danger-bg); }
 
 /* ── 5.2 Navigation — four destinations ────────────────────────────*/
 .nav {
