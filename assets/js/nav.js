@@ -20,8 +20,9 @@
    that page.
    ══════════════════════════════════════════════════════════════════ */
 
-import { auth, MODULES, enabledModules, getProfile } from './firebase-config.js';
+import { auth, db, MODULES, enabledModules, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ICONS, icon } from './shell.js';
 
 const BEREICH_OF = {
@@ -193,6 +194,21 @@ export function setUnread(n) {
 }
 window.tvzaSetUnread = setUnread;   // so page scripts can call it without importing
 
+/* Der Punkt war zwar gebaut, aber niemand hat setUnread je aufgerufen —
+   er konnte darum nie erscheinen. Die Zahl kommt aus denselben Daten,
+   die die Nachrichtenliste ohnehin führt: unread.<uid> pro Unterhaltung.
+   Weil das hier in nav.js läuft, meldet sich eine neue Nachricht auf
+   JEDER Seite, nicht nur in den Nachrichten selbst. Dieselbe Abfrage
+   wie in messages.html, also von den Firestore-Regeln gedeckt. */
+function watchUnread(user) {
+  const q = query(collection(db, 'dms'), where('participants', 'array-contains', user.uid));
+  onSnapshot(q, snap => {
+    let n = 0;
+    snap.forEach(d => { n += Number(d.data()?.unread?.[user.uid]) || 0; });
+    setUnread(n);
+  }, () => { /* offline oder keine Berechtigung: Punkt bleibt einfach aus */ });
+}
+
 const file = location.pathname.split('/').pop() || 'index.html';
 if (!SKIP.includes(file)) {
   onAuthStateChanged(auth, async user => {
@@ -201,5 +217,6 @@ if (!SKIP.includes(file)) {
     try { profile = await getProfile(user); } catch { /* rail just stays empty */ }
     mount(profile);
     mountAccountMenu(user, profile);
+    watchUnread(user);
   });
 }
