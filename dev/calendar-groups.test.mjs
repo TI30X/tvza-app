@@ -41,3 +41,14 @@ test('desktop planner sheets are centered and Outlook has a week-selecting mini 
   assert.match(css, /\.planner-page \.sheet \{[^}]*top:50%/s);
   assert.match(css, /transform:translate\(-50%,-50%\)/);
 });
+
+test('calendar actions use aligned icons and compact calendars remain readable', async () => {
+  const [planner, css] = await Promise.all([
+    read('pages/planner.html'),
+    read('assets/css/calendar.css'),
+  ]);
+  assert.doesNotMatch(planner, />\+\s*(?:Neuer Termin|Erinnerung|Termin|Gruppe)/);
+  assert.match(planner, /class="ic calendar-action-icon/);
+  assert.match(css, /\.mini-calendar-day,[\s\S]*font-size:12px/);
+  assert.match(css, /\.calendar-month \.evchip \{[\s\S]*font-size:12px/);
+});

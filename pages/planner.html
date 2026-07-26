@@ -213,12 +213,18 @@
             <div class="calendar-side-card mini-calendar-card">
               <div id="miniCalendars"></div>
             </div>
-            <button class="btn btn-primary btn-block" id="addTripBtn" type="button">+ Neuer Termin</button>
+            <button class="btn btn-primary btn-block calendar-action-with-icon" id="addTripBtn" type="button">
+              <svg class="ic calendar-action-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Neuer Termin</span>
+            </button>
             <div class="calendar-side-card calendar-source-card">
               <div class="calendar-side-title"><span>Meine Kalender</span></div>
               <div id="calendarSources"><div class="spinner">Lade…</div></div>
               <div class="calendar-side-actions">
-                <button class="pill" id="addGroupBtn" type="button">+ Gruppe hinzufügen</button>
+                <button class="pill calendar-action-with-icon" id="addGroupBtn" type="button">
+                  <svg class="ic calendar-action-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>Gruppe hinzufügen</span>
+                </button>
                 <button class="pill" id="manageGroupsBtn" type="button">Gruppen verwalten</button>
               </div>
             </div>
@@ -252,7 +258,7 @@
                 </button>
               </div>
               <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">
-                <span class="calendar-commandbar__plus" aria-hidden="true">+</span>
+                <svg class="ic calendar-action-icon calendar-commandbar__plus" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                 <span class="calendar-commandbar__create-label">Neuer Termin</span>
               </button>
             </div>
@@ -284,7 +290,10 @@
               <p class="marke">Erinnerungen</p>
               <h2>Was als Nächstes ansteht</h2>
             </div>
-            <button class="pill primary" id="addReminderBtn" type="button">+ Erinnerung</button>
+            <button class="pill primary calendar-action-with-icon" id="addReminderBtn" type="button">
+              <svg class="ic calendar-action-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              <span>Erinnerung</span>
+            </button>
           </div>
           <div class="reminder-list" id="reminderList"><div class="spinner">Lade…</div></div>
         </section>
@@ -317,8 +326,14 @@
     <div class="grip"></div>
     <div class="sheet-head"><span class="sheet-title" id="dayTitle">—</span>
       <span style="display:flex;gap:6px">
-        <button class="pill" id="daySheetReminder">+ Erinnerung</button>
-        <button class="pill primary" id="daySheetAdd">+ Termin</button>
+        <button class="pill calendar-action-with-icon" id="daySheetReminder">
+          <svg class="ic calendar-action-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Erinnerung</span>
+        </button>
+        <button class="pill primary calendar-action-with-icon" id="daySheetAdd">
+          <svg class="ic calendar-action-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Termin</span>
+        </button>
       </span></div>
     <div id="dayEvents"></div>
   </div>
@@ -768,7 +783,10 @@
           <svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
           Verwalten
         </button>
-        <button class="calendar-source-chip is-visible" id="mobileAddGroupBtn" type="button" style="--source-color:var(--cal-accent)">+ Gruppe</button>`;
+        <button class="calendar-source-chip is-visible calendar-action-with-icon" id="mobileAddGroupBtn" type="button" style="--source-color:var(--cal-accent)">
+          <svg class="ic calendar-action-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>Gruppe</span>
+        </button>`;
 
       document.querySelectorAll('[data-source-personal]').forEach(button => button.onclick = () => {
         showPersonal = !showPersonal;

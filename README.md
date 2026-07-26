@@ -19,6 +19,8 @@
   Die Outlook-Darstellung ergänzt einen Mini-Monatsnavigator mit direkter Wochenwahl.
   Farben gelten pro Kalender (inkl. Grün und Gelb), nicht mehr pro Einzeltermin; Gruppenleitungen
   können Namen, Farbe, Mitglieder, Verwaltungsrollen und Einladungslinks verwalten.
+  Kalenderzahlen, Wochentage und Termine sind auch in der kompakten Ansicht bewusst gross
+  und kontrastreich; Aktionsknöpfe verwenden einheitlich ausgerichtete Symbole.
   Hochgeladene HTML-Pläne werden nach Datum/Uhrzeit in der Terminübersicht aufgeteilt; die
   Originalseite bleibt zusätzlich öffnbar. Dazu kommen persönliche Erinnerungen und
   ICS-Import/-Export für Google Calendar, Outlook/Exchange, Apple und Samsung Calendar.
