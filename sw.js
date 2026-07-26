@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.30.1.0';
+const CACHE = 'tvza-v.30.1.1';
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -51,8 +51,18 @@ const SHELL = [
 ];
 
 self.addEventListener('install', event => {
+  /* cache:'reload' erzwingt den Weg zum Server und übergeht den
+     HTTP-Cache des Browsers. Ohne das half der Namenswechsel oben nur
+     halb: der alte Cache wurde zwar geleert, danach holte c.add() die
+     Dateien aber wieder aus dem Browser-Cache — GitHub Pages liefert
+     sie mit zehn Minuten Haltbarkeit aus. Ergebnis war ein neuer Cache
+     mit altem Inhalt, und die Seite sah nach dem Update unverändert
+     aus. Die Seiten selbst werden ohnehin netzwerk-zuerst geholt,
+     darum fiel es nur bei CSS und JS auf. */
   event.waitUntil(
-    caches.open(CACHE).then(c => Promise.allSettled(SHELL.map(url => c.add(url))))
+    caches.open(CACHE).then(c => Promise.allSettled(
+      SHELL.map(url => c.add(new Request(url, { cache: 'reload' })))
+    ))
   );
   self.skipWaiting();
 });
