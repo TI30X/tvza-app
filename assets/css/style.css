@@ -232,7 +232,6 @@ button, input, select, textarea { font-family: inherit; }
 .accent-bar--ski    { background: var(--tint-ski); }
 .accent-bar--food   { background: var(--tint-food); }
 .accent-bar--trip   { background: var(--tint-trip); }
-.accent-bar--matura { background: var(--tint-matura); }
 .accent-bar--watch  { background: var(--tint-watch); }
 
 /* ─── Back button & page title ─── */
@@ -506,7 +505,6 @@ button, input, select, textarea { font-family: inherit; }
 .link-icon  { font-size: 22px; width: 34px; text-align: center; }
 .link-title { flex: 1; font-size: var(--text-base); font-weight: 700; min-width: 140px; }
 .link-title small { display: block; margin-top: 3px; color: var(--ink-soft); font-size: var(--text-xs); font-weight: 500; }
-.link-arrow { color: var(--ink-soft); font-size: 16px; }
 
 .project-row {
   align-items: center;
@@ -721,9 +719,7 @@ button, input, select, textarea { font-family: inherit; }
   font-size: 11px;
   font-weight: 700;
 }
-.badge-todo       { background: var(--tint-trip); color: var(--trip-deep); }
 .badge-doing      { background: var(--tint-ski);  color: var(--ski-deep); }
-.badge-done       { background: var(--tint-food); color: var(--food-deep); }
 
 /* ─── Progress ─── */
 /* ─── Empty state ─── */
@@ -779,9 +775,6 @@ button, input, select, textarea { font-family: inherit; }
 .trip-card:hover { border-color: var(--ink-soft); }
 .trip-name { font-size: var(--text-base); font-weight: 700; }
 .trip-meta { font-size: var(--text-xs); color: var(--ink-soft); margin-top: var(--s1); }
-
-/* ─── Back view (trip detail) ─── */
-.detail-view { display: none; }
 .detail-view.visible { display: block; }
 .list-view.hidden { display: none; }
 
