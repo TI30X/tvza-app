@@ -19,17 +19,8 @@
   <style>
     .icon-btn { cursor:pointer; color:var(--ink-soft); min-width:40px; min-height:40px;
       display:inline-flex; align-items:center; justify-content:center; }
-    .header-actions { display:flex; align-items:center; gap:6px; }
-    /* live weather mini-chip (top-right on laptop, in header on phone) */
-    .wx-chip-mini { display:inline-flex; align-items:center; gap:5px; text-decoration:none;
-      border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
-      border-radius:999px; padding:5px 11px 5px 9px; font-weight:700; font-size:13px;
-      min-height:34px; transition:transform .15s ease, border-color .15s ease; }
-    .wx-chip-mini:hover { border-color:var(--ink-soft); }
-    .wx-chip-mini .wxc-ic { font-size:16px; line-height:1; }
-    .wx-chip-mini .wxc-temp { font-variant-numeric:tabular-nums; }
     .wx-chip-mini.loading { opacity:.6; }
-    @media (max-width:520px){ .wx-chip-mini .wxc-temp { font-size:12.5px; } .wx-chip-mini { padding:5px 9px; } }
+    @media (max-width:520px){ }
     .share-list .link-row small { color:var(--ink-soft); }
     .role-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;
       background:var(--accent-bg); color:var(--accent); }
@@ -52,38 +43,22 @@
       ✈️ Offline – Daten werden synchronisiert, sobald du wieder online bist
     </div>
 
-    <header class="header">
-      <div class="header-inner">
-        <a class="app-brand app-brand--formal" href="index.html" aria-label="TVZA Startseite">
-          <span class="tvz-wordmark">TvZ</span>
-          <span class="brand-divider"></span>
-          <span class="app-brand-text">
-            <span class="app-brand-title">TVZA</span>
-            <span class="app-brand-sub">Webprojekte · eine Webseite von TvZ</span>
-          </span>
-        </a>
-        <div class="header-actions">
-          <a class="wx-chip-mini" id="wxChip" href="pages/weather.html?v=3" title="Wetter ansehen" style="display:none">
-            <span class="wxc-ic" id="wxChipIc">⛅</span>
-            <span class="wxc-temp" id="wxChipTemp">–°</span>
-          </a>
-          <span class="icon-btn" id="settingsBtn" title="Einstellungen & Module">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </span>
-          <span class="user-chip" id="userChip" title="Abmelden">
-            <span id="userName"></span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          </span>
+    <header class="appbar">
+      <div class="appbar__inner">
+        <div class="appbar__spacer">
+          <div class="appbar__greet" id="greetingText">Willkommen</div>
+          <div class="appbar__date" id="greetingDate"></div>
         </div>
+        <a class="wx-pill" id="wxChip" href="pages/weather.html?v=3" title="Wetter ansehen" style="display:none">
+          <span id="wxChipIc"></span><span id="wxChipTemp">–°</span>
+        </a>
+        <button class="appbar__btn" id="settingsBtn" title="Einstellungen &amp; Module"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+        <button class="avatar" id="userChip" title="Konto &amp; Abmelden"><span id="userInitials">·</span></button>
+        <span id="userName" hidden></span>
       </div>
     </header>
 
     <main class="main">
-
-      <div class="greeting">
-        <h1 id="greetingText">Willkommen 👋</h1>
-        <p class="greeting-sub" id="greetingDate"></p>
-      </div>
 
       <!-- Trackers -->
       <section class="section" id="trackerSection" data-overview-section="tracker">
@@ -384,6 +359,14 @@
     const name = profile.displayName || 'du';
     const ownerName = profile.displayName || '';
     document.getElementById('userName').textContent = name;
+    // Avatar initials (§5.1) — replaces the .user-chip that spelled the
+    // whole name out beside an arrow.
+    {
+      const parts = String(profile.displayName || '').trim().split(/\s+/).filter(Boolean);
+      const ini = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0]
+                : parts.length === 1 ? parts[0].slice(0, 2) : '\u00b7';
+      document.getElementById('userInitials').textContent = ini.toUpperCase();
+    }
     try { localStorage.setItem('tvza-name', profile.displayName || ''); } catch (e) {}
     try { window.dispatchEvent(new CustomEvent('tvza-name', { detail: profile.displayName || '' })); } catch (e) {}
     let appUsers = [];
@@ -455,7 +438,7 @@
 
     const h = new Date().getHours();
     const g = h>=5&&h<12 ? 'Guten Morgen' : h>=12&&h<18 ? 'Guten Tag' : h>=18 ? 'Guten Abend' : 'Gute Nacht';
-    document.getElementById('greetingText').textContent = `${g}, ${name}! 👋`;
+    document.getElementById('greetingText').textContent = `${g}, ${name}`;
     document.getElementById('greetingDate').textContent =
       new Date().toLocaleDateString('de-CH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
@@ -1275,17 +1258,26 @@
     if (!chip) return;
     const icEl = document.getElementById('wxChipIc');
     const tEl  = document.getElementById('wxChipTemp');
+    // SVG, not emoji (§4.5): the pill sits on the navy header and the
+    // glyph has to take that colour, which an emoji cannot.
+    const WX = {
+      sun:   '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
+      part:  '<path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><circle cx="10" cy="10" r="3.2"/><path d="M17.5 19H8a4 4 0 1 1 1.1-7.85A5 5 0 0 1 19 13a3 3 0 0 1-1.5 6z"/>',
+      cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+      fog:   '<path d="M4 9h16M4 13h16M6 17h12"/>',
+      rain:  '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M8 20l-1 2M12 20l-1 2M16 20l-1 2"/>',
+      snow:  '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M8 21h.01M12 21h.01M16 21h.01"/>',
+      storm: '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M13 17l-2.5 4h4L12 24"/>',
+    };
     const EMOJI = code => {
-      if (code === 0) return '☀️';
-      if (code === 1 || code === 2) return '🌤️';
-      if (code === 3) return '☁️';
-      if (code === 45 || code === 48) return '🌫️';
-      if (code >= 51 && code <= 67) return '🌧️';
-      if (code >= 71 && code <= 77) return '🌨️';
-      if (code >= 80 && code <= 82) return '🌦️';
-      if (code === 85 || code === 86) return '❄️';
-      if (code >= 95) return '⛈️';
-      return '⛅';
+      const k = code === 0 ? 'sun'
+        : (code === 1 || code === 2) ? 'part'
+        : code === 3 ? 'cloud'
+        : (code === 45 || code === 48) ? 'fog'
+        : (code >= 51 && code <= 67) || (code >= 80 && code <= 82) ? 'rain'
+        : (code >= 71 && code <= 77) || code === 85 || code === 86 ? 'snow'
+        : code >= 95 ? 'storm' : 'part';
+      return '<svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">' + WX[k] + '</svg>';
     };
     const DEFAULT_LOC = { name:'Vaduz', latitude:47.141, longitude:9.521 };
     function getLoc() {
@@ -1303,7 +1295,7 @@
           if (!r.ok) throw 0;
           const j = await r.json();
           const c = j.current;
-          if (c) { icEl.textContent = EMOJI(c.weather_code); tEl.textContent = Math.round(c.temperature_2m) + '°'; }
+          if (c) { icEl.innerHTML = EMOJI(c.weather_code); tEl.textContent = Math.round(c.temperature_2m) + '°'; }
         } catch(e) { /* leave placeholder */ }
         finish();
       };

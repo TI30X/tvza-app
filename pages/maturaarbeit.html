@@ -33,24 +33,11 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; backg
 
 /* HEADER */
 header { background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460); color:white; padding:24px 36px 22px; }
-.tvza-back { display:inline-flex; align-items:center; gap:6px; color:rgba(255,255,255,.7); text-decoration:none; font-size:.8rem; font-weight:600; margin-bottom:16px; padding:6px 12px; border:1px solid rgba(255,255,255,.18); border-radius:8px; transition:background .15s,color .15s; }
-.tvza-back:hover { background:rgba(255,255,255,.1); color:#fff; }
-.header-top { display:flex; align-items:center; gap:0; margin-bottom:18px; }
-.tvz-mark { display:flex; flex-direction:column; padding-right:22px; flex-shrink:0; }
 .tvz-letters { font-family:Georgia,'Times New Roman',serif; font-size:2rem; font-weight:700; line-height:1; color:white; }
-.tvz-rule { width:100%; height:1px; background:rgba(255,255,255,0.18); margin-top:4px; }
-.tvz-name { font-size:.68rem; opacity:.38; margin-top:4px; letter-spacing:.2px; }
-.tvz-divider { width:1px; height:50px; background:rgba(255,255,255,0.1); margin-right:22px; flex-shrink:0; }
-.header-title-block { }
 header h1 { font-size:1.15rem; font-weight:700; letter-spacing:-.2px; }
 .subtitle { opacity:.45; font-size:.78rem; margin-top:3px; }
 .subtitle2 { opacity:.25; font-size:.7rem; margin-top:2px; }
-.header-stats { display:grid; grid-template-columns:auto 1fr; gap:20px; margin-top:0; align-items:start; }
-.deadline-box { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:14px 22px; text-align:center; min-width:130px; }
-.deadline-box .days { font-size:2.4rem; font-weight:900; line-height:1; }
 .days.urgent{color:var(--red-m);} .days.warn{color:var(--orange-m);} .days.ok{color:var(--green-m);}
-.deadline-box .dlabel { font-size:.72rem; opacity:.7; text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
-.deadline-box .ddate { font-size:.8rem; opacity:.5; margin-top:2px; }
 .cat-overview { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
 .cat-pill { background:rgba(255,255,255,.08); border-radius:8px; padding:10px 12px; display:flex; align-items:center; gap:8px; }
 .cp-icon { font-size:1.1rem; }
@@ -212,49 +199,48 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
   .meetings-row{grid-template-columns:repeat(2,1fr);}
   .points-grid{grid-template-columns:1fr;}
   header{padding:18px;}
-  .header-stats{grid-template-columns:1fr;}
 }
 </style>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=15" defer></script>
 </head>
 <body>
-<header>
-  <a href="../index.html" class="tvza-back">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><polyline points="15 18 9 12 15 6"/></svg>
-    Zurück zu TVZA
-  </a>
-  <div class="header-top">
-    <div class="tvz-mark">
-      <span class="tvz-letters">TvZ</span>
-      <div class="tvz-rule"></div>
-      <span class="tvz-name">Timothy van Zanten</span>
-    </div>
-    <div class="tvz-divider"></div>
-    <div class="header-title-block">
-      <h1>Maturaarbeit – Status</h1>
-      <p class="subtitle">Intels Verlust der technologischen Führungsposition</p>
-      <p class="subtitle2">Herr Diriwächter · Kantonsschule Ausserschwyz · WR 2025/26</p>
-    </div>
+<header class="appbar appbar--bereich" data-bereich="matura">
+  <div class="appbar__inner">
+    <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="appbar__title">Maturaarbeit</span>
+    <span class="appbar__end">
+      <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+    </span>
   </div>
-  <div class="header-stats">
-    <div class="deadline-box">
-      <div class="days" id="days-el">–</div>
-      <div class="dlabel">Tage bis Abgabe</div>
-      <div class="ddate">17. August 2026</div>
-    </div>
-    <div>
-      <div class="cat-overview" id="cat-overview"></div>
-      <div class="global-prog">
-        <div class="gp-row"><span>Gesamtfortschritt</span><span id="gp-pct">0 %</span></div>
-        <div class="gp-bar-bg"><div class="gp-bar-fill" id="gp-fill" style="width:0%"></div></div>
-      </div>
-    </div>
-  </div>
+  <div class="appbar__accent"></div>
 </header>
 
+
+
 <div class="page-layout">
-<main>
+<main class="main">
+<section class="section">
+    <div class="panel" data-bereich="matura">
+      <div class="marke">Maturaarbeit — Status</div>
+      <h1 style="font-size:24px;font-weight:800;letter-spacing:-0.02em">Intels Verlust der technologischen Führungsposition</h1>
+      <p class="row__sub" style="white-space:normal;margin-top:6px">Herr Diriwächter · Kantonsschule Ausserschwyz · WR 2025/26</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="panel" data-bereich="matura">
+      <div class="marke">Abgabe</div>
+      <div class="panel__big" id="days-el">–</div>
+      <p class="row__sub" style="white-space:normal">Tage bis Abgabe · 17. August 2026</p>
+      <div class="cat-overview" id="cat-overview" style="margin-top:14px"></div>
+      <div class="global-prog" style="margin-top:14px">
+        <div class="gp-row"><span>Gesamtfortschritt</span><span id="gp-pct">0 %</span></div>
+        <div class="row__bar" style="height:8px"><i class="gp-bar-fill" id="gp-fill" style="width:0%"></i></div>
+      </div>
+    </div>
+  </section>
+
   <div class="card">
     <div class="card-title">🗺 Vollständiger Zeitplan nach Phasen <span class="ct-badge">Klicken zum Auf-/Zuklappen</span></div>
     <div class="phases" id="phases-container"></div>
