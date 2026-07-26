@@ -305,7 +305,7 @@
   </div>
 
   <script type="module">
-    import { requireAuth, wireOfflineBanner, escHtml } from '../assets/js/firebase-config.js';
+    import { requireAuth, wireOfflineBanner, escHtml, reportClientError } from '../assets/js/firebase-config.js';
 
     wireOfflineBanner();
     await requireAuth('../login.html');
@@ -708,7 +708,7 @@
         closeSplash();
         $('wxUpdated').textContent = 'Stand: ' + new Date().toLocaleTimeString('de-CH', { hour:'2-digit', minute:'2-digit' });
       } catch (e) {
-        console.warn('weather load failed', e);
+        reportClientError('weather-load', e);
         if (seq === loadSeq) {
           if (lastData) {
             // Already showing a forecast — don't wipe it just because a refresh hiccuped.

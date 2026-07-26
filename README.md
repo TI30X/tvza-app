@@ -13,6 +13,8 @@
 - 🔐 **Familien-Einladungen:** Neue Familienkonten brauchen einen 128-Bit-Code, den der Admin
   unter ⚙️ Einstellungen → „Admin · Familien-Einladungen" für eine bestimmte E-Mail erstellt.
   Ein Firebase-Login allein erhält keinen Zugriff auf Familiendaten.
+- 🗓️ **Kalender & Erinnerungen:** Moderne Monats- und Agendaansicht, persönliche Erinnerungen
+  sowie ICS-Import/-Export für Google Calendar, Outlook/Exchange, Apple und Samsung Calendar.
 
 ## Datenmodell (Firestore)
 - `users/{uid}` — Profil inkl. `modules` (welche Module aktiv sind), `isTimo`, `isParent`.
@@ -24,6 +26,10 @@
 - `shares/{ownerUid__targetUid__module}` — serverseitig prüfbare Freigaben:
   `ownerUid, ownerName, module, targetUid, targetEmail, role` (`view`/`edit`).
 - `skitracker/{uid}/…`, `foodlog/{uid}/…`, `families`/`trips`/`activities` — wie bisher.
+- `users/{uid}/reminders/{id}` — persönliche Erinnerungen; nur der jeweilige Nutzer darf sie
+  lesen oder verändern.
+- `calendarDays/{id}` — persönliche oder importierte Termine; Zugriff wird über `ownerUid`
+  auf den Besitzer begrenzt.
 - `customFoods/{id}` — vom Admin freigegebene Lebensmittel (`name, kcal, protein, carbs, fat, fibre, micros`).
   Werden im Food Tracker beim Start geladen und stehen dann allen in Suche & Scan zur Verfügung.
 - `foodRequests/{id}` — Vorschläge von Nutzern für fehlende Lebensmittel
@@ -44,6 +50,14 @@
   Reis/Pasta 200 g, Glas 200 ml) oder **100 g**. Eigene Menge bleibt jederzeit möglich.
 - ➕ **Nicht gefunden?** In der Zutatensuche erscheint „… vorschlagen"; der Vorschlag
   landet als `foodRequest` im Admin-Panel.
+
+## Kalender-Synchronisation
+- Der eingebaute ICS-Abgleich überträgt Termine und Erinnerungen ohne externe Zugangsdaten.
+- Automatische Google- und Microsoft-Synchronisation benötigt je eine registrierte OAuth-Web-App.
+- Apple-CalDAV benötigt einen geschützten Serverdienst; Apple-Passwörter dürfen niemals in
+  Firestore oder im Browser gespeichert werden.
+- Der Samsung-Gerätekalender ist nur aus einer nativen Android-App direkt erreichbar. In der
+  Web-App bleibt ICS der sichere gemeinsame Weg.
 
 ## Einmalige Firebase-Schritte
 

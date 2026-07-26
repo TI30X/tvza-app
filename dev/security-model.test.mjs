@@ -60,6 +60,36 @@ test('authentication messages never append backend codes', async () => {
   }
 });
 
+test('production pages do not expose raw backend errors', async () => {
+  const pages = await Promise.all([
+    'index.html',
+    'pages/planner.html',
+    'pages/foodtracker.html',
+    'pages/messages.html',
+    'pages/weather.html',
+    'pages/watchlist.html',
+    'assets/js/firebase-config.js',
+    'assets/js/notifications.js',
+  ].map(read));
+  const visibleBackendError = /(?:alert\s*\(|textContent\s*=|innerHTML\s*=)[^\n]*(?:error|err|e)\.(?:message|code)/i;
+  const rawConsoleError = /console\.(?:warn|error)\(\s*(?:['"`][^'"`]*['"`]\s*,\s*)?(?:error|err|e)\s*\)/i;
+  for (const page of pages) {
+    assert.doesNotMatch(page, visibleBackendError);
+    assert.doesNotMatch(page, rawConsoleError);
+  }
+});
+
+test('personal reminders and imported calendar entries stay owner-scoped', async () => {
+  const rules = await read('firestore.rules');
+  const reminders = rules.match(/match \/users\/\{uid\}\/reminders\/\{reminderId\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  const calendarDays = rules.match(/match \/calendarDays\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+
+  assert.match(reminders, /request\.auth\.uid == uid/);
+  assert.match(calendarDays, /resource\.data\.ownerUid == request\.auth\.uid/);
+  assert.match(calendarDays, /request\.resource\.data\.ownerUid == request\.auth\.uid/);
+  assert.doesNotMatch(calendarDays, /allow read, write: if isMember/);
+});
+
 test('visible version and service-worker cache stay aligned', async () => {
   const [ui, sw] = await Promise.all([
     read('assets/js/ui-fx.js'),

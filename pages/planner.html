@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
-  <title>Planer — TVZA</title>
+  <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
     .seg button { border:0; background:transparent; color:var(--ink-soft); font:inherit; font-weight:700; font-size:13px;
@@ -126,6 +126,47 @@
     .info-banner { background:var(--accent-bg); color:var(--accent); border:1px solid var(--border); border-radius: var(--r-icon);
       padding:10px 12px; font-size:12px; margin-bottom:12px; display:none; }
     .info-banner.show { display:block; }
+    #calView, #listView, .planner-panel {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--r2); padding:16px; margin-bottom:16px;
+    }
+    .planner-section-head { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .planner-section-head > div { flex:1; min-width:0; }
+    .planner-section-head .marke { margin-bottom:3px; }
+    .planner-section-head h2 { font-size:17px; line-height:1.25; }
+    .reminder-list { display:flex; flex-direction:column; }
+    .reminder-row {
+      display:flex; align-items:center; gap:11px; min-height:54px;
+      padding:9px 0; border-top:1px solid var(--border);
+    }
+    .reminder-row:first-child { border-top:0; }
+    .reminder-row__body { flex:1; min-width:0; }
+    .reminder-row__title { display:block; font-size:14px; font-weight:700; }
+    .reminder-row__meta { display:block; color:var(--ink-soft); font-size:12px; margin-top:2px; }
+    .reminder-row.is-done .reminder-row__title { text-decoration:line-through; color:var(--ink-soft); }
+    .reminder-row.is-overdue .reminder-row__meta { color:var(--danger); font-weight:700; }
+    .reminder-check {
+      width:24px; height:24px; flex:0 0 auto; border:2px solid var(--border);
+      border-radius:var(--r-pill); background:var(--surface); color:#fff;
+      display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+    }
+    .reminder-check.is-done { background:var(--accent); border-color:var(--accent); }
+    .provider-row { display:flex; gap:7px; flex-wrap:wrap; margin:10px 0 14px; }
+    .provider-chip {
+      display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border);
+      background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
+      padding:6px 10px; font-size:12px; font-weight:700;
+    }
+    .sync-copy { color:var(--ink-soft); font-size:13px; line-height:1.5; }
+    .sync-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .sync-status { min-height:18px; color:var(--ink-soft); font-size:12px; margin-top:9px; }
+    .evchip b { font-weight:800; }
+    @media (min-width:900px) {
+      .cell { min-height:104px; padding:7px; }
+      .daynum { font-size:14px; }
+      .evchip { font-size:11px; padding:3px 5px; }
+      #calView, #listView, .planner-panel { padding:20px; }
+    }
   </style>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=15" defer></script>
@@ -137,7 +178,7 @@
     <header class="appbar appbar--bereich" data-bereich="kalender">
       <div class="appbar__inner">
         <a href="../index.html" class="appbar__btn back-btn" id="backBtn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-        <span class="appbar__title" id="pageTitle">Planer</span>
+        <span class="appbar__title" id="pageTitle">Kalender &amp; Erinnerungen</span>
         <span class="appbar__end">
           <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
         </span>
@@ -170,8 +211,8 @@
 
         <div style="display:flex;justify-content:center;margin-bottom:6px">
           <div class="seg">
-            <button id="segCal" class="active">📅 Kalender</button>
-            <button id="segList">📋 Liste</button>
+            <button id="segCal" class="active">📅 Monat</button>
+            <button id="segList">📋 Agenda</button>
           </div>
         </div>
 
@@ -191,7 +232,8 @@
           <div class="grid" id="grid"><div class="spinner" style="grid-column:1/-1">Lade…</div></div>
           <div class="legend">
             <span><i style="background:#d8761d"></i>Termine</span>
-            <span><i style="background:#7f77dd"></i>Ältere Einträge</span>
+            <span><i style="background:#7f77dd"></i>Persönlich</span>
+            <span><i style="background:#2f6fed"></i>Erinnerungen</span>
           </div>
         </div>
 
@@ -205,6 +247,40 @@
         </div>
       </div>
 
+      <section class="planner-panel" id="reminderSection">
+        <div class="planner-section-head">
+          <div>
+            <p class="marke">Erinnerungen</p>
+            <h2>Was als Nächstes ansteht</h2>
+          </div>
+          <button class="pill primary" id="addReminderBtn" type="button">+ Erinnerung</button>
+        </div>
+        <div class="reminder-list" id="reminderList"><div class="spinner">Lade…</div></div>
+      </section>
+
+      <section class="planner-panel" id="calendarSync">
+        <div class="planner-section-head">
+          <div>
+            <p class="marke">Kalender abgleichen</p>
+            <h2>Mit deinen anderen Kalendern</h2>
+          </div>
+        </div>
+        <p class="sync-copy">Kalenderdateien im offenen ICS-Format funktionieren mit allen wichtigen Kalenderdiensten.</p>
+        <div class="provider-row" aria-label="Unterstützte Kalender">
+          <span class="provider-chip">Google Calendar</span>
+          <span class="provider-chip">Outlook / Exchange</span>
+          <span class="provider-chip">Apple Calendar</span>
+          <span class="provider-chip">Samsung Calendar</span>
+        </div>
+        <div class="sync-actions">
+          <button class="pill primary" id="calendarImportBtn" type="button">ICS importieren</button>
+          <button class="pill" id="calendarExportBtn" type="button">TVZA exportieren</button>
+          <input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden />
+        </div>
+        <p class="sync-status" id="calendarSyncStatus"></p>
+        <p class="sync-copy">Der ICS-Abgleich ist bewusst dateibasiert. Für eine automatische Zweiweg-Verbindung werden später Google-/Microsoft-OAuth und für Apple ein geschützter CalDAV-Dienst benötigt.</p>
+      </section>
+
       <!-- Trip detail -->
       <div id="tripDetail" style="display:none"></div>
     </main>
@@ -214,7 +290,10 @@
   <div class="sheet" id="daySheet">
     <div class="grip"></div>
     <div class="sheet-head"><span class="sheet-title" id="dayTitle">—</span>
-      <button class="pill primary" id="daySheetAdd">+ Termin</button></div>
+      <span style="display:flex;gap:6px">
+        <button class="pill" id="daySheetReminder">+ Erinnerung</button>
+        <button class="pill primary" id="daySheetAdd">+ Termin</button>
+      </span></div>
     <div id="dayEvents"></div>
   </div>
 
@@ -229,6 +308,10 @@
     <div class="row2">
       <div class="field"><label>Von</label><input class="form-input" id="tStart" type="date" /></div>
       <div class="field"><label>Bis (optional)</label><input class="form-input" id="tEnd" type="date" placeholder="leer = eintägig"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Startzeit (optional)</label><input class="form-input" id="tStartTime" type="time" /></div>
+      <div class="field"><label>Endzeit (optional)</label><input class="form-input" id="tEndTime" type="time" /></div>
     </div>
     <div class="field"><label>Farbe</label><div class="swatches" id="tSwatch"></div></div>
     <div class="field"><label>Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
@@ -245,6 +328,22 @@
     </div>
     <button class="btn btn-primary btn-block" id="tripSave">Speichern</button>
     <button class="btn btn-danger btn-block" id="tripFormDelete" style="display:none;margin-top:8px">Termin löschen</button>
+  </div>
+
+  <!-- Reminder form sheet -->
+  <div class="backdrop" id="reminderBackdrop"></div>
+  <div class="sheet" id="reminderSheet">
+    <div class="grip"></div>
+    <div class="sheet-head"><span class="sheet-title" id="reminderFormTitle">Neue Erinnerung</span>
+      <button class="icon-pill" id="reminderFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="field"><label>Titel</label><input class="form-input" id="rTitle" placeholder="z.B. Versicherung bezahlen" /></div>
+    <div class="row2">
+      <div class="field"><label>Datum</label><input class="form-input" id="rDate" type="date" /></div>
+      <div class="field"><label>Zeit (optional)</label><input class="form-input" id="rTime" type="time" /></div>
+    </div>
+    <div class="field"><label>Notiz (optional)</label><textarea class="form-textarea" id="rNotes" rows="3"></textarea></div>
+    <button class="btn btn-primary btn-block" id="reminderSave">Speichern</button>
+    <button class="btn btn-danger btn-block" id="reminderDelete" style="display:none;margin-top:8px">Erinnerung löschen</button>
   </div>
 
   <!-- Special day form sheet -->
@@ -287,8 +386,9 @@
   </div>
 
   <script type="module">
-    import { auth, db, app, requireAuth, wireOfflineBanner, escHtml, getProfile } from '../assets/js/firebase-config.js';
+    import { auth, db, app, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError } from '../assets/js/firebase-config.js';
     import { parseItineraryHtml, groupByDay } from '../assets/js/itinerary.js';
+    import { buildCalendarIcs, parseCalendarIcs } from '../assets/js/calendar-interop.js';
     import {
       collection, addDoc, getDocs, getDoc, query, where, doc, updateDoc, deleteDoc,
       onSnapshot, serverTimestamp, arrayUnion, arrayRemove
@@ -322,16 +422,16 @@
       const d=await readAsDataURL(file); return d.length<=MAX_FILE ? {name:file.name, type:file.type||'', size:d.length, dataUrl:d} : null;
     }
     function dataUrlToBlob(d){ const [h,b]=d.split(','); const mime=(h.match(/:(.*?);/)||[])[1]||'application/octet-stream'; const bin=atob(b); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i); return new Blob([arr],{type:mime}); }
-    function openStored(f){ if(!f)return; try{ const u=URL.createObjectURL(dataUrlToBlob(f.dataUrl)); window.open(u,'_blank','noopener'); }catch(e){ console.warn(e); } }
-    async function loadAttachments(parentId){ try{ const s=await getDocs(query(collection(db,'attachments'), where('parent','==',parentId))); return s.docs.map(d=>({id:d.id,...d.data()})); }catch(e){ console.warn(e); return []; } }
+    function openStored(f){ if(!f)return; try{ const u=URL.createObjectURL(dataUrlToBlob(f.dataUrl)); window.open(u,'_blank','noopener'); }catch(e){ reportClientError('attachment-open', e); } }
+    async function loadAttachments(parentId){ try{ const s=await getDocs(query(collection(db,'attachments'), where('parent','==',parentId))); return s.docs.map(d=>({id:d.id,...d.data()})); }catch(e){ reportClientError('attachments-load', e); return []; } }
     async function saveAttachment(parentId, scope, st){ return addDoc(collection(db,'attachments'), {parent:parentId, scope, name:st.name, type:st.type, size:st.size, dataUrl:st.dataUrl, by:user.uid, at:Date.now()}); }
     async function delAttachment(id){ return deleteDoc(doc(db,'attachments',id)); }
 
-    let user, profile, group = null, grpUnsub = null;
-    let trips = [], days = [];
+    let user, profile, group = null, grpUnsub = null, reminderUnsub = null;
+    let trips = [], days = [], reminders = [];
     let viewY = tdy.getFullYear(), viewM = tdy.getMonth();
     let curView = 'cal';
-    let editTripId = null, editDayId = null, dayColor = COLORS[0], dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
+    let editTripId = null, editDayId = null, editReminderId = null, dayColor = COLORS[0], dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
     let pendingDayFiles = [], dayFiles = [];
 
     init();
@@ -342,7 +442,11 @@
       profile = await getProfile(user);
       buildSwatches();
       wireUI();
+      watchReminders();
       await resolveGroup();
+      if (location.hash === '#reminders') {
+        setTimeout(() => $('reminderSection').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+      }
     }
 
     /* ── Group membership ── */
@@ -361,7 +465,7 @@
               profile.familyId = invite;
             } else if ((d.members||[]).includes(user.uid)) { profile.familyId = invite; }
           }
-        } catch(e){ console.warn(e); }
+        } catch(e){ reportClientError('family-invite', e); }
         history.replaceState({}, '', location.pathname);
       }
       if (profile.familyId) {
@@ -443,17 +547,112 @@
     /* ── Data load ── */
     async function reload() {
       const t1 = group ? getDocs(query(collection(db,'trips'), where('familyId','==',group.id)))
-        .then(s=>{ trips = s.docs.map(d=>({id:d.id,...d.data()})); }).catch(e=>{console.warn(e);trips=[];}) : Promise.resolve();
+        .then(s=>{ trips = s.docs.map(d=>({id:d.id,...d.data()})); }).catch(e=>{reportClientError('calendar-trips-load',e);trips=[];}) : Promise.resolve();
       const t2 = getDocs(query(collection(db,'calendarDays'), where('ownerUid','==',user.uid)))
-        .then(s=>{ days = s.docs.map(d=>({id:d.id,...d.data()})); }).catch(e=>{console.warn(e);days=[];});
+        .then(s=>{ days = s.docs.map(d=>({id:d.id,...d.data()})); }).catch(e=>{reportClientError('calendar-days-load',e);days=[];});
       await Promise.all([t1,t2]);
       curView === 'cal' ? renderCalendar() : renderAgenda();
     }
 
+    /* ── Personal reminders ── */
+    const reminderCollection = () => collection(db, 'users', user.uid, 'reminders');
+    function watchReminders() {
+      if (reminderUnsub) reminderUnsub();
+      reminderUnsub = onSnapshot(reminderCollection(), snap => {
+        reminders = snap.docs.map(item => ({ id:item.id, ...item.data() }))
+          .sort((a,b) =>
+            Number(!!a.completed) - Number(!!b.completed) ||
+            `${a.date||'9999'} ${a.time||''}`.localeCompare(`${b.date||'9999'} ${b.time||''}`)
+          );
+        renderReminders();
+        if (group) curView === 'cal' ? renderCalendar() : renderAgenda();
+      }, () => {
+        $('reminderList').innerHTML = '<p class="empty-hint">Erinnerungen konnten nicht geladen werden.</p>';
+      });
+    }
+    function reminderWhen(reminder) {
+      if (!reminder.date) return 'Ohne Datum';
+      const day = reminder.date === todayKey ? 'Heute' : fmtDateKey(reminder.date);
+      return `${day}${reminder.time ? ' · ' + reminder.time : ''}`;
+    }
+    function renderReminders() {
+      const box = $('reminderList');
+      const visible = [
+        ...reminders.filter(item => !item.completed),
+        ...reminders.filter(item => item.completed).slice(-3)
+      ];
+      if (!visible.length) {
+        box.innerHTML = '<p class="empty-hint">Noch keine Erinnerungen. Lege deine erste an.</p>';
+        return;
+      }
+      box.innerHTML = visible.map(item => `
+        <div class="reminder-row${item.completed?' is-done':''}${!item.completed&&item.date<todayKey?' is-overdue':''}">
+          <button class="reminder-check${item.completed?' is-done':''}" type="button"
+            data-reminder-check="${esc(item.id)}" aria-label="${item.completed?'Als offen markieren':'Erledigen'}">${item.completed?'✓':''}</button>
+          <button class="reminder-row__body mini" type="button" data-reminder-edit="${esc(item.id)}" style="text-align:left;padding:0">
+            <span class="reminder-row__title">${esc(item.title||'Erinnerung')}</span>
+            <span class="reminder-row__meta">${esc(reminderWhen(item))}</span>
+          </button>
+          <button class="mini" type="button" data-reminder-edit="${esc(item.id)}" aria-label="Erinnerung bearbeiten">✎</button>
+        </div>`).join('');
+      box.querySelectorAll('[data-reminder-check]').forEach(button => button.onclick = async () => {
+        const item = reminders.find(entry => entry.id === button.dataset.reminderCheck);
+        if (!item) return;
+        await updateDoc(doc(reminderCollection(), item.id), {
+          completed: !item.completed,
+          completedAt: !item.completed ? serverTimestamp() : null,
+          updatedAt: serverTimestamp()
+        }).catch(() => alert('Erinnerung konnte nicht aktualisiert werden.'));
+      });
+      box.querySelectorAll('[data-reminder-edit]').forEach(button => button.onclick = () => {
+        const item = reminders.find(entry => entry.id === button.dataset.reminderEdit);
+        if (item) openReminderForm(item);
+      });
+    }
+    function openReminderForm(existing = null, date = '') {
+      editReminderId = existing?.id || null;
+      $('reminderFormTitle').textContent = existing ? 'Erinnerung bearbeiten' : 'Neue Erinnerung';
+      $('rTitle').value = existing?.title || '';
+      $('rDate').value = existing?.date || date || todayKey;
+      $('rTime').value = existing?.time || '';
+      $('rNotes').value = existing?.notes || '';
+      $('reminderDelete').style.display = existing ? '' : 'none';
+      $('reminderBackdrop').classList.add('visible');
+      $('reminderSheet').classList.add('visible');
+      setTimeout(() => $('rTitle').focus(), 50);
+    }
+    function closeReminderForm() {
+      $('reminderBackdrop').classList.remove('visible');
+      $('reminderSheet').classList.remove('visible');
+    }
+
     /* ── Event map ── */
+    function dateRangeKeys(start, end = start) {
+      const keys = [];
+      if (!start) return keys;
+      let date = new Date(start + 'T00:00:00');
+      const last = new Date((end || start) + 'T00:00:00');
+      let guard = 0;
+      while (date <= last && guard++ < 400) {
+        keys.push(keyOf(date.getFullYear(), date.getMonth(), date.getDate()));
+        date.setDate(date.getDate() + 1);
+      }
+      return keys;
+    }
     function eventMap() {
       const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
-      days.forEach(s=>{ if(s.date) push(s.date,{kind:'day',color:s.color||COLORS[0],title:s.title||'Tag',ref:s}); });
+      days.forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
+        push(date, {
+          kind:'day', color:item.color||COLORS[0], title:item.title||'Termin',
+          time:item.startTime||'', ref:item
+        })
+      ));
+      reminders.filter(item => !item.completed && item.date).forEach(item =>
+        push(item.date, {
+          kind:'reminder', color:'#2f6fed', title:item.title||'Erinnerung',
+          time:item.time||'', ref:item
+        })
+      );
       trips.forEach(tr=>{
         // Union of the trip's start/end range AND any dates carried by its
         // itinerary items (e.g. from an imported multi-day plan) — a pasted
@@ -464,7 +663,7 @@
           while(d<=last && g++<400){ keys.add(keyOf(d.getFullYear(),d.getMonth(),d.getDate())); d.setDate(d.getDate()+1); }
         }
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
-        keys.forEach(k=>push(k,{kind:'trip',color:tr.color||TRIP_COLOR,title:tr.name||'Termin',ref:tr}));
+        keys.forEach(k=>push(k,{kind:'trip',color:tr.color||TRIP_COLOR,title:tr.name||'Termin',time:tr.startTime||'',ref:tr}));
       });
       return map;
     }
@@ -476,7 +675,18 @@
        month-grid chips are unaffected. ── */
     function dayProgramMap() {
       const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
-      days.forEach(s=>{ if(s.date) push(s.date,{kind:'day',color:s.color||COLORS[0],title:s.title||'Tag',ref:s}); });
+      days.forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
+        push(date, {
+          kind:'day', color:item.color||COLORS[0], title:item.title||'Termin',
+          time:item.startTime||'', ref:item
+        })
+      ));
+      reminders.filter(item => !item.completed && item.date).forEach(item =>
+        push(item.date, {
+          kind:'reminder', color:'#2f6fed', title:item.title||'Erinnerung',
+          time:item.time||'', ref:item
+        })
+      );
       trips.forEach(tr=>{
         const keys = new Set();
         if (tr.startDate) {
@@ -486,7 +696,7 @@
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
         keys.forEach(k=>{
           const stops = (tr.itinerary||[]).filter(it=>it.date===k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-          push(k,{kind:'trip',color:tr.color||TRIP_COLOR,title:tr.name||'Termin',ref:tr,stops});
+          push(k,{kind:'trip',color:tr.color||TRIP_COLOR,title:tr.name||'Termin',time:tr.startTime||'',ref:tr,stops});
         });
       });
       return map;
@@ -508,7 +718,7 @@
         const k=keyOf(y,m,dn); if(k===todayKey)cell.classList.add('today');
         const evs=map[k]||[];
         let inner=`<span class="daynum">${dn}</span>`;
-        if(evs.length){ const two=evs.slice(0,2).map(e=>`<span class="evchip" style="background:${e.color}">${esc(e.title)}</span>`).join('');
+        if(evs.length){ const two=evs.slice(0,2).map(e=>`<span class="evchip" style="background:${e.color}">${e.time?`<b>${esc(e.time)}</b> `:''}${esc(e.title)}</span>`).join('');
           inner+=`<div class="chips">${two}${evs.length>2?`<span class="more">+${evs.length-2}</span>`:''}</div>`; }
         cell.innerHTML=inner;
         cell.onclick=()=>openDay(k,y,m,dn);
@@ -531,16 +741,17 @@
             return `<div class="item-card" data-k="${k}" data-i="${i}" style="flex-direction:column;align-items:stretch">
               <div style="display:flex;align-items:center;gap:12px">
                 <div class="item-bar" style="background:${e.color}"></div>
-                <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">Termin${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
+                <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">${e.time?esc(e.time)+' · ':''}Termin${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
               </div>
               <div class="prog-list">${rows}</div>
               ${fullBtn}
             </div>`;
           }
+          const typeLabel = e.kind==='trip' ? 'Termin' : e.kind==='reminder' ? 'Erinnerung' : 'Persönlicher Termin';
           return `<div class="item-card" data-k="${k}" data-i="${i}">
             <div class="item-bar" style="background:${e.color}"></div>
             <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-            <div class="item-meta">${e.kind==='trip'?'Termin':'Besonderer Tag'}${e.ref.destination?' · '+esc(e.ref.destination):''}</div>${fullBtn}</div></div>`;
+            <div class="item-meta">${e.time?esc(e.time)+' · ':''}${typeLabel}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}</div>${fullBtn}</div></div>`;
         }).join('');
         return `<div class="agenda-group"><div class="agenda-date">${fmtDateKey(k)}</div>${items}</div>`;
       }).join('');
@@ -551,11 +762,14 @@
       box.querySelectorAll('[data-edit-k]').forEach(b=>b.onclick=(ev)=>{
         ev.stopPropagation();
         const e=(map[b.dataset.editK]||[])[+b.dataset.editI]; if(!e)return;
-        if(e.kind==='trip'){ openTrip(e.ref.id); } else { openDayForm(e.ref); }
+        if(e.kind==='trip') openTrip(e.ref.id);
+        else if(e.kind==='reminder') openReminderForm(e.ref);
+        else openDayForm(e.ref);
       });
       box.querySelectorAll('.item-card').forEach(c=>c.onclick=()=>{
         const e=(map[c.dataset.k]||[])[+c.dataset.i]; if(!e)return;
         if(e.kind==='trip') { openTrip(e.ref.id); return; }
+        if(e.kind==='reminder') { openReminderForm(e.ref); return; }
         // Open the same read-only day sheet the calendar cell uses,
         // instead of jumping straight into the edit form.
         const [y,m,d]=c.dataset.k.split('-').map(Number);
@@ -573,14 +787,17 @@
         const fullBtn = hasPage ? `<button class="pill primary" data-full="${i}" title="Plan/Programm öffnen">Öffnen</button>` : '';
         let act='';
         if(e.kind==='trip'){ act=fullBtn+`<button class="pill" data-open-trip="${esc(e.ref.id)}">Bearbeiten</button>`; }
+        else if(e.kind==='reminder'){ act=`<button class="pill" data-edit-reminder="${i}">Bearbeiten</button>`; }
         else { act=fullBtn+`<button class="pill" data-edit="${i}">Bearbeiten</button>`; }
+        const typeLabel=e.kind==='trip'?'Termin':e.kind==='reminder'?'Erinnerung':'Persönlicher Termin';
         return `<div class="item-card"><div class="item-bar" style="background:${e.color}"></div>
           <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-          <div class="item-meta">${e.kind==='trip'?'Termin':'Besonderer Tag'}</div>
+          <div class="item-meta">${e.time?esc(e.time)+' · ':''}${typeLabel}</div>
           <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${act}</div></div></div>`;
       }).join('') : `<p class="empty-hint">Keine Einträge an diesem Tag.</p>`;
       box.querySelectorAll('[data-open-trip]').forEach(b=>b.onclick=()=>{closeDay();openTrip(b.dataset.openTrip);});
       box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.edit];closeDay();openDayForm(e.ref);});
+      box.querySelectorAll('[data-edit-reminder]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.editReminder];closeDay();openReminderForm(e.ref);});
       box.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.page];openViewer(e.title,e.ref.planHtml,e.ref.planUrl);});
       box.querySelectorAll('[data-full]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.full];openPlanFull(e.ref);});
       $('dayBackdrop').classList.add('visible'); $('daySheet').classList.add('visible');
@@ -613,6 +830,7 @@
       $('tripFormTitle').textContent = t ? 'Termin bearbeiten' : 'Neuer Termin';
       $('tName').value=t?.name||''; $('tDest').value=t?.destination||'';
       $('tStart').value=t?.startDate||(sheetKey||''); $('tEnd').value=t?.endDate||'';
+      $('tStartTime').value=t?.startTime||''; $('tEndTime').value=t?.endTime||'';
       $('tNotes').value=t?.notes||'';
       // Programm/Info-Seite: prefill from the existing Termin when editing, so
       // this same field can also be used later to update the plan — same
@@ -643,14 +861,16 @@
         await deleteDoc(doc(db,'trips',id));
         closeTripForm();
         backToGroup();
-      } catch(e) { console.warn(e); alert('Löschen fehlgeschlagen.'); }
+      } catch(e) { reportClientError('calendar-trip-delete', e); alert('Löschen fehlgeschlagen.'); }
     };
     $('tripSave').onclick = async () => {
       const name=$('tName').value.trim(); if(!name){alert('Bitte einen Titel eingeben.');return;}
       const start=$('tStart').value;
       // "Bis" is optional — a Termin with no end date is simply a single-day
       // entry, so it still shows correctly everywhere dates are unioned.
-      const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start, notes:$('tNotes').value.trim(), color:tripColor };
+      const startTime=$('tStartTime').value, endTime=$('tEndTime').value;
+      const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start,
+        startTime, endTime:endTime||startTime, notes:$('tNotes').value.trim(), color:tripColor };
 
       // Same auto-import as the trip detail's Plan section: paste/upload/link
       // gets parsed into per-day, per-time stops right away.
@@ -677,7 +897,7 @@
         else { const ref = await addDoc(collection(db,'trips'), { ...data, familyId:group.id, createdBy:user.uid, createdAt:serverTimestamp() }); id = ref.id; }
         closeTripForm();
         await openTrip(id);
-      }catch(e){console.warn(e);alert('Speichern fehlgeschlagen.');}
+      }catch(e){reportClientError('calendar-trip-save',e);alert('Speichern fehlgeschlagen.');}
       $('tripSave').disabled=false;
     };
 
@@ -878,7 +1098,7 @@
           await deleteDoc(doc(db,'guestAccess',b.dataset.gdel));
           loadGuestList(tr);
         });
-      } catch(e) { console.warn(e); list.innerHTML = '<p class="empty-hint" style="padding:10px">Gäste konnten nicht geladen werden.</p>'; }
+      } catch(e) { reportClientError('calendar-guests-load',e); list.innerHTML = '<p class="empty-hint" style="padding:10px">Gäste konnten nicht geladen werden.</p>'; }
     }
 
     function renderFileList(files){
@@ -895,12 +1115,12 @@
         const st=await fileToStored(file);
         if(!st){ alert(`„${file.name}" ist zu groß für den Gratis-Speicher (max ~0,9 MB; Bilder werden automatisch verkleinert). Für große Dateien nutze den Link-Tab.`); continue; }
         try{ const r=await saveAttachment(parentId,scope,st); curFiles.push({id:r.id,...st}); }
-        catch(e){ console.warn(e); alert('Datei speichern fehlgeschlagen.'); }
+        catch(e){ reportClientError('attachment-save',e); alert('Datei speichern fehlgeschlagen.'); }
       }
       if(prog)prog.style.display='none';
     }
     async function removeFile(id, curFiles, rebind){ if(!id)return; if(!confirm('Datei löschen?'))return;
-      try{ await delAttachment(id); }catch(e){console.warn(e);} const i=curFiles.findIndex(f=>f.id===id); if(i>=0)curFiles.splice(i,1); rebind(); }
+      try{ await delAttachment(id); }catch(e){reportClientError('attachment-delete',e);} const i=curFiles.findIndex(f=>f.id===id); if(i>=0)curFiles.splice(i,1); rebind(); }
 
     /* ── Special day form ── */
     function buildSwatches(){ $('dSwatch').innerHTML=COLORS.map(c=>`<span class="swatch" data-c="${c}" style="background:${c}"></span>`).join('');
@@ -939,7 +1159,7 @@
         else { data.createdAt=serverTimestamp(); const r=await addDoc(collection(db,'calendarDays'),data); id=r.id; }
         if(pendingDayFiles.length){ const tmp=[]; await uploadFiles(id,'day',pendingDayFiles,tmp); }
         await reload(); closeDayForm();
-      }catch(e){console.warn(e);alert('Speichern fehlgeschlagen.');}
+      }catch(e){reportClientError('calendar-day-save',e);alert('Speichern fehlgeschlagen.');}
       $('dayFormSave').disabled=false;
     };
     $('dayFormDelete').onclick = async () => { if(!editDayId)return; if(!confirm('Tag löschen?'))return;
@@ -950,6 +1170,42 @@
     $('dHtmlFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{dayUploadHtml=String(r.result||'');$('dHtmlChosen').textContent='✓ '+f.name;$('dHtmlChosen').style.display='';}; r.readAsText(f); };
     document.querySelectorAll('#dayForm .tab').forEach(t=>t.onclick=()=>setDayPane(t.dataset.pane));
     $('dDrop').onclick=()=>$('dHtmlFile').click();
+
+    /* ── Reminder form ── */
+    $('reminderSave').onclick = async () => {
+      const title = $('rTitle').value.trim();
+      const date = $('rDate').value;
+      if (!title) { alert('Bitte einen Titel eingeben.'); return; }
+      if (!date) { alert('Bitte ein Datum wählen.'); return; }
+      const existing = reminders.find(item => item.id === editReminderId);
+      const data = {
+        title,
+        date,
+        time: $('rTime').value,
+        notes: $('rNotes').value.trim(),
+        completed: existing?.completed === true,
+        updatedAt: serverTimestamp()
+      };
+      $('reminderSave').disabled = true;
+      try {
+        if (editReminderId) await updateDoc(doc(reminderCollection(), editReminderId), data);
+        else await addDoc(reminderCollection(), { ...data, createdAt:serverTimestamp() });
+        closeReminderForm();
+      } catch {
+        alert('Erinnerung konnte nicht gespeichert werden.');
+      } finally {
+        $('reminderSave').disabled = false;
+      }
+    };
+    $('reminderDelete').onclick = async () => {
+      if (!editReminderId || !confirm('Diese Erinnerung löschen?')) return;
+      try {
+        await deleteDoc(doc(reminderCollection(), editReminderId));
+        closeReminderForm();
+      } catch {
+        alert('Erinnerung konnte nicht gelöscht werden.');
+      }
+    };
 
     /* Auto-import lives in ../assets/js/itinerary.js — it used to be
        copied into this page and into a second, unreachable planner
@@ -983,13 +1239,87 @@
       $('viewer').classList.add('visible'); }
     function closeViewer(){ $('viewer').classList.remove('visible'); const f=$('viewerFrame'); f.removeAttribute('src'); f.removeAttribute('srcdoc'); clearViewerBlob(); }
 
-    /* ── ICS ── */
-    function icsEvent(tr){ const s=(tr.startDate||'').replace(/-/g,'');
-      const end=(tr.endDate||tr.startDate)?(()=>{const d=new Date(tr.endDate||tr.startDate);d.setDate(d.getDate()+1);return keyOf(d.getFullYear(),d.getMonth(),d.getDate()).replace(/-/g,'');})():s;
-      return ['BEGIN:VEVENT',`UID:${tr.id}@tvza`,`SUMMARY:${(tr.name||'Termin').replace(/[,;]/g,' ')}`,s?`DTSTART;VALUE=DATE:${s}`:'',s?`DTEND;VALUE=DATE:${end}`:'',tr.destination?`LOCATION:${tr.destination.replace(/[,;]/g,' ')}`:'','END:VEVENT'].filter(Boolean).join('\r\n'); }
-    function downloadIcs(list,fname){ const body=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//TVZA//Planer//DE',...list.filter(t=>t.startDate).map(icsEvent),'END:VCALENDAR'].join('\r\n');
-      const blob=new Blob([body],{type:'text/calendar'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname.replace(/[^a-z0-9_-]/gi,'_')+'.ics'; a.click(); }
-    function exportAllIcs(){ downloadIcs(trips,(group?.name||'planer')+'_reisen'); }
+    /* ── Provider-neutral calendar interchange (ICS) ── */
+    function exportAllIcs() {
+      const events = [
+        ...trips.map(item => ({
+          ...item,
+          title:item.name,
+          location:item.destination
+        })),
+        ...days.map(item => ({
+          ...item,
+          startDate:item.date,
+          description:item.notes
+        }))
+      ];
+      const body = buildCalendarIcs({
+        events,
+        reminders,
+        calendarName:group?.name ? `${group.name} · TVZA` : 'TVZA'
+      });
+      const blob = new Blob([body], { type:'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'tvza-kalender.ics';
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      $('calendarSyncStatus').textContent = 'TVZA-Kalender wurde exportiert.';
+    }
+    async function importCalendarFile(file) {
+      const status = $('calendarSyncStatus');
+      status.textContent = 'Kalender wird importiert…';
+      try {
+        const parsed = parseCalendarIcs(await file.text());
+        if (!parsed.events.length && !parsed.reminders.length) {
+          status.textContent = 'In dieser Datei wurden keine Termine oder Erinnerungen gefunden.';
+          return;
+        }
+        const knownEvents = new Map(days.filter(item => item.externalUid).map(item => [item.externalUid, item]));
+        const knownReminders = new Map(reminders.filter(item => item.externalUid).map(item => [item.externalUid, item]));
+        for (const event of parsed.events) {
+          const data = {
+            ownerUid:user.uid,
+            title:event.title,
+            date:event.startDate,
+            endDate:event.endDate,
+            startTime:event.startTime,
+            endTime:event.endTime,
+            location:event.location,
+            notes:event.description,
+            color:COLORS[0],
+            source:'ics',
+            externalUid:event.uid || '',
+            updatedAt:serverTimestamp()
+          };
+          const existing = event.uid ? knownEvents.get(event.uid) : null;
+          if (existing) await updateDoc(doc(db, 'calendarDays', existing.id), data);
+          else await addDoc(collection(db, 'calendarDays'), { ...data, createdAt:serverTimestamp() });
+        }
+        for (const reminder of parsed.reminders) {
+          const data = {
+            title:reminder.title,
+            date:reminder.date,
+            time:reminder.time,
+            notes:reminder.notes,
+            completed:reminder.completed,
+            source:'ics',
+            externalUid:reminder.uid || '',
+            updatedAt:serverTimestamp()
+          };
+          const existing = reminder.uid ? knownReminders.get(reminder.uid) : null;
+          if (existing) await updateDoc(doc(reminderCollection(), existing.id), data);
+          else await addDoc(reminderCollection(), { ...data, createdAt:serverTimestamp() });
+        }
+        await reload();
+        status.textContent = `${parsed.events.length} Termine und ${parsed.reminders.length} Erinnerungen importiert.`;
+      } catch {
+        status.textContent = 'Die Kalenderdatei konnte nicht gelesen werden.';
+      } finally {
+        $('calendarImportFile').value = '';
+      }
+    }
 
     /* ── View toggle + wiring ── */
     function setView(v){ curView=v; $('segCal').classList.toggle('active',v==='cal'); $('segList').classList.toggle('active',v==='list');
@@ -1006,10 +1336,17 @@
       $('calAddBtn').onclick=()=>{ sheetKey=todayKey; openTripForm(null); };
       $('addTripBtn').onclick=()=>{ sheetKey=null; openTripForm(null); };
       $('daySheetAdd').onclick=()=>{ closeDay(); openTripForm(null); };
+      $('daySheetReminder').onclick=()=>{ const date=sheetKey; closeDay(); openReminderForm(null,date); };
+      $('addReminderBtn').onclick=()=>openReminderForm();
+      $('calendarImportBtn').onclick=()=>$('calendarImportFile').click();
+      $('calendarImportFile').onchange=e=>{ const file=e.target.files?.[0]; if(file)importCalendarFile(file); };
+      $('calendarExportBtn').onclick=exportAllIcs;
       $('dayBackdrop').onclick=closeDay; $('tripBackdrop').onclick=closeTripForm; $('tripFormClose').onclick=closeTripForm;
+      $('reminderBackdrop').onclick=closeReminderForm; $('reminderFormClose').onclick=closeReminderForm;
       $('dayFormBackdrop').onclick=closeDayForm; $('dayFormClose').onclick=closeDayForm; $('viewerClose').onclick=closeViewer;
       document.addEventListener('keydown',e=>{ if(e.key!=='Escape')return;
         if($('viewer').classList.contains('visible'))closeViewer();
+        else if($('reminderSheet').classList.contains('visible'))closeReminderForm();
         else if($('dayForm').classList.contains('visible'))closeDayForm();
         else if($('tripSheet').classList.contains('visible'))closeTripForm();
         else if($('daySheet').classList.contains('visible'))closeDay(); });
@@ -1018,6 +1355,7 @@
       // sheet/viewer/trip detail is open, instead of jumping straight home.
       $('backBtn').addEventListener('click', e => {
         if ($('viewer').classList.contains('visible')) { e.preventDefault(); closeViewer(); return; }
+        if ($('reminderSheet').classList.contains('visible')) { e.preventDefault(); closeReminderForm(); return; }
         if ($('dayForm').classList.contains('visible')) { e.preventDefault(); closeDayForm(); return; }
         if ($('tripSheet').classList.contains('visible')) { e.preventDefault(); closeTripForm(); return; }
         if ($('daySheet').classList.contains('visible')) { e.preventDefault(); closeDay(); return; }

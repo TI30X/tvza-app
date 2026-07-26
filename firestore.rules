@@ -118,6 +118,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /users/{uid}/reminders/{reminderId} {
+      allow read, create, update, delete: if isMember()
+                                           && request.auth.uid == uid;
+    }
+
     // ── Guests ───────────────────────────────────────────────────
     match /guestProfiles/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isMember());
@@ -348,7 +353,15 @@ service cloud.firestore {
 
     match /families/{id}     { allow read, write: if isMember(); }
     match /activities/{id}   { allow read, write: if isMember(); }
-    match /calendarDays/{id} { allow read, write: if isMember(); }
+    match /calendarDays/{id} {
+      allow create: if isMember()
+                    && request.resource.data.ownerUid == request.auth.uid;
+      allow read, delete: if isMember()
+                          && resource.data.ownerUid == request.auth.uid;
+      allow update: if isMember()
+                    && resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.ownerUid == request.auth.uid;
+    }
     match /attachments/{id}  { allow read, write: if isMember(); }
 
     match /trips/{tripId} {

@@ -348,7 +348,7 @@
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml, resolveAccess, getFinnhubKey } from '../assets/js/firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, resolveAccess, getFinnhubKey, reportClientError } from '../assets/js/firebase-config.js';
     import {
       collection, addDoc, deleteDoc, doc, getDoc, setDoc, onSnapshot, query, orderBy, Timestamp
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -534,7 +534,7 @@
       const sig = allItems.map(i => i.type + ':' + i.symbol).sort().join('|');
       if (sig !== newsSig) { newsSig = sig; loadNews(); }
     }, err => {
-      console.warn(err);
+      reportClientError('watchlist-load', err);
       document.getElementById('listWrap').innerHTML =
         `<div class="empty-state"><p class="empty-text">Konnte Watchlist nicht laden.</p></div>`;
     });
@@ -565,7 +565,7 @@
         if (addType === 'crypto')   results = await searchCrypto(q);
         else if (addType === 'fx')  results = searchFx(q);
         else                        results = await searchSymbols(q);
-      } catch (e) { console.warn(e); }
+      } catch (e) { reportClientError('watchlist-search', e); }
       if (seq !== searchSeq) return;
       acResults = results;
       renderAc(results);
@@ -629,11 +629,11 @@
       symInput.value = ''; hideAc();
       if (dup) return;
       try { await addDoc(itemsCol, { ...entry, createdAt: Timestamp.now() }); }
-      catch (e) { console.warn(e); alert('Konnte nicht hinzufügen — bitte erneut versuchen.'); }
+      catch (e) { reportClientError('watchlist-add', e); alert('Konnte nicht hinzufügen — bitte erneut versuchen.'); }
     }
 
     function removeItem(id) {
-      if (confirm('Aus der Watchlist entfernen?')) deleteDoc(doc(itemsCol, id)).catch(console.warn);
+      if (confirm('Aus der Watchlist entfernen?')) deleteDoc(doc(itemsCol, id)).catch(error => reportClientError('watchlist-remove', error));
     }
 
     /* ════ Quotes ════ */
@@ -654,7 +654,7 @@
         renderCounts();
         renderList();
         checkAlerts();
-      } catch (e) { console.warn(e); }
+      } catch (e) { reportClientError('watchlist-refresh', e); }
       finally { setTimeout(() => btn.classList.remove('spin'), 500); }
     }
 
@@ -670,7 +670,7 @@
           const d = byId[i.coinId]; if (!d) return;
           quotes.set(i.id, { price:d.current_price, dp:d.price_change_percentage_24h, cur:'$', src:'CoinGecko', img:d.image });
         });
-      } catch (e) { console.warn(e); }
+      } catch (e) { reportClientError('watchlist-crypto', e); }
     }
 
     async function fetchStocks(items) {
@@ -857,7 +857,7 @@
             <div class="news-grid">${list.map(newsTileHtml).join('')}</div>
           </section>`).join('') + `</div>`;
       } catch (e) {
-        console.warn(e);
+        reportClientError('watchlist-news', e);
         wrap.innerHTML = `<p style="color:var(--ink-soft);font-size:13px">News konnten nicht geladen werden.</p>`;
       }
     }

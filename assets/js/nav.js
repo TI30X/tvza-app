@@ -20,10 +20,10 @@
    that page.
    ══════════════════════════════════════════════════════════════════ */
 
-import { auth, db, MODULES, enabledModules, getProfile } from './firebase-config.js';
+import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from './shell.js';
+import { ICONS, icon, areaModuleKeys } from './shell.js';
 
 const BEREICH_OF = {
   ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
@@ -43,7 +43,6 @@ const TABS = [
    weitergereicht, damit index.html und bereiche.html sie wie bisher
    von nav.js beziehen können. */
 export { ownsTab } from './shell.js';
-import { ownsTab } from './shell.js';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');
@@ -72,6 +71,7 @@ function mount(profile) {
 
   const tabs = TABS.map(t => `
     <a class="nav__item${t.id === active ? ' is-active' : ''}" href="${b}${t.href}"
+       data-nav-tab="${t.id}"
        ${t.id === active ? 'aria-current="page"' : ''}>
       ${icon(t.icon, 21)}
       <span>${t.label}</span>
@@ -83,11 +83,10 @@ function mount(profile) {
   /* On a laptop the Bereiche are listed open beneath the tabs, so a
      Bereich is one click instead of two. On a phone they are not
      rendered — that is what the Bereiche tab is for. */
-  const mods = profile ? enabledModules(profile) : {};
-  const bereiche = Object.keys(MODULES)
-    .filter(k => mods[k] && MODULES[k].page && !ownsTab(k))
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  const bereiche = areaModuleKeys(profile)
     .map(k => `
-      <a class="nav__bereich" href="${b}${MODULES[k].page}" data-bereich="${BEREICH_OF[k] || ''}">
+      <a class="nav__bereich${MODULES[k].page.split('/').pop() === currentFile ? ' is-active' : ''}" href="${b}${MODULES[k].page}" data-bereich="${BEREICH_OF[k] || ''}">
         <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i><span>${esc(MODULES[k].name)}</span>
       </a>`).join('');
 

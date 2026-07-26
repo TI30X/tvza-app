@@ -9,7 +9,7 @@
  * Mounts a bell into the page header (or floats it if there's no header),
  * is fully self-styled, and tracks read-state per device in localStorage.
  */
-import { auth, db, MODULES, escHtml, sharesForEmail, getFinnhubKey } from './firebase-config.js';
+import { auth, db, MODULES, escHtml, sharesForEmail, getFinnhubKey, reportClientError } from './firebase-config.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 (() => {
@@ -99,7 +99,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
           href: m.page ? BASE + m.page + '?owner=' + encodeURIComponent(s.ownerUid) : BASE + 'index.html'
         });
       });
-    } catch(e){ console.warn('[notif] shares', e); }
+    } catch(e){ reportClientError('notif-shares', e); }
     return out;
   }
 
@@ -118,7 +118,30 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
           body: 'Tippe, um deine Mahlzeiten nachzutragen.',
           href: BASE + 'pages/foodtracker.html' });
       }
-    } catch(e){ console.warn('[notif] food', e); }
+    } catch(e){ reportClientError('notif-food', e); }
+    return out;
+  }
+
+  async function buildReminders(user){
+    const out = [];
+    try {
+      const today = dstr(new Date());
+      const tomorrow = dstr(new Date(Date.now() + 86400000));
+      const qs = await getDocs(collection(db, 'users', user.uid, 'reminders'));
+      qs.forEach(snapshot => {
+        const item = snapshot.data();
+        if (item.completed || !item.date || item.date > tomorrow) return;
+        const due = new Date(`${item.date}T${item.time || '09:00'}:00`);
+        out.push({
+          id: 'reminder-' + snapshot.id + '-' + item.date,
+          ts: Number.isNaN(due.getTime()) ? Date.now() : due.getTime(),
+          icon: '⏰',
+          title: escHtml(item.title || 'Erinnerung'),
+          body: item.date < today ? 'Überfällig' : item.date === today ? 'Heute fällig' : 'Morgen fällig',
+          href: BASE + 'pages/planner.html#reminders'
+        });
+      });
+    } catch(e){ reportClientError('notif-reminders', e); }
     return out;
   }
 
@@ -143,7 +166,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
           body: days <= 7 ? 'Endspurt – die Abgabe steht kurz bevor.' : 'Behalte den Zeitplan im Blick.',
           href: BASE + 'pages/maturaarbeit-tracker.html' });
       }
-    } catch(e){ console.warn('[notif] matura', e); }
+    } catch(e){ reportClientError('notif-matura', e); }
     return out;
   }
 
@@ -182,7 +205,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
           cryptos.forEach(i => { const d = by[i.coinId]; if (!d) return; const dp = d.price_change_percentage_24h;
             if (dp != null && Math.abs(dp) >= thr) items.push(moverNote(i.symbol, dp, d.current_price, '$', today)); });
         }
-      } catch(e){ console.warn('[notif] crypto', e); }
+      } catch(e){ reportClientError('notif-crypto', e); }
     }
 
     const key = (localStorage.getItem('tvza-finnhub-key') || '').trim() || await getFinnhubKey();
@@ -201,7 +224,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
   }
 
   async function buildAll(user){
-    const groups = await Promise.all([ buildShares(user), buildFood(user), buildMovers(user) ]);
+    const groups = await Promise.all([ buildShares(user), buildFood(user), buildMovers(user), buildReminders(user) ]);
     const out = [].concat(...groups, buildMatura(user));
     out.sort((a, b) => b.ts - a.ts);
     return out;
@@ -258,7 +281,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
       try {
         notifs = await buildAll(user);
         updateBadge(bell, notifs.filter(n => !getRead().has(n.id)).length);
-      } catch(e){ console.warn('[notif] refresh', e); }
+      } catch(e){ reportClientError('notif-refresh', e); }
     }
     await refresh();
 
@@ -274,7 +297,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
       panel.innerHTML = `
         <div class="tvzn-head"><h3>Benachrichtigungen</h3><button class="tvzn-x" title="Schliessen">&times;</button></div>
         <div class="tvzn-list"></div>
-        <div class="tvzn-foot">Aktien-Bewegungen, Food-Erinnerung, Maturaarbeit &amp; Freigaben</div>`;
+        <div class="tvzn-foot">Erinnerungen, Termine, Märkte, Food, Maturaarbeit &amp; Freigaben</div>`;
       const read = getRead();
       render(panel, notifs, read);
       panel.querySelector('.tvzn-x').addEventListener('click', close);
@@ -300,7 +323,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
     auth.onAuthStateChanged(user => {
       if (done || !user) return;
       done = true;
-      init(user).catch(e => console.warn('[notif] init', e));
+      init(user).catch(e => reportClientError('notif-init', e));
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

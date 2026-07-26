@@ -5,7 +5,10 @@ Nothing in here ships as part of the app — no page links to it.
 | Datei | Zweck |
 | --- | --- |
 | `bausatz.html` | Style guide. Every component from §4/§5 of the handoff on one page, in both modes. Open it in a browser to compare against `TVZA Redesign.dc.html`. |
+| `calendar-interop.test.mjs` | Prüft ICS-Import und -Export für Termine und Erinnerungen. |
 | `dashboard.test.mjs` | Prüft den Vierer-Schnellzugriff, dessen Ausschlüsse und die Initialisierungsreihenfolge. |
+| `html-module-syntax.test.mjs` | Prüft die eingebetteten JavaScript-Module der geänderten HTML-Seiten. |
+| `navigation.test.mjs` | Prüft die gemeinsame Bereiche-/Sidebar-Reihenfolge und die Desktop-Navigation. |
 | `itinerary.test.mjs` | Tests for `assets/js/itinerary.js`. |
 
 ## Tests laufen lassen
@@ -32,6 +35,24 @@ Der Dashboard-Regressionstest läuft ebenfalls ohne Installation:
 
 ```bash
 node --test dashboard.test.mjs
+```
+
+Der Kalender-Abgleich läuft ebenfalls ohne Installation:
+
+```bash
+node --test calendar-interop.test.mjs
+```
+
+Die Navigation läuft ebenfalls ohne Installation:
+
+```bash
+node --test navigation.test.mjs
+```
+
+Die eingebetteten Module werden mit Nodes VM-Prüfung getestet:
+
+```bash
+node --experimental-vm-modules --test html-module-syntax.test.mjs
 ```
 
 Sie verhindern versehentliches Wiederöffnen der Registrierung, globale

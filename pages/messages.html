@@ -156,7 +156,7 @@
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml, getProfile } from '../assets/js/firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError } from '../assets/js/firebase-config.js';
     import {
       collection, doc, addDoc, setDoc, updateDoc, getDocs, onSnapshot,
       query, orderBy, where, serverTimestamp, increment
@@ -196,7 +196,7 @@
         .sort((a, b) => (toDate(b.lastAt)?.getTime() || 0) - (toDate(a.lastAt)?.getTime() || 0));
       renderConvList();
     }, err => {
-      console.warn(err);
+      reportClientError('messages-conversations-load', err);
       $('convList').innerHTML = `<div class="dm-empty">Unterhaltungen konnten nicht geladen werden.</div>`;
     });
 
@@ -291,7 +291,7 @@
         // keep marking read while the thread is open
         if (!document.hidden) updateDoc(doc(db, 'dms', cid), { ['unread.' + me]: 0 }).catch(() => {});
       }, err => {
-        console.warn(err);
+        reportClientError('messages-thread-load', err);
         $('msgs').innerHTML = `<div class="dm-empty">Nachrichten konnten nicht geladen werden.</div>`;
       });
 
@@ -421,7 +421,7 @@
         }, { merge: true });
         await addDoc(collection(convRef, 'messages'), { text, sender: me, createdAt: serverTimestamp() });
       } catch (e) {
-        console.warn(e);
+        reportClientError('message-send', e);
         alert('Nachricht konnte nicht gesendet werden.');
         input.value = text; autoSize();
       } finally {
@@ -442,7 +442,7 @@
         allUsers = qs.docs.map(d => ({ uid: d.id, ...d.data() }))
           .filter(u => u.uid !== me)
           .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
-      } catch (e) { console.warn(e); allUsers = []; }
+      } catch (e) { reportClientError('messages-users-load', e); allUsers = []; }
       return allUsers;
     }
     function renderUsers(filter = '') {

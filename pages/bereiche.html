@@ -58,8 +58,7 @@
       MODULES, enabledModules, getProfile, sharesForEmail
     } from '../assets/js/firebase-config.js';
     import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { mountShell, icon, ICONS } from '../assets/js/shell.js';
-    import { ownsTab } from '../assets/js/nav.js';
+    import { mountShell, icon, ICONS, areaModuleKeys } from '../assets/js/shell.js';
 
     const $ = id => document.getElementById(id);
 
@@ -100,21 +99,10 @@
         onSettings: () => { location.href = '../index.html#settings'; },
       });
 
-      /* ── Meine Bereiche ─────────────────────────────────────────
-         Order follows tvza.trackerTileOrder, the key the app already
-         uses, so nobody has to set anything up again (§7). The key is
-         read but never written here. */
-      const stored = (() => {
-        try { return JSON.parse(localStorage.getItem(`tvza.trackerTileOrder.${user.uid}`) || '[]'); }
-        catch { return []; }
-      })();
-      /* Kalender und Nachrichten haben einen eigenen Tab und stehen
-         darum nicht noch einmal hier (§6.4). */
-      const keys = Object.keys(MODULES).filter(k => mods[k] && MODULES[k].page && !ownsTab(k));
-      keys.sort((a, b) => {
-        const ia = stored.indexOf(a), ib = stored.indexOf(b);
-        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
-      });
+      /* Genau dieselbe Quelle und Reihenfolge wie die Desktop-Seitenleiste.
+         Kalender und Nachrichten besitzen eigene Tabs und werden daher
+         nicht als Bereich dupliziert. */
+      const keys = areaModuleKeys(profile);
 
       $('listMine').innerHTML = keys.length
         ? keys.map(k => row({

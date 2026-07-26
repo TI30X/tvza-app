@@ -1829,6 +1829,7 @@ body.reorder-editing .module-tile::after {
     font-size: 14px; font-weight: 700;
   }
   .nav__item.is-active { background: var(--accent-bg); color: var(--accent); }
+  .nav__item[data-nav-tab="bereiche"] { display: none; }
   .nav__dot   { display: none; }
   .nav__count {
     display: inline-flex; align-items: center; justify-content: center;
@@ -1845,6 +1846,7 @@ body.reorder-editing .module-tile::after {
     font-size: 13px; font-weight: 700; color: var(--ink);
   }
   .nav__bereich:hover { background: var(--surface-2); }
+  .nav__bereich.is-active { background: var(--accent-bg); color: var(--accent); }
   .nav__bereich i {
     width: 26px; height: 26px; flex: none;
     display: inline-flex; align-items: center; justify-content: center;

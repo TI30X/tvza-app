@@ -108,6 +108,11 @@ const TABS = [
    nicht auseinanderlaufen. */
 const TAB_HREFS = new Set(TABS.map(t => t.href));
 export const ownsTab = key => TAB_HREFS.has(MODULES[key]?.page);
+export function areaModuleKeys(profile) {
+  const mods = profile ? enabledModules(profile) : {};
+  return Object.keys(MODULES)
+    .filter(key => mods[key] && MODULES[key].page && !ownsTab(key));
+}
 
 /* Pages sit either at the root or in /pages/, so links need a prefix. */
 function base() {
@@ -184,6 +189,7 @@ export function mountShell(o = {}) {
 
   const tabs = TABS.map(t => `
     <a class="nav__item${t.id === active ? ' is-active' : ''}" href="${b}${t.href}"
+       data-nav-tab="${t.id}"
        ${t.id === active ? 'aria-current="page"' : ''}>
       ${icon(t.icon, 21)}
       <span>${t.label}</span>
@@ -193,12 +199,12 @@ export function mountShell(o = {}) {
   /* On a laptop the Bereiche are listed open under the tabs, so
      reaching one is a single click. On a phone they are not rendered
      at all — the Bereiche tab is the way there. */
-  const mods = o.profile ? enabledModules(o.profile) : {};
-  const bereiche = Object.keys(MODULES)
-    .filter(k => mods[k] && MODULES[k].page && !ownsTab(k))
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  const bereiche = areaModuleKeys(o.profile)
     .map(k => {
       const m = MODULES[k];
-      return `<a class="nav__bereich" href="${b}${m.page}" data-bereich="${BEREICH_OF[k] || ''}">
+      const moduleFile = m.page.split('/').pop();
+      return `<a class="nav__bereich${moduleFile === currentFile ? ' is-active' : ''}" href="${b}${m.page}" data-bereich="${BEREICH_OF[k] || ''}">
                 <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i><span>${esc(m.name)}</span>
               </a>`;
     }).join('');

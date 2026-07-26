@@ -237,7 +237,7 @@
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail } from '../assets/js/firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail, reportClientError } from '../assets/js/firebase-config.js';
     import { searchFoods, findFood, registerFoods, defaultServing } from '../assets/js/foods.js';
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
@@ -584,7 +584,7 @@
       try {
         const qs = await getDocs(collection(db, 'customFoods'));
         registerFoods(qs.docs.map(d => d.data()));
-      } catch (e) { console.warn('customFoods', e); }
+      } catch (e) { reportClientError('custom-foods-load', e); }
     }
     loadCustomFoods();
 
@@ -785,7 +785,7 @@
           packGrams: parseAmount(p.quantity),
           servingGrams: parseAmount(p.serving_size),
         };
-      } catch (e) { console.warn('OFF', e); return null; }
+      } catch (e) { reportClientError('food-search', e); return null; }
     }
     const num = v => (v == null || v === '' || isNaN(+v)) ? null : +v;
     function parseAmount(str) {       // "500 g" / "1 kg" / "250ml" → Gramm
