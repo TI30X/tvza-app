@@ -1650,6 +1650,19 @@
       </div>`;
     }
 
+    function focusAgendaOnToday(box) {
+      if (!agendaShouldFocusToday || !isMobileCalendar()) return;
+      const target = box.querySelector('[data-agenda-focus]');
+      if (!target) return;
+      agendaShouldFocusToday = false;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const scroller = $('listView');
+        if (!target.isConnected || !scroller) return;
+        const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
+        scroller.scrollTo({ top:Math.max(0,top), behavior:'auto' });
+      }));
+    }
+
     function renderAgenda() {
       const map = dayProgramMap();
       /* Keep earlier entries in the DOM so they remain available by
@@ -1661,9 +1674,10 @@
       const scrollTail = '<div class="agenda-scroll-tail" aria-hidden="true"></div>';
       if(!keys.length){
         const todayMarker = containsToday
-          ? `<div class="agenda-today-marker" data-agenda-focus><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine Einträge</small></div>`
+          ? `<div class="agenda-today-anchor" data-agenda-focus aria-hidden="true"></div><div class="agenda-today-marker"><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine Einträge</small></div>`
           : '';
         box.innerHTML=`${todayMarker}<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>${scrollTail}`;
+        focusAgendaOnToday(box);
         return;
       }
       const focusKey = keys.find(key=>key>=todayKey) || '';
@@ -1699,14 +1713,14 @@
         }).join('');
         const isFocus = k===focusKey;
         const marker = isFocus && containsToday
-          ? `<div class="agenda-today-marker" data-agenda-focus><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span>${k>todayKey?'<small>Keine Einträge</small>':''}</div>`
+          ? `<div class="agenda-today-anchor" data-agenda-focus aria-hidden="true"></div><div class="agenda-today-marker"><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span>${k>todayKey?'<small>Keine Einträge</small>':''}</div>`
           : '';
         const dateLabel = k===todayKey ? '' : `<div class="agenda-date">${fmtDateKey(k)}</div>`;
         return `${marker}<div class="agenda-group${k<todayKey?' is-past':''}">
           ${dateLabel}${items}</div>`;
       }).join('');
       const endMarker = !focusKey && containsToday
-        ? `<div class="agenda-today-marker" data-agenda-focus><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine weiteren Einträge</small></div>`
+        ? `<div class="agenda-today-anchor" data-agenda-focus aria-hidden="true"></div><div class="agenda-today-marker"><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine weiteren Einträge</small></div>`
         : '';
       box.innerHTML = groupsHtml + endMarker + scrollTail;
       box.querySelectorAll('[data-full-k]').forEach(b=>b.onclick=(ev)=>{
@@ -1735,17 +1749,7 @@
         const [y,m,d]=c.dataset.k.split('-').map(Number);
         openDay(c.dataset.k, y, m-1, d);
       });
-      if (agendaShouldFocusToday && isMobileCalendar()) {
-        const target = box.querySelector('[data-agenda-focus]');
-        if (target) {
-          agendaShouldFocusToday = false;
-          requestAnimationFrame(() => {
-            const scroller = $('listView');
-            const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
-            scroller.scrollTo({ top:Math.max(0,top), behavior:'auto' });
-          });
-        }
-      }
+      focusAgendaOnToday(box);
     }
 
     /* ── Day sheet ── */

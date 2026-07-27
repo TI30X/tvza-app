@@ -111,7 +111,7 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /id="reminderHubList"/);
   assert.match(planner, /id="reminderHubList"[\s\S]*id="reminderHubAdd"/);
   assert.match(planner, /document\.body\.dataset\.calendarView = curView/);
-  assert.match(planner, /agenda-today-marker" data-agenda-focus><strong>Heute<\/strong>/);
+  assert.match(planner, /agenda-today-anchor" data-agenda-focus[\s\S]*agenda-today-marker"><strong>Heute<\/strong>/);
   assert.match(planner, /\$\('calendarBelow'\)\.style\.display='none'/);
   assert.match(css, /\.mobile-reminder-button \{[\s\S]*display:none/);
   assert.match(css, /#calendarBelow \{ display:none; \}/);
@@ -137,6 +137,10 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /function reminderListHtml\(\) \{\s*const visible = reminders;/);
   assert.match(planner, /item\.completed = completed;\s*renderReminders\(\);/);
   assert.match(planner, /agenda-completed-badge/);
+  assert.match(planner, /function focusAgendaOnToday\(box\)/);
+  assert.match(planner, /class="agenda-today-anchor" data-agenda-focus/);
+  assert.doesNotMatch(planner, /class="agenda-today-marker" data-agenda-focus/);
+  assert.match(css, /\.agenda-today-anchor \{[\s\S]*height:0/);
   assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
