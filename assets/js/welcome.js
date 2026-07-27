@@ -79,8 +79,7 @@
   #tvza-welcome .tvza-hint{
     position:absolute; bottom:max(26px,env(safe-area-inset-bottom)); left:0; right:0;
     text-align:center; font-family:'Hanken Grotesk',system-ui,sans-serif;
-    font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.3); opacity:0;
-    animation:tvzaFade 1s ease 1.5s forwards;
+    font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.46); opacity:1;
   }
   @keyframes tvzaReveal{ to{ opacity:1; transform:translateY(0) scale(1); filter:blur(0); } }
   @keyframes tvzaUp{ to{ opacity:1; transform:translateY(0); } }

@@ -1206,6 +1206,11 @@ html.settings-embed #settingsModal .modal { max-height: 100dvh; }
    anklicken, obwohl er nichts mit ihnen zu tun hat. */
 body:has(.modal-backdrop.visible) .reorder-fab,
 body:has(.modal-backdrop.show) .reorder-fab { display: none; }
+/* Anordnen gehört ausschliesslich zur Startseite. Bei der dauerhaften
+   App-Hülle bleibt deren DOM im Hintergrund bestehen; ohne diese Regel
+   würde der Knopf über jedem geladenen Bereich schweben. */
+body:has(.tvza-route-frame) .reorder-fab,
+body:has(.tvza-route-frame) .reorder-hint { display: none; }
 .reorder-fab:hover { background: var(--accent-hover); }
 .reorder-fab:active { transform: scale(0.97); }
 body.reorder-editing .reorder-fab {

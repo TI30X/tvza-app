@@ -103,3 +103,21 @@ test('embedded settings can share Firestore and shared rows keep icon plus perso
   assert.match(css, /\.avatar\.avatar--ink/);
   assert.match(css, /\.shared-identity__person/);
 });
+
+test('splash skip hints are immediate and arranging stays on Start', async () => {
+  const [watchlist, weather, welcome, css] = await Promise.all([
+    read('pages/watchlist.html'),
+    read('pages/weather.html'),
+    read('assets/js/welcome.js'),
+    read('assets/css/style.css'),
+  ]);
+
+  assert.doesNotMatch(watchlist, /class="hint">Tippen zum Überspringen/);
+  assert.doesNotMatch(weather, /class="hint">Tippen zum Überspringen/);
+  assert.match(watchlist, /class="skip-hint">Tippen zum Überspringen/);
+  assert.match(weather, /class="skip-hint">Tippen zum Überspringen/);
+  assert.match(watchlist, /#wl-splash \.skip-hint[\s\S]*opacity:1/);
+  assert.match(weather, /#wx-splash \.skip-hint[\s\S]*opacity:1/);
+  assert.match(welcome, /#tvza-welcome \.tvza-hint[\s\S]*opacity:1/);
+  assert.match(css, /body:has\(\.tvza-route-frame\) \.reorder-fab,[\s\S]*\.reorder-hint\s*\{\s*display:\s*none/);
+});

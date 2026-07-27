@@ -141,8 +141,9 @@
       opacity:0; transform:translateY(14px) scale(.97); filter:blur(6px); animation:wxReveal .8s cubic-bezier(.22,.61,.36,1) .35s forwards; }
     #wx-splash .sub{ margin-top:11px; font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:clamp(11px,2.6vw,13px);
       letter-spacing:.3em; text-transform:uppercase; color:rgba(255,255,255,.72); opacity:0; animation:wxFade .8s ease .8s forwards; min-height:14px; }
-    #wx-splash .hint{ position:absolute; bottom:max(26px,env(safe-area-inset-bottom)); left:0; right:0; text-align:center;
-      font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.34); opacity:0; animation:wxFade 1s ease 1.7s forwards; }
+    #wx-splash .skip-hint{ position:absolute; bottom:max(26px,env(safe-area-inset-bottom)); left:0; right:0;
+      display:block; width:auto; margin:0; padding:0; text-align:center; background:none; border:0; border-radius:0;
+      font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.5); opacity:1; }
     /* splash scene primitives */
     #wx-splash .s-sun{ fill:#ffe08a; transform-origin:120px 86px; animation:wxSunIn 1s cubic-bezier(.2,.8,.3,1.2) .1s both; }
     #wx-splash.theme-clear-night .s-sun{ display:none; }
@@ -175,7 +176,7 @@
     @keyframes wxFade{ to{ opacity:1; } }
     @media (prefers-reduced-motion: reduce){
       #wx-splash .s-sun,#wx-splash .s-moon,#wx-splash .s-ray,#wx-splash .s-cloud,#wx-splash .s-drop,#wx-splash .s-flake,#wx-splash .s-bolt,#wx-splash .s-fog,
-      #wx-splash .mark,#wx-splash .sub,#wx-splash .hint{ animation:none!important; opacity:1!important; transform:none!important; filter:none!important; }
+      #wx-splash .mark,#wx-splash .sub{ animation:none!important; opacity:1!important; transform:none!important; filter:none!important; }
     }
     @media (max-width:899px){
       .wx-metrics { grid-template-columns:repeat(2,1fr); }
@@ -252,7 +253,7 @@
       <div class="mark">Wetter</div>
       <div class="sub" id="wxSplashSub">Standort wird ermittelt…</div>
     </div>
-    <div class="hint">Tippen zum Überspringen</div>
+    <div class="skip-hint">Tippen zum Überspringen</div>
   </div>
 
   <div class="app">

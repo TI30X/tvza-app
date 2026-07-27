@@ -145,8 +145,9 @@
     #wl-splash .mark .accent{ color:#5ee6a3; }
     #wl-splash .sub{ margin-top:12px; font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:clamp(11px,2.6vw,13px);
       letter-spacing:.32em; text-transform:uppercase; color:rgba(255,255,255,.62); opacity:0; animation:wlFade .8s ease 1s forwards; }
-    #wl-splash .hint{ position:absolute; bottom:max(26px,env(safe-area-inset-bottom)); left:0; right:0; text-align:center;
-      font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.32); opacity:0; animation:wlFade 1s ease 1.9s forwards; }
+    #wl-splash .skip-hint{ position:absolute; bottom:max(26px,env(safe-area-inset-bottom)); left:0; right:0;
+      display:block; width:auto; margin:0; padding:0; text-align:center; background:none; border:0; border-radius:0;
+      font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:9px; letter-spacing:.1em; color:rgba(255,255,255,.48); opacity:1; }
     @keyframes wlDraw{ to{ stroke-dashoffset:0; } }
     @keyframes wlFade{ to{ opacity:1; } }
     @keyframes wlSun{ to{ opacity:.6; } }
@@ -159,7 +160,7 @@
     @media (prefers-reduced-motion: reduce){
       #wl-splash .glow,#wl-splash .flake{ animation:none; }
       #wl-splash .chip{ animation:none!important; opacity:.9!important; transform:none!important; }
-      #wl-splash .sun,#wl-splash .range,#wl-splash .snow,#wl-splash .area,#wl-splash .dot,#wl-splash .mark,#wl-splash .sub,#wl-splash .hint{
+      #wl-splash .sun,#wl-splash .range,#wl-splash .snow,#wl-splash .area,#wl-splash .dot,#wl-splash .mark,#wl-splash .sub{
         animation:none!important; opacity:1!important; transform:none!important; filter:none!important; }
       #wl-splash .line{ stroke-dashoffset:0!important; animation:none!important; }
     }
@@ -220,7 +221,7 @@
         <div class="mark">TVZA <span class="accent">Watchlist</span></div>
         <div class="sub">Märkte · Kurse · News</div>
       </div>
-      <div class="hint">Tippen zum Überspringen</div>`;
+      <div class="skip-hint">Tippen zum Überspringen</div>`;
     const prev = document.documentElement.style.overflow;
     document.documentElement.style.overflow = 'hidden';
     let closed = false;
