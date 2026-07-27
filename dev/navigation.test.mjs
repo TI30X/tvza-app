@@ -30,7 +30,7 @@ test('desktop hides the redundant areas tab while mobile keeps its nav marker', 
   assert.match(shell, /data-nav-tab="\$\{t\.id\}"/);
 });
 
-test('current area is explicit and settings stay above the active page', async () => {
+test('current area uses the same active band as Start and settings stay above the page', async () => {
   const [nav, shell, settingsLayer, css, dashboard, areas] = await Promise.all([
     read('assets/js/nav.js'),
     read('assets/js/shell.js'),
@@ -40,10 +40,13 @@ test('current area is explicit and settings stay above the active page', async (
     read('pages/bereiche.html'),
   ]);
 
-  assert.match(nav, /nav__current">Aktuell/);
   assert.match(nav, /aria-current="page"/);
-  assert.match(shell, /nav__current">Aktuell/);
-  assert.match(css, /\.nav__bereich\.is-active[^}]*box-shadow/s);
+  assert.doesNotMatch(nav, /nav__current|>Aktuell</);
+  assert.doesNotMatch(shell, /nav__current|>Aktuell</);
+  assert.doesNotMatch(css, /content:\s*"Aktueller Bereich"/);
+  assert.doesNotMatch(css, /\.nav__bereich\.is-active[^}]*box-shadow/s);
+  assert.match(css, /\.appbar--bereich \.back-btn,[\s\S]*#shellBack\s*\{\s*display:\s*none/);
+  assert.match(css, /\.appbar \.appbar__inner::before/);
   assert.match(settingsLayer, /index\.html\?embed=settings#settings/);
   assert.match(settingsLayer, /tvza-settings-close/);
   assert.doesNotMatch(nav, /location\.href\s*=\s*base\(\)\s*\+\s*'index\.html#settings'/);
@@ -56,13 +59,31 @@ test('current area is explicit and settings stay above the active page', async (
 });
 
 test('app destinations are prefetched and use a progressive page transition', async () => {
-  const [nav, css] = await Promise.all([
+  const [nav, router, theme, css, sw] = await Promise.all([
     read('assets/js/nav.js'),
+    read('assets/js/router.js'),
+    read('assets/js/theme.js'),
     read('assets/css/style.css'),
+    read('sw.js'),
   ]);
 
   assert.match(nav, /link\.rel\s*=\s*'prefetch'/);
   assert.match(nav, /link\.as\s*=\s*'document'/);
+  assert.match(nav, /mountAppRouter\(nav\)/);
+  assert.match(router, /className = 'tvza-route-frame is-entering'/);
+  assert.match(router, /history\.pushState/);
+  assert.match(router, /window\.parent\.postMessage\(\{ type:'tvza-route-request'/);
+  assert.match(router, /window\.tvzaNavigate = requestRoute/);
+  assert.match(router, /type:'tvza-header-action'/);
+  assert.match(router, /'foodtracker\.html': \{ targetId:'profileBtn'/);
+  assert.match(router, /'watchlist\.html': \{ targetId:'settingsBtn'/);
+  assert.match(router, /document\.addEventListener\('click'[\s\S]*\{ capture:true \}\)/);
+  assert.match(nav, /refreshAreaNavigation\(profile\)/);
+  assert.doesNotMatch(nav, /document\.querySelector\('\.nav'\)\?\.remove\(\)/);
+  assert.match(theme, /classList\.add\('tvza-content-frame'\)/);
+  assert.match(css, /\.tvza-route-frame\.is-entering/);
+  assert.match(css, /html\.tvza-content-frame \.appbar/);
+  assert.match(sw, /assets\/js\/router\.js/);
   assert.match(css, /@view-transition\s*\{\s*navigation:\s*auto/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });

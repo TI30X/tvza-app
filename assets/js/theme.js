@@ -1,4 +1,8 @@
 (() => {
+  if (window.parent !== window &&
+      new URLSearchParams(location.search).get('tvzaFrame') === '1') {
+    document.documentElement.classList.add('tvza-content-frame');
+  }
   const KEY = 'tvza-theme';
   const MODES = ['auto', 'dark', 'light'];
   const MEDIA = window.matchMedia('(prefers-color-scheme: dark)');

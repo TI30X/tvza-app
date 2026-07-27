@@ -18,6 +18,7 @@
    ══════════════════════════════════════════════════════════════════ */
 
 import { MODULES, enabledModules } from './firebase-config.js';
+import { mountAppRouter } from './router.js';
 
 /* ── Icons (§4.5) ──────────────────────────────────────────────────
    One set, Feather-like. The Bereich glyphs are the ones already in
@@ -209,7 +210,6 @@ export function mountShell(o = {}) {
                  data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
                 <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
                 <span class="nav__bereich-name">${esc(m.name)}</span>
-                ${isCurrent ? '<span class="nav__current">Aktuell</span>' : ''}
               </a>`;
     }).join('');
 
@@ -224,6 +224,7 @@ export function mountShell(o = {}) {
   nav.addEventListener('click', event => {
     if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
   });
+  mountAppRouter(nav);
 
   /* ── Wiring ─────────────────────────────────────────────────── */
   const backBtn = document.getElementById('shellBack');

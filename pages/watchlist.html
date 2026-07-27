@@ -358,7 +358,10 @@
 
     // ── Access: own data, or shared (?owner=…) ──
     const access = await resolveAccess(user, 'watch');
-    if (access.denied) { alert('Kein Zugriff auf diese Freigabe.'); location.href = '../index.html'; }
+    if (access.denied) {
+      alert('Kein Zugriff auf diese Freigabe.');
+      if (!window.tvzaNavigate?.('../index.html')) location.href = '../index.html';
+    }
     const dataUid  = access.dataUid;
     const readOnly = access.role === 'view';
     if (dataUid !== user.uid) {

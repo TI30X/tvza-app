@@ -256,7 +256,10 @@
       const shares = await sharesForEmail(user.email);
       const s = shares.find(x => x.ownerUid === ownerParam && x.module === 'food');
       if (s) { dataUid = ownerParam; readOnly = s.role !== 'edit'; ownerLabel = s.ownerName || 'geteilt'; }
-      else { alert('Kein Zugriff auf diese Freigabe.'); window.location.href = '../index.html'; }
+      else {
+        alert('Kein Zugriff auf diese Freigabe.');
+        if (!window.tvzaNavigate?.('../index.html')) window.location.href = '../index.html';
+      }
     }
     if (dataUid !== user.uid) {
       document.querySelector('.page-title').textContent =

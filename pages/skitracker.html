@@ -178,7 +178,7 @@
           dataUid = ownerParam; readOnly = true; ownerLabel = 'Timo';
         } else {
           alert('Kein Zugriff auf diese Freigabe.');
-          window.location.href = '../index.html';
+          if (!window.tvzaNavigate?.('../index.html')) window.location.href = '../index.html';
         }
       }
     }

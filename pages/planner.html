@@ -1753,7 +1753,8 @@
           </div>`;
         }).join('');
         list.querySelectorAll('[data-gchat]').forEach(b=>b.onclick=()=>{
-          location.href = `messages.html?to=${encodeURIComponent(b.dataset.gchat)}&name=${encodeURIComponent(b.dataset.gname)}`;
+          const destination = `messages.html?to=${encodeURIComponent(b.dataset.gchat)}&name=${encodeURIComponent(b.dataset.gname)}`;
+          if (!window.tvzaNavigate?.(destination)) location.href = destination;
         });
         list.querySelectorAll('[data-gdel]').forEach(b=>b.onclick=async()=>{
           if(!confirm('Gast-Zugang entfernen?')) return;
