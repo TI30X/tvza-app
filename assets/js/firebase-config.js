@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
-  initializeFirestore, persistentLocalCache, persistentSingleTabManager
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
   getAuth, setPersistence, indexedDBLocalPersistence, browserLocalPersistence
@@ -23,7 +23,10 @@ export const app = initializeApp(firebaseConfig);
 
 // Firestore with offline persistence (modern API)
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
+  /* Einstellungen können als zweite, gleichzeitige App-Ansicht über
+     einer Bereichsseite offen sein. Multi-tab persistence hält beide
+     Ansichten synchron; single-tab sperrte die Aktionen im Dialog. */
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 
 // Geteilter Finnhub-Key für die Watchlist (Aktien/ETF-Kurse + Markt-News).

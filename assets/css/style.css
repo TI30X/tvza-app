@@ -1543,10 +1543,34 @@ body.reorder-editing .module-tile::after {
 .admin-user + .admin-user { margin-top: 8px; }
 .admin-user__head { list-style: none; }
 .admin-user__head::-webkit-details-marker { display: none; }
-.avatar--ink {
+.avatar.avatar--ink {
   background: var(--tint, var(--surface-2));
   color: var(--deep, var(--ink-soft));
   width: 36px; height: 36px; font-size: 13px;
+  cursor: default;
+}
+.shared-identity {
+  position: relative;
+  width: 48px;
+  height: 40px;
+  display: inline-flex;
+  align-items: flex-start;
+  flex: none;
+}
+.shared-identity .row__icon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+}
+.shared-identity__person {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 3px rgba(15,23,42,0.18);
+  font-size: 9px;
 }
 .admin-user__body { padding: 4px 14px 14px; }
 .admin-mods {

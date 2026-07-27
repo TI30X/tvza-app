@@ -1004,7 +1004,10 @@
       if (!shares.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch nichts geteilt.</p>'; return; }
       wrap.innerHTML = '<p class="marke" style="margin-bottom:8px">Von mir geteilt</p><div class="rows">' + shares.map(s => `
         <div class="row" data-bereich="${BEREICH_OF[s.module] || ''}">
-          <span class="avatar avatar--ink" style="${personAvatarStyle(s.targetUid||s.targetEmail)}">${escHtml(initialsOf(s.targetName||s.targetEmail))}</span>
+          <span class="shared-identity">
+            <span class="row__icon">${icon(ICONS[s.module] ? s.module : 'bereiche', 18)}</span>
+            <span class="avatar avatar--ink shared-identity__person" style="${personAvatarStyle(s.targetUid||s.targetEmail)}">${escHtml(initialsOf(s.targetName||s.targetEmail))}</span>
+          </span>
           <span class="row__body">
             <span class="row__title">${escHtml(s.targetName || s.targetEmail)}</span>
             <span class="row__sub">${escHtml(MODULES[s.module]?.name || s.module)} · ${s.role === 'edit' ? 'Bearbeiten' : 'Nur ansehen'}</span>
@@ -1257,7 +1260,10 @@
         const href = `${m.page}?owner=${encodeURIComponent(s.ownerUid)}`;
         return `
         <a class="row" href="${href}" data-bereich="${BEREICH_OF[s.module] || ''}">
-          <span class="avatar avatar--ink" style="${personAvatarStyle(s.ownerUid||s.ownerName)}">${escHtml(initialsOf(s.ownerName||'Geteilt'))}</span>
+          <span class="shared-identity">
+            <span class="row__icon">${icon(ICONS[s.module] ? s.module : 'bereiche', 18)}</span>
+            <span class="avatar avatar--ink shared-identity__person" style="${personAvatarStyle(s.ownerUid||s.ownerName)}">${escHtml(initialsOf(s.ownerName||'Geteilt'))}</span>
+          </span>
           <span class="row__body">
             <span class="row__title">${escHtml(s.ownerName || 'Geteilt')}</span>
             <span class="row__sub">${escHtml(m.name)} · Mit dir geteilt</span>

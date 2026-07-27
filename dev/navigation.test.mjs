@@ -66,3 +66,19 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(css, /@view-transition\s*\{\s*navigation:\s*auto/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
+
+test('embedded settings can share Firestore and shared rows keep icon plus person', async () => {
+  const [firebase, dashboard, css] = await Promise.all([
+    read('assets/js/firebase-config.js'),
+    read('index.html'),
+    read('assets/css/style.css'),
+  ]);
+
+  assert.match(firebase, /persistentMultipleTabManager/);
+  assert.doesNotMatch(firebase, /persistentSingleTabManager/);
+  assert.match(dashboard, /class="shared-identity"/);
+  assert.match(dashboard, /class="row__icon"/);
+  assert.match(dashboard, /shared-identity__person/);
+  assert.match(css, /\.avatar\.avatar--ink/);
+  assert.match(css, /\.shared-identity__person/);
+});
