@@ -43,6 +43,7 @@ export const ICONS = {
 
   back:    '<path d="M15 18l-6-6 6-6"/>',
   gear:    '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  bell:    '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
   plus:    '<path d="M12 5v14M5 12h14"/>',
   chevron: '<path d="M9 18l6-6-6-6"/>',
   close:   '<path d="M18 6L6 18M6 6l12 12"/>',
@@ -149,7 +150,7 @@ export function mountShell(o = {}) {
   const b = base();
   shellState.profile = o.profile || null;
 
-  document.querySelectorAll('.appbar, .nav').forEach(el => el.remove());
+  document.querySelectorAll('.appbar, .nav, .global-reminder-fab').forEach(el => el.remove());
 
   /* ── Header ─────────────────────────────────────────────────── */
   const bar = document.createElement('header');
@@ -220,6 +221,14 @@ export function mountShell(o = {}) {
     : '');
 
   document.body.appendChild(nav);
+  const reminderFab = document.createElement('a');
+  reminderFab.className = 'global-reminder-fab';
+  reminderFab.href = `${b}pages/planner.html?open=reminder-new`;
+  reminderFab.setAttribute('aria-label', 'Erinnerung erstellen');
+  reminderFab.title = 'Erinnerung erstellen';
+  reminderFab.hidden = active === 'kalender';
+  reminderFab.innerHTML = icon('bell', 22);
+  document.body.appendChild(reminderFab);
   document.body.classList.add('has-nav');
   nav.addEventListener('click', event => {
     if (event.target.closest('a[aria-current="page"]')) event.preventDefault();

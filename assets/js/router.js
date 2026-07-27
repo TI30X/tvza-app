@@ -147,6 +147,8 @@ function headerController(runPageAction) {
 
   const show = (target, label) => {
     const start = fileOf(target) === 'index.html';
+    const reminderFab = document.querySelector('.global-reminder-fab');
+    if (reminderFab) reminderFab.hidden = fileOf(target) === 'planner.html';
     bar?.classList.toggle('appbar--route-view', !start);
     if (title) title.textContent = start ? (original.title || 'Start') : label;
     if (greeting) greeting.textContent = start ? original.greeting : label;
@@ -196,10 +198,19 @@ export function mountAppRouter(nav) {
 
   const syncShellBounds = () => {
     const top = Math.max(0, header.bar?.getBoundingClientRect().bottom || 0);
+    const bottom = matchMedia('(max-width:899px)').matches
+      ? Math.max(0, nav.getBoundingClientRect().height || 0)
+      : 0;
     document.documentElement.style.setProperty('--tvza-shell-top', `${top}px`);
+    document.documentElement.style.setProperty('--tvza-shell-bottom', `${bottom}px`);
   };
   syncShellBounds();
   addEventListener('resize', syncShellBounds, { passive:true });
+  if ('ResizeObserver' in window) {
+    const shellBoundsObserver = new ResizeObserver(syncShellBounds);
+    shellBoundsObserver.observe(nav);
+    if (header.bar) shellBoundsObserver.observe(header.bar);
+  }
 
   const revealBasePage = target => {
     navigationId++;

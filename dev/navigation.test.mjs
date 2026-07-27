@@ -104,6 +104,24 @@ test('embedded settings can share Firestore and shared rows keep icon plus perso
   assert.match(css, /\.shared-identity__person/);
 });
 
+test('mobile reminders stay thumb-reachable across routes without exposing the base page', async () => {
+  const [shell, router, css] = await Promise.all([
+    read('assets/js/shell.js'),
+    read('assets/js/router.js'),
+    read('assets/css/style.css'),
+  ]);
+
+  assert.match(shell, /className = 'global-reminder-fab'/);
+  assert.match(shell, /planner\.html\?open=reminder-new/);
+  assert.match(shell, /aria-label', 'Erinnerung erstellen'/);
+  assert.match(router, /reminderFab\.hidden = fileOf\(target\) === 'planner\.html'/);
+  assert.match(router, /--tvza-shell-bottom/);
+  assert.match(router, /new ResizeObserver\(syncShellBounds\)/);
+  assert.match(css, /\.global-reminder-fab:not\(\[hidden\]\)/);
+  assert.match(css, /bottom: var\(--tvza-shell-bottom/);
+  assert.match(css, /html\.tvza-content-frame \.global-reminder-fab/);
+});
+
 test('loaded content only fades in once instead of blinking after updates', async () => {
   const ui = await read('assets/js/ui-fx.js');
   assert.match(ui, /if \(el\.dataset\.fxRevealed\) return/);

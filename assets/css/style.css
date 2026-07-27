@@ -1927,6 +1927,33 @@ body.reorder-editing .module-tile::after {
 /* Keep the bottom bar from covering the last row of content. */
 .has-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 
+.global-reminder-fab { display:none; }
+@media (max-width:899px) {
+  .global-reminder-fab:not([hidden]) {
+    position:fixed;
+    z-index:44;
+    right:3%;
+    bottom:calc(var(--tvza-shell-bottom, 64px) + clamp(10px, 2.5vw, 16px));
+    width:clamp(48px, 14vw, 58px);
+    aspect-ratio:1;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--accent);
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+  }
+  .global-reminder-fab svg { width:42%; height:42%; }
+  body:has(.modal-backdrop.visible) .global-reminder-fab,
+  body:has(.modal-backdrop.show) .global-reminder-fab,
+  body:has(.global-settings-layer) .global-reminder-fab {
+    display:none;
+  }
+  body:has(.global-reminder-fab:not([hidden])) .reorder-fab {
+    right:calc(3% + clamp(48px, 14vw, 58px) + 2%);
+  }
+}
+
 /* ── Persistent app shell ───────────────────────────────────────────
    Header and navigation stay untouched; only this content surface is
    exchanged after the destination is fully ready. */
@@ -1935,7 +1962,7 @@ body.reorder-editing .module-tile::after {
   z-index: 35;
   top: var(--tvza-shell-top, 62px);
   right: 0;
-  bottom: calc(64px + env(safe-area-inset-bottom));
+  bottom: var(--tvza-shell-bottom, calc(64px + env(safe-area-inset-bottom)));
   left: 0;
   width: auto;
   height: auto;
@@ -1992,7 +2019,8 @@ body.reorder-editing .module-tile::after {
    hidden before first paint by theme.js. */
 html.tvza-content-frame .appbar,
 html.tvza-content-frame .nav,
-html.tvza-content-frame .fx-version {
+html.tvza-content-frame .fx-version,
+html.tvza-content-frame .global-reminder-fab {
   display: none !important;
 }
 html.tvza-content-frame body,

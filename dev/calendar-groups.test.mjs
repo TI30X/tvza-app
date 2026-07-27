@@ -104,6 +104,8 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /id="createEventOption"/);
   assert.match(planner, /id="createReminderOption"/);
   assert.match(planner, /id="mobileRemindersBtn"/);
+  assert.match(planner, /class="calendar-thumb-actions"/);
+  assert.match(planner, /id="mobileCalAddBtn"/);
   assert.match(planner, /class="mobile-reminder-label">Erinnerungen</);
   assert.match(planner, /id="mobileReminderCount"/);
   assert.match(planner, /id="reminderHubList"/);
@@ -114,12 +116,14 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(css, /#calendarBelow \{ display:none; \}/);
   assert.match(css, /data-calendar-view="agenda"[\s\S]*calendar-commandbar__nav \{\s*display:none/);
   assert.match(css, /@media \(max-width:899px\)/);
-  assert.match(css, /grid-template-columns:24% minmax\(0,1fr\) 27%/);
+  assert.match(css, /grid-template-columns:minmax\(0,1fr\) var\(--calendar-thumb-size\)/);
+  assert.match(css, /html\.tvza-content-frame \.calendar-thumb-actions \{\s*bottom:2\.5%/);
   assert.match(css, /body\.planner-page\.has-nav \{[\s\S]*overflow:hidden/);
   assert.match(css, /#groupView \.calendar-stage \{[\s\S]*flex:1;[\s\S]*overflow:hidden/);
   assert.match(css, /\.calendar-agenda \{[\s\S]*height:100%;[\s\S]*overflow-y:auto/);
   assert.match(css, /--calendar-mobile-control:clamp/);
-  assert.match(css, /padding-bottom:clamp\(64px, 18vw, 92px\)/);
+  assert.match(css, /padding-bottom:clamp\(82px, 23vw, 108px\)/);
+  assert.match(planner, /requestedAction === 'reminder-new'/);
 });
 
 test('mobile month uses only required weeks and wraps event labels', async () => {

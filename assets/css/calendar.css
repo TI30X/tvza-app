@@ -157,6 +157,7 @@
   justify-content:center;
   gap:6px;
 }
+.calendar-thumb-actions { display:none; }
 .mobile-reminder-count {
   position:absolute;
   top:-4px;
@@ -960,7 +961,7 @@
     overflow:hidden;
   }
   html:not(.tvza-content-frame) body.planner-page.has-nav .app {
-    height:calc(100vh - 64px - env(safe-area-inset-bottom, 0px));
+    height:calc(100vh - var(--tvza-shell-bottom, 64px));
     min-height:0;
     overflow:hidden;
   }
@@ -978,7 +979,7 @@
       height:100dvh;
     }
     html:not(.tvza-content-frame) body.planner-page.has-nav .app {
-      height:calc(100dvh - 64px - env(safe-area-inset-bottom, 0px));
+      height:calc(100dvh - var(--tvza-shell-bottom, 64px));
     }
     html.tvza-content-frame body.planner-page,
     html.tvza-content-frame body.planner-page > .app {
@@ -1059,19 +1060,15 @@
     font-size:clamp(11px, 3.2vw, 13px);
   }
   .calendar-commandbar__create {
-    width:100%;
-    height:var(--calendar-mobile-control);
-    padding:0 4%;
-    font-size:clamp(10px, 2.9vw, 12px);
+    display:none;
   }
-  .calendar-commandbar__create-label { display:inline; }
   .calendar-commandbar__views {
     width:100%;
-    display:grid;
-    grid-template-columns:24% minmax(0,1fr) 27%;
-    gap:2%;
+    display:flex;
+    justify-content:flex-start;
   }
   .calendar-commandbar__views .view-picker {
+    flex:0 0 24%;
     min-width:0;
   }
   .calendar-commandbar__settings {
@@ -1080,25 +1077,54 @@
     border-radius:50%;
   }
   .calendar-commandbar__views .calendar-commandbar__create {
-    grid-area:auto;
-    min-width:0;
+    display:none;
   }
   .calendar-commandbar__views .view-picker__button {
     height:var(--calendar-mobile-control);
   }
-  .mobile-reminder-button {
+  .calendar-thumb-actions {
+    --calendar-thumb-size:clamp(50px, 15vw, 62px);
+    position:fixed;
+    z-index:44;
+    right:3%;
+    left:3%;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) var(--calendar-thumb-size);
+    gap:2.5%;
+    pointer-events:none;
+  }
+  html:not(.tvza-content-frame) .calendar-thumb-actions {
+    bottom:calc(var(--tvza-shell-bottom, 64px) + 2.5%);
+  }
+  html.tvza-content-frame .calendar-thumb-actions {
+    bottom:2.5%;
+  }
+  .calendar-thumb-actions > * { pointer-events:auto; }
+  .calendar-thumb-actions .mobile-reminder-button {
     display:inline-flex;
     width:auto;
     min-width:0;
-    height:var(--calendar-mobile-control);
+    height:var(--calendar-thumb-size);
     padding:0 3%;
-    font-size:clamp(10px, 2.9vw, 13px);
+    background:var(--surface);
+    font-size:clamp(12px, 3.4vw, 14px);
   }
   .mobile-reminder-button .ic { flex:none; }
   .mobile-reminder-label {
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
+  }
+  .calendar-mobile-create {
+    width:var(--calendar-thumb-size);
+    height:var(--calendar-thumb-size);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border-radius:50%;
+    background:var(--cal-accent);
+    border-color:var(--cal-accent);
   }
   .view-picker__button {
     width:100%;
@@ -1111,7 +1137,10 @@
     font-size:clamp(10px, 2.8vw, 12px);
   }
   #calendarBelow { display:none; }
-  .calendar-view { padding:1.5% 2% 2%; }
+  .calendar-view {
+    padding:1.5% 2% clamp(82px, 23vw, 108px);
+    scroll-padding-bottom:clamp(82px, 23vw, 108px);
+  }
   .calendar-month .weekdays span { font-size:clamp(9px, 2.8vw, 12px); }
   .calendar-month .daynum { font-size:clamp(12px, 3.6vw, 15px); }
   .calendar-month .cell,
@@ -1144,8 +1173,8 @@
   .calendar-agenda {
     height:100%;
     min-height:0;
-    padding-bottom:clamp(64px, 18vw, 92px);
-    scroll-padding-bottom:clamp(64px, 18vw, 92px);
+    padding-bottom:clamp(82px, 23vw, 108px);
+    scroll-padding-bottom:clamp(82px, 23vw, 108px);
     overflow-y:auto;
     overscroll-behavior:contain;
     scrollbar-width:none;
