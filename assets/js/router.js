@@ -192,8 +192,7 @@ function headerController(runPageAction) {
       startHeader.greeting = greeting?.textContent?.trim() || startHeader.greeting;
       startHeader.date = date?.textContent?.trim() || startHeader.date;
     }
-    const reminderFab = document.querySelector('.global-reminder-fab');
-    if (reminderFab) reminderFab.hidden = fileOf(target) === 'planner.html';
+    window.tvzaReminderOverlay?.setContext(fileOf(target));
     bar?.classList.toggle('appbar--route-view', !start);
     if (title) title.textContent = start ? 'Start' : label;
     const generated = generatedStartHeader(bar);

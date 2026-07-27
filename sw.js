@@ -11,7 +11,7 @@
    beide Zahlen nur noch gemeinsam wandern können. */
 
 const CACHE = 'tvza-v.31.0.0';
-// Shell revision 8: directional mobile routes and shared reminder access.
+// Shell revision 9: live global reminder sheet without calendar navigation.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -38,6 +38,7 @@ const SHELL = [
   './assets/js/matura-sync.js',
   './assets/js/shell.js',
   './assets/js/router.js',
+  './assets/js/reminders-overlay.js',
   './assets/js/settings-layer.js',
   './assets/js/hints.js',
   './assets/js/nav.js',

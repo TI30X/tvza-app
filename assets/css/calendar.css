@@ -905,7 +905,26 @@
 .create-option > span:nth-child(2) { min-width:0; display:flex; flex-direction:column; }
 .create-option strong { font-size:15px; }
 .create-option small { color:var(--ink-soft); font-size:12px; line-height:1.35; }
-.reminder-hub-list { margin-top:12px; max-height:min(58vh,520px); overflow:auto; }
+.reminder-hub-list { max-height:min(58vh,520px); overflow:auto; }
+.reminder-hub-add {
+  flex:0 0 auto;
+  margin-top:12px;
+  border-radius:var(--r-pill);
+}
+.reminder-hub-sheet .reminder-row__title {
+  color:var(--ink);
+  font-weight:800;
+}
+.reminder-hub-sheet .reminder-row__meta {
+  color:color-mix(in srgb,var(--ink) 68%,transparent);
+  font-weight:600;
+}
+.reminder-hub-sheet .reminder-check {
+  border-color:color-mix(in srgb,var(--ink) 34%,var(--border));
+}
+.reminder-hub-sheet .reminder-row.is-done .reminder-row__title {
+  color:color-mix(in srgb,var(--ink) 62%,transparent);
+}
 
 @media (min-width:700px) {
   .calendar-commandbar {
@@ -1210,8 +1229,8 @@
     max-height:none;
     overflow-y:auto;
     overscroll-behavior:contain;
-    padding-bottom:clamp(24px, 8vw, 42px);
-    scroll-padding-bottom:clamp(24px, 8vw, 42px);
+    padding-bottom:clamp(8px, 2.5vw, 12px);
+    scroll-padding-bottom:clamp(8px, 2.5vw, 12px);
   }
   .planner-page .reminder-form-sheet {
     max-height:min(88dvh, 720px);

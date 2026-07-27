@@ -1921,7 +1921,9 @@ body.reorder-editing .module-tile::after {
 /* Keep the bottom bar from covering the last row of content. */
 .has-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 
-.global-reminder-fab { display:none; }
+.global-reminder-fab,
+.global-reminder-backdrop,
+.global-reminder-sheet { display:none; }
 @media (max-width:899px) {
   .global-reminder-fab:not([hidden]) {
     position:fixed;
@@ -1936,13 +1938,303 @@ body.reorder-editing .module-tile::after {
     border-radius:50%;
     background:var(--accent);
     color:#fff;
+    padding:0;
+    font:inherit;
+    cursor:pointer;
+    box-shadow:0 8px 22px rgba(15,52,96,.24);
   }
   .global-reminder-fab svg { width:42%; height:42%; }
+  .global-reminder-fab__count {
+    position:absolute;
+    top:-5px;
+    right:-4px;
+    min-width:20px;
+    height:20px;
+    padding:0 5px;
+    display:grid;
+    place-items:center;
+    border:2px solid var(--surface);
+    border-radius:var(--r-pill);
+    background:#2f7d5a;
+    color:#fff;
+    font-size:10px;
+    font-weight:900;
+    line-height:1;
+  }
+  .global-reminder-fab__count.has-open { background:#cf2f3b; }
   body:has(.modal-backdrop.visible) .global-reminder-fab,
   body:has(.modal-backdrop.show) .global-reminder-fab,
-  body:has(.global-settings-layer) .global-reminder-fab {
+  body:has(.global-settings-layer) .global-reminder-fab,
+  body.global-reminders-open .global-reminder-fab {
     display:none;
   }
+
+  .global-reminder-backdrop {
+    position:fixed;
+    z-index:60;
+    inset:0;
+    display:none;
+    background:rgba(15,23,42,.52);
+    backdrop-filter:blur(1px);
+  }
+  .global-reminder-backdrop.visible { display:block; }
+  .global-reminder-sheet {
+    display:block;
+    position:fixed;
+    z-index:61;
+    right:0;
+    bottom:var(--tvza-shell-bottom, calc(64px + env(safe-area-inset-bottom)));
+    left:0;
+    width:min(680px,100%);
+    max-height:min(76dvh,680px);
+    margin:0 auto;
+    overflow:hidden;
+    border:1px solid color-mix(in srgb,var(--accent) 16%,var(--border));
+    border-bottom:0;
+    border-radius:var(--r-panel) var(--r-panel) 0 0;
+    background:var(--surface);
+    color:var(--ink);
+    box-shadow:0 -18px 50px rgba(15,23,42,.18);
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(104%);
+    transition:transform 260ms cubic-bezier(.22,.61,.36,1),opacity 160ms ease;
+  }
+  .global-reminder-sheet.visible {
+    opacity:1;
+    pointer-events:auto;
+    transform:translateY(0);
+  }
+  .global-reminder-list-view,
+  .global-reminder-form-view {
+    max-height:min(76dvh,680px);
+    padding:clamp(15px,4vw,20px) 5% clamp(14px,4vw,20px);
+  }
+  .global-reminder-list-view {
+    display:flex;
+    flex-direction:column;
+    min-height:min(58dvh,510px);
+  }
+  .global-reminder-form-view {
+    overflow-y:auto;
+    overscroll-behavior:contain;
+  }
+  .global-reminder-form-view[hidden],
+  .global-reminder-list-view[hidden] { display:none; }
+  .global-reminder-sheet__head {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .global-reminder-sheet__head > div { flex:1; min-width:0; }
+  .global-reminder-sheet__head h2 {
+    flex:1;
+    margin:0;
+    color:var(--ink);
+    font-size:clamp(19px,5.5vw,24px);
+    line-height:1.15;
+  }
+  .global-reminder-sheet__eyebrow {
+    display:block;
+    margin-bottom:3px;
+    color:var(--accent);
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  .global-reminder-icon-button {
+    width:42px;
+    height:42px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    padding:0;
+    border:1px solid var(--border);
+    border-radius:50%;
+    background:var(--surface);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .global-reminder-list {
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    border-top:1px solid var(--border);
+    scrollbar-width:none;
+  }
+  .global-reminder-list::-webkit-scrollbar { display:none; }
+  .global-reminder-row {
+    display:flex;
+    align-items:center;
+    gap:11px;
+    min-height:64px;
+    padding:10px 1px;
+    border-bottom:1px solid var(--border);
+  }
+  .global-reminder-check {
+    width:27px;
+    height:27px;
+    flex:0 0 auto;
+    display:grid;
+    place-items:center;
+    padding:0;
+    border:2px solid color-mix(in srgb,var(--ink) 34%,var(--border));
+    border-radius:50%;
+    background:var(--surface);
+    color:#fff;
+    font-weight:900;
+    cursor:pointer;
+  }
+  .global-reminder-check.is-done {
+    border-color:var(--accent);
+    background:var(--accent);
+  }
+  .global-reminder-row__body {
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    padding:4px 0;
+    border:0;
+    background:transparent;
+    color:var(--ink);
+    text-align:left;
+    cursor:pointer;
+  }
+  .global-reminder-row__title {
+    max-width:100%;
+    overflow:hidden;
+    font-size:15px;
+    font-weight:800;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .global-reminder-row__meta {
+    margin-top:3px;
+    color:color-mix(in srgb,var(--ink) 68%,transparent);
+    font-size:12px;
+    font-weight:600;
+  }
+  .global-reminder-row.is-done .global-reminder-row__title {
+    color:color-mix(in srgb,var(--ink) 62%,transparent);
+    text-decoration:line-through;
+  }
+  .global-reminder-row.is-overdue .global-reminder-row__meta {
+    color:var(--danger);
+    font-weight:800;
+  }
+  .global-reminder-edit {
+    min-width:38px;
+    min-height:38px;
+    padding:0;
+    border:0;
+    background:transparent;
+    color:var(--ink);
+    font-size:18px;
+    cursor:pointer;
+  }
+  .global-reminder-add,
+  .global-reminder-save {
+    width:100%;
+    min-height:50px;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin-top:12px;
+    border:1px solid var(--accent);
+    border-radius:var(--r-pill);
+    background:var(--accent);
+    color:#fff;
+    font:inherit;
+    font-size:14px;
+    font-weight:800;
+    line-height:1;
+    cursor:pointer;
+  }
+  .global-reminder-add > span:first-child { font-size:22px; line-height:1; }
+  .global-reminder-empty {
+    flex:1;
+    min-height:180px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    color:var(--ink);
+    text-align:center;
+  }
+  .global-reminder-empty svg {
+    width:30px;
+    height:30px;
+    margin-bottom:5px;
+    color:var(--accent);
+  }
+  .global-reminder-empty span,
+  .global-reminder-error {
+    color:color-mix(in srgb,var(--ink) 66%,transparent);
+    font-size:13px;
+  }
+  .global-reminder-field {
+    display:block;
+    margin-bottom:12px;
+  }
+  .global-reminder-field > span {
+    display:block;
+    margin-bottom:5px;
+    color:color-mix(in srgb,var(--ink) 70%,transparent);
+    font-size:12px;
+    font-weight:800;
+  }
+  .global-reminder-field input,
+  .global-reminder-field textarea {
+    width:100%;
+    min-height:46px;
+    padding:11px 12px;
+    border:1px solid var(--border);
+    border-radius:var(--r1);
+    background:var(--surface);
+    color:var(--ink);
+    font:inherit;
+  }
+  .global-reminder-field textarea { min-height:86px; resize:vertical; }
+  .global-reminder-fields {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .global-reminder-complete,
+  .global-reminder-delete {
+    width:100%;
+    min-height:46px;
+    margin-top:8px;
+    border-radius:var(--r-pill);
+    background:transparent;
+    font:inherit;
+    font-size:13px;
+    font-weight:800;
+    line-height:1;
+    cursor:pointer;
+  }
+  .global-reminder-complete {
+    border:1px solid var(--accent);
+    color:var(--accent);
+  }
+  .global-reminder-complete.is-completed {
+    border-color:var(--border);
+    color:var(--ink);
+  }
+  .global-reminder-delete {
+    border:0;
+    color:var(--danger);
+  }
+  .global-reminder-complete[hidden],
+  .global-reminder-delete[hidden] { display:none; }
 }
 
 /* ── Persistent app shell ───────────────────────────────────────────

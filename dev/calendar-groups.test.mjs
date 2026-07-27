@@ -109,6 +109,7 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /class="mobile-reminder-label">Erinnerungen</);
   assert.match(planner, /id="mobileReminderCount"/);
   assert.match(planner, /id="reminderHubList"/);
+  assert.match(planner, /id="reminderHubList"[\s\S]*id="reminderHubAdd"/);
   assert.match(planner, /document\.body\.dataset\.calendarView = curView/);
   assert.match(planner, /agenda-today-marker" data-agenda-focus><strong>Heute<\/strong>/);
   assert.match(planner, /\$\('calendarBelow'\)\.style\.display='none'/);
@@ -137,6 +138,8 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);
   assert.match(css, /\.reminder-hub-sheet \.reminder-hub-list \{[\s\S]*overflow-y:auto/);
+  assert.match(css, /\.reminder-hub-add \{[\s\S]*border-radius:var\(--r-pill\)/);
+  assert.match(css, /\.reminder-hub-sheet \.reminder-row__title \{[\s\S]*font-weight:800/);
   assert.match(css, /\.planner-page \.reminder-form-sheet \{[\s\S]*overflow-y:auto/);
   assert.match(planner, /requestedAction === 'reminder-new'/);
 });

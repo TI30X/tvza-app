@@ -19,6 +19,7 @@
 
 import { MODULES, enabledModules } from './firebase-config.js';
 import { mountAppRouter } from './router.js';
+import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 
 /* ── Icons (§4.5) ──────────────────────────────────────────────────
    One set, Feather-like. The Bereich glyphs are the ones already in
@@ -150,7 +151,7 @@ export function mountShell(o = {}) {
   const b = base();
   shellState.profile = o.profile || null;
 
-  document.querySelectorAll('.appbar, .nav, .global-reminder-fab').forEach(el => el.remove());
+  document.querySelectorAll('.appbar, .nav').forEach(el => el.remove());
 
   /* ── Header ─────────────────────────────────────────────────── */
   const bar = document.createElement('header');
@@ -221,14 +222,7 @@ export function mountShell(o = {}) {
     : '');
 
   document.body.appendChild(nav);
-  const reminderFab = document.createElement('a');
-  reminderFab.className = 'global-reminder-fab';
-  reminderFab.href = `${b}pages/planner.html?open=reminders`;
-  reminderFab.setAttribute('aria-label', 'Erinnerungen öffnen');
-  reminderFab.title = 'Erinnerungen öffnen';
-  reminderFab.hidden = active === 'kalender';
-  reminderFab.innerHTML = icon('bell', 22);
-  document.body.appendChild(reminderFab);
+  mountGlobalReminderOverlay({ activeFile:currentFile });
   document.body.classList.add('has-nav');
   nav.addEventListener('click', event => {
     if (event.target.closest('a[aria-current="page"]')) event.preventDefault();

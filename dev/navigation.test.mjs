@@ -112,19 +112,24 @@ test('embedded settings can share Firestore and shared rows keep icon plus perso
 });
 
 test('mobile reminders stay thumb-reachable across routes without exposing the base page', async () => {
-  const [shell, nav, router, css] = await Promise.all([
+  const [shell, nav, router, overlay, css, sw] = await Promise.all([
     read('assets/js/shell.js'),
     read('assets/js/nav.js'),
     read('assets/js/router.js'),
+    read('assets/js/reminders-overlay.js'),
     read('assets/css/style.css'),
+    read('sw.js'),
   ]);
 
-  assert.match(shell, /className = 'global-reminder-fab'/);
-  assert.match(shell, /planner\.html\?open=reminders/);
-  assert.match(shell, /aria-label', 'Erinnerungen öffnen'/);
-  assert.match(nav, /function ensureReminderFab/);
-  assert.match(nav, /planner\.html\?open=reminders/);
-  assert.match(router, /reminderFab\.hidden = fileOf\(target\) === 'planner\.html'/);
+  assert.match(shell, /mountGlobalReminderOverlay\(\{ activeFile:currentFile \}\)/);
+  assert.match(nav, /mountGlobalReminderOverlay/);
+  assert.match(overlay, /trigger\.type = 'button'/);
+  assert.doesNotMatch(overlay, /planner\.html\?open=reminders/);
+  assert.match(overlay, /const HIDDEN_ON = new Set\(\['planner\.html', 'messages\.html'\]\)/);
+  assert.match(overlay, /onSnapshot\(reminderCollection\(\)/);
+  assert.match(overlay, /global-reminder-fab__count/);
+  assert.match(overlay, /global-reminder-list[\s\S]*globalReminderAdd/);
+  assert.match(router, /tvzaReminderOverlay\?\.setContext\(fileOf\(target\)\)/);
   assert.match(router, /title\.textContent = start \? 'Start' : label/);
   assert.match(router, /function generatedStartHeader\(bar\)/);
   assert.match(router, /startHeader\.greeting = greeting\?\.textContent\?\.trim\(\)/);
@@ -135,8 +140,12 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.match(router, /--tvza-shell-bottom/);
   assert.match(router, /new ResizeObserver\(syncShellBounds\)/);
   assert.match(css, /\.global-reminder-fab:not\(\[hidden\]\)/);
-  assert.match(css, /bottom: var\(--tvza-shell-bottom/);
+  assert.match(css, /\.global-reminder-fab,[\s\S]*\.global-reminder-sheet \{ display:none; \}/);
+  assert.match(css, /\.global-reminder-sheet \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
+  assert.match(css, /\.global-reminder-fab__count\.has-open/);
+  assert.match(css, /\.global-reminder-add,[\s\S]*margin-top:12px/);
   assert.match(css, /html\.tvza-content-frame \.global-reminder-fab/);
+  assert.match(sw, /assets\/js\/reminders-overlay\.js/);
 });
 
 test('arranging is docked beside Schnellzugriff instead of floating over cards', async () => {
