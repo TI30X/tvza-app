@@ -46,7 +46,7 @@
   display:grid;
   grid-template-columns:auto minmax(0, 1fr) auto;
   grid-template-areas:
-    "today title create"
+    "today title settings"
     "nav views views";
   align-items:center;
   gap:10px;
@@ -55,6 +55,7 @@
   background:var(--surface);
 }
 .calendar-commandbar__today { grid-area:today; }
+.calendar-commandbar__settings { grid-area:settings; }
 .calendar-commandbar__title {
   grid-area:title;
   min-width:0;
@@ -913,8 +914,8 @@
   .calendar-commandbar__nav { order:1; }
   .calendar-commandbar__today { order:2; }
   .calendar-commandbar__title { order:3; flex:1; padding-left:8px; }
-  .calendar-commandbar__views { order:4; }
-  .calendar-commandbar__create { order:5; }
+  .calendar-commandbar__settings { order:4; }
+  .calendar-commandbar__views { order:5; }
   .calendar-style-options { grid-template-columns:1fr 1fr; }
   .calendar-view { padding:16px; }
   .calendar-month .cell { min-height:112px; padding:7px; }
@@ -954,28 +955,83 @@
 }
 
 @media (max-width:899px) {
+  html:not(.tvza-content-frame) body.planner-page.has-nav {
+    height:100vh;
+    overflow:hidden;
+  }
+  html:not(.tvza-content-frame) body.planner-page.has-nav .app {
+    height:calc(100vh - 64px - env(safe-area-inset-bottom, 0px));
+    min-height:0;
+    overflow:hidden;
+  }
+  html.tvza-content-frame body.planner-page {
+    height:100vh;
+    overflow:hidden;
+  }
+  html.tvza-content-frame body.planner-page > .app {
+    height:100vh;
+    min-height:0;
+    overflow:hidden;
+  }
+  @supports (height:100dvh) {
+    html:not(.tvza-content-frame) body.planner-page.has-nav {
+      height:100dvh;
+    }
+    html:not(.tvza-content-frame) body.planner-page.has-nav .app {
+      height:calc(100dvh - 64px - env(safe-area-inset-bottom, 0px));
+    }
+    html.tvza-content-frame body.planner-page,
+    html.tvza-content-frame body.planner-page > .app {
+      height:100dvh;
+    }
+  }
   .planner-page .main {
+    min-height:0;
+    overflow:auto;
     padding-top:1%;
     padding-left:2%;
     padding-right:2%;
+    padding-bottom:1%;
   }
+  .planner-page #groupView,
+  .planner-page #groupView > .calendar-layout,
+  .planner-page #groupView .calendar-workspace {
+    height:100%;
+    min-height:0;
+  }
+  .planner-page #groupView .calendar-workspace {
+    display:flex;
+    flex-direction:column;
+  }
+  .planner-page #groupView .calendar-stage {
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+  }
+  .planner-page #groupView .calendar-view {
+    height:100%;
+    overflow:auto;
+  }
+  .planner-page .fx-version { display:none; }
   .calendar-workspace { border-radius:var(--r-row); }
   .calendar-commandbar {
     --calendar-mobile-control:clamp(38px, 10.5vw, 46px);
     display:grid;
     position:relative;
     z-index:20;
-    grid-template-columns:22% minmax(0,1fr) 27%;
+    flex:none;
+    grid-template-columns:22% minmax(0,1fr) var(--calendar-mobile-control);
     grid-template-areas:
-      "today title create"
-      "nav views views";
+      "today title settings"
+      "nav nav nav"
+      "views views views";
     gap:2%;
     padding:2%;
     box-shadow:none;
   }
   .planner-page[data-calendar-view="agenda"] .calendar-commandbar {
     grid-template-areas:
-      "today title create"
+      "today title settings"
       "views views views";
   }
   .planner-page[data-calendar-view="agenda"] .calendar-commandbar__nav {
@@ -1005,30 +1061,33 @@
   .calendar-commandbar__create {
     width:100%;
     height:var(--calendar-mobile-control);
-    padding:0 5%;
-    font-size:clamp(11px, 3.2vw, 13px);
+    padding:0 4%;
+    font-size:clamp(10px, 2.9vw, 12px);
   }
   .calendar-commandbar__create-label { display:inline; }
   .calendar-commandbar__views {
     width:100%;
+    display:grid;
+    grid-template-columns:24% minmax(0,1fr) 27%;
     gap:2%;
   }
   .calendar-commandbar__views .view-picker {
-    flex:0 1 36%;
+    min-width:0;
+  }
+  .calendar-commandbar__settings {
+    width:var(--calendar-mobile-control);
+    height:var(--calendar-mobile-control);
+    border-radius:50%;
+  }
+  .calendar-commandbar__views .calendar-commandbar__create {
+    grid-area:auto;
     min-width:0;
   }
   .calendar-commandbar__views .view-picker__button {
     height:var(--calendar-mobile-control);
   }
-  .calendar-commandbar__views .icon-pill {
-    flex:0 0 var(--calendar-mobile-control);
-    width:var(--calendar-mobile-control);
-    height:var(--calendar-mobile-control);
-    border-radius:50%;
-  }
   .mobile-reminder-button {
     display:inline-flex;
-    flex:1 1 42%;
     width:auto;
     min-width:0;
     height:var(--calendar-mobile-control);
@@ -1083,8 +1142,8 @@
     font-size:clamp(11px, 3.1vw, 13px);
   }
   .calendar-agenda {
-    height:calc(70dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-    min-height:52dvh;
+    height:100%;
+    min-height:0;
     padding-bottom:clamp(64px, 18vw, 92px);
     scroll-padding-bottom:clamp(64px, 18vw, 92px);
     overflow-y:auto;

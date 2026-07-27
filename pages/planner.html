@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
-  <link rel="stylesheet" href="../assets/css/calendar.css" />
+  <link rel="stylesheet" href="../assets/css/calendar.css?v=2" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -301,6 +301,9 @@
               </div>
               <button class="pill calendar-commandbar__today" id="todayBtn" type="button">Heute</button>
               <h2 class="calendar-commandbar__title" id="monthTitle">—</h2>
+              <button class="icon-pill calendar-commandbar__settings" id="calendarSettingsBtn" type="button" aria-label="Kalenderdarstellung">
+                <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+              </button>
               <div class="calendar-commandbar__views">
                 <div class="view-picker">
                   <button class="pill view-picker__button" id="viewPickerBtn" type="button" aria-haspopup="menu" aria-expanded="false">
@@ -321,14 +324,11 @@
                   <span class="mobile-reminder-label">Erinnerungen</span>
                   <span class="mobile-reminder-count" id="mobileReminderCount" hidden></span>
                 </button>
-                <button class="icon-pill" id="calendarSettingsBtn" type="button" aria-label="Kalenderdarstellung">
-                  <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+                <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">
+                  <span class="ui-plus calendar-action-icon calendar-commandbar__plus" aria-hidden="true"></span>
+                  <span class="calendar-commandbar__create-label">Erstellen</span>
                 </button>
               </div>
-              <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">
-                <span class="ui-plus calendar-action-icon calendar-commandbar__plus" aria-hidden="true"></span>
-                <span class="calendar-commandbar__create-label">Erstellen</span>
-              </button>
             </div>
 
             <div class="calendar-mobile-sources" id="calendarMobileSources"></div>

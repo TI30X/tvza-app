@@ -114,8 +114,10 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(css, /#calendarBelow \{ display:none; \}/);
   assert.match(css, /data-calendar-view="agenda"[\s\S]*calendar-commandbar__nav \{\s*display:none/);
   assert.match(css, /@media \(max-width:899px\)/);
-  assert.match(css, /grid-template-columns:22% minmax\(0,1fr\) 27%/);
-  assert.match(css, /height:calc\(70dvh/);
+  assert.match(css, /grid-template-columns:24% minmax\(0,1fr\) 27%/);
+  assert.match(css, /body\.planner-page\.has-nav \{[\s\S]*overflow:hidden/);
+  assert.match(css, /#groupView \.calendar-stage \{[\s\S]*flex:1;[\s\S]*overflow:hidden/);
+  assert.match(css, /\.calendar-agenda \{[\s\S]*height:100%;[\s\S]*overflow-y:auto/);
   assert.match(css, /--calendar-mobile-control:clamp/);
   assert.match(css, /padding-bottom:clamp\(64px, 18vw, 92px\)/);
 });
