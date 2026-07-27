@@ -316,6 +316,10 @@
                     <button type="button" data-calendar-view="agenda" id="agendaViewOption">Liste</button>
                   </div>
                 </div>
+                <button class="icon-pill mobile-reminder-button" id="mobileRemindersBtn" type="button" aria-label="Erinnerungen öffnen">
+                  <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+                  <span class="mobile-reminder-count" id="mobileReminderCount" hidden></span>
+                </button>
                 <button class="icon-pill" id="calendarSettingsBtn" type="button" aria-label="Kalenderdarstellung">
                   <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
                 </button>
@@ -327,17 +331,6 @@
             </div>
 
             <div class="calendar-mobile-sources" id="calendarMobileSources"></div>
-            <button class="mobile-reminder-summary" id="mobileReminderSummary" type="button">
-              <span class="mobile-reminder-summary__icon" aria-hidden="true">
-                <svg class="ic" viewBox="0 0 24 24" width="18" height="18"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
-              </span>
-              <span class="mobile-reminder-summary__body">
-                <span class="mobile-reminder-summary__label">Erinnerungen</span>
-                <strong id="mobileReminderSummaryTitle">Wird geladen…</strong>
-                <span id="mobileReminderSummaryMeta"></span>
-              </span>
-              <span class="mobile-reminder-summary__open">Öffnen ›</span>
-            </button>
 
             <div class="calendar-stage">
               <div class="calendar-view calendar-month" id="calView">
@@ -1298,13 +1291,18 @@
         bindReminderList(box);
       });
       const open = reminders.filter(item => !item.completed);
-      const future = open.filter(item => !item.date || item.date >= todayKey);
       const overdue = open.filter(item => item.date && item.date < todayKey);
-      const next = overdue[0] || future[0];
-      $('mobileReminderSummaryTitle').textContent = next?.title || 'Keine offenen Erinnerungen';
-      $('mobileReminderSummaryMeta').textContent = next
-        ? `${reminderWhen(next)}${open.length>1?` · ${open.length} offen`:''}${overdue.length?` · ${overdue.length} überfällig`:''}`
-        : 'Tippe, um eine neue anzulegen.';
+      const reminderButton = $('mobileRemindersBtn');
+      const reminderCount = $('mobileReminderCount');
+      if (reminderButton && reminderCount) {
+        const label = open.length
+          ? `${open.length} offene Erinnerung${open.length===1?'':'en'}${overdue.length?`, ${overdue.length} überfällig`:''}`
+          : 'Keine offenen Erinnerungen';
+        reminderButton.setAttribute('aria-label', `${label}. Erinnerungen öffnen`);
+        reminderButton.title = label;
+        reminderCount.hidden = !open.length;
+        reminderCount.textContent = open.length>9 ? '9+' : String(open.length);
+      }
     }
     function openReminderHub() {
       renderReminders();
@@ -1574,6 +1572,7 @@
 
     function renderCurrentView() {
       if (!$('calView')) return;
+      document.body.dataset.calendarView = curView;
       renderMiniCalendars();
       const isMonth = curView==='month', isAgenda = curView==='agenda';
       $('calView').hidden = !isMonth;
@@ -1581,7 +1580,7 @@
       $('listView').hidden = !isAgenda;
       const currentAgendaMonth = isAgenda && anchorKey.slice(0,7)===todayKey.slice(0,7);
       $('monthTitle').textContent = isMobileCalendar() && currentAgendaMonth
-        ? 'Heute & später'
+        ? 'Termine'
         : calendarRangeTitle(anchorKey,curView);
       const option = CALENDAR_VIEWS.find(view=>view.key===curView);
       const label = curView==='agenda' ? CALENDAR_STYLES[calendarPreference.style].agendaLabel : option?.label || 'Monat';
@@ -1624,6 +1623,7 @@
       const box=$('agenda');
       if(!keys.length){ box.innerHTML=`<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>`; return; }
       const focusKey = keys.find(key=>key>=todayKey) || '';
+      const containsToday = anchorKey.slice(0,7)===todayKey.slice(0,7);
       const groupsHtml = keys.map(k=>{
         const items = map[k].map((e,i)=>{
           const hasPage=(e.ref.planHtml||e.ref.planUrl||(e.ref.itinerary||[]).length);
@@ -1651,15 +1651,15 @@
             <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}</div>${importNote}${fullBtn}</div></div>`;
         }).join('');
         const isFocus = k===focusKey;
-        const marker = isFocus && k>todayKey
-          ? `<div class="agenda-today-marker" data-agenda-focus><span>Heute</span><small>Keine Einträge</small></div>`
+        const marker = isFocus && containsToday
+          ? `<div class="agenda-today-marker" data-agenda-focus><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span>${k>todayKey?'<small>Keine Einträge</small>':''}</div>`
           : '';
-        const dateLabel = k===todayKey ? `Heute · ${fmtDateKey(k)}` : fmtDateKey(k);
-        return `${marker}<div class="agenda-group${k<todayKey?' is-past':''}"${isFocus&&k===todayKey?' data-agenda-focus':''}>
-          <div class="agenda-date">${dateLabel}</div>${items}</div>`;
+        const dateLabel = k===todayKey ? '' : `<div class="agenda-date">${fmtDateKey(k)}</div>`;
+        return `${marker}<div class="agenda-group${k<todayKey?' is-past':''}">
+          ${dateLabel}${items}</div>`;
       }).join('');
-      const endMarker = !focusKey && anchorKey.slice(0,7)===todayKey.slice(0,7)
-        ? `<div class="agenda-today-marker" data-agenda-focus><span>Heute</span><small>Keine weiteren Einträge</small></div>`
+      const endMarker = !focusKey && containsToday
+        ? `<div class="agenda-today-marker" data-agenda-focus><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine weiteren Einträge</small></div>`
         : '';
       box.innerHTML = groupsHtml + endMarker;
       box.querySelectorAll('[data-full-k]').forEach(b=>b.onclick=(ev)=>{
@@ -2448,7 +2448,7 @@
         closeCreateSheet();
         openReminderForm(null,anchorKey<todayKey ? todayKey : anchorKey);
       };
-      $('mobileReminderSummary').onclick=openReminderHub;
+      $('mobileRemindersBtn').onclick=openReminderHub;
       $('reminderHubBackdrop').onclick=closeReminderHub;
       $('reminderHubClose').onclick=closeReminderHub;
       $('reminderHubAdd').onclick=()=>{

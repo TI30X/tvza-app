@@ -103,11 +103,18 @@ test('mobile creation and reminders stay above long calendar content', async () 
 
   assert.match(planner, /id="createEventOption"/);
   assert.match(planner, /id="createReminderOption"/);
-  assert.match(planner, /id="mobileReminderSummary"/);
+  assert.match(planner, /id="mobileRemindersBtn"/);
+  assert.match(planner, /id="mobileReminderCount"/);
   assert.match(planner, /id="reminderHubList"/);
+  assert.match(planner, /document\.body\.dataset\.calendarView = curView/);
+  assert.match(planner, /agenda-today-marker" data-agenda-focus><strong>Heute<\/strong>/);
   assert.match(planner, /\$\('calendarBelow'\)\.style\.display='none'/);
-  assert.match(css, /\.mobile-reminder-summary \{[\s\S]*display:none/);
-  assert.match(css, /#reminderSection \{ display:none; \}/);
+  assert.match(css, /\.mobile-reminder-button \{[\s\S]*display:none/);
+  assert.match(css, /#calendarBelow \{ display:none; \}/);
+  assert.match(css, /data-calendar-view="agenda"[\s\S]*calendar-commandbar__nav \{\s*display:none/);
+  assert.match(css, /@media \(max-width:899px\)/);
+  assert.match(css, /grid-template-columns:22% minmax\(0,1fr\) 27%/);
+  assert.match(css, /height:calc\(70dvh/);
 });
 
 test('mobile month uses only required weeks and wraps event labels', async () => {
