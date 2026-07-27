@@ -75,7 +75,10 @@ function whenText(item) {
 }
 
 function visibleReminders() {
-  return reminders.filter(item => !item.completed);
+  return [
+    ...reminders.filter(item => !item.completed),
+    ...reminders.filter(item => item.completed).slice(-3)
+  ];
 }
 
 function renderList() {

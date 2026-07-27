@@ -1261,7 +1261,10 @@
       return `${day}${reminder.time ? ' · ' + reminder.time : ''}`;
     }
     function reminderListHtml() {
-      const visible = reminders.filter(item => !item.completed);
+      const visible = [
+        ...reminders.filter(item => !item.completed),
+        ...reminders.filter(item => item.completed).slice(-3)
+      ];
       if (!visible.length) {
         return reminders.length
           ? '<p class="empty-hint">Alles erledigt. Abgeschlossene Erinnerungen bleiben unter „Termine“ sichtbar.</p>'
