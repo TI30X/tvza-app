@@ -115,11 +115,24 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.match(shell, /planner\.html\?open=reminder-new/);
   assert.match(shell, /aria-label', 'Erinnerung erstellen'/);
   assert.match(router, /reminderFab\.hidden = fileOf\(target\) === 'planner\.html'/);
+  assert.match(router, /title\.textContent = start \? 'Start' : label/);
+  assert.match(router, /initialStart \? original\.greeting : 'Start'/);
   assert.match(router, /--tvza-shell-bottom/);
   assert.match(router, /new ResizeObserver\(syncShellBounds\)/);
   assert.match(css, /\.global-reminder-fab:not\(\[hidden\]\)/);
   assert.match(css, /bottom: var\(--tvza-shell-bottom/);
   assert.match(css, /html\.tvza-content-frame \.global-reminder-fab/);
+});
+
+test('arranging is docked beside Schnellzugriff instead of floating over cards', async () => {
+  const [dashboard, css] = await Promise.all([
+    read('index.html'),
+    read('assets/css/style.css'),
+  ]);
+
+  assert.match(dashboard, /<h2 class="section-title">Schnellzugriff<\/h2>\s*<button class="reorder-fab" id="editModeBtn"/);
+  assert.match(css, /\.reorder-fab \{[\s\S]*position: static;[\s\S]*background: var\(--surface\)/);
+  assert.doesNotMatch(css, /global-reminder-fab:not\(\[hidden\]\)\) \.reorder-fab/);
 });
 
 test('loaded content only fades in once instead of blinking after updates', async () => {

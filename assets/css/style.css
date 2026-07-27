@@ -1178,22 +1178,19 @@ html.settings-embed #settingsModal .modal { max-height: 100dvh; }
 
 /* Floating "Anordnen" button (bottom-right). Hidden while already editing. */
 .reorder-fab {
-  position: fixed;
-  right: 18px;
-  /* Clear of the navigation bar (§5.2), which owns the bottom edge. */
-  bottom: calc(18px + 64px + env(safe-area-inset-bottom, 0px));
-  z-index: 1150;
+  position: static;
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0 18px;
-  min-height: 48px;
-  border: 0;
+  padding: 0 12px;
+  min-height: 36px;
+  border: 1px solid var(--border);
   border-radius: var(--r-pill);
-  background: var(--accent);
-  color: #fff;
+  background: var(--surface);
+  color: var(--accent);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   -webkit-appearance: none;
@@ -1211,22 +1208,19 @@ body:has(.modal-backdrop.show) .reorder-fab { display: none; }
    würde der Knopf über jedem geladenen Bereich schweben. */
 body:has(.tvza-route-frame) .reorder-fab,
 body:has(.tvza-route-frame) .reorder-hint { display: none; }
-.reorder-fab:hover { background: var(--accent-hover); }
+.reorder-fab:hover { background: var(--surface-2); }
 .reorder-fab:active { transform: scale(0.97); }
 body.reorder-editing .reorder-fab {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(12px);
+  transform: scale(.96);
 }
 @media (max-width: 899px) {
-  /* Keep clear of the navigation bar, which owns the bottom edge —
-     without the bar's height the button lands on top of it. */
   .reorder-fab {
-    right: 14px;
-    bottom: calc(14px + 64px + env(safe-area-inset-bottom, 0px));
-    padding: 0 16px;
-    min-height: 46px;
+    padding: 0 10px;
+    min-height: 34px;
   }
+  .reorder-fab svg { width:16px; height:16px; }
 }
 
 /* ── Settings menu layout — even vertical rhythm ── */
@@ -1949,9 +1943,6 @@ body.reorder-editing .module-tile::after {
   body:has(.global-settings-layer) .global-reminder-fab {
     display:none;
   }
-  body:has(.global-reminder-fab:not([hidden])) .reorder-fab {
-    right:calc(3% + clamp(48px, 14vw, 58px) + 2%);
-  }
 }
 
 /* ── Persistent app shell ───────────────────────────────────────────
@@ -2035,9 +2026,6 @@ html.tvza-content-frame body > main {
 
 /* ── The one breakpoint: 900px ─────────────────────────────────────*/
 @media (min-width: 900px) {
-  /* The bar becomes a left rail, so the bottom edge is free again. */
-  .reorder-fab { bottom: 18px; }
-
   .row      { padding: 14px 16px; gap: 14px; }
   .row__bar { height: 6px; }
   .panel    { padding: 20px 22px; }

@@ -144,14 +144,17 @@ function headerController(runPageAction) {
     greeting: greeting?.textContent || '',
     dateHidden: date?.hidden || false,
   };
+  const initialStart = fileOf(new URL(location.href)) === 'index.html';
 
   const show = (target, label) => {
     const start = fileOf(target) === 'index.html';
     const reminderFab = document.querySelector('.global-reminder-fab');
     if (reminderFab) reminderFab.hidden = fileOf(target) === 'planner.html';
     bar?.classList.toggle('appbar--route-view', !start);
-    if (title) title.textContent = start ? (original.title || 'Start') : label;
-    if (greeting) greeting.textContent = start ? original.greeting : label;
+    if (title) title.textContent = start ? 'Start' : label;
+    if (greeting) greeting.textContent = start
+      ? (initialStart ? original.greeting : 'Start')
+      : label;
     if (date) date.hidden = start ? original.dateHidden : true;
     const pageAction = PAGE_ACTIONS[fileOf(target)];
     action.hidden = !pageAction;

@@ -21,7 +21,7 @@ const SHELL = [
   './index.html',
   './login.html',
   './assets/css/style.css',
-  './assets/css/calendar.css?v=3',
+  './assets/css/calendar.css?v=4',
   './assets/css/matura.css',
   './assets/css/ui-fx.css',
   './assets/js/theme.js',

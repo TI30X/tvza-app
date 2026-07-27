@@ -122,7 +122,10 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(css, /#groupView \.calendar-stage \{[\s\S]*flex:1;[\s\S]*overflow:hidden/);
   assert.match(css, /\.calendar-agenda \{[\s\S]*height:100%;[\s\S]*overflow-y:auto/);
   assert.match(css, /--calendar-mobile-control:clamp/);
-  assert.match(css, /padding-bottom:clamp\(82px, 23vw, 108px\)/);
+  assert.match(css, /padding-bottom:clamp\(112px, 31vw, 148px\)/);
+  assert.doesNotMatch(planner, /id="reminderHubSheet">\s*<div class="grip"/);
+  assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);
+  assert.match(css, /\.reminder-hub-sheet \.reminder-hub-list \{[\s\S]*overflow-y:auto/);
   assert.match(planner, /requestedAction === 'reminder-new'/);
 });
 

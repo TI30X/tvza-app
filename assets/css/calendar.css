@@ -1138,8 +1138,8 @@
   }
   #calendarBelow { display:none; }
   .calendar-view {
-    padding:1.5% 2% clamp(82px, 23vw, 108px);
-    scroll-padding-bottom:clamp(82px, 23vw, 108px);
+    padding:1.5% 2% clamp(112px, 31vw, 148px);
+    scroll-padding-bottom:clamp(112px, 31vw, 148px);
   }
   .calendar-month .weekdays span { font-size:clamp(9px, 2.8vw, 12px); }
   .calendar-month .daynum { font-size:clamp(12px, 3.6vw, 15px); }
@@ -1173,13 +1173,36 @@
   .calendar-agenda {
     height:100%;
     min-height:0;
-    padding-bottom:clamp(82px, 23vw, 108px);
-    scroll-padding-bottom:clamp(82px, 23vw, 108px);
+    padding-bottom:clamp(112px, 31vw, 148px);
+    scroll-padding-bottom:clamp(112px, 31vw, 148px);
     overflow-y:auto;
     overscroll-behavior:contain;
     scrollbar-width:none;
   }
   .calendar-agenda::-webkit-scrollbar { display:none; }
+  .planner-page .reminder-hub-sheet {
+    max-height:min(78dvh, 680px);
+    padding:clamp(12px, 3.5vw, 16px) 5%
+      calc(var(--tvza-shell-bottom, 64px) + clamp(16px, 5vw, 24px));
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  html.tvza-content-frame .planner-page .reminder-hub-sheet {
+    padding-bottom:clamp(16px, 5vw, 24px);
+  }
+  .planner-page .reminder-hub-sheet .sheet-head {
+    margin-bottom:clamp(8px, 2.5vw, 12px);
+  }
+  .planner-page .reminder-hub-sheet .reminder-hub-list {
+    flex:1;
+    min-height:0;
+    max-height:none;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding-bottom:clamp(24px, 8vw, 42px);
+    scroll-padding-bottom:clamp(24px, 8vw, 42px);
+  }
   .calendar-agenda [data-agenda-focus] { scroll-margin-top:8px; }
   .calendar-agenda .item-card { padding:2.5% 1%; }
   .calendar-agenda .agenda-today-marker {
