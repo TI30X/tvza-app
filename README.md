@@ -39,6 +39,15 @@
   lesen oder verändern.
 - `calendarDays/{id}` — persönliche oder importierte Termine; Zugriff wird über `ownerUid`
   auf den Besitzer begrenzt.
+- `families/{id}` — **Kalendergruppe.** Felder: `name, headUid, managers[], members[],
+  pendingRequests[], inviteToken, calendarColor`. Nur wer in `members` steht, darf das
+  Dokument lesen — dort stehen Mitgliederliste und Einladungstoken.
+- `familyDirectory/{familyId}` — enthält **ausschliesslich** `name`. Damit kann man eine
+  Gruppe über ihren Namen finden und eine Beitrittsanfrage stellen, ohne die Gruppe selbst
+  lesen zu dürfen.
+- `trips/{id}`, `activities/{id}`, `attachments/{id}` — Gruppendaten. Der Zugriff hängt an
+  der Mitgliedschaft in `families/{trip.familyId}`, nicht am blossen Familien-Login.
+  Ein Anhang gehört entweder zu einer Reise oder zu einem eigenen `calendarDays`-Eintrag.
 - `customFoods/{id}` — vom Admin freigegebene Lebensmittel (`name, kcal, protein, carbs, fat, fibre, micros`).
   Werden im Food Tracker beim Start geladen und stehen dann allen in Suche & Scan zur Verfügung.
 - `foodRequests/{id}` — Vorschläge von Nutzern für fehlende Lebensmittel
@@ -82,6 +91,12 @@ Kopiere die komplette Datei `firestore.rules` (im Repo-Stamm) in die Firebase-Ko
 >
 > Falls künftig eine **neue** Sammlung dazukommt, muss sie in `firestore.rules`
 > ergänzt werden — sonst wird der Zugriff standardmässig verweigert.
+>
+> **Seit v.31.1.0:** Kalendergruppen sind gegeneinander abgeschottet. Ein Familien-Login
+> allein reicht nicht mehr, um fremde Gruppen, Reisen, Aktivitäten oder Anhänge zu lesen
+> oder zu verändern — dafür zählt nur noch die Mitgliedschaft in `families/{id}.members`.
+> Nach dem Veröffentlichen einmal „Einladungslink" pro Gruppe öffnen: kurze Alt-Tokens
+> werden dabei durch 16-stellige Zufallstokens ersetzt (alte Links verfallen).
 
 ### 2. Neue Familienmitglieder einladen
 1. Admin öffnet ⚙️ Einstellungen → „Admin · Familien-Einladungen".

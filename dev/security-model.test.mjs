@@ -93,6 +93,56 @@ test('personal reminders and imported calendar entries stay owner-scoped', async
   assert.doesNotMatch(calendarDays, /allow read, write: if isMember/);
 });
 
+test('calendar group data is scoped to the group, not to the whole family', async () => {
+  const rules = await read('firestore.rules');
+
+  for (const name of ['families', 'trips', 'activities', 'attachments']) {
+    assert.doesNotMatch(rules, new RegExp(`match /${name}/\\{[^}]+\\}\\s*\\{[^}]*allow read, write: if isMember`));
+  }
+  assert.match(rules, /function inFamily\(familyId\)[\s\S]*request\.auth\.uid in familyData\(familyId\)\.get\('members', \[\]\)/);
+
+  const trips = rules.match(/match \/trips\/\{tripId\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  assert.ok(trips);
+  assert.match(trips, /allow list: if inFamily\(resource\.data\.get\('familyId', ''\)\)/);
+  assert.match(trips, /allow create: if inFamily\(request\.resource\.data\.get\('familyId', ''\)\)/);
+
+  const activities = rules.match(/match \/activities\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  const attachments = rules.match(/match \/attachments\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  assert.match(activities, /canUseTrip/);
+  assert.match(attachments, /canUseAttachmentParent/);
+});
+
+test('group documents stay unreadable outside the group and names live in a directory', async () => {
+  const [rules, planner] = await Promise.all([
+    read('firestore.rules'),
+    read('pages/planner.html'),
+  ]);
+
+  const families = rules.match(/match \/families\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  assert.ok(families);
+  assert.match(families, /allow get, list: if inFamilyDoc\(\) \|\| managesFamilyDoc\(\)/);
+  // Joining by link proves knowledge of the token instead of reading it.
+  assert.match(families, /request\.resource\.data\.inviteToken == resource\.data\.inviteToken/);
+  assert.match(rules, /match \/familyDirectory\/\{familyId\}/);
+
+  assert.match(planner, /collection\(db,'familyDirectory'\), where\('name','==',name\)/);
+  assert.doesNotMatch(planner, /Math\.random\(\)\.toString\(36\)\.slice\(2,10\)/);
+});
+
+test('a member cannot slip into a calendar group by editing their own profile', async () => {
+  const rules = await read('firestore.rules');
+  const users = rules.match(/match \/users\/\{uid\} \{([\s\S]*?)\n      allow delete: if isAdmin\(\);/)?.[1] || '';
+
+  assert.ok(users);
+  assert.match(users, /inFamily\(request\.resource\.data\.familyId\)/);
+});
+
+test('dashboard loads trips per group instead of the whole collection', async () => {
+  const dashboard = await read('index.html');
+  assert.doesNotMatch(dashboard, /getDocs\(collection\(db, 'trips'\)\)/);
+  assert.match(dashboard, /where\('familyId','==',familyId\)/);
+});
+
 test('uploaded calendar HTML cannot run with TVZA origin privileges', async () => {
   const planner = await read('pages/planner.html');
   assert.doesNotMatch(planner, /sandbox="[^"]*allow-same-origin/);

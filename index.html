@@ -1778,14 +1778,15 @@
           });
         } catch (e) { reportClientError('calendar-tile-reminders', e); }
         try {
-          // Alle Reisen holen (Firestore-Regeln erlauben das ohnehin allen angemeldeten
-          // Nutzern) und client-seitig auf die eigene Gruppe ODER selbst erstellte Reisen
-          // filtern — robuster als ein reiner familyId-Filter, falls die Gruppenzuordnung
-          // mal nicht passt.
-          const tripSnap = await getDocs(collection(db, 'trips'));
-          tripSnap.docs.forEach(d => {
+          // Reisen werden pro Gruppe geladen. Eine Sammelabfrage über alle
+          // Reisen lehnen die Firestore-Regeln ab, weil fremde Gruppen für
+          // Nichtmitglieder unsichtbar sind.
+          const tripSnaps = await Promise.all([...familyIds].map(familyId =>
+            getDocs(query(collection(db, 'trips'), where('familyId','==',familyId)))
+          ));
+          tripSnaps.flatMap(snap => snap.docs).forEach(d => {
             const x = d.data(); if (!x.startDate) return;
-            const mine = familyIds.has(x.familyId) || x.createdBy === uid;
+            const mine = familyIds.has(x.familyId);
             if (!mine) return;
             // Bereits laufende Reisen (Start in der Vergangenheit, Ende noch nicht erreicht) zählen als "heute".
             const ongoing = x.startDate < todayStr && (!x.endDate || x.endDate >= todayStr);

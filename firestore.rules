@@ -39,13 +39,67 @@ service cloud.firestore {
           == request.auth.token.email.lower();
     }
 
+    // ── Calendar group membership ───────────────────────────────
+    // Belonging to the family app is NOT the same as belonging to a calendar
+    // group. Each group document carries its own members list, and all group
+    // data — trips, activities, attachments — is gated on that list.
+
+    function familyData(familyId) {
+      return get(/databases/$(database)/documents/families/$(familyId)).data;
+    }
+
+    function familyExists(familyId) {
+      return familyId is string
+        && exists(/databases/$(database)/documents/families/$(familyId));
+    }
+
+    function inFamily(familyId) {
+      return isMember()
+        && familyExists(familyId)
+        && request.auth.uid in familyData(familyId).get('members', []);
+    }
+
     function managesFamily(familyId) {
       return isMember()
-        && familyId is string
-        && exists(/databases/$(database)/documents/families/$(familyId))
+        && familyExists(familyId)
         && (
-          get(/databases/$(database)/documents/families/$(familyId)).data.headUid == request.auth.uid
-          || request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.managers
+          familyData(familyId).get('headUid', '') == request.auth.uid
+          || request.auth.uid in familyData(familyId).get('managers', [])
+        );
+    }
+
+    // The same two checks against the document already being read or written,
+    // so the rules on /families itself need no extra lookup.
+    function inFamilyDoc() {
+      return isMember() && request.auth.uid in resource.data.get('members', []);
+    }
+
+    function managesFamilyDoc() {
+      return isMember()
+        && (
+          resource.data.get('headUid', '') == request.auth.uid
+          || request.auth.uid in resource.data.get('managers', [])
+        );
+    }
+
+    function canUseTrip(tripId) {
+      return tripId is string
+        && exists(/databases/$(database)/documents/trips/$(tripId))
+        && inFamily(
+          get(/databases/$(database)/documents/trips/$(tripId)).data.get('familyId', '')
+        );
+    }
+
+    // An attachment hangs off either a group trip or a personal calendar day.
+    function canUseAttachmentParent(parentId) {
+      return parentId is string
+        && (
+          canUseTrip(parentId)
+          || (
+            exists(/databases/$(database)/documents/calendarDays/$(parentId))
+            && get(/databases/$(database)/documents/calendarDays/$(parentId)).data.ownerUid
+              == request.auth.uid
+          )
         );
     }
 
@@ -100,13 +154,21 @@ service cloud.firestore {
                     ]);
 
       // Members may change only their own preferences and planner membership.
-      // Admin/module flags and the account email are server-controlled.
+      // Admin/module flags and the account email are server-controlled. A
+      // self-set familyId must be a group the user really belongs to,
+      // otherwise the join-approval flow could be skipped by writing here.
       allow update: if isAdmin()
                     || (
                       isMember()
                       && request.auth.uid == uid
                       && request.resource.data.diff(resource.data).affectedKeys()
                         .hasOnly(['displayName', 'modules', 'projectsSeeded', 'familyId', 'role'])
+                      && (
+                        request.resource.data.get('familyId', null)
+                          == resource.data.get('familyId', null)
+                        || request.resource.data.get('familyId', null) == null
+                        || inFamily(request.resource.data.familyId)
+                      )
                     )
                     || (
                       isMember()
@@ -364,8 +426,126 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /families/{id}     { allow read, write: if isMember(); }
-    match /activities/{id}   { allow read, write: if isMember(); }
+    // ── Calendar groups ──────────────────────────────────────────
+    // The group document holds the member list and the invite token, so only
+    // its own members may read it. Searching for a group by name goes through
+    // /familyDirectory, which carries nothing but the name.
+    match /familyDirectory/{familyId} {
+      allow read: if isMember();
+      allow create, update: if managesFamily(familyId)
+                            && request.resource.data.name is string
+                            && request.resource.data.name.size() > 0
+                            && request.resource.data.name.size() <= 80
+                            && request.resource.data.keys().hasOnly(['name']);
+      allow delete: if managesFamily(familyId);
+    }
+
+    match /families/{id} {
+      allow get, list: if inFamilyDoc() || managesFamilyDoc();
+
+      allow create: if isMember()
+                    && request.resource.data.headUid == request.auth.uid
+                    && request.resource.data.members == [request.auth.uid]
+                    && request.resource.data.managers == [request.auth.uid]
+                    && request.resource.data.pendingRequests == []
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 80
+                    && request.resource.data.inviteToken is string
+                    && request.resource.data.inviteToken.size() >= 8
+                    && request.resource.data.keys().hasOnly([
+                      'name', 'headUid', 'managers', 'members', 'pendingRequests',
+                      'inviteToken', 'calendarColor', 'createdAt'
+                    ]);
+
+      allow update: if
+                    // Managers curate the group. Only the head may change the
+                    // manager list or hand the lead over.
+                    (
+                      managesFamilyDoc()
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly([
+                          'name', 'calendarColor', 'members', 'managers',
+                          'headUid', 'pendingRequests', 'inviteToken'
+                        ])
+                      && request.resource.data.headUid is string
+                      && request.auth.uid in request.resource.data.members
+                      && (
+                        request.resource.data.headUid == resource.data.headUid
+                        || resource.data.get('headUid', '') == request.auth.uid
+                      )
+                      && (
+                        request.resource.data.get('managers', [])
+                          == resource.data.get('managers', [])
+                        || resource.data.get('headUid', '') == request.auth.uid
+                      )
+                    )
+                    // Joining through an invite link: the caller proves it knows
+                    // the token by sending it back unchanged, and may add nobody
+                    // but itself.
+                    || (
+                      isMember()
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['members', 'inviteToken'])
+                      && resource.data.inviteToken is string
+                      && resource.data.inviteToken.size() >= 8
+                      && request.resource.data.inviteToken == resource.data.inviteToken
+                      && !(request.auth.uid in resource.data.get('members', []))
+                      && request.resource.data.members
+                        == resource.data.get('members', []).concat([request.auth.uid])
+                    )
+                    // Asking to join: adds only itself to pendingRequests.
+                    || (
+                      isMember()
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['pendingRequests'])
+                      && !(request.auth.uid in resource.data.get('members', []))
+                      && request.resource.data.pendingRequests
+                        == resource.data.get('pendingRequests', []).concat([request.auth.uid])
+                    )
+                    // Leaving: removes only itself. The head hands over first.
+                    || (
+                      isMember()
+                      && request.auth.uid in resource.data.get('members', [])
+                      && resource.data.get('headUid', '') != request.auth.uid
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['members', 'managers'])
+                      && request.resource.data.members
+                        == resource.data.get('members', []).removeAll([request.auth.uid])
+                      && request.resource.data.get('managers', [])
+                        == resource.data.get('managers', []).removeAll([request.auth.uid])
+                    );
+
+      allow delete: if isMember()
+                    && resource.data.get('headUid', '') == request.auth.uid;
+    }
+
+    match /trips/{tripId} {
+      allow get: if inFamily(resource.data.get('familyId', ''))
+                 || hasGuestAccess(tripId);
+      allow list: if inFamily(resource.data.get('familyId', ''));
+      allow create: if inFamily(request.resource.data.get('familyId', ''))
+                    && request.resource.data.createdBy == request.auth.uid;
+      // Moving a trip is allowed only between groups the caller belongs to.
+      allow update: if inFamily(resource.data.get('familyId', ''))
+                    && inFamily(request.resource.data.get('familyId', ''))
+                    && request.resource.data.get('createdBy', '')
+                      == resource.data.get('createdBy', '');
+      allow delete: if inFamily(resource.data.get('familyId', ''));
+    }
+
+    match /activities/{id} {
+      allow read: if canUseTrip(resource.data.get('tripId', ''));
+      allow create: if canUseTrip(request.resource.data.get('tripId', ''))
+                    && request.resource.data.keys().hasOnly([
+                      'tripId', 'name', 'done', 'createdAt'
+                    ]);
+      allow update: if canUseTrip(resource.data.get('tripId', ''))
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['name', 'done']);
+      allow delete: if canUseTrip(resource.data.get('tripId', ''));
+    }
+
     match /calendarDays/{id} {
       allow create: if isMember()
                     && request.resource.data.ownerUid == request.auth.uid;
@@ -375,11 +555,18 @@ service cloud.firestore {
                     && resource.data.ownerUid == request.auth.uid
                     && request.resource.data.ownerUid == request.auth.uid;
     }
-    match /attachments/{id}  { allow read, write: if isMember(); }
 
-    match /trips/{tripId} {
-      allow read: if isMember() || hasGuestAccess(tripId);
-      allow write: if isMember();
+    match /attachments/{id} {
+      allow read: if canUseAttachmentParent(resource.data.get('parent', ''));
+      allow create: if canUseAttachmentParent(request.resource.data.get('parent', ''))
+                    && request.resource.data.by == request.auth.uid
+                    && request.resource.data.size is number
+                    && request.resource.data.size <= 950000
+                    && request.resource.data.keys().hasOnly([
+                      'parent', 'scope', 'name', 'type', 'size', 'dataUrl', 'by', 'at'
+                    ]);
+      allow update: if false;
+      allow delete: if canUseAttachmentParent(resource.data.get('parent', ''));
     }
 
     // Everything else is denied by default.

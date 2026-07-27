@@ -607,7 +607,7 @@
       normalizeCalendarColor, calendarColorInk, normalizeCalendarPreference
     } from '../assets/js/calendar-view.js';
     import {
-      collection, addDoc, getDocs, getDoc, query, where, doc, updateDoc, deleteDoc,
+      collection, addDoc, getDocs, getDoc, query, where, doc, setDoc, updateDoc, deleteDoc,
       onSnapshot, serverTimestamp, arrayUnion, arrayRemove
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -765,22 +765,24 @@
     const personalCalendarColor = () => normalizeCalendarColor(calendarPreference.personalColor);
     const eventColorVars = color => `--event-color:${normalizeCalendarColor(color)};--event-ink:${calendarColorInk(normalizeCalendarColor(color))}`;
 
+    const directorySynced = new Set();
+
     async function resolveGroups() {
       const params = new URLSearchParams(location.search);
       const invite = params.get('invite'), token = params.get('token');
       const userRef = doc(db, 'users', user.uid);
       if (invite && token) {
         try {
-          const fs = await getDoc(doc(db,'families',invite));
-          if (fs.exists()) {
-            const data = fs.data();
-            if (!(data.members||[]).includes(user.uid) && data.inviteToken === token) {
-              await updateDoc(doc(db,'families',invite), { members:arrayUnion(user.uid) });
-              if (!profile.familyId) {
-                await updateDoc(userRef, { familyId:invite, role:'member' });
-                profile.familyId = invite;
-              }
-            }
+          // Wer noch nicht Mitglied ist, darf die Gruppe nicht mehr lesen. Das
+          // Token wird deshalb unverändert mitgeschickt und serverseitig
+          // verglichen — ein falsches Token lässt den Schreibvorgang scheitern.
+          await updateDoc(doc(db,'families',invite), {
+            members:arrayUnion(user.uid),
+            inviteToken:token
+          });
+          if (!profile.familyId) {
+            await updateDoc(userRef, { familyId:invite, role:'member' });
+            profile.familyId = invite;
           }
         } catch(e){ reportClientError('family-invite', e); }
         history.replaceState({}, '', location.pathname);
@@ -813,6 +815,14 @@
           const previousActive = group?.id;
           groups = snap.docs.map(item => ({ id:item.id, ...item.data() }))
             .sort((a,b) => (a.name||'').localeCompare(b.name||''));
+          // Gruppen von früher haben noch keinen Verzeichniseintrag. Wer die
+          // Gruppe leitet, legt ihn beim ersten Laden einmal nach.
+          groups.forEach(item => {
+            if (!item.name || directorySynced.has(item.id)) return;
+            if (![...(item.managers||[]), item.headUid].includes(user.uid)) return;
+            directorySynced.add(item.id);
+            syncGroupDirectory(item.id, item.name);
+          });
           if (!groups.length) { group=null; showNoGroup(); return; }
           loadVisibleSources();
           let savedActive = '';
@@ -1079,10 +1089,22 @@
       $('grpCard').querySelectorAll('[data-remove-member]').forEach(button => button.onclick=()=>removeGroupMember(button.dataset.removeMember,names[button.dataset.removeMember]));
     }
     async function renameGroup() {
+      if(!isManager())return;
       const name=$('groupRenameInput').value.trim();
       if(!name){ groupManageStatus('Bitte einen Gruppennamen eingeben.',true); return; }
-      try { await updateDoc(doc(db,'families',group.id),{name}); }
+      try {
+        await updateDoc(doc(db,'families',group.id),{name});
+        await syncGroupDirectory(group.id,name);
+      }
       catch(error){ reportClientError('calendar-group-rename',error); groupManageStatus('Der Name konnte nicht gespeichert werden.',true); }
+    }
+    /* Der Gruppenname liegt zusätzlich in familyDirectory: Suchende dürfen die
+       Gruppe selbst nicht lesen (dort stehen Mitglieder und Einladungstoken),
+       brauchen aber einen Namen, um eine Beitrittsanfrage stellen zu können. */
+    async function syncGroupDirectory(id, name) {
+      if(!id || !name) return;
+      try { await setDoc(doc(db,'familyDirectory',id),{name}); }
+      catch(error){ reportClientError('calendar-group-directory',error); }
     }
     async function setGroupCalendarColor(color) {
       if(!isManager())return;
@@ -1132,8 +1154,8 @@
     }
     async function showInvite(){
       let token=group.inviteToken;
-      if(!token){
-        token=Math.random().toString(36).slice(2,10);
+      if(!token || token.length<16){
+        token=randToken();
         try { await updateDoc(doc(db,'families',group.id),{inviteToken:token}); group.inviteToken=token; }
         catch(error){ reportClientError('calendar-group-invite',error); groupManageStatus('Der Einladungslink konnte nicht erstellt werden.',true); return; }
       }
@@ -1144,7 +1166,7 @@
     }
     async function resetInvite(){
       if(!isManager() || !confirm('Der bisherige Einladungslink funktioniert danach nicht mehr. Link erneuern?'))return;
-      const inviteToken=Math.random().toString(36).slice(2,10);
+      const inviteToken=randToken();
       try { await updateDoc(doc(db,'families',group.id),{inviteToken}); group.inviteToken=inviteToken; await showInvite(); }
       catch(error){ reportClientError('calendar-group-invite-reset',error); groupManageStatus('Der Link konnte nicht erneuert werden.',true); }
     }
@@ -1152,8 +1174,9 @@
     /* ── Create / join ── */
     async function createGroup(name) {
       name = name.trim(); if(!name){ alert('Bitte einen Namen eingeben.'); return; }
-      const token = Math.random().toString(36).slice(2,10);
+      const token = randToken();
       const ref = await addDoc(collection(db,'families'), { name, headUid:user.uid, managers:[user.uid], members:[user.uid], pendingRequests:[], inviteToken:token, createdAt:serverTimestamp() });
+      await syncGroupDirectory(ref.id, name);
       if (!profile.familyId) {
         await updateDoc(doc(db,'users',user.uid), { familyId:ref.id, role:'manager' });
         profile.familyId = ref.id;
@@ -1162,11 +1185,14 @@
     }
     async function joinGroup(name, statusEl) {
       name = name.trim(); if(!name)return;
-      const qs = await getDocs(query(collection(db,'families'), where('name','==',name)));
+      // Gesucht wird im Namensverzeichnis — die Gruppe selbst bleibt für
+      // Nichtmitglieder unlesbar.
+      const qs = await getDocs(query(collection(db,'familyDirectory'), where('name','==',name)));
       if (qs.empty){ statusEl.textContent='Keine Gruppe mit diesem Namen gefunden.'; return; }
       const candidate = qs.docs[0];
-      if ((candidate.data().members||[]).includes(user.uid)){ statusEl.textContent='Du bist bereits Mitglied dieser Gruppe.'; return; }
-      await updateDoc(doc(db,'families',candidate.id), { pendingRequests:arrayUnion(user.uid) });
+      if (groups.some(item => item.id === candidate.id)){ statusEl.textContent='Du bist bereits Mitglied dieser Gruppe.'; return; }
+      try { await updateDoc(doc(db,'families',candidate.id), { pendingRequests:arrayUnion(user.uid) }); }
+      catch(error){ reportClientError('calendar-group-join',error); statusEl.textContent='Die Anfrage konnte nicht gesendet werden.'; return; }
       statusEl.textContent='Anfrage gesendet — ein Gruppen-Manager muss dich bestätigen.';
     }
     function openGroupManager(){
