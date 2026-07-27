@@ -75,10 +75,7 @@ function whenText(item) {
 }
 
 function visibleReminders() {
-  return [
-    ...reminders.filter(item => !item.completed),
-    ...reminders.filter(item => item.completed).slice(-3)
-  ];
+  return reminders;
 }
 
 function renderList() {
@@ -159,6 +156,9 @@ function watchUserReminders(nextUser) {
 
 async function setCompleted(item, completed) {
   if (!user || !item?.id) return false;
+  const previousCompleted = !!item.completed;
+  item.completed = completed;
+  renderState();
   try {
     await updateDoc(doc(reminderCollection(), item.id), {
       completed,
@@ -167,6 +167,8 @@ async function setCompleted(item, completed) {
     });
     return true;
   } catch (error) {
+    item.completed = previousCompleted;
+    renderState();
     reportClientError('global-reminder-completion', error);
     alert('Erinnerung konnte nicht aktualisiert werden.');
     return false;

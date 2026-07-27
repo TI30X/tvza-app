@@ -127,7 +127,8 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.doesNotMatch(overlay, /planner\.html\?open=reminders/);
   assert.match(overlay, /const HIDDEN_ON = new Set\(\['planner\.html', 'messages\.html'\]\)/);
   assert.match(overlay, /onSnapshot\(reminderCollection\(\)/);
-  assert.match(overlay, /reminders\.filter\(item => item\.completed\)\.slice\(-3\)/);
+  assert.match(overlay, /function visibleReminders\(\) \{\s*return reminders;/);
+  assert.match(overlay, /item\.completed = completed;\s*renderState\(\);/);
   assert.match(overlay, /global-reminder-fab__count/);
   assert.match(overlay, /global-reminder-list[\s\S]*globalReminderAdd/);
   assert.match(router, /tvzaReminderOverlay\?\.setContext\(fileOf\(target\)\)/);

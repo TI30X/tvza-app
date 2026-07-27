@@ -11,7 +11,7 @@
    beide Zahlen nur noch gemeinsam wandern können. */
 
 const CACHE = 'tvza-v.31.0.0';
-// Shell revision 9: live global reminder sheet without calendar navigation.
+// Shell revision 10: keep completed reminders visible and refresh the panel instantly.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',

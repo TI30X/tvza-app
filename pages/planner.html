@@ -1261,10 +1261,7 @@
       return `${day}${reminder.time ? ' · ' + reminder.time : ''}`;
     }
     function reminderListHtml() {
-      const visible = [
-        ...reminders.filter(item => !item.completed),
-        ...reminders.filter(item => item.completed).slice(-3)
-      ];
+      const visible = reminders;
       if (!visible.length) {
         return reminders.length
           ? '<p class="empty-hint">Alles erledigt. Abgeschlossene Erinnerungen bleiben unter „Termine“ sichtbar.</p>'
@@ -1356,6 +1353,10 @@
     }
     async function setReminderCompletion(item, completed) {
       if (!item?.id) return false;
+      const previousCompleted = !!item.completed;
+      item.completed = completed;
+      renderReminders();
+      if (groups.length) renderCurrentView();
       try {
         await updateDoc(doc(reminderCollection(), item.id), {
           completed,
@@ -1364,6 +1365,9 @@
         });
         return true;
       } catch (error) {
+        item.completed = previousCompleted;
+        renderReminders();
+        if (groups.length) renderCurrentView();
         reportClientError('reminder-completion', error);
         alert('Erinnerung konnte nicht aktualisiert werden.');
         return false;
