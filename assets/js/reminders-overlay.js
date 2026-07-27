@@ -42,8 +42,8 @@ const currentFile = () => location.pathname.split('/').pop() || 'index.html';
 function setContext(file = currentFile()) {
   const trigger = $('globalReminderFab');
   if (!trigger) return;
+  closeOverlay();
   trigger.hidden = HIDDEN_ON.has(file);
-  if (trigger.hidden) closeOverlay();
 }
 
 function setCount(value, state = 'ready') {

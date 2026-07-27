@@ -143,6 +143,9 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.match(css, /\.global-reminder-fab:not\(\[hidden\]\)/);
   assert.match(css, /\.global-reminder-fab,[\s\S]*\.global-reminder-sheet \{ display:none; \}/);
   assert.match(css, /\.global-reminder-sheet \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
+  assert.match(css, /\.global-reminder-backdrop \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
+  assert.doesNotMatch(css, /\.global-reminder-backdrop \{[\s\S]{0,260}backdrop-filter/);
+  assert.match(overlay, /function setContext[\s\S]*closeOverlay\(\);[\s\S]*trigger\.hidden/);
   assert.match(css, /\.global-reminder-fab__count\.has-open/);
   assert.match(css, /\.global-reminder-add,[\s\S]*margin-top:12px/);
   assert.doesNotMatch(css, /\.global-reminder-list-view \{[\s\S]{0,180}min-height:min\(58dvh/);

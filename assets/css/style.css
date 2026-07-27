@@ -1972,10 +1972,12 @@ body.reorder-editing .module-tile::after {
   .global-reminder-backdrop {
     position:fixed;
     z-index:60;
-    inset:0;
+    top:0;
+    right:0;
+    bottom:var(--tvza-shell-bottom, calc(64px + env(safe-area-inset-bottom)));
+    left:0;
     display:none;
     background:rgba(15,23,42,.52);
-    backdrop-filter:blur(1px);
   }
   .global-reminder-backdrop.visible { display:block; }
   .global-reminder-sheet {

@@ -138,6 +138,9 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /agenda-completed-badge/);
   assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);
+  assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
+  assert.match(css, /\.planner-page #reminderHubBackdrop \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
+  assert.match(css, /html\.tvza-content-frame \.planner-page #reminderHubBackdrop \{ bottom:0; \}/);
   assert.match(css, /\.reminder-hub-sheet \.reminder-hub-list \{[\s\S]*overflow-y:auto/);
   assert.match(css, /\.reminder-hub-add \{[\s\S]*border-radius:var\(--r-pill\)/);
   assert.match(css, /\.reminder-hub-sheet \.reminder-row__title \{[\s\S]*font-weight:800/);
