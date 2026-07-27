@@ -1024,7 +1024,7 @@
     position:relative;
     z-index:20;
     flex:none;
-    grid-template-columns:repeat(12,minmax(0,1fr));
+    grid-template-columns:repeat(11,minmax(0,1fr)) var(--calendar-mobile-control);
     grid-template-areas:
       "title title title title title title title title title title title settings"
       "today today today views views views views views views . . ."
@@ -1080,6 +1080,7 @@
     width:var(--calendar-mobile-control);
     height:var(--calendar-mobile-control);
     border-radius:50%;
+    justify-self:end;
   }
   .calendar-commandbar__views .calendar-commandbar__create {
     display:none;

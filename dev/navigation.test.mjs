@@ -41,6 +41,8 @@ test('current area uses the same active band as Start and settings stay above th
   ]);
 
   assert.match(nav, /aria-current="page"/);
+  assert.match(nav, /appbar\.dataset\.profileName = profileName/);
+  assert.match(nav, /localStorage\.setItem\('tvza-name', profileName\)/);
   assert.doesNotMatch(nav, /nav__current|>Aktuell</);
   assert.doesNotMatch(shell, /nav__current|>Aktuell</);
   assert.doesNotMatch(css, /content:\s*"Aktueller Bereich"/);
@@ -116,7 +118,12 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.match(shell, /aria-label', 'Erinnerung erstellen'/);
   assert.match(router, /reminderFab\.hidden = fileOf\(target\) === 'planner\.html'/);
   assert.match(router, /title\.textContent = start \? 'Start' : label/);
-  assert.match(router, /initialStart \? original\.greeting : 'Start'/);
+  assert.match(router, /function generatedStartHeader\(bar\)/);
+  assert.match(router, /startHeader\.greeting = greeting\?\.textContent\?\.trim\(\)/);
+  assert.match(router, /savedGreeting === 'Willkommen' \|\| savedGreeting === 'Start'/);
+  assert.match(router, /date\.hidden = !start/);
+  assert.match(router, /toLocaleDateString\('de-CH'/);
+  assert.match(router, /bar\?\.dataset\.profileName/);
   assert.match(router, /--tvza-shell-bottom/);
   assert.match(router, /new ResizeObserver\(syncShellBounds\)/);
   assert.match(css, /\.global-reminder-fab:not\(\[hidden\]\)/);

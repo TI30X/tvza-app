@@ -119,11 +119,39 @@ function routeLabel(nav, target) {
     document.title.split('—')[0].trim();
 }
 
+function generatedStartHeader(bar) {
+  let name = String(bar?.dataset.profileName || '').trim();
+  if (!name) {
+    try { name = String(localStorage.getItem('tvza-name') || '').trim(); } catch {}
+  }
+  const now = new Date();
+  const hour = now.getHours();
+  const salutation = hour >= 5 && hour < 12 ? 'Guten Morgen'
+    : hour >= 12 && hour < 18 ? 'Guten Tag'
+    : hour >= 18 ? 'Guten Abend'
+    : 'Gute Nacht';
+  return {
+    greeting: `${salutation}, ${name || 'du'}`,
+    date: now.toLocaleDateString('de-CH', {
+      weekday:'long',
+      year:'numeric',
+      month:'long',
+      day:'numeric',
+    }),
+  };
+}
+
 function headerController(runPageAction) {
   const bar = document.querySelector('.appbar');
   const title = bar?.querySelector('.appbar__title');
   const greeting = bar?.querySelector('.appbar__greet');
-  const date = bar?.querySelector('.appbar__date');
+  let date = bar?.querySelector('.appbar__date');
+  if (!date && greeting) {
+    date = document.createElement('div');
+    date.className = 'appbar__date';
+    date.hidden = true;
+    greeting.insertAdjacentElement('afterend', date);
+  }
   const sourceAction = bar?.querySelector('#profileBtn, #settingsBtn');
   const action = document.createElement('button');
   action.className = 'appbar__btn tvza-route-page-action';
@@ -145,17 +173,33 @@ function headerController(runPageAction) {
     dateHidden: date?.hidden || false,
   };
   const initialStart = fileOf(new URL(location.href)) === 'index.html';
+  const startHeader = {
+    greeting: initialStart ? original.greeting : '',
+    date: initialStart ? date?.textContent || '' : '',
+  };
+  let showingStart = initialStart;
 
   const show = (target, label) => {
     const start = fileOf(target) === 'index.html';
+    if (showingStart && !start) {
+      startHeader.greeting = greeting?.textContent?.trim() || startHeader.greeting;
+      startHeader.date = date?.textContent?.trim() || startHeader.date;
+    }
     const reminderFab = document.querySelector('.global-reminder-fab');
     if (reminderFab) reminderFab.hidden = fileOf(target) === 'planner.html';
     bar?.classList.toggle('appbar--route-view', !start);
     if (title) title.textContent = start ? 'Start' : label;
-    if (greeting) greeting.textContent = start
-      ? (initialStart ? original.greeting : 'Start')
-      : label;
-    if (date) date.hidden = start ? original.dateHidden : true;
+    const generated = generatedStartHeader(bar);
+    const savedGreeting = startHeader.greeting;
+    const personalGreeting = !savedGreeting || savedGreeting === 'Willkommen' || savedGreeting === 'Start'
+      ? generated.greeting
+      : savedGreeting;
+    if (greeting) greeting.textContent = start ? personalGreeting : label;
+    if (date) {
+      if (start) date.textContent = startHeader.date || generated.date;
+      date.hidden = !start;
+    }
+    showingStart = start;
     const pageAction = PAGE_ACTIONS[fileOf(target)];
     action.hidden = !pageAction;
     action.dataset.targetId = pageAction?.targetId || '';

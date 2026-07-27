@@ -113,6 +113,12 @@ function refreshAreaNavigation(profile) {
 }
 
 function mount(profile) {
+  const profileName = String(profile?.displayName || profile?.name || '').trim();
+  const appbar = document.querySelector('.appbar');
+  if (appbar && profileName) appbar.dataset.profileName = profileName;
+  if (profileName) {
+    try { localStorage.setItem('tvza-name', profileName); } catch {}
+  }
   const existingNav = document.querySelector('.nav');
   if (existingNav) {
     mountAppRouter(existingNav);

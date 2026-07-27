@@ -11,6 +11,7 @@
    beide Zahlen nur noch gemeinsam wandern können. */
 
 const CACHE = 'tvza-v.31.0.0';
+// Shell revision 7: restore the personal Start greeting after routed views.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
@@ -21,7 +22,7 @@ const SHELL = [
   './index.html',
   './login.html',
   './assets/css/style.css',
-  './assets/css/calendar.css?v=5',
+  './assets/css/calendar.css?v=6',
   './assets/css/matura.css',
   './assets/css/ui-fx.css',
   './assets/js/theme.js',
