@@ -322,11 +322,22 @@
               </div>
               <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">
                 <span class="ui-plus calendar-action-icon calendar-commandbar__plus" aria-hidden="true"></span>
-                <span class="calendar-commandbar__create-label">Neuer Termin</span>
+                <span class="calendar-commandbar__create-label">Erstellen</span>
               </button>
             </div>
 
             <div class="calendar-mobile-sources" id="calendarMobileSources"></div>
+            <button class="mobile-reminder-summary" id="mobileReminderSummary" type="button">
+              <span class="mobile-reminder-summary__icon" aria-hidden="true">
+                <svg class="ic" viewBox="0 0 24 24" width="18" height="18"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+              </span>
+              <span class="mobile-reminder-summary__body">
+                <span class="mobile-reminder-summary__label">Erinnerungen</span>
+                <strong id="mobileReminderSummaryTitle">Wird geladen…</strong>
+                <span id="mobileReminderSummaryMeta"></span>
+              </span>
+              <span class="mobile-reminder-summary__open">Öffnen ›</span>
+            </button>
 
             <div class="calendar-stage">
               <div class="calendar-view calendar-month" id="calView">
@@ -346,7 +357,7 @@
         </div>
       </div>
 
-      <div class="calendar-below">
+      <div class="calendar-below" id="calendarBelow">
         <section class="planner-panel" id="reminderSection">
           <div class="planner-section-head">
             <div>
@@ -399,6 +410,44 @@
         </button>
       </span></div>
     <div id="dayEvents"></div>
+  </div>
+
+  <!-- One entry point for both kinds of calendar content -->
+  <div class="backdrop" id="createBackdrop"></div>
+  <div class="sheet create-sheet" id="createSheet">
+    <div class="grip"></div>
+    <div class="sheet-head"><span class="sheet-title">Erstellen</span>
+      <button class="icon-pill" id="createSheetClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <p class="create-sheet__copy">Was möchtest du hinzufügen?</p>
+    <div class="create-options">
+      <button class="create-option" id="createEventOption" type="button">
+        <span class="create-option__icon create-option__icon--event" aria-hidden="true">
+          <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        </span>
+        <span><strong>Termin</strong><small>Ein Ereignis oder gemeinsames Programm</small></span>
+        <span aria-hidden="true">›</span>
+      </button>
+      <button class="create-option" id="createReminderOption" type="button">
+        <span class="create-option__icon create-option__icon--reminder" aria-hidden="true">
+          <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+        </span>
+        <span><strong>Erinnerung</strong><small>Etwas, das du nicht vergessen möchtest</small></span>
+        <span aria-hidden="true">›</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Reminders remain reachable without scrolling past the calendar -->
+  <div class="backdrop" id="reminderHubBackdrop"></div>
+  <div class="sheet reminder-hub-sheet" id="reminderHubSheet">
+    <div class="grip"></div>
+    <div class="sheet-head"><span class="sheet-title">Erinnerungen</span>
+      <button class="icon-pill" id="reminderHubClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <button class="btn btn-primary btn-block calendar-action-with-icon" id="reminderHubAdd" type="button">
+      <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
+      <span>Neue Erinnerung</span>
+    </button>
+    <div class="reminder-list reminder-hub-list" id="reminderHubList"></div>
   </div>
 
   <!-- Trip form sheet -->
@@ -616,7 +665,7 @@
     let calendarPreference = { style:'google', view:'month', personalColor:DEFAULT_CALENDAR_COLOR };
     let calendarPreferenceExists = false;
     let editTripId = null, editDayId = null, editReminderId = null, dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
-    let pendingDayFiles = [], dayFiles = [], openPlanTripId = null;
+    let pendingDayFiles = [], dayFiles = [], openPlanTripId = null, agendaShouldFocusToday = true;
 
     init();
 
@@ -1204,17 +1253,15 @@
       const day = reminder.date === todayKey ? 'Heute' : fmtDateKey(reminder.date);
       return `${day}${reminder.time ? ' · ' + reminder.time : ''}`;
     }
-    function renderReminders() {
-      const box = $('reminderList');
+    function reminderListHtml() {
       const visible = [
         ...reminders.filter(item => !item.completed),
         ...reminders.filter(item => item.completed).slice(-3)
       ];
       if (!visible.length) {
-        box.innerHTML = '<p class="empty-hint">Noch keine Erinnerungen. Lege deine erste an.</p>';
-        return;
+        return '<p class="empty-hint">Noch keine Erinnerungen. Lege deine erste an.</p>';
       }
-      box.innerHTML = visible.map(item => `
+      return visible.map(item => `
         <div class="reminder-row${item.completed?' is-done':''}${!item.completed&&item.date<todayKey?' is-overdue':''}">
           <button class="reminder-check${item.completed?' is-done':''}" type="button"
             data-reminder-check="${esc(item.id)}" aria-label="${item.completed?'Als offen markieren':'Erledigen'}">${item.completed?'✓':''}</button>
@@ -1224,6 +1271,8 @@
           </button>
           <button class="mini" type="button" data-reminder-edit="${esc(item.id)}" aria-label="Erinnerung bearbeiten">✎</button>
         </div>`).join('');
+    }
+    function bindReminderList(box) {
       box.querySelectorAll('[data-reminder-check]').forEach(button => button.onclick = async () => {
         const item = reminders.find(entry => entry.id === button.dataset.reminderCheck);
         if (!item) return;
@@ -1235,8 +1284,44 @@
       });
       box.querySelectorAll('[data-reminder-edit]').forEach(button => button.onclick = () => {
         const item = reminders.find(entry => entry.id === button.dataset.reminderEdit);
-        if (item) openReminderForm(item);
+        if (item) {
+          closeReminderHub();
+          openReminderForm(item);
+        }
       });
+    }
+    function renderReminders() {
+      const html = reminderListHtml();
+      [$('reminderList'), $('reminderHubList')].forEach(box => {
+        if (!box) return;
+        box.innerHTML = html;
+        bindReminderList(box);
+      });
+      const open = reminders.filter(item => !item.completed);
+      const future = open.filter(item => !item.date || item.date >= todayKey);
+      const overdue = open.filter(item => item.date && item.date < todayKey);
+      const next = overdue[0] || future[0];
+      $('mobileReminderSummaryTitle').textContent = next?.title || 'Keine offenen Erinnerungen';
+      $('mobileReminderSummaryMeta').textContent = next
+        ? `${reminderWhen(next)}${open.length>1?` · ${open.length} offen`:''}${overdue.length?` · ${overdue.length} überfällig`:''}`
+        : 'Tippe, um eine neue anzulegen.';
+    }
+    function openReminderHub() {
+      renderReminders();
+      $('reminderHubBackdrop').classList.add('visible');
+      $('reminderHubSheet').classList.add('visible');
+    }
+    function closeReminderHub() {
+      $('reminderHubBackdrop').classList.remove('visible');
+      $('reminderHubSheet').classList.remove('visible');
+    }
+    function openCreateSheet() {
+      $('createBackdrop').classList.add('visible');
+      $('createSheet').classList.add('visible');
+    }
+    function closeCreateSheet() {
+      $('createBackdrop').classList.remove('visible');
+      $('createSheet').classList.remove('visible');
     }
     function openReminderForm(existing = null, date = '') {
       editReminderId = existing?.id || null;
@@ -1370,8 +1455,9 @@
       const map = eventMap();
       const first = new Date(viewY,viewM,1); const offset=(first.getDay()+6)%7;
       const dim = new Date(viewY,viewM+1,0).getDate(); const prev=new Date(viewY,viewM,0).getDate();
+      const totalCells = Math.ceil((offset + dim) / 7) * 7;
       const grid=$('grid'); grid.innerHTML='';
-      for(let i=0;i<42;i++){
+      for(let i=0;i<totalCells;i++){
         const cell=document.createElement('div'); cell.className='cell';
         let y=viewY,m=viewM,dn;
         if(i<offset){dn=prev-offset+1+i;m--;if(m<0){m=11;y--;}cell.classList.add('other');}
@@ -1380,7 +1466,10 @@
         const k=keyOf(y,m,dn); if(k===todayKey)cell.classList.add('today');
         const evs=map[k]||[];
         let inner=`<span class="daynum">${dn}</span>`;
-        if(evs.length){ const two=evs.slice(0,2).map(e=>`<span class="evchip" style="${eventColorVars(e.color)}">${e.time?`<b>${esc(e.time)}</b> `:''}${esc(e.title)}</span>`).join('');
+        if(evs.length){
+          cell.classList.add('has-events');
+          cell.style.setProperty('--cell-color', normalizeCalendarColor(evs[0].color));
+          const two=evs.slice(0,2).map(e=>`<span class="evchip" style="${eventColorVars(e.color)}">${e.time?`<b>${esc(e.time)}</b> `:''}${esc(e.title)}</span>`).join('');
           inner+=`<div class="chips">${two}${evs.length>2?`<span class="more">+${evs.length-2}</span>`:''}</div>`; }
         cell.innerHTML=inner;
         cell.onclick=()=>openDay(k,y,m,dn);
@@ -1490,7 +1579,10 @@
       $('calView').hidden = !isMonth;
       $('timeView').hidden = isMonth || isAgenda;
       $('listView').hidden = !isAgenda;
-      $('monthTitle').textContent = calendarRangeTitle(anchorKey,curView);
+      const currentAgendaMonth = isAgenda && anchorKey.slice(0,7)===todayKey.slice(0,7);
+      $('monthTitle').textContent = isMobileCalendar() && currentAgendaMonth
+        ? 'Heute & später'
+        : calendarRangeTitle(anchorKey,curView);
       const option = CALENDAR_VIEWS.find(view=>view.key===curView);
       const label = curView==='agenda' ? CALENDAR_STYLES[calendarPreference.style].agendaLabel : option?.label || 'Monat';
       $('viewPickerLabel').textContent = label;
@@ -1525,13 +1617,14 @@
 
     function renderAgenda() {
       const map = dayProgramMap();
-      /* Include the whole selected month, not only future dates. A family
-         must still be able to review and complete yesterday's program. */
+      /* Keep earlier entries in the DOM so they remain available by
+         scrolling upwards, but focus the mobile list on today/next. */
       const from = `${anchorKey.slice(0,7)}-01`;
       const keys = Object.keys(map).filter(k=>k>=from).sort();
       const box=$('agenda');
       if(!keys.length){ box.innerHTML=`<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>`; return; }
-      box.innerHTML = keys.map(k=>{
+      const focusKey = keys.find(key=>key>=todayKey) || '';
+      const groupsHtml = keys.map(k=>{
         const items = map[k].map((e,i)=>{
           const hasPage=(e.ref.planHtml||e.ref.planUrl||(e.ref.itinerary||[]).length);
           const fullBtn = hasPage ? `<div class="program-actions"><button class="pill primary" data-full-k="${k}" data-full-i="${i}" title="Plan/Programm öffnen">Programm öffnen</button><button class="pill" data-edit-k="${k}" data-edit-i="${i}">Bearbeiten</button></div>` : '';
@@ -1557,8 +1650,18 @@
             <div class="item-body"><div class="item-title">${esc(e.title)}</div>
             <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}</div>${importNote}${fullBtn}</div></div>`;
         }).join('');
-        return `<div class="agenda-group${k<todayKey?' is-past':''}"><div class="agenda-date">${fmtDateKey(k)}</div>${items}</div>`;
+        const isFocus = k===focusKey;
+        const marker = isFocus && k>todayKey
+          ? `<div class="agenda-today-marker" data-agenda-focus><span>Heute</span><small>Keine Einträge</small></div>`
+          : '';
+        const dateLabel = k===todayKey ? `Heute · ${fmtDateKey(k)}` : fmtDateKey(k);
+        return `${marker}<div class="agenda-group${k<todayKey?' is-past':''}"${isFocus&&k===todayKey?' data-agenda-focus':''}>
+          <div class="agenda-date">${dateLabel}</div>${items}</div>`;
       }).join('');
+      const endMarker = !focusKey && anchorKey.slice(0,7)===todayKey.slice(0,7)
+        ? `<div class="agenda-today-marker" data-agenda-focus><span>Heute</span><small>Keine weiteren Einträge</small></div>`
+        : '';
+      box.innerHTML = groupsHtml + endMarker;
       box.querySelectorAll('[data-full-k]').forEach(b=>b.onclick=(ev)=>{
         ev.stopPropagation();
         const e=(map[b.dataset.fullK]||[])[+b.dataset.fullI]; if(e)openPlan(e.ref);
@@ -1585,6 +1688,17 @@
         const [y,m,d]=c.dataset.k.split('-').map(Number);
         openDay(c.dataset.k, y, m-1, d);
       });
+      if (agendaShouldFocusToday && isMobileCalendar()) {
+        const target = box.querySelector('[data-agenda-focus]');
+        if (target) {
+          agendaShouldFocusToday = false;
+          requestAnimationFrame(() => {
+            const scroller = $('listView');
+            const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
+            scroller.scrollTo({ top:Math.max(0,top), behavior:'auto' });
+          });
+        }
+      }
     }
 
     /* ── Day sheet ── */
@@ -1736,11 +1850,20 @@
       const tr={id:s.id,...s.data()}; editTripId=id;
       const acts=await getDocs(query(collection(db,'activities'), where('tripId','==',id))).then(q=>q.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[]);
       const files=await loadAttachments(id);
-      $('groupView').style.display='none'; $('tripDetail').style.display=''; window.scrollTo(0,0);
+      $('groupView').style.display='none';
+      $('calendarBelow').style.display='none';
+      $('tripDetail').style.display='';
+      window.scrollTo(0,0);
       if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Kalender';
       renderTripDetail(tr, acts, files);
     }
-    function backToGroup(){ $('tripDetail').style.display='none'; $('groupView').style.display=''; if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Start'; reload(); }
+    function backToGroup(){
+      $('tripDetail').style.display='none';
+      $('groupView').style.display='';
+      $('calendarBelow').style.display='';
+      if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Start';
+      reload();
+    }
 
     function renderTripDetail(tr, acts, files){
       files = files || [];
@@ -2272,6 +2395,7 @@
     function setView(view) {
       if (!CALENDAR_VIEWS.some(option=>option.key===view)) return;
       curView=view;
+      if (view==='agenda') agendaShouldFocusToday = true;
       if (isMobileCalendar()) {
         try { localStorage.setItem(mobileViewKey(), view); } catch {}
       }
@@ -2293,9 +2417,9 @@
           $('viewPickerBtn').setAttribute('aria-expanded','false');
         }
       });
-      $('prevBtn').onclick=()=>{ anchorKey=moveCalendarAnchor(anchorKey,curView,-1); renderCurrentView(); };
-      $('nextBtn').onclick=()=>{ anchorKey=moveCalendarAnchor(anchorKey,curView,1); renderCurrentView(); };
-      $('todayBtn').onclick=()=>{ anchorKey=todayKey; renderCurrentView(); };
+      $('prevBtn').onclick=()=>{ agendaShouldFocusToday=false; anchorKey=moveCalendarAnchor(anchorKey,curView,-1); renderCurrentView(); };
+      $('nextBtn').onclick=()=>{ agendaShouldFocusToday=false; anchorKey=moveCalendarAnchor(anchorKey,curView,1); renderCurrentView(); };
+      $('todayBtn').onclick=()=>{ agendaShouldFocusToday=true; anchorKey=todayKey; renderCurrentView(); };
       $('calendarSettingsBtn').onclick=()=>openCalendarSetup(false);
       document.querySelectorAll('[data-style]').forEach(card=>card.onclick=()=>{
         calendarPreference.style=card.dataset.style;
@@ -2313,11 +2437,29 @@
       $('groupSheetClose').onclick=closeGroupSheet;
       $('groupManageBackdrop').onclick=closeGroupManager;
       $('groupManageClose').onclick=closeGroupManager;
+      $('createBackdrop').onclick=closeCreateSheet;
+      $('createSheetClose').onclick=closeCreateSheet;
+      $('createEventOption').onclick=()=>{
+        closeCreateSheet();
+        sheetKey=anchorKey<todayKey ? todayKey : anchorKey;
+        openTripForm(null);
+      };
+      $('createReminderOption').onclick=()=>{
+        closeCreateSheet();
+        openReminderForm(null,anchorKey<todayKey ? todayKey : anchorKey);
+      };
+      $('mobileReminderSummary').onclick=openReminderHub;
+      $('reminderHubBackdrop').onclick=closeReminderHub;
+      $('reminderHubClose').onclick=closeReminderHub;
+      $('reminderHubAdd').onclick=()=>{
+        closeReminderHub();
+        openReminderForm(null,todayKey);
+      };
       // One unified entry point: every new entry is a "Termin" (trip-shaped
       // record) — single-day or multi-day, both work the same way and get
       // itinerary parsing + guest sharing. Existing legacy "Besondere Tage"
       // (calendarDays docs) still render/edit fine, we just stopped creating new ones.
-      $('calAddBtn').onclick=()=>{ sheetKey=anchorKey; openTripForm(null); };
+      $('calAddBtn').onclick=openCreateSheet;
       $('addTripBtn').onclick=()=>{ sheetKey=anchorKey; openTripForm(null); };
       $('daySheetAdd').onclick=()=>{ closeDay(); openTripForm(null); };
       $('daySheetReminder').onclick=()=>{ const date=sheetKey; closeDay(); openReminderForm(null,date); };
@@ -2330,6 +2472,8 @@
       $('dayFormBackdrop').onclick=closeDayForm; $('dayFormClose').onclick=closeDayForm; $('viewerClose').onclick=closeViewer;
       document.addEventListener('keydown',e=>{ if(e.key!=='Escape')return;
         if($('viewer').classList.contains('visible'))closeViewer();
+        else if($('reminderHubSheet').classList.contains('visible'))closeReminderHub();
+        else if($('createSheet').classList.contains('visible'))closeCreateSheet();
         else if($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists)closeCalendarSetup();
         else if($('groupManageSheet').classList.contains('visible'))closeGroupManager();
         else if($('groupSheet').classList.contains('visible'))closeGroupSheet();
@@ -2342,6 +2486,8 @@
       // sheet/viewer/trip detail is open, instead of jumping straight home.
       $('backBtn').addEventListener('click', e => {
         if ($('viewer').classList.contains('visible')) { e.preventDefault(); closeViewer(); return; }
+        if ($('reminderHubSheet').classList.contains('visible')) { e.preventDefault(); closeReminderHub(); return; }
+        if ($('createSheet').classList.contains('visible')) { e.preventDefault(); closeCreateSheet(); return; }
         if ($('groupManageSheet').classList.contains('visible')) { e.preventDefault(); closeGroupManager(); return; }
         if ($('groupSheet').classList.contains('visible')) { e.preventDefault(); closeGroupSheet(); return; }
         if ($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists) { e.preventDefault(); closeCalendarSetup(); return; }

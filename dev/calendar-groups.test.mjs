@@ -82,9 +82,42 @@ test('imported programs stay in TVZA and share completion state live', async () 
 });
 
 test('mobile calendar starts with the readable list view', async () => {
-  const planner = await read('pages/planner.html');
+  const [planner, css] = await Promise.all([
+    read('pages/planner.html'),
+    read('assets/css/calendar.css'),
+  ]);
 
   assert.match(planner, /const isMobileCalendar = \(\) => matchMedia\('\(max-width:899px\)'\)\.matches/);
   assert.match(planner, /isMobileCalendar\(\)[\s\S]*mobileView[\s\S]*'agenda'/);
   assert.match(planner, /data-calendar-view="agenda"[^>]*>Liste</);
+  assert.match(planner, /data-agenda-focus/);
+  assert.match(planner, /scroller\.scrollTo\(\{ top:Math\.max\(0,top\)/);
+  assert.match(css, /\.calendar-agenda \{[\s\S]*overflow-y:auto/);
+});
+
+test('mobile creation and reminders stay above long calendar content', async () => {
+  const [planner, css] = await Promise.all([
+    read('pages/planner.html'),
+    read('assets/css/calendar.css'),
+  ]);
+
+  assert.match(planner, /id="createEventOption"/);
+  assert.match(planner, /id="createReminderOption"/);
+  assert.match(planner, /id="mobileReminderSummary"/);
+  assert.match(planner, /id="reminderHubList"/);
+  assert.match(planner, /\$\('calendarBelow'\)\.style\.display='none'/);
+  assert.match(css, /\.mobile-reminder-summary \{[\s\S]*display:none/);
+  assert.match(css, /#reminderSection \{ display:none; \}/);
+});
+
+test('mobile month uses only required weeks and wraps event labels', async () => {
+  const [planner, css] = await Promise.all([
+    read('pages/planner.html'),
+    read('assets/css/calendar.css'),
+  ]);
+
+  assert.match(planner, /const totalCells = Math\.ceil\(\(offset \+ dim\) \/ 7\) \* 7/);
+  assert.match(planner, /for\(let i=0;i<totalCells;i\+\+\)/);
+  assert.match(css, /-webkit-line-clamp:2/);
+  assert.match(css, /\.calendar-month \.cell\.has-events/);
 });
