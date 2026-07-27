@@ -207,7 +207,7 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
 </style>
   <link rel="stylesheet" href="../assets/css/matura.css" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=15" defer></script>
+  <script src="../assets/js/ui-fx.js?v=16" defer></script>
 </head>
 <body class="matura-page matura-overview-page" data-bereich="matura">
 <header class="appbar appbar--bereich" data-bereich="matura">
@@ -582,9 +582,10 @@ const categories=[
 ];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
+let MATURA_STORAGE_KEY='matura_v3';
 function loadState(){
   try{
-    const raw=localStorage.getItem('matura_v3');
+    const raw=localStorage.getItem(MATURA_STORAGE_KEY);
     if(raw) return JSON.parse(raw);
     // First run: apply defaults based on work already done
     const s={};
@@ -596,9 +597,14 @@ function loadState(){
     return s;
   }catch(e){return{};}
 }
-function saveState(){
-  try{ localStorage.setItem('matura_v3',JSON.stringify(state)); }
+let cloudStateWriter=null;
+function storeLocalState(){
+  try{ localStorage.setItem(MATURA_STORAGE_KEY,JSON.stringify(state)); }
   catch(e){ console.warn('[matura-storage] save-failed'); }
+}
+function saveState(changedKey=null, options={}){
+  storeLocalState();
+  if(cloudStateWriter) void cloudStateWriter(state,changedKey,options);
 }
 let state=loadState();
 const currentPhase=phases.find(p=>p.phaseEnd>=TODAY) || phases[phases.length-1];
@@ -700,7 +706,7 @@ function renderPhases(){
   }).join('');
 }
 function togglePhase(id){ if(openPhases.has(id))openPhases.delete(id);else openPhases.add(id); renderPhases(); }
-function toggleMilestone(id){ state[id]=!state[id]; saveState(); renderPhases(); renderCatOverview(); renderGlobalProg(); renderSidebar(); }
+function toggleMilestone(id){ state[id]=!state[id]; saveState(id); renderPhases(); renderCatOverview(); renderGlobalProg(); renderSidebar(); }
 
 // ── MEETINGS ─────────────────────────────────────────────────────────────────
 function renderMeetings(){
@@ -716,7 +722,7 @@ function renderMeetings(){
   const warning=document.getElementById('meetings-warn');
   warning.innerHTML=count<4?`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.8L2.5 18a2 2 0 001.75 3h15.5a2 2 0 001.75-3L13.7 3.8a2 2 0 00-3.4 0z"/></svg><span><strong>${count} von 4 Gesprächen erledigt.</strong> ${4-count===1?'Ein Gespräch ist':'Die nächsten Gespräche sind'} noch offen; Fragen jeweils vorher per Mail schicken.</span>`:'';
 }
-function toggleMeeting(key){ state[key]=!state[key]; saveState(); renderMeetings(); renderCatOverview(); renderGlobalProg(); renderSidebar(); }
+function toggleMeeting(key){ state[key]=!state[key]; saveState(key); renderMeetings(); renderCatOverview(); renderGlobalProg(); renderSidebar(); }
 
 // ── CHECKLISTS ───────────────────────────────────────────────────────────────
 const tagLabels={pflicht:'Pflicht',inhalt:'Inhalt',format:'Format',abgabe:'Abgabe'};
@@ -741,7 +747,7 @@ function renderChecklist(key,clId,spId,slId){
 
 function toggleCheck(id,key,clId,spId,slId){
   state[id]=!state[id];
-  saveState();
+  saveState(id);
   renderChecklist(key,clId,spId,slId);
   renderCatOverview(); renderGlobalProg(); renderSidebar();
 }
@@ -863,7 +869,7 @@ function resetAll(){
   if(confirm('Wirklich den gesamten Fortschritt zurücksetzen?')){
     state={};
     openMilestoneDetails.clear();
-    saveState();
+    saveState(null,{reset:true});
     init();
   }
 }
@@ -879,7 +885,49 @@ function init(){
   renderCatOverview(); renderGlobalProg(); renderSidebar();
 }
 init();
+window.maturaProgressBridge={
+  storageKey:()=>MATURA_STORAGE_KEY,
+  useUser:uid=>{
+    const nextKey=`matura_v3_${uid}`;
+    try{
+      const legacyOwnerKey='matura_v3_owner';
+      const legacyOwner=localStorage.getItem(legacyOwnerKey);
+      if(!localStorage.getItem(nextKey) && (!legacyOwner || legacyOwner===uid)){
+        const legacy=localStorage.getItem('matura_v3');
+        if(legacy) localStorage.setItem(nextKey,legacy);
+        localStorage.setItem(legacyOwnerKey,uid);
+      }
+    }catch(e){ console.warn('[matura-storage] migration-failed'); }
+    MATURA_STORAGE_KEY=nextKey;
+    state=loadState();
+    init();
+  },
+  allowedKeys:[...new Set(categories.flatMap(category=>category.ids()))],
+  getState:()=>({...state}),
+  applyState:next=>{
+    state=next && typeof next==='object' && !Array.isArray(next)?{...next}:{};
+    storeLocalState();
+    init();
+  },
+  connect:writer=>{ cloudStateWriter=writer; },
+};
 </script>
+  <script type="module">
+    import { requireAuth } from '../assets/js/firebase-config.js';
+    import { connectMaturaProgress } from '../assets/js/matura-sync.js';
+    const user=await requireAuth('../login.html');
+    const bridge=window.maturaProgressBridge;
+    bridge.useUser(user.uid);
+    const sync=await connectMaturaProgress({
+      user,
+      documentId:'overview',
+      storageKey:bridge.storageKey(),
+      allowedKeys:bridge.allowedKeys,
+      getLocalState:bridge.getState,
+      applyState:bridge.applyState,
+    });
+    bridge.connect(sync.save);
+  </script>
   <script type="module" src="../assets/js/notifications.js?v=2"></script>
   <script type="module" src="../assets/js/nav.js"></script>
 </body>

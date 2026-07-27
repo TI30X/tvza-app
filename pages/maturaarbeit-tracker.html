@@ -138,7 +138,7 @@ body{ font-family: var(--font-ui); background:var(--bg); color:var(--text); min-
 </style>
   <link rel="stylesheet" href="../assets/css/matura.css" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=15" defer></script>
+  <script src="../assets/js/ui-fx.js?v=16" defer></script>
 </head>
 <body class="matura-page matura-tracker-page" data-bereich="matura">
 
@@ -273,12 +273,17 @@ const vorgaben = [
 // ── STATE (pro angemeldetem Schüler, eigener Key) ──────────────────
 let KEY = null;
 let state = {};
+let cloudStateWriter = null;
 const openPhases = new Set();
 const trackerTagLabels={pflicht:'Pflicht',inhalt:'Inhalt',format:'Format'};
-function save(){
+function storeLocalState(){
   if(!KEY) return;
   try{ localStorage.setItem(KEY, JSON.stringify(state)); }
   catch(e){ console.warn('[matura-tracker-storage] save-failed'); }
+}
+function save(changedKey=null, options={}){
+  storeLocalState();
+  if(cloudStateWriter) void cloudStateWriter(state,changedKey,options);
 }
 
 // ── RENDER MEETINGS ────────────────────────────────────────────────
@@ -298,8 +303,8 @@ function renderMeetings(){
   const md=[1,2,3,4].filter(n=>state['meeting_'+n]).length;
   document.getElementById('meet-badge').textContent = md+' / 4';
 }
-function toggleMeeting(n){ state['meeting_'+n]=!state['meeting_'+n]; save(); renderMeetings(); renderGlobal(); }
-function setMeetDate(n,v){ state['meeting_'+n+'_d']=v; save(); }
+function toggleMeeting(n){ const key='meeting_'+n; state[key]=!state[key]; save(key); renderMeetings(); renderGlobal(); }
+function setMeetDate(n,v){ const key='meeting_'+n+'_d'; state[key]=v; save(key); }
 
 // ── RENDER PHASES ──────────────────────────────────────────────────
 function renderPhases(){
@@ -323,7 +328,7 @@ function renderPhases(){
   }).join('');
 }
 function togglePhase(i){ openPhases.has(i)?openPhases.delete(i):openPhases.add(i); renderPhases(); }
-function toggleItem(id){ state[id]=!state[id]; save(); renderPhases(); renderGlobal(); }
+function toggleItem(id){ state[id]=!state[id]; save(id); renderPhases(); renderGlobal(); }
 
 // ── RENDER VORGABEN ────────────────────────────────────────────────
 function renderVorgaben(){
@@ -369,7 +374,7 @@ function renderGlobal(){
 // ── RESET ──────────────────────────────────────────────────────────
 function resetAll(){
   if(confirm('Alle Häkchen, Termine und das Abgabedatum zurücksetzen?')){
-    state={}; save(); document.getElementById('deadline-input').value='';
+    state={}; save(null,{reset:true}); document.getElementById('deadline-input').value='';
     openPhases.clear(); openPhases.add(0);
     renderAll();
   }
@@ -393,17 +398,46 @@ function startTracker(uid, label){
   openPhases.add(firstOpen>=0?firstOpen:phases.length-1);
   const di=document.getElementById('deadline-input');
   di.value=state.deadline||'';
-  di.onchange=()=>{ state.deadline=di.value; save(); renderDeadline(); renderGlobal(); };
+  di.onchange=()=>{ state.deadline=di.value; save('deadline'); renderDeadline(); renderGlobal(); };
   document.getElementById('who-line').textContent = 'Angemeldet: ' + (label || 'Schüler:in');
   renderAll();
 }
 window.startTracker = startTracker;
+window.maturaTrackerBridge={
+  storageKey:()=>KEY,
+  allowedKeys:()=>[
+    ...allIds(),
+    ...[1,2,3,4].map(n=>`meeting_${n}_d`),
+    'deadline',
+  ],
+  getState:()=>({...state}),
+  applyState:next=>{
+    state=next && typeof next==='object' && !Array.isArray(next)?{...next}:{};
+    if(!state.deadline) state.deadline='2026-08-17';
+    storeLocalState();
+    const deadlineInput=document.getElementById('deadline-input');
+    if(deadlineInput) deadlineInput.value=state.deadline;
+    renderAll();
+  },
+  connect:writer=>{ cloudStateWriter=writer; },
+};
 </script>
 
 <script type="module">
 import { requireAuth } from '../assets/js/firebase-config.js';
+import { connectMaturaProgress } from '../assets/js/matura-sync.js';
 const user = await requireAuth('../login.html');
 window.startTracker(user.uid, user.displayName || user.email || 'Schüler:in');
+const bridge=window.maturaTrackerBridge;
+const sync=await connectMaturaProgress({
+  user,
+  documentId:'tracker',
+  storageKey:bridge.storageKey(),
+  allowedKeys:bridge.allowedKeys(),
+  getLocalState:bridge.getState,
+  applyState:bridge.applyState,
+});
+bridge.connect(sync.save);
 </script>
   <script type="module" src="../assets/js/notifications.js?v=2"></script>
   <script type="module" src="../assets/js/nav.js"></script>

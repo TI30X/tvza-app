@@ -63,6 +63,8 @@
 
   /* ── 2. Fade real content in once, for EVERY loading section ─ */
   function fadeIn(el) {
+    if (el.dataset.fxRevealed) return;
+    el.dataset.fxRevealed = "1";
     if (reduceMotion || el.dataset.fxFading) return;
     el.dataset.fxFading = "1";
     el.classList.add("fx-fade-in");

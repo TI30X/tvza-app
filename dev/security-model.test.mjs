@@ -71,6 +71,7 @@ test('production pages do not expose raw backend errors', async () => {
     'pages/maturaarbeit.html',
     'pages/maturaarbeit-tracker.html',
     'assets/js/firebase-config.js',
+    'assets/js/matura-sync.js',
     'assets/js/notifications.js',
   ].map(read));
   const visibleBackendError = /(?:alert\s*\(|textContent\s*=|innerHTML\s*=)[^\n]*(?:error|err|e)\.(?:message|code)/i;

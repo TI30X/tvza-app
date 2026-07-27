@@ -104,6 +104,12 @@ test('embedded settings can share Firestore and shared rows keep icon plus perso
   assert.match(css, /\.shared-identity__person/);
 });
 
+test('loaded content only fades in once instead of blinking after updates', async () => {
+  const ui = await read('assets/js/ui-fx.js');
+  assert.match(ui, /if \(el\.dataset\.fxRevealed\) return/);
+  assert.match(ui, /el\.dataset\.fxRevealed = "1"/);
+});
+
 test('splash skip hints are immediate and arranging stays on Start', async () => {
   const [watchlist, weather, welcome, css] = await Promise.all([
     read('pages/watchlist.html'),

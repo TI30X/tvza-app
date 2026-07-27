@@ -64,6 +64,30 @@ test('Maturaarbeit pages do not expose raw backend or storage errors', async () 
   assert.match(html, /\[matura-tracker-storage\] invalid-local-state/);
 });
 
+test('Maturaarbeit progress migrates safely and syncs per user', async () => {
+  const [overview, tracker, sync, rules] = await Promise.all([
+    read(pages[0]),
+    read(pages[1]),
+    read('assets/js/matura-sync.js'),
+    read('firestore.rules'),
+  ]);
+
+  for (const html of [overview, tracker]) {
+    assert.match(html, /connectMaturaProgress/);
+    assert.match(html, /cloudStateWriter/);
+  }
+  assert.match(overview, /`matura_v3_\$\{uid\}`/);
+  assert.match(overview, /legacyOwner===uid/);
+  assert.match(tracker, /'matura_tracker_' \+ uid/);
+  assert.match(sync, /localValue === true \|\| cloudValue === true/);
+  assert.match(sync, /if \(localDone <= cloudDone\) \{[\s\S]*return merged/);
+  assert.match(sync, /localStorage\.getItem\(migrationKey\) === '1'/);
+  assert.match(sync, /\[`state\.\$\{changedKey\}`\]/);
+  assert.match(sync, /reportClientError\('matura-sync-save'/);
+  assert.match(rules, /match \/users\/\{uid\}\/maturaProgress\/\{progressId\}/);
+  assert.match(rules, /request\.auth\.uid == uid/);
+});
+
 test('all production add actions use the same two-pixel plus', async () => {
   const [style, calendar, index, food, ski, watch, planner] = await Promise.all([
     read('assets/css/style.css'),

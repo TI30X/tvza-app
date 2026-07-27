@@ -123,6 +123,19 @@ service cloud.firestore {
                                            && request.auth.uid == uid;
     }
 
+    match /users/{uid}/maturaProgress/{progressId} {
+      allow read, delete: if isMember()
+                           && request.auth.uid == uid;
+      allow create, update: if isMember()
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly([
+                              'state', 'schema', 'updatedAt'
+                            ])
+                            && request.resource.data.state is map
+                            && request.resource.data.state.size() <= 100
+                            && request.resource.data.schema == 1;
+    }
+
     // ── Guests ───────────────────────────────────────────────────
     match /guestProfiles/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isMember());

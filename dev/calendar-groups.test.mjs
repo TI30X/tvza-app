@@ -104,6 +104,7 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /id="createEventOption"/);
   assert.match(planner, /id="createReminderOption"/);
   assert.match(planner, /id="mobileRemindersBtn"/);
+  assert.match(planner, /class="mobile-reminder-label">Erinnerungen</);
   assert.match(planner, /id="mobileReminderCount"/);
   assert.match(planner, /id="reminderHubList"/);
   assert.match(planner, /document\.body\.dataset\.calendarView = curView/);
@@ -115,6 +116,8 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(css, /@media \(max-width:899px\)/);
   assert.match(css, /grid-template-columns:22% minmax\(0,1fr\) 27%/);
   assert.match(css, /height:calc\(70dvh/);
+  assert.match(css, /--calendar-mobile-control:clamp/);
+  assert.match(css, /padding-bottom:clamp\(64px, 18vw, 92px\)/);
 });
 
 test('mobile month uses only required weeks and wraps event labels', async () => {

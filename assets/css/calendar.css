@@ -152,6 +152,9 @@
 .mobile-reminder-button {
   display:none;
   position:relative;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
 }
 .mobile-reminder-count {
   position:absolute;
@@ -958,6 +961,7 @@
   }
   .calendar-workspace { border-radius:var(--r-row); }
   .calendar-commandbar {
+    --calendar-mobile-control:clamp(38px, 10.5vw, 46px);
     display:grid;
     position:relative;
     z-index:20;
@@ -993,13 +997,14 @@
   }
   .calendar-commandbar__today {
     width:100%;
+    height:var(--calendar-mobile-control);
     min-width:0;
-    padding:7% 5%;
+    padding:0 5%;
     font-size:clamp(11px, 3.2vw, 13px);
   }
   .calendar-commandbar__create {
     width:100%;
-    height:clamp(36px, 11vw, 42px);
+    height:var(--calendar-mobile-control);
     padding:0 5%;
     font-size:clamp(11px, 3.2vw, 13px);
   }
@@ -1008,12 +1013,34 @@
     width:100%;
     gap:2%;
   }
-  .calendar-commandbar__views .view-picker { flex:1; }
-  .calendar-commandbar__views .icon-pill {
-    width:clamp(36px, 11%, 42px);
-    height:clamp(36px, 11vw, 42px);
+  .calendar-commandbar__views .view-picker {
+    flex:0 1 36%;
+    min-width:0;
   }
-  .mobile-reminder-button { display:inline-grid; }
+  .calendar-commandbar__views .view-picker__button {
+    height:var(--calendar-mobile-control);
+  }
+  .calendar-commandbar__views .icon-pill {
+    flex:0 0 var(--calendar-mobile-control);
+    width:var(--calendar-mobile-control);
+    height:var(--calendar-mobile-control);
+    border-radius:50%;
+  }
+  .mobile-reminder-button {
+    display:inline-flex;
+    flex:1 1 42%;
+    width:auto;
+    min-width:0;
+    height:var(--calendar-mobile-control);
+    padding:0 3%;
+    font-size:clamp(10px, 2.9vw, 13px);
+  }
+  .mobile-reminder-button .ic { flex:none; }
+  .mobile-reminder-label {
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
   .view-picker__button {
     width:100%;
     min-width:0;
@@ -1058,6 +1085,8 @@
   .calendar-agenda {
     height:calc(70dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
     min-height:52dvh;
+    padding-bottom:clamp(64px, 18vw, 92px);
+    scroll-padding-bottom:clamp(64px, 18vw, 92px);
     overflow-y:auto;
     overscroll-behavior:contain;
     scrollbar-width:none;
