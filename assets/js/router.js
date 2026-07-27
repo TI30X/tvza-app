@@ -82,6 +82,13 @@ function tabFor(url) {
   return 'bereiche';
 }
 
+const TAB_ORDER = ['start', 'kalender', 'nachrichten', 'bereiche'];
+function routeDirection(from, to) {
+  const fromIndex = TAB_ORDER.indexOf(tabFor(from));
+  const toIndex = TAB_ORDER.indexOf(tabFor(to));
+  return toIndex < fromIndex ? -1 : 1;
+}
+
 function updateNavigation(nav, target) {
   const activeTab = tabFor(target);
   nav.querySelectorAll('[data-nav-tab]').forEach(link => {
@@ -264,8 +271,9 @@ export function mountAppRouter(nav) {
     progress.classList.remove('is-loading');
     if (currentFrame) {
       const old = currentFrame;
+      const direction = routeDirection(currentUrl, target);
       currentFrame = null;
-      old.classList.add('is-leaving');
+      old.classList.add('is-leaving', direction < 0 ? 'to-right' : 'to-left');
       setTimeout(() => old.remove(), 220);
     }
     currentUrl = new URL(target.href);
@@ -285,8 +293,9 @@ export function mountAppRouter(nav) {
 
     const id = ++navigationId;
     const label = routeLabel(nav, target);
+    const direction = routeDirection(currentUrl, target);
     const incoming = document.createElement('div');
-    incoming.className = 'tvza-route-frame is-entering';
+    incoming.className = `tvza-route-frame is-entering ${direction < 0 ? 'from-left' : 'from-right'}`;
     const contentFrame = document.createElement('iframe');
     contentFrame.title = `${label} – Inhalt`;
     contentFrame.src = frameUrl(target).href;
@@ -309,7 +318,7 @@ export function mountAppRouter(nav) {
       requestAnimationFrame(() => {
         incoming.classList.remove('is-entering');
         incoming.classList.add('is-active');
-        if (old) old.classList.add('is-leaving');
+        if (old) old.classList.add('is-leaving', direction < 0 ? 'to-right' : 'to-left');
       });
       if (old) setTimeout(() => old.remove(), 220);
       if (historyMode === 'push') history.pushState({ tvzaRoute:target.href }, '', routeKey(target));

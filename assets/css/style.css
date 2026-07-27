@@ -1980,6 +1980,12 @@ body.reorder-editing .module-tile::after {
   transform: translateX(-8px);
   pointer-events: none;
 }
+@media (max-width:899px) {
+  .tvza-route-frame.is-entering.from-right { transform:translateX(10%); }
+  .tvza-route-frame.is-entering.from-left { transform:translateX(-10%); }
+  .tvza-route-frame.is-leaving.to-left { transform:translateX(-8%); }
+  .tvza-route-frame.is-leaving.to-right { transform:translateX(8%); }
+}
 .tvza-route-progress {
   position: fixed;
   z-index: 44;

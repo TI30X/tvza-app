@@ -112,6 +112,20 @@ function refreshAreaNavigation(profile) {
   list.querySelectorAll('a[href]').forEach(link => { link.href = link.href; });
 }
 
+function ensureReminderFab(b = base(), active = activeTab()) {
+  let reminderFab = document.querySelector('.global-reminder-fab');
+  if (!reminderFab) {
+    reminderFab = document.createElement('a');
+    reminderFab.className = 'global-reminder-fab';
+    reminderFab.innerHTML = icon('bell', 22);
+    document.body.appendChild(reminderFab);
+  }
+  reminderFab.href = `${b}pages/planner.html?open=reminders`;
+  reminderFab.setAttribute('aria-label', 'Erinnerungen öffnen');
+  reminderFab.title = 'Erinnerungen öffnen';
+  reminderFab.hidden = active === 'kalender';
+}
+
 function mount(profile) {
   const profileName = String(profile?.displayName || profile?.name || '').trim();
   const appbar = document.querySelector('.appbar');
@@ -121,6 +135,7 @@ function mount(profile) {
   }
   const existingNav = document.querySelector('.nav');
   if (existingNav) {
+    ensureReminderFab();
     mountAppRouter(existingNav);
     return;
   }
@@ -151,6 +166,7 @@ function mount(profile) {
     : '');
 
   document.body.appendChild(nav);
+  ensureReminderFab(b, active);
   document.body.classList.add('has-nav');
   nav.addEventListener('click', event => {
     if (event.target.closest('a[aria-current="page"]')) event.preventDefault();

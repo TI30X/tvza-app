@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
-  <link rel="stylesheet" href="../assets/css/calendar.css?v=6" />
+  <link rel="stylesheet" href="../assets/css/calendar.css?v=7" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -540,8 +540,7 @@
 
   <!-- Reminder form sheet -->
   <div class="backdrop" id="reminderBackdrop"></div>
-  <div class="sheet" id="reminderSheet">
-    <div class="grip"></div>
+  <div class="sheet reminder-form-sheet" id="reminderSheet">
     <div class="sheet-head"><span class="sheet-title" id="reminderFormTitle">Neue Erinnerung</span>
       <button class="icon-pill" id="reminderFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="field"><label>Titel</label><input class="form-input" id="rTitle" placeholder="z.B. Versicherung bezahlen" /></div>
@@ -551,6 +550,10 @@
     </div>
     <div class="field"><label>Notiz (optional)</label><textarea class="form-textarea" id="rNotes" rows="3"></textarea></div>
     <button class="btn btn-primary btn-block" id="reminderSave">Speichern</button>
+    <button class="btn btn-block reminder-complete-button" id="reminderComplete" type="button" hidden>
+      <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+      <span id="reminderCompleteLabel">Als erledigt markieren</span>
+    </button>
     <button class="btn btn-danger btn-block" id="reminderDelete" style="display:none;margin-top:8px">Erinnerung löschen</button>
   </div>
 
@@ -681,7 +684,7 @@
       if (requestedAction === 'reminder-new') {
         setTimeout(() => openReminderForm(null,todayKey), 100);
       } else if (requestedAction === 'reminders' || location.hash === '#reminders') {
-        setTimeout(() => $('reminderSection').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+        setTimeout(openReminderHub, 100);
       }
     }
 
@@ -1280,11 +1283,7 @@
       box.querySelectorAll('[data-reminder-check]').forEach(button => button.onclick = async () => {
         const item = reminders.find(entry => entry.id === button.dataset.reminderCheck);
         if (!item) return;
-        await updateDoc(doc(reminderCollection(), item.id), {
-          completed: !item.completed,
-          completedAt: !item.completed ? serverTimestamp() : null,
-          updatedAt: serverTimestamp()
-        }).catch(() => alert('Erinnerung konnte nicht aktualisiert werden.'));
+        await setReminderCompletion(item, !item.completed);
       });
       box.querySelectorAll('[data-reminder-edit]').forEach(button => button.onclick = () => {
         const item = reminders.find(entry => entry.id === button.dataset.reminderEdit);
@@ -1339,6 +1338,11 @@
       $('rDate').value = existing?.date || date || todayKey;
       $('rTime').value = existing?.time || '';
       $('rNotes').value = existing?.notes || '';
+      $('reminderComplete').hidden = !existing;
+      $('reminderComplete').classList.toggle('is-completed', existing?.completed === true);
+      $('reminderCompleteLabel').textContent = existing?.completed
+        ? 'Wieder als offen markieren'
+        : 'Als erledigt markieren';
       $('reminderDelete').style.display = existing ? '' : 'none';
       $('reminderBackdrop').classList.add('visible');
       $('reminderSheet').classList.add('visible');
@@ -1347,6 +1351,21 @@
     function closeReminderForm() {
       $('reminderBackdrop').classList.remove('visible');
       $('reminderSheet').classList.remove('visible');
+    }
+    async function setReminderCompletion(item, completed) {
+      if (!item?.id) return false;
+      try {
+        await updateDoc(doc(reminderCollection(), item.id), {
+          completed,
+          completedAt: completed ? serverTimestamp() : null,
+          updatedAt: serverTimestamp()
+        });
+        return true;
+      } catch (error) {
+        reportClientError('reminder-completion', error);
+        alert('Erinnerung konnte nicht aktualisiert werden.');
+        return false;
+      }
     }
 
     /* ── Event map ── */
@@ -1404,7 +1423,7 @@
           time:item.startTime||'', sourceName:'Persönlich', ref:item
         })
       ));
-      (showPersonal ? reminders : []).filter(item => !item.completed && item.date).forEach(item =>
+      (showPersonal ? reminders : []).filter(item => item.date).forEach(item =>
         push(item.date, {
           kind:'reminder', color:personalCalendarColor(), title:item.title||'Erinnerung',
           time:item.time||'', sourceName:'Persönlich', ref:item
@@ -1663,10 +1682,14 @@
           const importNote = hasPage && e.kind==='trip'
             ? `<div class="plan-import-note">ⓘ Originalseite vorhanden${(e.ref.itinerary||[]).some(item=>item.autoImported)?' · erkannte Punkte werden nach Uhrzeit gezeigt':' · keine einzelnen Programmpunkte erkannt'}</div>`
             : '';
-          return `<div class="item-card" data-k="${k}" data-i="${i}">
+          const completedReminder = e.kind==='reminder' && e.ref.completed === true;
+          const completedBadge = completedReminder
+            ? '<span class="agenda-completed-badge">✓ Abgeschlossen</span>'
+            : '';
+          return `<div class="item-card${completedReminder?' is-completed-reminder':''}" data-k="${k}" data-i="${i}">
             <div class="item-bar" style="background:${e.color}"></div>
             <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-            <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}</div>${importNote}${fullBtn}</div></div>`;
+            <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}${completedBadge}</div>${importNote}${fullBtn}</div></div>`;
         }).join('');
         const isFocus = k===focusKey;
         const marker = isFocus && containsToday
@@ -2176,6 +2199,14 @@
       } finally {
         $('reminderSave').disabled = false;
       }
+    };
+    $('reminderComplete').onclick = async () => {
+      const existing = reminders.find(item => item.id === editReminderId);
+      if (!existing) return;
+      $('reminderComplete').disabled = true;
+      const updated = await setReminderCompletion(existing, !existing.completed);
+      $('reminderComplete').disabled = false;
+      if (updated) closeReminderForm();
     };
     $('reminderDelete').onclick = async () => {
       if (!editReminderId || !confirm('Diese Erinnerung löschen?')) return;

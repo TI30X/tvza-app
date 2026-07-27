@@ -130,8 +130,14 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /class="agenda-scroll-tail"/);
   assert.match(css, /\.agenda-scroll-tail \{[\s\S]*52dvh/);
   assert.doesNotMatch(planner, /id="reminderHubSheet">\s*<div class="grip"/);
+  assert.doesNotMatch(planner, /id="reminderSheet">\s*<div class="grip"/);
+  assert.match(planner, /id="reminderComplete"/);
+  assert.match(planner, /setReminderCompletion\(existing, !existing\.completed\)/);
+  assert.match(planner, /agenda-completed-badge/);
+  assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);
   assert.match(css, /\.reminder-hub-sheet \.reminder-hub-list \{[\s\S]*overflow-y:auto/);
+  assert.match(css, /\.planner-page \.reminder-form-sheet \{[\s\S]*overflow-y:auto/);
   assert.match(planner, /requestedAction === 'reminder-new'/);
 });
 

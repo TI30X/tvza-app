@@ -72,7 +72,7 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(nav, /link\.rel\s*=\s*'prefetch'/);
   assert.match(nav, /link\.as\s*=\s*'document'/);
   assert.match(nav, /mountAppRouter\(nav\)/);
-  assert.match(router, /className = 'tvza-route-frame is-entering'/);
+  assert.match(router, /className = `tvza-route-frame is-entering/);
   assert.match(router, /history\.pushState/);
   assert.match(router, /window\.parent\.postMessage\(\{ type:'tvza-route-request'/);
   assert.match(router, /window\.tvzaNavigate = requestRoute/);
@@ -88,6 +88,11 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(sw, /assets\/js\/router\.js/);
   assert.match(css, /@view-transition\s*\{\s*navigation:\s*auto/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
+  assert.match(router, /const TAB_ORDER = \['start', 'kalender', 'nachrichten', 'bereiche'\]/);
+  assert.match(router, /function routeDirection\(from, to\)/);
+  assert.match(router, /direction < 0 \? 'from-left' : 'from-right'/);
+  assert.match(css, /\.tvza-route-frame\.is-entering\.from-right/);
+  assert.match(css, /\.tvza-route-frame\.is-leaving\.to-right/);
 });
 
 test('embedded settings can share Firestore and shared rows keep icon plus person', async () => {
@@ -107,15 +112,18 @@ test('embedded settings can share Firestore and shared rows keep icon plus perso
 });
 
 test('mobile reminders stay thumb-reachable across routes without exposing the base page', async () => {
-  const [shell, router, css] = await Promise.all([
+  const [shell, nav, router, css] = await Promise.all([
     read('assets/js/shell.js'),
+    read('assets/js/nav.js'),
     read('assets/js/router.js'),
     read('assets/css/style.css'),
   ]);
 
   assert.match(shell, /className = 'global-reminder-fab'/);
-  assert.match(shell, /planner\.html\?open=reminder-new/);
-  assert.match(shell, /aria-label', 'Erinnerung erstellen'/);
+  assert.match(shell, /planner\.html\?open=reminders/);
+  assert.match(shell, /aria-label', 'Erinnerungen öffnen'/);
+  assert.match(nav, /function ensureReminderFab/);
+  assert.match(nav, /planner\.html\?open=reminders/);
   assert.match(router, /reminderFab\.hidden = fileOf\(target\) === 'planner\.html'/);
   assert.match(router, /title\.textContent = start \? 'Start' : label/);
   assert.match(router, /function generatedStartHeader\(bar\)/);

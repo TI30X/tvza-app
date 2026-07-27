@@ -223,9 +223,9 @@ export function mountShell(o = {}) {
   document.body.appendChild(nav);
   const reminderFab = document.createElement('a');
   reminderFab.className = 'global-reminder-fab';
-  reminderFab.href = `${b}pages/planner.html?open=reminder-new`;
-  reminderFab.setAttribute('aria-label', 'Erinnerung erstellen');
-  reminderFab.title = 'Erinnerung erstellen';
+  reminderFab.href = `${b}pages/planner.html?open=reminders`;
+  reminderFab.setAttribute('aria-label', 'Erinnerungen öffnen');
+  reminderFab.title = 'Erinnerungen öffnen';
   reminderFab.hidden = active === 'kalender';
   reminderFab.innerHTML = icon('bell', 22);
   document.body.appendChild(reminderFab);
