@@ -134,6 +134,7 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.doesNotMatch(planner, /id="reminderSheet">\s*<div class="grip"/);
   assert.match(planner, /id="reminderComplete"/);
   assert.match(planner, /setReminderCompletion\(existing, !existing\.completed\)/);
+  assert.match(planner, /const visible = reminders\.filter\(item => !item\.completed\)/);
   assert.match(planner, /agenda-completed-badge/);
   assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);

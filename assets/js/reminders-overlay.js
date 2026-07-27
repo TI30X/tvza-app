@@ -75,10 +75,7 @@ function whenText(item) {
 }
 
 function visibleReminders() {
-  return [
-    ...reminders.filter(item => !item.completed),
-    ...reminders.filter(item => item.completed).slice(-3)
-  ];
+  return reminders.filter(item => !item.completed);
 }
 
 function renderList() {
@@ -90,7 +87,7 @@ function renderList() {
       <div class="global-reminder-empty">
         ${bellIcon}
         <strong>Alles erledigt</strong>
-        <span>Du hast keine offenen Erinnerungen.</span>
+        <span>${reminders.length ? 'Deine erledigten Erinnerungen bleiben im Kalender sichtbar.' : 'Du hast keine offenen Erinnerungen.'}</span>
       </div>`;
     return;
   }

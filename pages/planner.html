@@ -1261,12 +1261,11 @@
       return `${day}${reminder.time ? ' · ' + reminder.time : ''}`;
     }
     function reminderListHtml() {
-      const visible = [
-        ...reminders.filter(item => !item.completed),
-        ...reminders.filter(item => item.completed).slice(-3)
-      ];
+      const visible = reminders.filter(item => !item.completed);
       if (!visible.length) {
-        return '<p class="empty-hint">Noch keine Erinnerungen. Lege deine erste an.</p>';
+        return reminders.length
+          ? '<p class="empty-hint">Alles erledigt. Abgeschlossene Erinnerungen bleiben unter „Termine“ sichtbar.</p>'
+          : '<p class="empty-hint">Noch keine Erinnerungen. Lege deine erste an.</p>';
       }
       return visible.map(item => `
         <div class="reminder-row${item.completed?' is-done':''}${!item.completed&&item.date<todayKey?' is-overdue':''}">

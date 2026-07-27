@@ -2013,7 +2013,6 @@ body.reorder-editing .module-tile::after {
   .global-reminder-list-view {
     display:flex;
     flex-direction:column;
-    min-height:min(58dvh,510px);
   }
   .global-reminder-form-view {
     overflow-y:auto;

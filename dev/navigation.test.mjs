@@ -127,6 +127,7 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.doesNotMatch(overlay, /planner\.html\?open=reminders/);
   assert.match(overlay, /const HIDDEN_ON = new Set\(\['planner\.html', 'messages\.html'\]\)/);
   assert.match(overlay, /onSnapshot\(reminderCollection\(\)/);
+  assert.match(overlay, /return reminders\.filter\(item => !item\.completed\)/);
   assert.match(overlay, /global-reminder-fab__count/);
   assert.match(overlay, /global-reminder-list[\s\S]*globalReminderAdd/);
   assert.match(router, /tvzaReminderOverlay\?\.setContext\(fileOf\(target\)\)/);
@@ -144,6 +145,7 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.match(css, /\.global-reminder-sheet \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
   assert.match(css, /\.global-reminder-fab__count\.has-open/);
   assert.match(css, /\.global-reminder-add,[\s\S]*margin-top:12px/);
+  assert.doesNotMatch(css, /\.global-reminder-list-view \{[\s\S]{0,180}min-height:min\(58dvh/);
   assert.match(css, /html\.tvza-content-frame \.global-reminder-fab/);
   assert.match(sw, /assets\/js\/reminders-overlay\.js/);
 });
