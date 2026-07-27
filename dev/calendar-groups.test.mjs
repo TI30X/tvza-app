@@ -138,6 +138,11 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /item\.completed = completed;\s*renderReminders\(\);/);
   assert.match(planner, /agenda-completed-badge/);
   assert.match(planner, /function focusAgendaOnToday\(box\)/);
+  assert.match(planner, /calendarEntryFocusPending = true, initialGroupsLoaded = false, initialRemindersLoaded = false/);
+  assert.match(planner, /function focusCalendarEntryWhenReady\(\)/);
+  assert.match(planner, /!initialGroupsLoaded \|\| !initialRemindersLoaded/);
+  assert.match(planner, /anchorKey = todayKey;\s*agendaShouldFocusToday = true;\s*renderCurrentView\(\);/);
+  assert.doesNotMatch(planner, /if \(!agendaShouldFocusToday \|\| !isMobileCalendar\(\)\) return/);
   assert.match(planner, /class="agenda-today-anchor" data-agenda-focus/);
   assert.doesNotMatch(planner, /class="agenda-today-marker" data-agenda-focus/);
   assert.match(css, /\.agenda-today-anchor \{[\s\S]*height:0/);

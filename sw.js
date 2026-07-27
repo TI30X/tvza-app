@@ -11,7 +11,7 @@
    beide Zahlen nur noch gemeinsam wandern können. */
 
 const CACHE = 'tvza-v.31.0.0';
-// Shell revision 11: use a non-sticky agenda anchor for exact Today scrolling.
+// Shell revision 12: every calendar entry waits for data, then opens at Today.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',

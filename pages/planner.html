@@ -668,6 +668,7 @@
     let calendarPreferenceExists = false;
     let editTripId = null, editDayId = null, editReminderId = null, dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
     let pendingDayFiles = [], dayFiles = [], openPlanTripId = null, agendaShouldFocusToday = true;
+    let calendarEntryFocusPending = true, initialGroupsLoaded = false, initialRemindersLoaded = false;
 
     init();
 
@@ -827,6 +828,8 @@
           renderCalendarSources();
           await renderGroupCard();
           await reload();
+          initialGroupsLoaded = true;
+          focusCalendarEntryWhenReady();
           watchTrips();
         },
         error => {
@@ -1241,6 +1244,13 @@
 
     /* ── Personal reminders ── */
     const reminderCollection = () => collection(db, 'users', user.uid, 'reminders');
+    function focusCalendarEntryWhenReady() {
+      if (!calendarEntryFocusPending || !initialGroupsLoaded || !initialRemindersLoaded) return;
+      calendarEntryFocusPending = false;
+      anchorKey = todayKey;
+      agendaShouldFocusToday = true;
+      renderCurrentView();
+    }
     function watchReminders() {
       if (reminderUnsub) reminderUnsub();
       reminderUnsub = onSnapshot(reminderCollection(), snap => {
@@ -1249,10 +1259,14 @@
             Number(!!a.completed) - Number(!!b.completed) ||
             `${a.date||'9999'} ${a.time||''}`.localeCompare(`${b.date||'9999'} ${b.time||''}`)
           );
+        initialRemindersLoaded = true;
         renderReminders();
         if (groups.length) renderCurrentView();
+        focusCalendarEntryWhenReady();
       }, () => {
+        initialRemindersLoaded = true;
         $('reminderList').innerHTML = '<p class="empty-hint">Erinnerungen konnten nicht geladen werden.</p>';
+        focusCalendarEntryWhenReady();
       });
     }
     function reminderWhen(reminder) {
@@ -1651,15 +1665,19 @@
     }
 
     function focusAgendaOnToday(box) {
-      if (!agendaShouldFocusToday || !isMobileCalendar()) return;
+      if (!agendaShouldFocusToday) return;
       const target = box.querySelector('[data-agenda-focus]');
       if (!target) return;
       agendaShouldFocusToday = false;
       requestAnimationFrame(() => requestAnimationFrame(() => {
         const scroller = $('listView');
         if (!target.isConnected || !scroller) return;
-        const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
-        scroller.scrollTo({ top:Math.max(0,top), behavior:'auto' });
+        if (isMobileCalendar()) {
+          const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
+          scroller.scrollTo({ top:Math.max(0,top), behavior:'auto' });
+        } else {
+          target.scrollIntoView({ block:'start', behavior:'auto' });
+        }
       }));
     }
 
