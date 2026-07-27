@@ -6,23 +6,23 @@ export const CALENDAR_VIEWS = [
   { key:'workweek', label:'Arbeitswoche' },
   { key:'week', label:'Woche' },
   { key:'month', label:'Monat' },
-  { key:'agenda', label:'Terminübersicht' },
+  { key:'agenda', label:'Liste' },
 ];
 
 export const CALENDAR_STYLES = {
   google: {
     key:'google',
     name:'Google Kalender',
-    description:'Ruhig, rund und mit Terminübersicht',
+    description:'Ruhig, rund und mit klarer Listenansicht',
     defaultView:'month',
-    agendaLabel:'Terminübersicht',
+    agendaLabel:'Liste',
   },
   outlook: {
     key:'outlook',
     name:'Outlook',
     description:'Kompakt, klar und auf die Arbeitswoche ausgerichtet',
     defaultView:'workweek',
-    agendaLabel:'Agenda',
+    agendaLabel:'Liste',
   },
 };
 
@@ -89,7 +89,11 @@ export function moveCalendarAnchor(anchor, view, direction) {
   if (view === 'day') return addCalendarDays(anchor, step);
   if (view === '3day') return addCalendarDays(anchor, step * 3);
   if (view === 'workweek' || view === 'week') return addCalendarDays(anchor, step * 7);
-  if (view === 'agenda') return addCalendarDays(anchor, step * 30);
+  if (view === 'agenda') {
+    const date = new Date(`${anchor}T00:00:00`);
+    date.setMonth(date.getMonth() + step, 1);
+    return dateKey(date);
+  }
 
   const date = new Date(`${anchor}T00:00:00`);
   date.setMonth(date.getMonth() + step, 1);
@@ -110,7 +114,9 @@ export function calendarRangeTitle(anchor, view) {
   if (view === 'month') {
     return anchorDate.toLocaleDateString('de-CH', { month:'long', year:'numeric' });
   }
-  if (view === 'agenda') return 'Kommende Termine';
+  if (view === 'agenda') {
+    return `Termine ab ${anchorDate.toLocaleDateString('de-CH', { month:'long', year:'numeric' })}`;
+  }
 
   const dates = datesForCalendarView(anchor, view);
   if (dates.length === 1) {

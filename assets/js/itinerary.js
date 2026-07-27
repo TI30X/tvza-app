@@ -188,10 +188,23 @@ function pickEntries(dom) {
 
 function entryTitle(el) {
   const head = el.querySelector('h1, h2, h3, h4, h5, .title, .stop-title, .card-title');
-  let title = head?.textContent.trim() || '';
+  /* Badges belong beside the title in TVZA, not inside it. Cloning keeps
+     the uploaded document untouched while removing template-specific
+     labels such as "Must-see" and "Vorab buchen". */
+  const cleanHead = head?.cloneNode(true);
+  cleanHead?.querySelectorAll('.badge, [class*="badge" i], .tag').forEach(node => node.remove());
+  let title = cleanHead?.textContent.trim() || '';
   if (!title && el.tagName === 'LI') {
     // A plain list item: first line is the title.
     title = (el.textContent || '').trim().split('\n')[0].trim();
+  }
+  if (!title) {
+    /* Rest/travel days often contain only explanatory text inside the
+       stop. The surrounding day title is the useful list label:
+       "Checkout & Abreise" is better than silently dropping the day. */
+    title = el.closest('.day, [class*="day-card" i], section')
+      ?.querySelector('.day-title, [class*="day-title" i]')
+      ?.textContent.trim() || '';
   }
   title = title.replace(/\s+/g, ' ');
   if (title.length > 120) title = title.slice(0, 117) + '…';
@@ -199,11 +212,23 @@ function entryTitle(el) {
 }
 
 function entryTime(el) {
-  const badge = el.querySelector('.time-badge, .time, .zeit, time');
+  const badge = el.querySelector('.stop-time, .time-badge, .time, .zeit, time');
   const fromBadge = parseTimeBadge(badge?.textContent || '');
   if (fromBadge) return fromBadge;
   // Otherwise look for a time at the start of the entry's own text.
   return parseTimeBadge((el.textContent || '').slice(0, 40));
+}
+
+function compactText(value, limit = 300) {
+  const text = String(value || '').trim().replace(/\s+/g, ' ');
+  return text.length > limit ? text.slice(0, limit - 1) + '…' : text;
+}
+
+function entryTimeLabel(el) {
+  return compactText(
+    el.querySelector('.stop-time, .time-badge, .time, .zeit, time')?.textContent || '',
+    40
+  );
 }
 
 function entryNotes(el, title) {
@@ -213,15 +238,41 @@ function entryNotes(el, title) {
     ?.textContent.trim().replace(/\s+/g, ' ') || '';
   if (desc === title) desc = '';
   const notes = [address, desc].filter(Boolean).join(' — ');
-  return notes.length > 300 ? notes.slice(0, 297) + '…' : notes;
+  return compactText(notes);
+}
+
+function entryMeta(el) {
+  const day = el.closest('.day, [class*="day-card" i], section');
+  const check = el.querySelector('.check, input[type="checkbox"], [aria-pressed]');
+  return {
+    tag: compactText(el.querySelector('.badge, [class*="badge" i], .tag')?.textContent, 60),
+    transport: compactText(
+      el.querySelector('.stop-transport, .transport, [class*="transport" i]')?.textContent,
+      300
+    ).replace(/^[➤→]\s*/, ''),
+    dayTitle: compactText(day?.querySelector('.day-title, [class*="day-title" i]')?.textContent, 100),
+    dayIntro: compactText(day?.querySelector('.day-intro, [class*="day-intro" i]')?.textContent, 240),
+    done: !!check && (
+      check.matches(':checked, .done, .is-done') ||
+      check.getAttribute('aria-pressed') === 'true'
+    ),
+  };
 }
 
 /* Anything that might carry a date, as long as it is not inside an
    entry — a heading within a stop card describes the stop, not a day. */
 const MARKER_SELECTOR = 'time[datetime], h1, h2, h3, h4, [class*="date" i], [class*="day" i], [class*="tag" i], caption, th';
 
-function randomId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+function stableImportedId(value) {
+  /* A deterministic, Firestore-field-safe id lets completion state live
+     in itineraryDone.<id>. Re-importing an edited copy of the same plan
+     therefore keeps existing checkmarks instead of creating new items. */
+  let hash = 2166136261;
+  for (const char of String(value || '')) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `imp_${(hash >>> 0).toString(36)}`;
 }
 
 /**
@@ -267,16 +318,25 @@ export function parseItineraryHtml(html, opts = {}) {
 
   let currentDate = '';
   const items = [];
+  const occurrences = new Map();
   for (const el of walk) {
     if (isEntry.has(el)) {
       const title = entryTitle(el);
       if (!title) continue;
+      const time = entryTime(el);
+      const timeLabel = entryTimeLabel(el);
+      const signature = `${currentDate}|${timeLabel || time}|${title.toLowerCase()}`;
+      const occurrence = (occurrences.get(signature) || 0) + 1;
+      occurrences.set(signature, occurrence);
       items.push({
-        id: randomId(),
+        id: stableImportedId(`${signature}|${occurrence}`),
         date: currentDate,
-        time: entryTime(el),
+        order: items.length,
+        time,
+        timeLabel,
         title,
         notes: entryNotes(el, title),
+        ...entryMeta(el),
         autoImported: true,
       });
       continue;
@@ -350,6 +410,9 @@ export function groupByDay(items) {
     .map(([date, list]) => ({
       date,
       heading: formatDayHeading(date),
-      items: list.sort((x, y) => (x.time || '99:99').localeCompare(y.time || '99:99')),
+      items: list.sort((x, y) => {
+        if (Number.isFinite(x.order) && Number.isFinite(y.order)) return x.order - y.order;
+        return (x.time || '99:99').localeCompare(y.time || '99:99');
+      }),
     }));
 }

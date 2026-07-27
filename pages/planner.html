@@ -55,8 +55,9 @@
     .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; font-size:12px; color:var(--ink-soft); }
     .legend i { display:inline-block; width:9px; height:9px; border-radius:var(--r-pill); margin-right:5px; }
 
-    .agenda-group { margin-bottom:18px; }
-    .agenda-date { font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
+    .agenda-group { margin-bottom:22px; }
+    .agenda-group.is-past .agenda-date { color:var(--ink-soft); }
+    .agenda-date { font-size:12px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.055em; margin-bottom:8px; }
     .item-card { display:flex; gap:12px; align-items:flex-start; background:var(--surface); border:1px solid var(--border);
       border-radius: var(--r-row); padding:13px; margin-bottom:9px; cursor:pointer; }
     .item-bar { width:4px; align-self:stretch; border-radius:var(--r-pill); flex:0 0 auto; }
@@ -67,11 +68,29 @@
 
     /* Consolidated day-program rows in the list view — one row per
        itinerary stop, grouped under the trip within that day's group. */
-    .prog-list { margin-top:10px; padding-left:16px; border-left:2px solid var(--border); display:flex; flex-direction:column; gap:8px; }
-    .prog-row { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-    .prog-time { font-size:12px; font-weight:700; color:var(--ink-soft); min-width:42px; flex:0 0 auto; }
-    .prog-title { font-size:13.5px; font-weight:600; }
-    .prog-notes { flex-basis:100%; font-size:12px; color:var(--ink-soft); margin-top:1px; }
+    .item-card--program { flex-direction:column; align-items:stretch; cursor:default; }
+    .program-summary { display:flex; align-items:center; gap:12px; }
+    .program-progress { margin-left:auto; color:var(--ink-soft); font-size:12px; font-weight:700; white-space:nowrap; }
+    .prog-list { margin-top:12px; display:flex; flex-direction:column; border-top:1px solid var(--border); }
+    .prog-row { display:flex; align-items:flex-start; gap:11px; padding:12px 0; border-bottom:1px solid var(--border); }
+    .prog-row:last-child { border-bottom:0; padding-bottom:2px; }
+    .prog-row.is-done .prog-title { text-decoration:line-through; color:var(--ink-soft); }
+    .prog-row.is-done .prog-row__body { opacity:.62; }
+    .prog-check, .plan-check {
+      width:28px; height:28px; flex:0 0 auto; border:2px solid var(--border); border-radius:var(--r-pill);
+      background:var(--surface); color:#fff; display:inline-flex; align-items:center; justify-content:center;
+      cursor:pointer; font:800 14px/1 inherit;
+    }
+    .prog-check.is-done, .plan-check.is-done { background:var(--accent); border-color:var(--accent); }
+    .prog-row__body { flex:1; min-width:0; }
+    .prog-row__top { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .prog-time { font-size:13px; font-weight:800; color:var(--ink-soft); min-width:42px; flex:0 0 auto; }
+    .prog-title { font-size:15px; font-weight:750; color:var(--ink); }
+    .prog-tag { display:inline-flex; border-radius:var(--r-pill); padding:2px 7px; background:var(--accent-bg); color:var(--accent); font-size:10px; font-weight:800; }
+    .prog-notes, .prog-transport { font-size:13.5px; color:var(--ink-soft); margin-top:5px; line-height:1.5; }
+    .prog-transport { display:flex; gap:5px; }
+    .program-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .plan-import-note { margin-top:9px; color:var(--ink-soft); font-size:12px; }
 
     .fab-row { display:flex; gap:10px; margin-bottom:16px; }
     .fab-row .pill { flex:1; text-align:center; padding:12px; }
@@ -123,6 +142,34 @@
     .viewer-bar { display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--border); }
     .viewer-bar .vt { flex:1; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     #viewerFrame { flex:1; border:0; width:100%; background:#fff; }
+    .viewer-plan { flex:1; overflow:auto; padding:20px clamp(14px,4vw,32px) 48px; }
+    .plan-wrap { width:min(760px,100%); margin:0 auto; }
+    .plan-hero { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel); padding:18px; margin-bottom:16px; }
+    .plan-hero__eyebrow { color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
+    .plan-hero h2 { font:700 clamp(22px,5vw,32px)/1.15 Georgia,'Times New Roman',serif; margin:5px 0; }
+    .plan-hero__meta { color:var(--ink-soft); font-size:13px; }
+    .plan-progress { display:flex; align-items:center; gap:12px; margin-top:15px; }
+    .plan-progress__track { height:8px; flex:1; border-radius:var(--r-pill); background:var(--surface-2); overflow:hidden; }
+    .plan-progress__fill { display:block; height:100%; border-radius:inherit; background:var(--accent); }
+    .plan-progress__text { color:var(--ink-soft); font-size:12px; font-weight:800; white-space:nowrap; }
+    .plan-day { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel); margin-bottom:14px; overflow:hidden; }
+    .plan-day__head { padding:14px 16px; background:var(--surface-2); border-bottom:1px solid var(--border); }
+    .plan-day__date { color:var(--accent); font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+    .plan-day__title { margin-top:3px; font-size:16px; font-weight:800; }
+    .plan-day__intro { margin:5px 0 0; color:var(--ink-soft); font-size:12.5px; line-height:1.45; }
+    .plan-stops { padding:2px 16px; }
+    .plan-stop { display:flex; align-items:flex-start; gap:12px; padding:14px 0; border-top:1px solid var(--border); }
+    .plan-stop:first-child { border-top:0; }
+    .plan-stop.is-done .plan-stop__body { opacity:.6; }
+    .plan-stop.is-done .plan-stop__title { text-decoration:line-through; }
+    .plan-stop__body { flex:1; min-width:0; }
+    .plan-stop__top { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:4px; }
+    .plan-stop__time { color:var(--ink-soft); font-size:12.5px; font-weight:800; padding:3px 8px; border:1px solid var(--border); border-radius:var(--r-icon); }
+    .plan-stop__title { font-size:16px; font-weight:800; }
+    .plan-stop__notes, .plan-stop__transport { color:var(--ink-soft); font-size:14px; line-height:1.52; margin-top:6px; }
+    .plan-stop__transport { padding-left:18px; position:relative; }
+    .plan-stop__transport::before { content:'→'; position:absolute; left:0; color:var(--accent); font-weight:800; }
+    .plan-past { color:var(--ink-soft); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
 
     .info-banner { background:var(--accent-bg); color:var(--accent); border:1px solid var(--border); border-radius: var(--r-icon);
       padding:10px 12px; font-size:12px; margin-bottom:12px; display:none; }
@@ -167,6 +214,22 @@
       .daynum { font-size:14px; }
       .evchip { font-size:11px; padding:3px 5px; }
       #calView, #listView, .planner-panel { padding:20px; }
+    }
+    @media (max-width:899px) {
+      #listView { padding:0; border:0; background:transparent; }
+      .agenda-date { position:sticky; top:0; z-index:2; padding:9px 3px 7px; background:var(--bg); margin:0; }
+      .item-card--program { border-radius:var(--r-panel); padding:14px; }
+      .program-summary { align-items:flex-start; }
+      .program-progress { font-size:11px; }
+      .prog-row { padding:13px 0; }
+      .prog-check, .plan-check { width:30px; height:30px; }
+      .prog-row__top { display:block; }
+      .prog-time { display:block; margin-bottom:2px; }
+      .viewer-bar { padding:10px 12px; }
+      .viewer-plan { padding:12px 10px 36px; }
+      .plan-hero { padding:15px; }
+      .plan-day__head { padding:13px 14px; }
+      .plan-stops { padding:2px 14px; }
     }
   </style>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
@@ -250,7 +313,7 @@
                     <button type="button" data-calendar-view="workweek">Arbeitswoche</button>
                     <button type="button" data-calendar-view="week">Woche</button>
                     <button type="button" data-calendar-view="month">Monat</button>
-                    <button type="button" data-calendar-view="agenda" id="agendaViewOption">Terminübersicht</button>
+                    <button type="button" data-calendar-view="agenda" id="agendaViewOption">Liste</button>
                   </div>
                 </div>
                 <button class="icon-pill" id="calendarSettingsBtn" type="button" aria-label="Kalenderdarstellung">
@@ -477,8 +540,9 @@
   <!-- HTML viewer -->
   <div class="viewer" id="viewer">
     <div class="viewer-bar"><button class="icon-pill" id="viewerClose">‹</button><span class="vt" id="viewerTitle">Info</span>
-      <a id="viewerFull" href="#" target="_blank" rel="noopener" class="pill" style="display:none">Ganz öffnen ↗</a></div>
-    <iframe id="viewerFrame" sandbox="allow-popups" referrerpolicy="no-referrer"></iframe>
+      <button id="viewerMode" type="button" class="pill" hidden>Original</button></div>
+    <div class="viewer-plan" id="viewerPlan" hidden></div>
+    <iframe id="viewerFrame" sandbox="allow-popups" referrerpolicy="no-referrer" hidden></iframe>
   </div>
 
   <script type="module">
@@ -545,14 +609,14 @@
     async function delAttachment(id){ return deleteDoc(doc(db,'attachments',id)); }
 
     const GROUP_COLORS = CALENDAR_COLORS.map(color => color.value);
-    let user, profile, group = null, groups = [], groupsUnsub = null, reminderUnsub = null;
+    let user, profile, group = null, groups = [], groupsUnsub = null, reminderUnsub = null, tripUnsubs = [];
     let trips = [], allTrips = [], days = [], reminders = [];
     let visibleGroupIds = new Set(), showPersonal = true;
     let anchorKey = todayKey, curView = 'month';
     let calendarPreference = { style:'google', view:'month', personalColor:DEFAULT_CALENDAR_COLOR };
     let calendarPreferenceExists = false;
     let editTripId = null, editDayId = null, editReminderId = null, dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
-    let pendingDayFiles = [], dayFiles = [];
+    let pendingDayFiles = [], dayFiles = [], openPlanTripId = null;
 
     init();
 
@@ -572,7 +636,9 @@
 
     /* ── Calendar preferences ── */
     const preferenceKey = () => `tvza-calendar-preference-${user.uid}`;
+    const mobileViewKey = () => `tvza-mobile-calendar-view-${user.uid}`;
     const sourceKey = () => `tvza-calendar-sources-${user.uid}`;
+    const isMobileCalendar = () => matchMedia('(max-width:899px)').matches;
     function loadCalendarPreference() {
       let raw = {};
       try {
@@ -581,7 +647,11 @@
         raw = saved ? JSON.parse(saved) : {};
       } catch {}
       calendarPreference = normalizeCalendarPreference(raw);
-      curView = calendarPreference.view;
+      let mobileView = '';
+      try { mobileView = localStorage.getItem(mobileViewKey()) || ''; } catch {}
+      curView = isMobileCalendar()
+        ? (CALENDAR_VIEWS.some(option=>option.key===mobileView) ? mobileView : 'agenda')
+        : calendarPreference.view;
       applyCalendarPreference();
     }
     function applyCalendarPreference() {
@@ -702,6 +772,7 @@
           renderCalendarSources();
           await renderGroupCard();
           await reload();
+          watchTrips();
         },
         error => {
           reportClientError('calendar-groups-load', error);
@@ -710,6 +781,8 @@
       );
     }
     function showNoGroup() {
+      tripUnsubs.forEach(unsubscribe => unsubscribe());
+      tripUnsubs = [];
       $('noGroup').style.display='';
       $('groupView').style.display='none';
       $('tripDetail').style.display='none';
@@ -1077,6 +1150,39 @@
       renderCurrentView();
     }
 
+    /* Trips are shared group data. A one-time getDocs load made another
+       person's edits and checkmarks appear only after reopening the page.
+       One listener per visible membership keeps every list and an open
+       native program view in sync without exposing the uploaded HTML. */
+    function watchTrips() {
+      tripUnsubs.forEach(unsubscribe => unsubscribe());
+      tripUnsubs = [];
+      const buckets = new Map(groups.map(item => [
+        item.id,
+        allTrips.filter(trip => trip.familyId === item.id)
+      ]));
+      const sync = () => {
+        allTrips = groups.flatMap(item => buckets.get(item.id) || []);
+        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
+        renderCurrentView();
+        if (openPlanTripId && $('viewer').classList.contains('visible') && !$('viewerPlan').hidden) {
+          const current = allTrips.find(item => item.id === openPlanTripId);
+          if (current) renderPlanViewer(current);
+        }
+      };
+      groups.forEach(item => {
+        const unsubscribe = onSnapshot(
+          query(collection(db,'trips'), where('familyId','==',item.id)),
+          snapshot => {
+            buckets.set(item.id, snapshot.docs.map(entry => ({ id:entry.id, ...entry.data() })));
+            sync();
+          },
+          error => reportClientError('calendar-trips-live', error)
+        );
+        tripUnsubs.push(unsubscribe);
+      });
+    }
+
     /* ── Personal reminders ── */
     const reminderCollection = () => collection(db, 'users', user.uid, 'reminders');
     function watchReminders() {
@@ -1218,11 +1324,43 @@
         }
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
         keys.forEach(k=>{
-          const stops = (tr.itinerary||[]).filter(it=>it.date===k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+          const stops = (tr.itinerary||[])
+            .filter(it=>it.date===k || (!it.date && k===tr.startDate))
+            .sort((a,b)=>{
+              if (Number.isFinite(a.order) && Number.isFinite(b.order)) return a.order-b.order;
+              return (a.time||'99:99').localeCompare(b.time||'99:99');
+            });
           push(k,{kind:'trip',color:groupColor(tr.familyId),title:tr.name||'Termin',time:tr.startTime||'',sourceName:groupName(tr.familyId),ref:tr,stops});
         });
       });
       return map;
+    }
+
+    const itineraryItemDone = (trip, item) => {
+      if (item?.id && Object.prototype.hasOwnProperty.call(trip?.itineraryDone||{},item.id)) {
+        return !!trip.itineraryDone[item.id];
+      }
+      return !!item?.done;
+    };
+    async function toggleItineraryItem(trip, item) {
+      if (!trip?.id || !item?.id) return;
+      const before = itineraryItemDone(trip, item);
+      const next = !before;
+      trip.itineraryDone = { ...(trip.itineraryDone || {}), [item.id]:next };
+      renderCurrentView();
+      if (openPlanTripId === trip.id && !$('viewerPlan').hidden) renderPlanViewer(trip);
+      try {
+        await updateDoc(doc(db,'trips',trip.id), {
+          [`itineraryDone.${item.id}`]:next,
+          itineraryUpdatedAt:serverTimestamp()
+        });
+      } catch (error) {
+        reportClientError('calendar-itinerary-toggle', error);
+        trip.itineraryDone = { ...(trip.itineraryDone || {}), [item.id]:before };
+        renderCurrentView();
+        if (openPlanTripId === trip.id && !$('viewerPlan').hidden) renderPlanViewer(trip);
+        alert('Der Programmpunkt konnte nicht aktualisiert werden.');
+      }
     }
 
     /* ── Calendar render ── */
@@ -1365,25 +1503,48 @@
     }
 
     /* ── Agenda (list) render ── */
+    function agendaStopHtml(trip, stop, date) {
+      const done = itineraryItemDone(trip, stop);
+      const past = !!date && date < todayKey;
+      return `<div class="prog-row${done?' is-done':''}">
+        <button class="prog-check${done?' is-done':''}" type="button"
+          data-stop-trip="${esc(trip.id)}" data-stop-id="${esc(stop.id||'')}"
+          aria-label="${done?'Wieder öffnen':'Als erledigt markieren'}">${done?'✓':''}</button>
+        <div class="prog-row__body">
+          <div class="prog-row__top">
+            <span class="prog-time">${esc(stop.timeLabel||stop.time||'flexibel')}</span>
+            <span class="prog-title">${esc(stop.title||'Programmpunkt')}</span>
+            ${stop.tag?`<span class="prog-tag">${esc(stop.tag)}</span>`:''}
+            ${past&&!done?'<span class="plan-past">Vorbei</span>':''}
+          </div>
+          ${stop.notes?`<div class="prog-notes">${esc(stop.notes)}</div>`:''}
+          ${stop.transport?`<div class="prog-transport"><span>→</span><span>${esc(stop.transport)}</span></div>`:''}
+        </div>
+      </div>`;
+    }
+
     function renderAgenda() {
       const map = dayProgramMap();
-      const from = anchorKey > todayKey ? anchorKey : todayKey;
+      /* Include the whole selected month, not only future dates. A family
+         must still be able to review and complete yesterday's program. */
+      const from = `${anchorKey.slice(0,7)}-01`;
       const keys = Object.keys(map).filter(k=>k>=from).sort();
       const box=$('agenda');
-      if(!keys.length){ box.innerHTML=`<p class="empty-hint">Keine kommenden Einträge. Füge einen Termin hinzu.</p>`; return; }
+      if(!keys.length){ box.innerHTML=`<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>`; return; }
       box.innerHTML = keys.map(k=>{
         const items = map[k].map((e,i)=>{
-          const hasPage=(e.ref.planHtml||e.ref.planUrl);
-          const fullBtn = hasPage ? `<div style="margin-top:8px;display:flex;gap:8px"><button class="pill primary" data-full-k="${k}" data-full-i="${i}" title="Plan/Programm öffnen">Öffnen</button><button class="pill" data-edit-k="${k}" data-edit-i="${i}">Bearbeiten</button></div>` : '';
+          const hasPage=(e.ref.planHtml||e.ref.planUrl||(e.ref.itinerary||[]).length);
+          const fullBtn = hasPage ? `<div class="program-actions"><button class="pill primary" data-full-k="${k}" data-full-i="${i}" title="Plan/Programm öffnen">Programm öffnen</button><button class="pill" data-edit-k="${k}" data-edit-i="${i}">Bearbeiten</button></div>` : '';
           if (e.kind==='trip' && e.stops && e.stops.length) {
-            const rows = e.stops.map(s=>`<div class="prog-row"><span class="prog-time">${esc(s.time||'–')}</span><span class="prog-title">${esc(s.title)}</span>${s.notes?`<div class="prog-notes">${esc(s.notes)}</div>`:''}</div>`).join('');
-            return `<div class="item-card" data-k="${k}" data-i="${i}" style="flex-direction:column;align-items:stretch">
-              <div style="display:flex;align-items:center;gap:12px">
+            const doneCount = e.stops.filter(stop=>itineraryItemDone(e.ref,stop)).length;
+            const rows = e.stops.map(stop=>agendaStopHtml(e.ref,stop,k)).join('');
+            return `<div class="item-card item-card--program" data-k="${k}" data-i="${i}">
+              <div class="program-summary">
                 <div class="item-bar" style="background:${e.color}"></div>
                 <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||'Termin')}${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
+                <span class="program-progress">${doneCount}/${e.stops.length}</span>
               </div>
               <div class="prog-list">${rows}</div>
-              <div class="plan-import-note">✓ ${e.stops.length} Programmpunkt${e.stops.length===1?'':'e'} aus der HTML-Seite in der Terminübersicht</div>
               ${fullBtn}
             </div>`;
           }
@@ -1396,11 +1557,11 @@
             <div class="item-body"><div class="item-title">${esc(e.title)}</div>
             <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}</div>${importNote}${fullBtn}</div></div>`;
         }).join('');
-        return `<div class="agenda-group"><div class="agenda-date">${fmtDateKey(k)}</div>${items}</div>`;
+        return `<div class="agenda-group${k<todayKey?' is-past':''}"><div class="agenda-date">${fmtDateKey(k)}</div>${items}</div>`;
       }).join('');
       box.querySelectorAll('[data-full-k]').forEach(b=>b.onclick=(ev)=>{
         ev.stopPropagation();
-        const e=(map[b.dataset.fullK]||[])[+b.dataset.fullI]; if(e)openPlanFull(e.ref);
+        const e=(map[b.dataset.fullK]||[])[+b.dataset.fullI]; if(e)openPlan(e.ref);
       });
       box.querySelectorAll('[data-edit-k]').forEach(b=>b.onclick=(ev)=>{
         ev.stopPropagation();
@@ -1408,6 +1569,12 @@
         if(e.kind==='trip') openTrip(e.ref.id);
         else if(e.kind==='reminder') openReminderForm(e.ref);
         else openDayForm(e.ref);
+      });
+      box.querySelectorAll('[data-stop-trip][data-stop-id]').forEach(button => button.onclick = event => {
+        event.stopPropagation();
+        const trip = allTrips.find(item=>item.id===button.dataset.stopTrip);
+        const stop = trip?.itinerary?.find(item=>item.id===button.dataset.stopId);
+        if (trip && stop) toggleItineraryItem(trip,stop);
       });
       box.querySelectorAll('.item-card').forEach(c=>c.onclick=()=>{
         const e=(map[c.dataset.k]||[])[+c.dataset.i]; if(!e)return;
@@ -1426,8 +1593,8 @@
       $('dayTitle').textContent=`${WD[new Date(y,m,d).getDay()]}, ${d}. ${MONTHS[m]}`;
       const box=$('dayEvents');
       box.innerHTML = evs.length ? evs.map((e,i)=>{
-        const hasPage=(e.ref.planHtml||e.ref.planUrl);
-        const fullBtn = hasPage ? `<button class="pill primary" data-full="${i}" title="Plan/Programm öffnen">Öffnen</button>` : '';
+        const hasPage=(e.ref.planHtml||e.ref.planUrl||(e.ref.itinerary||[]).length);
+        const fullBtn = hasPage ? `<button class="pill primary" data-full="${i}" title="Plan/Programm öffnen">Programm öffnen</button>` : '';
         let act='';
         if(e.kind==='trip'){ act=fullBtn+`<button class="pill" data-open-trip="${esc(e.ref.id)}">Bearbeiten</button>`; }
         else if(e.kind==='reminder'){ act=`<button class="pill" data-edit-reminder="${i}">Bearbeiten</button>`; }
@@ -1442,7 +1609,7 @@
       box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.edit];closeDay();openDayForm(e.ref);});
       box.querySelectorAll('[data-edit-reminder]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.editReminder];closeDay();openReminderForm(e.ref);});
       box.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.page];openViewer(e.title,e.ref.planHtml,e.ref.planUrl);});
-      box.querySelectorAll('[data-full]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.full];openPlanFull(e.ref);});
+      box.querySelectorAll('[data-full]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.full];openPlan(e.ref);});
       $('dayBackdrop').classList.add('visible'); $('daySheet').classList.add('visible');
     }
     function closeDay(){ $('dayBackdrop').classList.remove('visible'); $('daySheet').classList.remove('visible'); }
@@ -1601,18 +1768,24 @@
           <div id="iList" style="margin-top:10px">${itinCount ? itinDays.map(day => `
             <div class="itin-day">
               <div class="marke">${esc(day.heading)}</div>
-              <div class="rows">${day.items.map(it => `
-                <div class="row row--static" data-bereich="kalender">
+              <div class="rows">${day.items.map(it => {
+                const done = itineraryItemDone(tr,it);
+                return `<div class="row row--static${done?' done':''}" data-bereich="kalender">
+                  <button class="prog-check${done?' is-done':''}" type="button" data-itog="${esc(it.id||'')}"
+                    aria-label="${done?'Wieder öffnen':'Als erledigt markieren'}">${done?'✓':''}</button>
                   <span class="row__icon">${it.time ? esc(it.time.slice(0,2)) : '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'}</span>
                   <span class="row__body">
                     <span class="row__title">${esc(it.title)}</span>
+                    ${it.tag ? `<span class="prog-tag">${esc(it.tag)}</span>` : ''}
                     ${it.notes ? `<span class="row__sub">${esc(it.notes)}</span>` : ''}
+                    ${it.transport ? `<span class="row__sub">→ ${esc(it.transport)}</span>` : ''}
                   </span>
                   <span class="row__end">
-                    ${it.time ? `<span class="row__time">${esc(it.time)}</span>` : ''}
+                    ${it.timeLabel||it.time ? `<span class="row__time">${esc(it.timeLabel||it.time)}</span>` : ''}
                     <button class="hint__x" data-idel="${(tr.itinerary||[]).indexOf(it)}" title="Entfernen" aria-label="Entfernen"><svg class="ic" viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
                   </span>
-                </div>`).join('')}</div>
+                </div>`;
+              }).join('')}</div>
             </div>`).join('') : '<p class="empty-hint" style="padding:10px">Noch nichts geplant.</p>'}</div>
         </div>
 
@@ -1634,7 +1807,7 @@
           <div data-tb="paste"><textarea class="form-textarea" id="pHtml" rows="3" placeholder="HTML…">${esc(tr.planHtml||'')}</textarea></div>
           <div data-tb="upload" style="display:none"><label class="drop" id="pDrop"><span id="pDropText">HTML-Datei wählen</span><input type="file" id="pFile" accept=".html,.htm,text/html" hidden></label><p id="pChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
           <div data-tb="url" style="display:none"><input class="form-input" id="pUrl" type="url" placeholder="https://… (z.B. Claude-Link)" value="${esc(tr.planUrl||'')}"></div>
-          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="pSave" style="flex:1">Speichern</button>${(tr.planHtml||tr.planUrl)?`<button class="pill primary" id="pOpen">Öffnen</button>`:''}</div>
+          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="pSave" style="flex:1">Speichern</button>${(tr.planHtml||tr.planUrl||(tr.itinerary||[]).length)?`<button class="pill primary" id="pOpen">Programm öffnen</button>`:''}</div>
         </div>
 
         <div class="sub-card"><div class="sub-title">Dateien</div>
@@ -1663,6 +1836,10 @@
         const i=+b.dataset.idel; if(i<0) return;
         const n=(tr.itinerary||[]).filter((_,j)=>j!==i);
         await updateDoc(doc(db,'trips',tr.id),{itinerary:n}); tr.itinerary=n; renderTripDetail(tr,acts,files); });
+      v.querySelectorAll('[data-itog]').forEach(button => button.onclick = () => {
+        const item = (tr.itinerary||[]).find(entry=>entry.id===button.dataset.itog);
+        if (item) toggleItineraryItem(tr,item).then(()=>renderTripDetail(tr,acts,files));
+      });
       $('aAdd').onclick = async () => { const name=$('aName').value.trim(); if(!name)return; await addDoc(collection(db,'activities'),{tripId:tr.id,name,done:false,createdAt:serverTimestamp()}); openTrip(tr.id); };
       v.querySelectorAll('[data-tog]').forEach(b=>b.onclick=async()=>{ await updateDoc(doc(db,'activities',b.dataset.tog),{done:b.dataset.done!=='1'}); openTrip(tr.id); });
       v.querySelectorAll('[data-adel]').forEach(b=>b.onclick=async()=>{ await deleteDoc(doc(db,'activities',b.dataset.adel)); openTrip(tr.id); });
@@ -1690,7 +1867,7 @@
         tr.planHtml=planHtml; tr.planUrl=planUrl; tr.itinerary=itinerary;
         renderTripDetail(tr,acts,files);
       };
-      if($('pOpen')) $('pOpen').onclick=()=>openViewer(tr.name,tr.planHtml,tr.planUrl);
+      if($('pOpen')) $('pOpen').onclick=()=>openPlan(tr);
       // files (Firestore, free plan)
       let curFiles = files;
       const bindFiles=()=>{ $('fList').innerHTML=renderFileList(curFiles);
@@ -1897,43 +2074,118 @@
       });
       return '<!doctype html>'+parsed.documentElement.outerHTML;
     }
-    // Open a cleaned copy, never the raw uploaded page under TVZA's origin.
-    function openPlanFull(tr){
-      if(tr.planUrl){
-        const url=safeExternalUrl(tr.planUrl);
-        if(url) window.open(url,'_blank','noopener');
-        else alert('Dieser Link kann aus Sicherheitsgründen nicht geöffnet werden.');
+    function renderPlanViewer(tr) {
+      const items = tr.itinerary || [];
+      const grouped = groupByDay(items);
+      const doneCount = items.filter(item=>itineraryItemDone(tr,item)).length;
+      const pct = items.length ? Math.round(doneCount/items.length*100) : 0;
+      const range = tr.startDate
+        ? `${fmtDateKey(tr.startDate)}${tr.endDate&&tr.endDate!==tr.startDate?' – '+fmtDateKey(tr.endDate):''}`
+        : 'Ohne festes Datum';
+      $('viewerPlan').innerHTML = `<div class="plan-wrap">
+        <section class="plan-hero">
+          <div class="plan-hero__eyebrow">${esc(groupName(tr.familyId))}</div>
+          <h2>${esc(tr.name||'Programm')}</h2>
+          <div class="plan-hero__meta">${esc(range)}${tr.destination?' · '+esc(tr.destination):''}</div>
+          ${tr.notes?`<p class="plan-stop__notes">${esc(tr.notes)}</p>`:''}
+          <div class="plan-progress">
+            <div class="plan-progress__track"><span class="plan-progress__fill" style="width:${pct}%"></span></div>
+            <span class="plan-progress__text">${doneCount} / ${items.length} erledigt</span>
+          </div>
+        </section>
+        ${grouped.length ? grouped.map(day => {
+          const first = day.items[0] || {};
+          return `<section class="plan-day">
+            <header class="plan-day__head">
+              <div class="plan-day__date">${esc(day.heading)}</div>
+              ${first.dayTitle?`<div class="plan-day__title">${esc(first.dayTitle)}</div>`:''}
+              ${first.dayIntro?`<p class="plan-day__intro">${esc(first.dayIntro)}</p>`:''}
+            </header>
+            <div class="plan-stops">${day.items.map(item => {
+              const done = itineraryItemDone(tr,item);
+              const past = !!item.date && item.date < todayKey;
+              return `<article class="plan-stop${done?' is-done':''}">
+                <button class="plan-check${done?' is-done':''}" type="button" data-plan-stop="${esc(item.id||'')}"
+                  aria-label="${done?'Wieder öffnen':'Als erledigt markieren'}">${done?'✓':''}</button>
+                <div class="plan-stop__body">
+                  <div class="plan-stop__top">
+                    ${item.timeLabel||item.time?`<span class="plan-stop__time">${esc(item.timeLabel||item.time)}</span>`:''}
+                    <span class="plan-stop__title">${esc(item.title||'Programmpunkt')}</span>
+                    ${item.tag?`<span class="prog-tag">${esc(item.tag)}</span>`:''}
+                    ${past&&!done?'<span class="plan-past">Vorbei</span>':''}
+                  </div>
+                  ${item.notes?`<div class="plan-stop__notes">${esc(item.notes)}</div>`:''}
+                  ${item.transport?`<div class="plan-stop__transport">${esc(item.transport)}</div>`:''}
+                </div>
+              </article>`;
+            }).join('')}</div>
+          </section>`;
+        }).join('') : '<p class="empty-hint">Aus der HTML konnten noch keine Programmpunkte erkannt werden.</p>'}
+      </div>`;
+      $('viewerPlan').querySelectorAll('[data-plan-stop]').forEach(button => button.onclick = () => {
+        const item = (tr.itinerary||[]).find(entry=>entry.id===button.dataset.planStop);
+        if (item) toggleItineraryItem(tr,item);
+      });
+    }
+
+    /* Uploaded HTML is converted to the native, synchronised plan above.
+       The cleaned original remains available as a secondary in-app view. */
+    function openPlan(tr) {
+      if (!(tr.itinerary||[]).length) {
+        openViewer(tr.name,tr.planHtml,tr.planUrl);
         return;
       }
-      if(tr.planHtml && tr.planHtml.trim()){
-        const u=URL.createObjectURL(new Blob([safePlanHtml(tr.planHtml)],{type:'text/html'}));
-        window.open(u,'_blank','noopener');
-        setTimeout(()=>URL.revokeObjectURL(u), 60000);
+      openPlanTripId = tr.id;
+      $('viewerTitle').textContent=tr.name||'Programm';
+      const frame=$('viewerFrame'), plan=$('viewerPlan'), mode=$('viewerMode');
+      frame.hidden=true; frame.removeAttribute('src'); frame.removeAttribute('srcdoc');
+      plan.hidden=false;
+      renderPlanViewer(tr);
+      if(tr.planHtml||tr.planUrl){
+        mode.hidden=false;
+        mode.textContent='Original ansehen';
+        mode.onclick=()=>openViewer(tr.name,tr.planHtml,tr.planUrl,tr);
+      } else {
+        mode.hidden=true;
+        mode.onclick=null;
       }
+      $('viewer').classList.add('visible');
     }
-    let viewerBlobUrl=null;
-    function clearViewerBlob(){ if(viewerBlobUrl){ URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl=null; } }
-    function openViewer(title,html,url){ $('viewerTitle').textContent=title||'Info'; const f=$('viewerFrame'),full=$('viewerFull');
-      clearViewerBlob();
+
+    function openViewer(title,html,url,returnTrip=null){
+      $('viewerTitle').textContent=title||'Info';
+      const f=$('viewerFrame'),plan=$('viewerPlan'),mode=$('viewerMode');
+      plan.hidden=true; f.hidden=false;
       const safeUrl=safeExternalUrl(url);
       if(safeUrl){
         f.setAttribute('sandbox','allow-scripts allow-forms allow-popups');
-        f.removeAttribute('srcdoc'); f.src=safeUrl; full.href=safeUrl; full.style.display='';
+        f.removeAttribute('srcdoc'); f.src=safeUrl;
       }
       else {
         f.setAttribute('sandbox','allow-popups');
         f.removeAttribute('src');
         const safeHtml = safePlanHtml(html) || '<p style="font-family:sans-serif;padding:24px">Keine Infos.</p>';
         f.srcdoc = safeHtml;
-        // Also expose a "fully open in a new tab" button for pasted/uploaded HTML
-        // by turning it into a Blob URL (a raw srcdoc can't be opened on its own).
-        if(html && html.trim()){
-          viewerBlobUrl = URL.createObjectURL(new Blob([safeHtml], {type:'text/html'}));
-          full.href = viewerBlobUrl; full.style.display='';
-        } else { full.removeAttribute('href'); full.style.display='none'; }
       }
-      $('viewer').classList.add('visible'); }
-    function closeViewer(){ $('viewer').classList.remove('visible'); const f=$('viewerFrame'); f.removeAttribute('src'); f.removeAttribute('srcdoc'); clearViewerBlob(); }
+      if(returnTrip){
+        mode.hidden=false;
+        mode.textContent='Programm';
+        mode.onclick=()=>openPlan(returnTrip);
+      } else {
+        mode.hidden=true;
+        mode.onclick=null;
+      }
+      $('viewer').classList.add('visible');
+    }
+    function closeViewer(){
+      $('viewer').classList.remove('visible');
+      const f=$('viewerFrame');
+      f.removeAttribute('src'); f.removeAttribute('srcdoc'); f.hidden=true;
+      $('viewerPlan').hidden=true;
+      $('viewerMode').hidden=true;
+      $('viewerMode').onclick=null;
+      openPlanTripId=null;
+    }
 
     /* ── Provider-neutral calendar interchange (ICS) ── */
     function exportAllIcs() {
@@ -2020,6 +2272,9 @@
     function setView(view) {
       if (!CALENDAR_VIEWS.some(option=>option.key===view)) return;
       curView=view;
+      if (isMobileCalendar()) {
+        try { localStorage.setItem(mobileViewKey(), view); } catch {}
+      }
       calendarPreference.view=view;
       saveCalendarPreference();
       $('viewMenu').hidden=true;
@@ -2044,7 +2299,9 @@
       $('calendarSettingsBtn').onclick=()=>openCalendarSetup(false);
       document.querySelectorAll('[data-style]').forEach(card=>card.onclick=()=>{
         calendarPreference.style=card.dataset.style;
-        if ($('calendarSetupSheet').dataset.firstRun==='true') curView=CALENDAR_STYLES[calendarPreference.style].defaultView;
+        if ($('calendarSetupSheet').dataset.firstRun==='true') {
+          curView=isMobileCalendar() ? 'agenda' : CALENDAR_STYLES[calendarPreference.style].defaultView;
+        }
         applyCalendarPreference();
       });
       $('calendarSetupSave').onclick=()=>{ saveCalendarPreference(); closeCalendarSetup(); };

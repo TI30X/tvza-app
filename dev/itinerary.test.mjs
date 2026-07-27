@@ -70,6 +70,10 @@ eq('German plan: 4 stops', g.items.length, 4);
 eq('German plan: 3 days',  g.days, 3);
 eq('German plan: dates', g.items.map(i => i.date),
    ['2026-08-10','2026-08-10','2026-08-11','2026-08-12']);
+eq('German plan: stable imported ids', g.items.every(i => /^imp_[a-z0-9]+$/.test(i.id)), true);
+eq('German plan: same HTML keeps ids',
+   parseItineraryHtml(german, { today:TODAY }).items.map(i=>i.id),
+   g.items.map(i=>i.id));
 
 /* ── no .stop class at all ── */
 const noStop = `
@@ -98,6 +102,41 @@ const english = `
 const e = parseItineraryHtml(english, { today: TODAY });
 eq('English: dates', e.items.map(i => i.date), ['2026-07-05','2026-07-06']);
 eq('English: times', e.items.map(i => i.time), ['09:00','14:00']);
+
+const rich = `
+<div class="day"><div class="day-head"><span class="day-num">12.7.</span>
+  <span class="day-title">Ankommen & Tour</span></div>
+  <p class="day-intro">Ein ruhiger erster Tag.</p>
+  <div class="stop"><button class="check done" aria-pressed="true"></button>
+    <span class="stop-time">ab Mittag</span>
+    <h3>Wat Pho <span class="badge badge-must">Must-see</span></h3>
+    <p>Liegender Buddha.</p>
+    <div class="stop-transport">➤ MRT bis Sanam Chai</div>
+  </div>
+</div>`;
+const r = parseItineraryHtml(rich, { today:TODAY });
+eq('rich plan: clean title', r.items[0].title, 'Wat Pho');
+eq('rich plan: keeps flexible time label', r.items[0].timeLabel, 'ab Mittag');
+eq('rich plan: keeps tag', r.items[0].tag, 'Must-see');
+eq('rich plan: keeps transport', r.items[0].transport, 'MRT bis Sanam Chai');
+eq('rich plan: keeps day heading', r.items[0].dayTitle, 'Ankommen & Tour');
+eq('rich plan: imports completion', r.items[0].done, true);
+
+/* ── source order + travel/rest days without their own heading ── */
+const travelDays = `
+<div class="day">
+  <div class="day-head"><div class="day-date">14.07.2026</div><div class="day-title">Freier Tag</div></div>
+  <div class="stop"><span class="stop-time">Vormittag</span><h3>Pool</h3></div>
+  <div class="stop"><span class="stop-time">16:00</span><h3>Skyline</h3></div>
+</div>
+<div class="day">
+  <div class="day-head"><div class="day-date">15.07.2026</div><div class="day-title">Checkout &amp; Abreise</div></div>
+  <div class="stop"><p>Kein weiteres Programm.</p></div>
+</div>`;
+const td = parseItineraryHtml(travelDays, { today:TODAY });
+const tdGrouped = groupByDay(td.items);
+eq('source order stays intact', tdGrouped[0].items.map(item=>item.title), ['Pool','Skyline']);
+eq('travel day gets day title', tdGrouped[1].items[0].title, 'Checkout & Abreise');
 
 /* ── undated multi-section plan spread from the trip start ── */
 const undated = `

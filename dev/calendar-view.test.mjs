@@ -28,6 +28,8 @@ test('week navigation advances in the same-sized range', () => {
 test('view title and preference fallback are stable', () => {
   assert.match(calendarRangeTitle('2026-07-29', 'month'), /Juli 2026/);
   assert.match(calendarRangeTitle('2026-07-29', 'week'), /27\. Juli.*2\. Aug/);
+  assert.match(calendarRangeTitle('2026-07-29', 'agenda'), /Juli 2026/);
+  assert.equal(moveCalendarAnchor('2026-07-31', 'agenda', 1), '2026-08-01');
   assert.deepEqual(normalizeCalendarPreference({ style:'outlook' }), {
     style:'outlook',
     view:'workweek',

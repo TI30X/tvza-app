@@ -68,3 +68,23 @@ test('group people use consistent initial avatars in lists and requests', async 
   assert.match(css, /--person-bg/);
   assert.match(css, /\.group-member-avatar--stacked/);
 });
+
+test('imported programs stay in TVZA and share completion state live', async () => {
+  const planner = await read('pages/planner.html');
+
+  assert.match(planner, /function watchTrips\(\)/);
+  assert.match(planner, /onSnapshot\(\s*query\(collection\(db,'trips'\)/);
+  assert.match(planner, /\[`itineraryDone\.\$\{item\.id\}`\]:next/);
+  assert.match(planner, /function renderPlanViewer\(tr\)/);
+  assert.match(planner, /function openPlan\(tr\)/);
+  assert.match(planner, /mode\.textContent='Original ansehen'/);
+  assert.doesNotMatch(planner, /function openPlanFull\(/);
+});
+
+test('mobile calendar starts with the readable list view', async () => {
+  const planner = await read('pages/planner.html');
+
+  assert.match(planner, /const isMobileCalendar = \(\) => matchMedia\('\(max-width:899px\)'\)\.matches/);
+  assert.match(planner, /isMobileCalendar\(\)[\s\S]*mobileView[\s\S]*'agenda'/);
+  assert.match(planner, /data-calendar-view="agenda"[^>]*>Liste</);
+});
