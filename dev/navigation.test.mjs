@@ -135,6 +135,16 @@ test('arranging is docked beside Schnellzugriff instead of floating over cards',
   assert.doesNotMatch(css, /global-reminder-fab:not\(\[hidden\]\)\) \.reorder-fab/);
 });
 
+test('the header weather glyph stays readable at mobile size', async () => {
+  const [shell, css] = await Promise.all([
+    read('assets/js/shell.js'),
+    read('assets/css/style.css'),
+  ]);
+
+  assert.match(shell, /part:\s*'<path d="M12 2v2"\/>[\s\S]*M13 22H7/);
+  assert.match(css, /\.wx-pill svg \{ width: 16px; height: 16px; flex: none; stroke-width: 1\.7; \}/);
+});
+
 test('loaded content only fades in once instead of blinking after updates', async () => {
   const ui = await read('assets/js/ui-fx.js');
   assert.match(ui, /if \(el\.dataset\.fxRevealed\) return/);

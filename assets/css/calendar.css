@@ -994,6 +994,9 @@
     padding-right:2%;
     padding-bottom:1%;
   }
+  .planner-page[data-calendar-workspace="true"] .main {
+    overflow:hidden;
+  }
   .planner-page #groupView,
   .planner-page #groupView > .calendar-layout,
   .planner-page #groupView .calendar-workspace {
@@ -1021,19 +1024,19 @@
     position:relative;
     z-index:20;
     flex:none;
-    grid-template-columns:22% minmax(0,1fr) var(--calendar-mobile-control);
+    grid-template-columns:repeat(12,minmax(0,1fr));
     grid-template-areas:
-      "today title settings"
-      "nav nav nav"
-      "views views views";
+      "title title title title title title title title title title title settings"
+      "today today today views views views views views views . . ."
+      "nav nav nav nav nav nav nav nav nav nav nav nav";
     gap:2%;
     padding:2%;
     box-shadow:none;
   }
   .planner-page[data-calendar-view="agenda"] .calendar-commandbar {
     grid-template-areas:
-      "today title settings"
-      "views views views";
+      "title title title title title title title title title title title settings"
+      "today today today views views views views views views . . .";
   }
   .planner-page[data-calendar-view="agenda"] .calendar-commandbar__nav {
     display:none;
@@ -1049,8 +1052,9 @@
     background:var(--surface-2);
   }
   .calendar-commandbar__title {
-    font-size:clamp(15px, 4.6vw, 19px);
+    font-size:clamp(18px, 5.2vw, 22px);
     text-align:left;
+    padding-left:1%;
   }
   .calendar-commandbar__today {
     width:100%;
@@ -1068,7 +1072,8 @@
     justify-content:flex-start;
   }
   .calendar-commandbar__views .view-picker {
-    flex:0 0 24%;
+    flex:1 1 auto;
+    width:100%;
     min-width:0;
   }
   .calendar-commandbar__settings {
@@ -1178,6 +1183,10 @@
     overflow-y:auto;
     overscroll-behavior:contain;
     scrollbar-width:none;
+  }
+  .calendar-agenda .agenda-scroll-tail {
+    height:max(clamp(180px, 48vw, 230px), 52dvh);
+    pointer-events:none;
   }
   .calendar-agenda::-webkit-scrollbar { display:none; }
   .planner-page .reminder-hub-sheet {

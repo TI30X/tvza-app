@@ -123,6 +123,11 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(css, /\.calendar-agenda \{[\s\S]*height:100%;[\s\S]*overflow-y:auto/);
   assert.match(css, /--calendar-mobile-control:clamp/);
   assert.match(css, /padding-bottom:clamp\(112px, 31vw, 148px\)/);
+  assert.match(css, /grid-template-columns:repeat\(12,minmax\(0,1fr\)\)/);
+  assert.match(css, /"title title title title title title title title title title title settings"\s*"today today today views views views views views views \. \. \."/);
+  assert.match(css, /data-calendar-workspace="true"] \.main \{\s*overflow:hidden/);
+  assert.match(planner, /class="agenda-scroll-tail"/);
+  assert.match(css, /\.agenda-scroll-tail \{[\s\S]*52dvh/);
   assert.doesNotMatch(planner, /id="reminderHubSheet">\s*<div class="grip"/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);
   assert.match(css, /\.reminder-hub-sheet \.reminder-hub-list \{[\s\S]*overflow-y:auto/);

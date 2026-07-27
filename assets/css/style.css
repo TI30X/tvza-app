@@ -1840,13 +1840,13 @@ body.reorder-editing .module-tile::after {
 .appbar__accent { height: 3px; background: var(--tint, transparent); }
 
 .wx-pill {
-  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none;
   height: var(--ctl, 32px); padding: 0 calc(var(--ctl, 32px) * 0.34);
   border-radius: var(--r-pill);
   background: rgba(255,255,255,0.12); color: #fff;
   font-size: clamp(12px, 3.4vw, 13px); font-weight: 700; font-variant-numeric: tabular-nums;
 }
-.wx-pill svg { width: 14px; height: 14px; }
+.wx-pill svg { width: 16px; height: 16px; flex: none; stroke-width: 1.7; }
 .avatar {
   width: var(--ctl, 32px); height: var(--ctl, 32px); flex: none;
   display: inline-flex; align-items: center; justify-content: center;

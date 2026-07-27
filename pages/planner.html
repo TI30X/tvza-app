@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
-  <link rel="stylesheet" href="../assets/css/calendar.css?v=4" />
+  <link rel="stylesheet" href="../assets/css/calendar.css?v=5" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -820,6 +820,7 @@
           saveVisibleSources();
           $('noGroup').style.display='none';
           $('groupView').style.display='';
+          document.body.dataset.calendarWorkspace='true';
           renderCalendarSources();
           await renderGroupCard();
           await reload();
@@ -837,6 +838,7 @@
       $('noGroup').style.display='';
       $('groupView').style.display='none';
       $('tripDetail').style.display='none';
+      delete document.body.dataset.calendarWorkspace;
     }
 
     function isoWeekNumber(value) {
@@ -1630,9 +1632,16 @@
       const from = `${anchorKey.slice(0,7)}-01`;
       const keys = Object.keys(map).filter(k=>k>=from).sort();
       const box=$('agenda');
-      if(!keys.length){ box.innerHTML=`<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>`; return; }
-      const focusKey = keys.find(key=>key>=todayKey) || '';
       const containsToday = anchorKey.slice(0,7)===todayKey.slice(0,7);
+      const scrollTail = '<div class="agenda-scroll-tail" aria-hidden="true"></div>';
+      if(!keys.length){
+        const todayMarker = containsToday
+          ? `<div class="agenda-today-marker" data-agenda-focus><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine Einträge</small></div>`
+          : '';
+        box.innerHTML=`${todayMarker}<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>${scrollTail}`;
+        return;
+      }
+      const focusKey = keys.find(key=>key>=todayKey) || '';
       const groupsHtml = keys.map(k=>{
         const items = map[k].map((e,i)=>{
           const hasPage=(e.ref.planHtml||e.ref.planUrl||(e.ref.itinerary||[]).length);
@@ -1670,7 +1679,7 @@
       const endMarker = !focusKey && containsToday
         ? `<div class="agenda-today-marker" data-agenda-focus><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine weiteren Einträge</small></div>`
         : '';
-      box.innerHTML = groupsHtml + endMarker;
+      box.innerHTML = groupsHtml + endMarker + scrollTail;
       box.querySelectorAll('[data-full-k]').forEach(b=>b.onclick=(ev)=>{
         ev.stopPropagation();
         const e=(map[b.dataset.fullK]||[])[+b.dataset.fullI]; if(e)openPlan(e.ref);
@@ -1862,6 +1871,7 @@
       $('groupView').style.display='none';
       $('calendarBelow').style.display='none';
       $('tripDetail').style.display='';
+      delete document.body.dataset.calendarWorkspace;
       window.scrollTo(0,0);
       if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Kalender';
       renderTripDetail(tr, acts, files);
@@ -1870,6 +1880,7 @@
       $('tripDetail').style.display='none';
       $('groupView').style.display='';
       $('calendarBelow').style.display='';
+      document.body.dataset.calendarWorkspace='true';
       if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Start';
       reload();
     }

@@ -56,7 +56,7 @@ export const ICONS = {
    full emoji ternary in each. One set, one mapping. */
 export const WEATHER_GLYPHS = {
   sun:   '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
-  part:  '<path d="M12 2v2M4.9 4.9l1.4 1.4M2 12h2M19.1 4.9l-1.4 1.4"/><circle cx="10" cy="10" r="3.2"/><path d="M17.5 19H8a4 4 0 1 1 1.1-7.85A5 5 0 0 1 19 13a3 3 0 0 1-1.5 6z"/>',
+  part:  '<path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.95 12.65a4 4 0 0 0-5.93-4.13"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>',
   cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
   fog:   '<path d="M4 9h16M4 13h16M6 17h12"/>',
   rain:  '<path d="M18 9h-1.26A7 7 0 1 0 9 18h9a4.5 4.5 0 0 0 0-9z"/><path d="M8 20l-1 2M12 20l-1 2M16 20l-1 2"/>',
