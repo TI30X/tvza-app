@@ -278,16 +278,6 @@
       <hr class="settings-divider" />
 
       <section class="settings-section">
-        <p class="settings-section-title">Module</p>
-        <div class="rows" id="moduleToggles"></div>
-        <div class="modal-actions">
-          <button class="btn btn-primary btn-block" id="modulesSave">Module speichern</button>
-        </div>
-      </section>
-
-      <hr class="settings-divider" />
-
-      <section class="settings-section">
         <p class="settings-section-title">Modul teilen — mit Ansehen oder Bearbeiten</p>
         <div class="form-group">
           <label class="form-label" for="shareModule">Modul</label>
@@ -895,7 +885,6 @@
       tellSettingsParent({ type:'tvza-settings-close' });
     }
     function openSettings() {
-      renderModuleToggles();
       renderShareModuleOptions();
       renderMyShares();
       document.getElementById('adminSection').style.display = 'none';
@@ -962,41 +951,6 @@
         return email === val || name === val || userOptionLabel(u).toLowerCase() === val;
       }) || null;
     }
-
-    function renderModuleToggles() {
-      const allowed = allowedModules(profile);
-      const mods = enabledModules(profile);
-      const availableModules = Object.values(MODULES).filter(m => allowed[m.key]);
-      document.getElementById('modulesSave').style.display = availableModules.length ? '' : 'none';
-      if (!availableModules.length) {
-        document.getElementById('moduleToggles').innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch keine Module freigeschaltet.</p>';
-        return;
-      }
-      document.getElementById('moduleToggles').innerHTML = availableModules.map(m => `
-        <label class="row row--check" data-bereich="${BEREICH_OF[m.key] || ''}">
-          <span class="row__icon">${icon(ICONS[m.key] ? m.key : 'bereiche', 18)}</span>
-          <span class="row__body">
-            <span class="row__title">${escHtml(m.name)}</span>
-            <span class="row__sub">${escHtml(m.sub)}</span>
-          </span>
-          <span class="row__end">
-            <input type="checkbox" data-mod="${m.key}" ${mods[m.key] ? 'checked' : ''} />
-          </span>
-        </label>`).join('');
-    }
-
-    document.getElementById('modulesSave').addEventListener('click', async () => {
-      const modules = {};
-      document.querySelectorAll('#moduleToggles [data-mod]').forEach(cb => modules[cb.dataset.mod] = cb.checked);
-      await updateDoc(doc(db, 'users', user.uid), { modules }).catch(async () => {
-        await setDoc(doc(db, 'users', user.uid), { modules }, { merge: true });
-      });
-      profile.modules = modules;
-      applyModules();
-      syncPublicFeed();
-      tellSettingsParent({ type:'tvza-settings-modules', modules });
-      closeSettings();
-    });
 
     /* ════ Teilen ════════════════════════════════ */
     function renderShareModuleOptions() {

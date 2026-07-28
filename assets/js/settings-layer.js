@@ -63,9 +63,6 @@ export function mountSettingsLayer() {
     if (event.data?.type === 'tvza-settings-theme') {
       window.TVZATheme?.applyTheme(event.data.mode);
     }
-    if (event.data?.type === 'tvza-settings-modules') {
-      window.dispatchEvent(new CustomEvent('tvza-modules-change', { detail:event.data.modules || {} }));
-    }
   });
 
   return { open, close };

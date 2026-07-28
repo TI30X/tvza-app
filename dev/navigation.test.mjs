@@ -18,6 +18,21 @@ test('areas page and sidebar share one module ordering source', async () => {
   assert.doesNotMatch(areas, /quick_access_order/);
 });
 
+test('admin approval is the only module visibility source', async () => {
+  const [firebase, dashboard, nav, settingsLayer] = await Promise.all([
+    read('assets/js/firebase-config.js'),
+    read('index.html'),
+    read('assets/js/nav.js'),
+    read('assets/js/settings-layer.js'),
+  ]);
+
+  assert.match(firebase, /export function enabledModules\(profile\) \{[\s\S]*const allowed = allowedModules\(profile\);[\s\S]*\[key, !!allowed\[key\]\]/);
+  assert.doesNotMatch(firebase, /profile\?\.modules/);
+  assert.doesNotMatch(dashboard, /moduleToggles|modulesSave|renderModuleToggles|tvza-settings-modules/);
+  assert.doesNotMatch(nav, /tvza-modules-change/);
+  assert.doesNotMatch(settingsLayer, /tvza-settings-modules|tvza-modules-change/);
+});
+
 test('desktop hides the redundant areas tab while mobile keeps its nav marker', async () => {
   const [css, nav, shell] = await Promise.all([
     read('assets/css/style.css'),

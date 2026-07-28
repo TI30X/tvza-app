@@ -335,10 +335,5 @@ if (!SKIP.includes(file)) {
     mountAccountMenu(user, profile);
     watchUnread(user);
     watchKeyboard();
-    window.addEventListener('tvza-modules-change', event => {
-      if (!event.detail || typeof event.detail !== 'object') return;
-      profile = { ...(profile || {}), modules:event.detail };
-      refreshAreaNavigation(profile);
-    });
   });
 }

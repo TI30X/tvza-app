@@ -126,8 +126,8 @@ export function reportClientError(context, error) {
 }
 
 /* ── Module-Registry (erweiterbar) ─────────────────
-   Neue Module hier ergänzen — Dashboard, Einstellungen
-   und Teilen ziehen sich automatisch daraus.            */
+   Neue Module hier ergänzen — Dashboard, Bereiche,
+   Admin-Freigaben und Teilen ziehen sich daraus.         */
 export const MODULES = {
   ski:  { key:'ski',  name:'Ski Tracker',    sub:'Schliff & Wachs',        emoji:'🎿', page:'pages/skitracker.html',  perUser:true,  shareable:true  },
   food: { key:'food', name:'Food Tracker',   sub:'Kalorien & Nährstoffe',  emoji:'🍎', page:'pages/foodtracker.html', perUser:true,  shareable:true  },
@@ -158,11 +158,12 @@ export function allowedModules(profile) {
   return { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}) };
 }
 
-// Effektive Modul-Auswahl: Admin-Freigabe UND persönliche Sichtbarkeit.
+// Die Admin-Freigabe ist die einzige Sichtbarkeitsquelle. Das frühere
+// persönliche profile.modules-Feld wird absichtlich ignoriert, damit ein
+// freigegebenes Modul auf Dashboard und Bereiche-Seite zuverlässig erscheint.
 export function enabledModules(profile) {
   const allowed = allowedModules(profile);
-  const visible = { ...allowed, ...(profile?.modules || {}) };
-  return Object.fromEntries(Object.keys(MODULES).map(key => [key, !!allowed[key] && !!visible[key]]));
+  return Object.fromEntries(Object.keys(MODULES).map(key => [key, !!allowed[key]]));
 }
 
 /* ── Teilen (Module mit anderen Nutzern) ──────────── */

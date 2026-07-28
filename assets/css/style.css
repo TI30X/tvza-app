@@ -1268,7 +1268,6 @@ body.reorder-editing .reorder-fab {
   margin: 0 0 12px;
 }
 #settingsModal .settings-divider { margin: var(--s5) 0; }
-#settingsModal #moduleToggles { display: flex; flex-direction: column; gap: 6px; }
 #settingsModal .modal-actions { margin-top: var(--s4); }
 #settingsModal .form-group { margin-bottom: var(--s4); }
 #settingsModal #myShares:not(:empty) { margin-top: var(--s4); }
