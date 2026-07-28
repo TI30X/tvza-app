@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
-  <link rel="stylesheet" href="../assets/css/calendar.css?v=7" />
+  <link rel="stylesheet" href="../assets/css/calendar.css?v=8" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -542,6 +542,13 @@
       <p>Termine übernehmen immer die Farbe ihres Kalenders.</p>
       <div class="calendar-color-options" id="personalCalendarColors"></div>
     </fieldset>
+    <label class="calendar-feature-setting" for="showGroupFeatures">
+      <span>
+        <strong>Gruppenfunktionen anzeigen</strong>
+        <small>Wenn du noch keiner Gruppe angehörst, werden Optionen zum Erstellen und Beitreten im Kalender angezeigt.</small>
+      </span>
+      <input id="showGroupFeatures" type="checkbox" role="switch" />
+    </label>
     <button class="btn btn-primary btn-block" id="calendarSetupSave" type="button">Übernehmen</button>
   </div>
 
@@ -677,7 +684,12 @@
     let trips = [], allTrips = [], days = [], reminders = [];
     let visibleGroupIds = new Set(), showPersonal = true;
     let anchorKey = todayKey, curView = 'month';
-    let calendarPreference = { style:'google', view:'month', personalColor:DEFAULT_CALENDAR_COLOR };
+    let calendarPreference = {
+      style:'google',
+      view:'month',
+      personalColor:DEFAULT_CALENDAR_COLOR,
+      showGroupFeatures:false
+    };
     let calendarPreferenceExists = false;
     let editTripId = null, editDayId = null, editReminderId = null, dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
     let pendingDayFiles = [], dayFiles = [], openPlanTripId = null, agendaShouldFocusToday = true;
@@ -728,6 +740,8 @@
       document.querySelectorAll('[data-style]').forEach(card =>
         card.classList.toggle('is-selected', card.dataset.style === calendarPreference.style)
       );
+      $('showGroupFeatures').checked = calendarPreference.showGroupFeatures;
+      updateNoGroupVisibility();
       renderPersonalColorOptions();
       renderCalendarSources();
       renderCurrentView();
@@ -845,7 +859,7 @@
             || groups.find(item => item.id === profile.familyId)
             || groups[0];
           saveVisibleSources();
-          $('noGroup').style.display='none';
+          updateNoGroupVisibility();
           $('groupView').style.display='';
           $('addTripBtn').style.display='';
           $('manageGroupsBtn').style.display='';
@@ -871,7 +885,8 @@
       trips = [];
       visibleGroupIds = new Set();
       loadVisibleSources();
-      $('noGroup').style.display='';
+      initialGroupsLoaded = true;
+      updateNoGroupVisibility();
       $('groupView').style.display='';
       $('tripDetail').style.display='none';
       document.body.dataset.calendarWorkspace='true';
@@ -879,9 +894,16 @@
       $('manageGroupsBtn').style.display='none';
       renderCalendarSources();
       await reload();
-      initialGroupsLoaded = true;
       focusCalendarEntryWhenReady();
       watchTrips();
+    }
+
+    function updateNoGroupVisibility() {
+      $('noGroup').style.display = initialGroupsLoaded
+        && !groups.length
+        && calendarPreference.showGroupFeatures
+        ? ''
+        : 'none';
     }
 
     function isoWeekNumber(value) {
@@ -2575,6 +2597,10 @@
         }
         applyCalendarPreference();
       });
+      $('showGroupFeatures').onchange=()=>{
+        calendarPreference.showGroupFeatures=$('showGroupFeatures').checked;
+        updateNoGroupVisibility();
+      };
       $('calendarSetupSave').onclick=()=>{ saveCalendarPreference(); closeCalendarSetup(); };
       $('calendarSetupClose').onclick=closeCalendarSetup;
       $('calendarSetupBackdrop').onclick=()=>{ if(calendarPreferenceExists)closeCalendarSetup(); };

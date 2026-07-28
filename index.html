@@ -351,7 +351,7 @@
       signOut, sendEmailVerification
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
-      doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
+      doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
       deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { ICONS, icon } from './assets/js/shell.js';
@@ -1222,15 +1222,60 @@
         row.querySelectorAll('[data-admin-allowed]').forEach(cb => allowedModulesNext[cb.dataset.adminAllowed] = cb.checked);
         const isTimo = row.querySelector('[data-admin-timo]').checked;
         if (uid === user.uid && !isTimo) { alert('Du kannst dir selbst den Admin-Zugriff nicht entfernen.'); return; }
-        await updateDoc(doc(db, 'users', uid), { allowedModules: allowedModulesNext, isTimo }).catch(error => reportClientError('member-modules-save', error));
-        if (uid === user.uid) {
-          profile = { ...profile, allowedModules: allowedModulesNext, isTimo };
-          applyModules();
-          syncPublicFeed();
+        const moduleKeys = Object.keys(MODULES);
+        const allowedKeys = Object.keys(allowedModulesNext);
+        const validPayload = Object.getPrototypeOf(allowedModulesNext) === Object.prototype
+          && allowedKeys.length === moduleKeys.length
+          && moduleKeys.every(key => typeof allowedModulesNext[key] === 'boolean');
+        if (!validPayload) {
+          reportClientError('member-modules-save', { code:'invalid-module-payload' });
+          alert('Die Modul-Auswahl ist ungültig und wurde nicht gespeichert. Bitte lade die Seite neu und versuche es nochmals.');
+          return;
         }
-        await loadAppUsers(true);
-        renderUserSuggestions();
-        renderAdminUsers();
+
+        const originalLabel = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Speichert…';
+        try {
+          // Firestore authorises this write from the acting user's current
+          // users/{uid} document. Re-read it here so a revoked or stale admin
+          // session produces a useful explanation instead of a silent no-op.
+          const actingAdmin = await getDocFromServer(doc(db, 'users', user.uid));
+          if (!actingAdmin.exists() || actingAdmin.data().isTimo !== true) {
+            const error = new Error('The acting user is not an admin in Firestore.');
+            error.code = 'admin-access-revoked';
+            throw error;
+          }
+
+          await updateDoc(doc(db, 'users', uid), {
+            allowedModules: allowedModulesNext,
+            isTimo
+          });
+          if (uid === user.uid) {
+            profile = { ...profile, allowedModules: allowedModulesNext, isTimo };
+            applyModules();
+            syncPublicFeed();
+          }
+          await loadAppUsers(true);
+          renderUserSuggestions();
+          await renderAdminUsers();
+        } catch (error) {
+          reportClientError('member-modules-save', error);
+          const code = typeof error?.code === 'string' ? error.code : 'operation-failed';
+          const message = code === 'admin-access-revoked'
+            ? 'Dein Admin-Zugriff ist in Firestore nicht mehr aktiv. Lade die Seite neu oder lass dein Konto von einem Admin prüfen (Fehlercode: admin-access-revoked).'
+            : code === 'permission-denied' || code === 'firestore/permission-denied'
+              ? `Firestore hat das Speichern abgelehnt. Prüfe, ob dein eigenes Konto weiterhin als Admin freigeschaltet ist (Fehlercode: ${code}).`
+              : code === 'invalid-argument' || code === 'firestore/invalid-argument'
+                ? `Die Modul-Auswahl enthält ungültige Daten und konnte nicht gespeichert werden (Fehlercode: ${code}).`
+                : `Die Modul-Freigaben konnten nicht gespeichert werden (Fehlercode: ${code}).`;
+          alert(message);
+        } finally {
+          if (btn.isConnected) {
+            btn.disabled = false;
+            btn.textContent = originalLabel;
+          }
+        }
       }));
     }
 

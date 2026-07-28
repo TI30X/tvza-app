@@ -135,5 +135,6 @@ export function normalizeCalendarPreference(raw = {}) {
   const validViews = new Set(CALENDAR_VIEWS.map(view => view.key));
   const view = validViews.has(raw.view) ? raw.view : CALENDAR_STYLES[style].defaultView;
   const personalColor = normalizeCalendarColor(raw.personalColor);
-  return { style, view, personalColor };
+  const showGroupFeatures = raw.showGroupFeatures === true;
+  return { style, view, personalColor, showGroupFeatures };
 }

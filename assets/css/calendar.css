@@ -681,6 +681,57 @@
 .calendar-color-setting legend { padding:0 5px; font-size:12px; font-weight:800; }
 .calendar-color-setting p { margin:0 0 10px; color:var(--ink-soft); font-size:12px; }
 .calendar-color-options { display:flex; flex-wrap:wrap; gap:8px; }
+.calendar-feature-setting {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin:0 0 16px;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:var(--r-row);
+  cursor:pointer;
+}
+.calendar-feature-setting strong { display:block; font-size:13px; }
+.calendar-feature-setting small {
+  display:block;
+  margin-top:3px;
+  color:var(--ink-soft);
+  font-size:12px;
+  line-height:1.4;
+}
+.calendar-feature-setting input {
+  appearance:none;
+  flex:0 0 auto;
+  width:42px;
+  height:24px;
+  margin:0;
+  padding:2px;
+  border:1px solid var(--border);
+  border-radius:var(--r-pill);
+  background:var(--surface-2);
+  cursor:pointer;
+  transition:background 160ms ease,border-color 160ms ease;
+}
+.calendar-feature-setting input::before {
+  content:'';
+  display:block;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:var(--surface);
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+  transition:transform 160ms ease;
+}
+.calendar-feature-setting input:checked {
+  border-color:var(--cal-accent);
+  background:var(--cal-accent);
+}
+.calendar-feature-setting input:checked::before { transform:translateX(18px); }
+.calendar-feature-setting input:focus-visible {
+  outline:3px solid color-mix(in oklab, var(--cal-accent) 30%, transparent);
+  outline-offset:2px;
+}
 .calendar-color {
   width:30px;
   height:30px;
