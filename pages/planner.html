@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
-  <link rel="stylesheet" href="../assets/css/calendar.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/calendar.css?v=10" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -446,7 +446,7 @@
 
   <!-- Reminders remain reachable without scrolling past the calendar -->
   <div class="backdrop" id="reminderHubBackdrop"></div>
-  <div class="sheet reminder-hub-sheet" id="reminderHubSheet">
+  <div class="sheet reminder-hub-sheet" id="reminderHubSheet" aria-hidden="true" inert>
     <div class="sheet-head"><span class="sheet-title">Erinnerungen</span>
       <button class="icon-pill" id="reminderHubClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="reminder-list reminder-hub-list" id="reminderHubList"></div>
@@ -1404,12 +1404,16 @@
     }
     function openReminderHub() {
       renderReminders();
+      $('reminderHubSheet').inert = false;
+      $('reminderHubSheet').setAttribute('aria-hidden', 'false');
       $('reminderHubBackdrop').classList.add('visible');
       $('reminderHubSheet').classList.add('visible');
     }
     function closeReminderHub() {
       $('reminderHubBackdrop').classList.remove('visible');
       $('reminderHubSheet').classList.remove('visible');
+      $('reminderHubSheet').inert = true;
+      $('reminderHubSheet').setAttribute('aria-hidden', 'true');
     }
     function openCreateSheet() {
       $('createGroupEventOption').style.display = groups.length ? '' : 'none';

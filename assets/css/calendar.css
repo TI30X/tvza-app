@@ -1274,12 +1274,19 @@
     display:flex;
     flex-direction:column;
   }
+  .planner-page .reminder-hub-sheet:not(.visible) {
+    transform:translateY(calc(100% + var(--tvza-shell-bottom, calc(64px + env(safe-area-inset-bottom)))));
+    pointer-events:none;
+  }
   .planner-page #reminderHubBackdrop {
     bottom:var(--tvza-shell-bottom, calc(64px + env(safe-area-inset-bottom)));
   }
   html.tvza-content-frame .planner-page .reminder-hub-sheet {
     bottom:0;
     padding-bottom:clamp(16px, 5vw, 24px);
+  }
+  html.tvza-content-frame .planner-page .reminder-hub-sheet:not(.visible) {
+    transform:translateY(100%);
   }
   html.tvza-content-frame .planner-page #reminderHubBackdrop { bottom:0; }
   .planner-page .reminder-hub-sheet .sheet-head {

@@ -10,8 +10,8 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.31.2.2';
-// Shell revision 15: make the calendar group-feature switch explicitly interactive.
+const CACHE = 'tvza-v.31.2.3';
+// Shell revision 16: fully hide the closed planner reminder sheet above mobile navigation.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js',
@@ -23,7 +23,7 @@ const SHELL = [
   './index.html',
   './login.html',
   './assets/css/style.css',
-  './assets/css/calendar.css?v=9',
+  './assets/css/calendar.css?v=10',
   './assets/css/matura.css',
   './assets/css/ui-fx.css',
   './assets/js/theme.js',

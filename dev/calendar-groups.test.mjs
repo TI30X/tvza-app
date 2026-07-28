@@ -149,6 +149,11 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);
   assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
+  assert.match(css, /\.planner-page \.reminder-hub-sheet:not\(\.visible\) \{[\s\S]*translateY\(calc\(100% \+ var\(--tvza-shell-bottom/);
+  assert.match(css, /\.planner-page \.reminder-hub-sheet:not\(\.visible\) \{[\s\S]*pointer-events:none/);
+  assert.match(planner, /id="reminderHubSheet" aria-hidden="true" inert/);
+  assert.match(planner, /function openReminderHub\(\) \{[\s\S]*\.inert = false;[\s\S]*aria-hidden', 'false'/);
+  assert.match(planner, /function closeReminderHub\(\) \{[\s\S]*\.inert = true;[\s\S]*aria-hidden', 'true'/);
   assert.match(css, /\.planner-page #reminderHubBackdrop \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
   assert.match(css, /html\.tvza-content-frame \.planner-page #reminderHubBackdrop \{ bottom:0; \}/);
   assert.match(css, /\.reminder-hub-sheet \.reminder-hub-list \{[\s\S]*overflow-y:auto/);

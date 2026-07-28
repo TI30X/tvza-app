@@ -34,11 +34,13 @@ test('view title and preference fallback are stable', () => {
     style:'outlook',
     view:'workweek',
     personalColor:'#7f77dd',
+    showGroupFeatures:false,
   });
   assert.deepEqual(normalizeCalendarPreference({ style:'unknown', view:'nope', personalColor:'#e0b52f' }), {
     style:'google',
     view:'month',
     personalColor:'#e0b52f',
+    showGroupFeatures:false,
   });
   assert.equal(calendarColorInk('#e0b52f'), '#342b00');
 });
