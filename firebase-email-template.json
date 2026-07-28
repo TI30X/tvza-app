@@ -1,0 +1,6 @@
+{
+  "documentId": "member-invite",
+  "subject": "Deine TVZA-Einladung",
+  "text": "Du wurdest zu {{familyName}} in TVZA eingeladen.\n\nEinladung annehmen:\nhttps://ti30x.github.io/tvza-app/login.html?invite={{inviteCode}}\n\nDer Link ist einmalig und nur für die eingeladene E-Mail-Adresse gültig.",
+  "html": "<p>Du wurdest zu <strong>{{familyName}}</strong> in TVZA eingeladen.</p><p><a href=\"https://ti30x.github.io/tvza-app/login.html?invite={{inviteCode}}\">TVZA-Einladung annehmen</a></p><p>Der Link ist einmalig und nur für die eingeladene E-Mail-Adresse gültig.</p>"
+}

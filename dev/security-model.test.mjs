@@ -13,14 +13,18 @@ test('membership requires a server-readable user profile', async () => {
   assert.match(rules, /function isMember\(\)[\s\S]*hasProfile\(\) && !isGuest\(\)/);
 });
 
-test('family registration requires an invitation code', async () => {
+test('registration is open while supplied invitations stay email-bound and one-time', async () => {
   const [rules, login] = await Promise.all([
     read('firestore.rules'),
     read('login.html'),
   ]);
   assert.match(rules, /inviteIsValid\(request\.resource\.data\)/);
+  assert.match(rules, /data\.inviteCode == null && data\.familyId == null/);
+  assert.match(rules, /request\.auth\.token\.email\.lower\(\)/);
+  assert.match(rules, /!existsAfter\([\s\S]*memberInvites/);
   assert.match(login, /id="fInvite"/);
-  assert.match(login, /inviteCode/);
+  assert.doesNotMatch(login, /mode === 'register' && !inviteCode/);
+  assert.match(login, /batch\.delete\(inviteRef\)/);
 });
 
 test('admin and per-user data are not globally writable', async () => {

@@ -33,7 +33,7 @@
     .radio-row label { display:flex; gap:6px; align-items:center; cursor:pointer; }
   </style>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
-  <script src="assets/js/ui-fx.js?v=16" defer></script>
+  <script src="assets/js/ui-fx.js?v=17" defer></script>
 </head>
 <body>
   <script src="assets/js/welcome.js?v=5"></script>
@@ -311,25 +311,29 @@
 
       <div id="adminSection" style="display:none">
         <hr class="settings-divider" />
-        <section class="settings-section">
+        <section class="settings-section" id="memberInviteSection">
           <p class="settings-section-title">Admin · Familien-Einladungen</p>
-          <p class="form-hint">Erstelle einen einmaligen Code und sende E-Mail und Code nur an die eingeladene Person.</p>
+          <p class="form-hint">Erstellt einen einmaligen Link und legt die Einladungs-E-Mail sicher zum Versand ab.</p>
           <div class="form-group">
             <label class="form-label" for="memberInviteEmail">E-Mail</label>
             <input class="form-input" id="memberInviteEmail" type="email"
                    placeholder="person@beispiel.ch" inputmode="email"
                    autocapitalize="none" autocorrect="off" />
           </div>
+          <div class="form-group">
+            <label class="form-label" for="memberInviteFamily">Kalendergruppe</label>
+            <select class="form-select" id="memberInviteFamily"></select>
+          </div>
           <button class="btn btn-primary btn-block" id="memberInviteCreate">Einladung erstellen</button>
           <div id="memberInviteList"></div>
         </section>
         <hr class="settings-divider" />
-        <section class="settings-section">
+        <section class="settings-section" id="superAdminUserSection">
           <p class="settings-section-title">Admin · Benutzer verwalten</p>
           <div id="adminUsers"><div class="spinner">Lade…</div></div>
         </section>
         <hr class="settings-divider" />
-        <section class="settings-section">
+        <section class="settings-section" id="superAdminFoodSection">
           <p class="settings-section-title">Admin · Food-Anfragen <span id="reqCount" class="role-badge" style="display:none"></span></p>
           <div id="adminFoodRequests"><div class="spinner">Lade…</div></div>
         </section>
@@ -343,10 +347,12 @@
       MODULES, allowedModules, enabledModules, getProfile, sharesForEmail,
       sharesByOwner, reportClientError
     } from './assets/js/firebase-config.js';
-    import { signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import {
+      signOut, sendEmailVerification
+    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
-      deleteDoc, serverTimestamp, query, orderBy, where, getDocs
+      deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { ICONS, icon } from './assets/js/shell.js';
     import { initialsOf } from './assets/js/nav.js';
@@ -374,6 +380,14 @@
 
     // Nicht angemeldet → öffentliche Seite zuerst (Login erst danach).
     const user = await requireAuth('public.html');
+    if (sessionStorage.getItem('tvza-send-verification') === '1') {
+      sessionStorage.removeItem('tvza-send-verification');
+      if (!user.emailVerified) {
+        void sendEmailVerification(user, {
+          url: new URL('login.html?verified=1', location.href).href
+        }).catch(() => {});
+      }
+    }
 
     const svgIcon = paths => `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
     const ICON_LOCK   = svgIcon('<path d="M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z"/><path d="M7 11V7a5 5 0 0110 0v4"/>');
@@ -847,7 +861,16 @@
     // ── Config: Timos UID (für Legacy-Elternansicht) ──
     let timoUid = '';
     if (profile.isTimo === true) {
-      await setDoc(doc(db, 'config', 'tvza'), { timoUid: user.uid }, { merge: true }).catch(error => reportClientError('admin-config-save', error));
+      const configRef = doc(db, 'config', 'tvza');
+      const configSnap = await getDoc(configRef).catch(() => null);
+      const configPatch = { timoUid: user.uid };
+      // Beta default: optional verification reduces testing friction. Preserve
+      // any explicit admin choice once the flag exists.
+      if (!configSnap?.exists() || typeof configSnap.data().requireEmailVerification !== 'boolean') {
+        configPatch.requireEmailVerification = false;
+      }
+      await setDoc(configRef, configPatch, { merge: true })
+        .catch(error => reportClientError('admin-config-save', error));
       timoUid = user.uid;
     } else if (profile.isParent === true) {
       try { const cfg = await getDoc(doc(db, 'config', 'tvza')); if (cfg.exists()) timoUid = cfg.data().timoUid || ''; } catch (e) {}
@@ -875,12 +898,19 @@
       renderModuleToggles();
       renderShareModuleOptions();
       renderMyShares();
-      document.getElementById('adminSection').style.display = profile.isTimo === true ? '' : 'none';
+      document.getElementById('adminSection').style.display = 'none';
       settingsModal.classList.add('visible');
+      loadInviteFamilies().then(() => {
+        const canInvite = profile.isTimo === true || inviteFamilies.length > 0;
+        document.getElementById('adminSection').style.display = canInvite ? '' : 'none';
+        document.getElementById('memberInviteSection').style.display = canInvite ? '' : 'none';
+        document.getElementById('superAdminUserSection').style.display = profile.isTimo === true ? '' : 'none';
+        document.getElementById('superAdminFoodSection').style.display = profile.isTimo === true ? '' : 'none';
+        if (canInvite) renderMemberInvites();
+      });
       loadAppUsers().then(() => {
         renderUserSuggestions();
         if (profile.isTimo === true) {
-          renderMemberInvites();
           renderAdminUsers();
           renderFoodRequests();
         }
@@ -1026,11 +1056,40 @@
       return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    let inviteFamilies = [];
+    async function loadInviteFamilies() {
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'families'),
+          where('members', 'array-contains', user.uid)
+        ));
+        inviteFamilies = snap.docs
+          .map(item => ({ id:item.id, ...item.data() }))
+          .filter(item => item.headUid === user.uid || (item.managers || []).includes(user.uid))
+          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
+      } catch (error) {
+        reportClientError('invite-families', error);
+        inviteFamilies = [];
+      }
+      const picker = document.getElementById('memberInviteFamily');
+      const noGroup = profile.isTimo === true
+        ? '<option value="">Keine Gruppe – nur TVZA</option>'
+        : '<option value="" disabled>Keine Gruppe – nur für App-Admin</option>';
+      picker.innerHTML = noGroup + inviteFamilies
+        .map(item => `<option value="${escHtml(item.id)}">${escHtml(item.name || 'Unbenannte Gruppe')}</option>`)
+        .join('');
+      if (profile.isTimo !== true && inviteFamilies.length) picker.value = inviteFamilies[0].id;
+      return inviteFamilies;
+    }
+
     async function renderMemberInvites() {
-      if (profile.isTimo !== true) return;
+      if (profile.isTimo !== true && !inviteFamilies.length) return;
       const wrap = document.getElementById('memberInviteList');
       try {
-        const snap = await getDocs(collection(db, 'memberInvites'));
+        const inviteQuery = profile.isTimo === true
+          ? collection(db, 'memberInvites')
+          : query(collection(db, 'memberInvites'), where('createdBy', '==', user.uid));
+        const snap = await getDocs(inviteQuery);
         const invites = snap.docs.map(d => ({ code: d.id, ...d.data() }))
           .sort((a, b) => String(a.email || '').localeCompare(String(b.email || ''), 'de-CH'));
         if (!invites.length) {
@@ -1042,7 +1101,11 @@
             <span class="avatar avatar--ink" style="${personAvatarStyle(invite.email)}">${escHtml(initialsOf(invite.email))}</span>
             <span class="row__body">
               <span class="row__title">${escHtml(invite.email || 'Ohne E-Mail')}</span>
-              <span class="row__sub">${escHtml(invite.code)}</span>
+              <span class="row__sub">${escHtml(
+                invite.familyId
+                  ? (inviteFamilies.find(item => item.id === invite.familyId)?.name || 'Kalendergruppe')
+                  : 'Nur TVZA'
+              )} · ${escHtml(invite.code)}</span>
             </span>
             <span class="row__end">
               <button class="b" data-invite-copy="${escHtml(invite.code)}" type="button">Kopieren</button>
@@ -1052,7 +1115,8 @@
         wrap.querySelectorAll('[data-invite-copy]').forEach(btn => btn.addEventListener('click', async () => {
           const invite = invites.find(x => x.code === btn.dataset.inviteCopy);
           if (!invite) return;
-          const text = `TVZA-Einladung\nE-Mail: ${invite.email}\nCode: ${invite.code}`;
+          const link = `${location.origin}${location.pathname.replace(/index\.html$/, 'login.html')}?invite=${encodeURIComponent(invite.code)}`;
+          const text = `TVZA-Einladung\nE-Mail: ${invite.email}\n${link}`;
           try {
             await navigator.clipboard.writeText(text);
             btn.textContent = 'Kopiert';
@@ -1074,6 +1138,7 @@
     document.getElementById('memberInviteCreate').addEventListener('click', async () => {
       const input = document.getElementById('memberInviteEmail');
       const email = input.value.trim().toLowerCase();
+      const familyId = document.getElementById('memberInviteFamily').value || null;
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         alert('Bitte eine gültige E-Mail-Adresse eingeben.');
         return;
@@ -1083,11 +1148,26 @@
       try {
         let code = newInviteCode();
         while ((await getDoc(doc(db, 'memberInvites', code))).exists()) code = newInviteCode();
-        await setDoc(doc(db, 'memberInvites', code), {
+        const family = inviteFamilies.find(item => item.id === familyId);
+        const batch = writeBatch(db);
+        batch.set(doc(db, 'memberInvites', code), {
           email,
+          familyId,
           createdBy: user.uid,
           createdAt: serverTimestamp()
         });
+        batch.set(doc(db, 'mail', `member-invite-${code}`), {
+          to: [email],
+          template: {
+            name: 'member-invite',
+            data: {
+              inviteCode: code,
+              familyName: family?.name || 'TVZA'
+            }
+          },
+          createdAt: serverTimestamp()
+        });
+        await batch.commit();
         input.value = '';
         await renderMemberInvites();
       } catch (error) {

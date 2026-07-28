@@ -1,13 +1,20 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
+  initializeAppCheck, ReCaptchaEnterpriseProvider
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js';
+import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
-  getAuth, setPersistence, indexedDBLocalPersistence, browserLocalPersistence
+  getAuth, setPersistence, indexedDBLocalPersistence, browserLocalPersistence, signOut
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   collection, query, where, getDocs, getDoc, doc, setDoc, deleteDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { APP_CHECK_SITE_KEY } from './app-check-config.js';
+import {
+  DEFAULT_REQUIRE_EMAIL_VERIFICATION, emailAccessAllowed
+} from './email-verification-policy.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNOe75cdHgw0kqL6xHACaUm0EUt83-cbE",
@@ -20,6 +27,13 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+if (APP_CHECK_SITE_KEY) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
 
 // Firestore with offline persistence (modern API)
 export const db = initializeFirestore(app, {
@@ -54,12 +68,36 @@ setPersistence(auth, indexedDBLocalPersistence)
 
 /* ── Shared helpers ────────────────────────────── */
 
+export const DEFAULT_TVZA_CONFIG = Object.freeze({
+  // Beta default: optional verification reduces testing friction.
+  requireEmailVerification: DEFAULT_REQUIRE_EMAIL_VERIFICATION,
+});
+
+let _tvzaConfigPromise = null;
+export function getTvzaConfig() {
+  if (_tvzaConfigPromise) return _tvzaConfigPromise;
+  _tvzaConfigPromise = getDoc(doc(db, 'config', 'tvza'))
+    .then(snap => ({
+      ...DEFAULT_TVZA_CONFIG,
+      ...(snap.exists() ? snap.data() : {}),
+    }))
+    .catch(() => ({ ...DEFAULT_TVZA_CONFIG }));
+  return _tvzaConfigPromise;
+}
+
 // Redirect to login if not authenticated. Returns a promise of the user.
 export function requireAuth(loginPath = 'login.html') {
   return new Promise(resolve => {
-    const unsub = auth.onAuthStateChanged(user => {
+    const unsub = auth.onAuthStateChanged(async user => {
       unsub();
       if (!user) { window.location.href = loginPath; return; }
+      const tvzaConfig = await getTvzaConfig();
+      if (!emailAccessAllowed(user, tvzaConfig)) {
+        await signOut(auth).catch(() => {});
+        const separator = loginPath.includes('?') ? '&' : '?';
+        window.location.href = `${loginPath}${separator}reason=verify`;
+        return;
+      }
       resolve(user);
     });
   });

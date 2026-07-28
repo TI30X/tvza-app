@@ -11,3 +11,11 @@ XX[A-Za-z0-9][A-Za-z0-9]*
 # OS noise
 .DS_Store
 Thumbs.db
+
+# Self-hosted mail worker secrets and local dependencies
+mailer/.env
+mailer/node_modules/
+mailer/service-account*.json
+**/*service-account*.json
+*.log
+dev/node_modules/

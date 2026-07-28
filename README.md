@@ -10,9 +10,9 @@
 - 🤝 **Teilen mit Rechten:** Module (Ski, Food) können per E-Mail geteilt werden —
   wahlweise „Nur ansehen" oder „Bearbeiten" (⚙️ Einstellungen → Modul teilen).
   Geteilte Module erscheinen beim Empfänger unter „Mit mir geteilt".
-- 🔐 **Familien-Einladungen:** Neue Familienkonten brauchen einen 128-Bit-Code, den der Admin
-  unter ⚙️ Einstellungen → „Admin · Familien-Einladungen" für eine bestimmte E-Mail erstellt.
-  Ein Firebase-Login allein erhält keinen Zugriff auf Familiendaten.
+- 🔐 **Optionale Familien-Einladungen:** Jeder kann ein persönliches Konto erstellen.
+  Ein 128-Bit-Einladungslink fügt die eingeladene Adresse auf Wunsch direkt einer
+  bestimmten Kalendergruppe hinzu und wird dabei atomar verbraucht.
 - 🗓️ **Kalender & Erinnerungen:** Vertraute Ansichten für Tag, 3 Tage, Arbeitswoche, Woche,
   Monat und Terminübersicht/Agenda. Nutzer wählen Google- oder Outlook-Darstellung, können
   mehreren Gruppen gleichzeitig angehören und deren Kalender einzeln ein-/ausblenden.
@@ -31,7 +31,9 @@
 - `publicProjects/{ownerUid__projectId}` — **flacher**, von allen lesbarer Feed.
   Felder: `ownerUid, ownerName, emoji, name, url, updatedAt`.
   Öffentlich bedeutet absichtlich öffentlich; geheime URLs oder Passwörter gehören nicht hierhin.
-- `memberInvites/{code}` — Admin-erstellte Familien-Einladungen: `email, createdBy, createdAt`.
+- `memberInvites/{code}` — Einmalige Einladungen:
+  `email, familyId|null, createdBy, createdAt`.
+- `mail/{id}` — streng geprüfte Template-Aufträge für den selbst gehosteten SMTP-Worker in `mailer/`.
 - `shares/{ownerUid__targetUid__module}` — serverseitig prüfbare Freigaben:
   `ownerUid, ownerName, module, targetUid, targetEmail, role` (`view`/`edit`).
 - `skitracker/{uid}/…`, `foodlog/{uid}/…`, `families`/`trips`/`activities` — wie bisher.
@@ -99,10 +101,11 @@ Kopiere die komplette Datei `firestore.rules` (im Repo-Stamm) in die Firebase-Ko
 > werden dabei durch 16-stellige Zufallstokens ersetzt (alte Links verfallen).
 
 ### 2. Neue Familienmitglieder einladen
-1. Admin öffnet ⚙️ Einstellungen → „Admin · Familien-Einladungen".
-2. E-Mail eintragen, Einladung erstellen und den kopierten Code privat senden.
-3. Die eingeladene Person wählt auf `login.html` „Registrieren" und verwendet exakt
-   diese E-Mail plus Code.
+1. Die zusätzlichen Konsolenschritte in [`FIREBASE_SETUP.md`](FIREBASE_SETUP.md) ausführen.
+2. Admin oder Gruppenverwaltung öffnet ⚙️ Einstellungen → „Admin · Familien-Einladungen".
+3. E-Mail und optional eine verwaltete Kalendergruppe wählen.
+4. Die eingeladene Person öffnet den einmaligen Link und registriert sich mit exakt
+   dieser E-Mail-Adresse.
 
 Bestehende Nutzer brauchen nichts zu tun. Neue Nutzer starten mit Kalender, Watchlist,
 Food, Wetter und Nachrichten; weitere Module schaltet der Admin frei.

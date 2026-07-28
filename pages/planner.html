@@ -233,7 +233,7 @@
     }
   </style>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=16" defer></script>
+  <script src="../assets/js/ui-fx.js?v=17" defer></script>
 </head>
 <body class="planner-page">
   <div class="app">
@@ -424,7 +424,14 @@
         <span class="create-option__icon create-option__icon--event" aria-hidden="true">
           <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
         </span>
-        <span><strong>Termin</strong><small>Ein Ereignis oder gemeinsames Programm</small></span>
+        <span><strong>Persönlicher Termin</strong><small>Nur in deinem eigenen Kalender</small></span>
+        <span aria-hidden="true">›</span>
+      </button>
+      <button class="create-option" id="createGroupEventOption" type="button">
+        <span class="create-option__icon create-option__icon--event" aria-hidden="true">
+          <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span><strong>Gruppentermin</strong><small>Ein gemeinsames Ereignis oder Programm</small></span>
         <span aria-hidden="true">›</span>
       </button>
       <button class="create-option" id="createReminderOption" type="button">
@@ -557,14 +564,20 @@
     <button class="btn btn-danger btn-block" id="reminderDelete" style="display:none;margin-top:8px">Erinnerung löschen</button>
   </div>
 
-  <!-- Special day form sheet -->
+  <!-- Personal calendar event form sheet -->
   <div class="backdrop" id="dayFormBackdrop"></div>
   <div class="sheet" id="dayForm">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" id="dayFormTitle">Besonderer Tag</span>
+    <div class="sheet-head"><span class="sheet-title" id="dayFormTitle">Persönlicher Termin</span>
       <button class="icon-pill" id="dayFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="field"><label>Titel</label><input class="form-input" id="dTitle" placeholder="z.B. Geburtstag, Konzert…" /></div>
     <div class="field"><label>Datum</label><input class="form-input" id="dDate" type="date" /></div>
+    <div class="row2">
+      <div class="field"><label>Beginn (optional)</label><input class="form-input" id="dStartTime" type="time" /></div>
+      <div class="field"><label>Ende (optional)</label><input class="form-input" id="dEndTime" type="time" /></div>
+    </div>
+    <div class="field"><label>Ort (optional)</label><input class="form-input" id="dLocation" /></div>
+    <div class="field"><label>Notiz (optional)</label><textarea class="form-textarea" id="dNotes" rows="3"></textarea></div>
     <div class="field">
       <label>Info-Seite (optional)</label>
       <div class="tabs">
@@ -716,7 +729,7 @@
         card.classList.toggle('is-selected', card.dataset.style === calendarPreference.style)
       );
       renderPersonalColorOptions();
-      if (groups.length) renderCalendarSources();
+      renderCalendarSources();
       renderCurrentView();
     }
     function renderColorOptions(container, selected, dataAttribute, disabled = false) {
@@ -823,7 +836,7 @@
             directorySynced.add(item.id);
             syncGroupDirectory(item.id, item.name);
           });
-          if (!groups.length) { group=null; showNoGroup(); return; }
+          if (!groups.length) { group=null; await showNoGroup(); return; }
           loadVisibleSources();
           let savedActive = '';
           try { savedActive = JSON.parse(localStorage.getItem(sourceKey()) || '{}').active || ''; } catch {}
@@ -834,6 +847,8 @@
           saveVisibleSources();
           $('noGroup').style.display='none';
           $('groupView').style.display='';
+          $('addTripBtn').style.display='';
+          $('manageGroupsBtn').style.display='';
           document.body.dataset.calendarWorkspace='true';
           renderCalendarSources();
           await renderGroupCard();
@@ -848,13 +863,25 @@
         }
       );
     }
-    function showNoGroup() {
+    async function showNoGroup() {
       tripUnsubs.forEach(unsubscribe => unsubscribe());
       tripUnsubs = [];
+      groups = [];
+      allTrips = [];
+      trips = [];
+      visibleGroupIds = new Set();
+      loadVisibleSources();
       $('noGroup').style.display='';
-      $('groupView').style.display='none';
+      $('groupView').style.display='';
       $('tripDetail').style.display='none';
-      delete document.body.dataset.calendarWorkspace;
+      document.body.dataset.calendarWorkspace='true';
+      $('addTripBtn').style.display='none';
+      $('manageGroupsBtn').style.display='none';
+      renderCalendarSources();
+      await reload();
+      initialGroupsLoaded = true;
+      focusCalendarEntryWhenReady();
+      watchTrips();
     }
 
     function isoWeekNumber(value) {
@@ -937,11 +964,11 @@
         <button class="calendar-source-chip${visibleGroupIds.has(item.id)?' is-visible':''}" type="button"
           data-source-group="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
           <span class="calendar-source-dot"></span>${esc(item.name||'Gruppe')}
-        </button>`).join('') + `
+        </button>`).join('') + (groups.length ? `
         <button class="calendar-source-chip is-visible" id="mobileManageGroupsBtn" type="button" style="--source-color:var(--ink-soft)">
           <svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
           Verwalten
-        </button>
+        </button>` : '') + `
         <button class="calendar-source-chip is-visible calendar-action-with-icon" id="mobileAddGroupBtn" type="button" style="--source-color:var(--cal-accent)">
           <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
           <span>Gruppe</span>
@@ -961,7 +988,7 @@
         renderCalendarSources();
         renderCurrentView();
       });
-      $('mobileManageGroupsBtn').onclick = openMobileGroupManager;
+      if ($('mobileManageGroupsBtn')) $('mobileManageGroupsBtn').onclick = openMobileGroupManager;
       $('mobileAddGroupBtn').onclick = openGroupSheet;
     }
 
@@ -1287,7 +1314,7 @@
           );
         initialRemindersLoaded = true;
         renderReminders();
-        if (groups.length) renderCurrentView();
+        renderCurrentView();
         focusCalendarEntryWhenReady();
       }, () => {
         initialRemindersLoaded = true;
@@ -1363,6 +1390,7 @@
       $('reminderHubSheet').classList.remove('visible');
     }
     function openCreateSheet() {
+      $('createGroupEventOption').style.display = groups.length ? '' : 'none';
       $('createBackdrop').classList.add('visible');
       $('createSheet').classList.add('visible');
     }
@@ -1396,7 +1424,7 @@
       const previousCompleted = !!item.completed;
       item.completed = completed;
       renderReminders();
-      if (groups.length) renderCurrentView();
+      renderCurrentView();
       try {
         await updateDoc(doc(reminderCollection(), item.id), {
           completed,
@@ -1407,7 +1435,7 @@
       } catch (error) {
         item.completed = previousCompleted;
         renderReminders();
-        if (groups.length) renderCurrentView();
+        renderCurrentView();
         reportClientError('reminder-completion', error);
         alert('Erinnerung konnte nicht aktualisiert werden.');
         return false;
@@ -1635,9 +1663,9 @@
         const minute = Math.max(0,Math.min(23*60+45,Math.round(((event.clientY-rect.top)/hourHeight*60)/15)*15));
         const endMinute = Math.min(23*60+59, minute+60);
         sheetKey = column.dataset.timeDate;
-        openTripForm(null);
-        $('tStartTime').value = `${pad(Math.floor(minute/60))}:${pad(minute%60)}`;
-        $('tEndTime').value = `${pad(Math.floor(endMinute/60))}:${pad(endMinute%60)}`;
+        openDayForm(null);
+        $('dStartTime').value = `${pad(Math.floor(minute/60))}:${pad(minute%60)}`;
+        $('dEndTime').value = `${pad(Math.floor(endMinute/60))}:${pad(endMinute%60)}`;
       });
       requestAnimationFrame(() => {
         const wrap = $('timeCalendar');
@@ -2193,8 +2221,12 @@
     }
     async function openDayForm(existing){
       editDayId=existing?existing.id:null; dayUploadHtml=''; pendingDayFiles=[]; dayFiles=[];
-      $('dayFormTitle').textContent=existing?'Tag bearbeiten':'Besonderer Tag';
+      $('dayFormTitle').textContent=existing?'Persönlichen Termin bearbeiten':'Persönlicher Termin';
       $('dTitle').value=existing?.title||''; $('dDate').value=existing?.date||sheetKey||todayKey;
+      $('dStartTime').value=existing?.startTime||'';
+      $('dEndTime').value=existing?.endTime||'';
+      $('dLocation').value=existing?.location||'';
+      $('dNotes').value=existing?.notes||'';
       $('dHtml').value=existing?.planHtml||''; $('dUrl').value=existing?.planUrl||''; $('dHtmlChosen').style.display='none';
       $('dFileList').innerHTML='';
       $('dayFormDelete').style.display=existing?'':'none';
@@ -2208,7 +2240,17 @@
       if(!title){alert('Bitte einen Titel eingeben.');return;} if(!date){alert('Bitte ein Datum wählen.');return;}
       let planHtml='',planUrl='';
       if(dayPane==='upload'&&dayUploadHtml)planHtml=dayUploadHtml; else if(dayPane==='url')planUrl=$('dUrl').value.trim(); else planHtml=$('dHtml').value.trim();
-      const data={ownerUid:user.uid,title,date,planHtml,planUrl};
+      const data={
+        ownerUid:user.uid,
+        title,
+        date,
+        startTime:$('dStartTime').value,
+        endTime:$('dEndTime').value,
+        location:$('dLocation').value.trim(),
+        notes:$('dNotes').value.trim(),
+        planHtml,
+        planUrl
+      };
       $('dayFormSave').disabled=true;
       try{
         let id=editDayId;
@@ -2547,6 +2589,11 @@
       $('createEventOption').onclick=()=>{
         closeCreateSheet();
         sheetKey=anchorKey<todayKey ? todayKey : anchorKey;
+        openDayForm(null);
+      };
+      $('createGroupEventOption').onclick=()=>{
+        closeCreateSheet();
+        sheetKey=anchorKey<todayKey ? todayKey : anchorKey;
         openTripForm(null);
       };
       $('createReminderOption').onclick=()=>{
@@ -2567,7 +2614,7 @@
       $('calAddBtn').onclick=openCreateSheet;
       $('mobileCalAddBtn').onclick=openCreateSheet;
       $('addTripBtn').onclick=()=>{ sheetKey=anchorKey; openTripForm(null); };
-      $('daySheetAdd').onclick=()=>{ closeDay(); openTripForm(null); };
+      $('daySheetAdd').onclick=()=>{ closeDay(); openDayForm(null); };
       $('daySheetReminder').onclick=()=>{ const date=sheetKey; closeDay(); openReminderForm(null,date); };
       $('addReminderBtn').onclick=()=>openReminderForm();
       $('calendarImportBtn').onclick=()=>$('calendarImportFile').click();

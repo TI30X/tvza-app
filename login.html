@@ -65,7 +65,7 @@
     .switch-mode a:hover { color: var(--accent-hover); }
   </style>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
-  <script src="assets/js/ui-fx.js?v=16" defer></script>
+  <script src="assets/js/ui-fx.js?v=17" defer></script>
 </head>
 <body>
   <span id="themeToggle" title="Theme wechseln" style="position:fixed;top:14px;right:14px;cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;padding:8px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;z-index:10">◐</span>
@@ -84,10 +84,11 @@
         </div>
 
         <div class="form-group" id="inviteGroup" style="display:none">
-          <label class="form-label" for="fInvite">Einladungscode</label>
+          <label class="form-label" for="fInvite">Einladungscode (optional)</label>
           <input class="form-input" id="fInvite" name="invite" type="text"
-                 placeholder="Code aus deiner Familieneinladung"
+                 placeholder="Nur für eine direkte Gruppeneinladung"
                  autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" />
+          <p class="form-hint">Ohne Code erhältst du ein persönliches TVZA-Konto. Ein Code kann dich direkt einer Kalendergruppe hinzufügen.</p>
         </div>
 
         <div class="form-group">
@@ -113,42 +114,71 @@
   </div>
 
   <script type="module">
-    import { auth, db, DEFAULT_MODULES } from './assets/js/firebase-config.js';
+    import {
+      auth, db, DEFAULT_MODULES, getTvzaConfig
+    } from './assets/js/firebase-config.js';
+    import {
+      emailAccessAllowed, requiresVerifiedEmail
+    } from './assets/js/email-verification-policy.js';
     import {
       signInWithEmailAndPassword, createUserWithEmailAndPassword,
-      deleteUser, signOut
+      deleteUser, signOut, sendEmailVerification, reload as reloadUser
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
-      doc, getDoc, setDoc, serverTimestamp
+      doc, getDoc, serverTimestamp, writeBatch, arrayUnion
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import {
+      loginLockRemaining, recordLoginFailure, clearLoginFailures
+    } from './assets/js/auth-security.js';
 
     // Already logged in? Go straight to the hub.
     let authActionInProgress = false;
-    auth.onAuthStateChanged(user => {
-      if (user && !authActionInProgress) window.location.href = 'index.html';
+    auth.onAuthStateChanged(async user => {
+      if (!user || authActionInProgress) return;
+      const tvzaConfig = await getTvzaConfig();
+      if (emailAccessAllowed(user, tvzaConfig)) {
+        window.location.href = 'index.html';
+        return;
+      }
+      await signOut(auth).catch(() => {});
+      showErr('Bitte bestätige zuerst deine E-Mail-Adresse. Der Bestätigungslink wurde bei der Registrierung verschickt.');
     });
 
     let mode = 'login'; // or 'register'
 
     const $ = id => document.getElementById(id);
-    if (new URLSearchParams(location.search).get('reason') === 'membership') {
-      showErr('Dieses Konto hat keinen Familienzugang. Bitte verwende eine Einladung.');
-      history.replaceState(null, '', location.pathname);
+    const params = new URLSearchParams(location.search);
+    if (params.get('reason') === 'verify') {
+      showErr('Bitte bestätige zuerst deine E-Mail-Adresse.');
+    } else if (params.get('reason') === 'membership') {
+      showErr('Für dieses Konto wurde noch kein TVZA-Profil gefunden.');
+    } else if (params.get('verified') === '1') {
+      showErr('E-Mail bestätigt. Du kannst dich jetzt anmelden.');
     }
 
-    $('switchLink').addEventListener('click', () => {
-      mode = mode === 'login' ? 'register' : 'login';
+    function setMode(nextMode) {
+      mode = nextMode;
       $('nameGroup').style.display = mode === 'register' ? '' : 'none';
       $('inviteGroup').style.display = mode === 'register' ? '' : 'none';
       $('subTitle').textContent = mode === 'register'
-        ? 'Familienkonto mit Einladungscode erstellen.'
+        ? 'Erstelle dein TVZA-Konto. Eine Gruppeneinladung ist optional.'
         : 'Willkommen zurück! Melde dich an.';
       $('submitBtn').textContent = mode === 'register' ? 'Registrieren' : 'Anmelden';
       $('switchText').firstChild.textContent = mode === 'register' ? 'Schon ein Konto? ' : 'Noch kein Konto? ';
       $('switchLink').textContent = mode === 'register' ? 'Anmelden' : 'Registrieren';
       $('fPass').setAttribute('autocomplete', mode === 'register' ? 'new-password' : 'current-password');
       hideErr();
+    }
+
+    $('switchLink').addEventListener('click', () => {
+      setMode(mode === 'login' ? 'register' : 'login');
     });
+
+    const inviteParam = params.get('invite')?.trim() || '';
+    if (inviteParam) {
+      setMode('register');
+      $('fInvite').value = inviteParam;
+    }
 
     function showErr(msg) { $('errBox').textContent = msg; $('errBox').classList.add('visible'); }
     function hideErr()    { $('errBox').classList.remove('visible'); }
@@ -162,6 +192,12 @@
       }
       if (action === 'register' && code === 'permission-denied') {
         return 'Dieser Einladungscode passt nicht zu dieser E-Mail.';
+      }
+      if (code === 'email-not-verified') {
+        return 'Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir erneut einen Bestätigungslink geschickt.';
+      }
+      if (code === 'auth/too-many-requests' || code === 'login-locked') {
+        return 'Zu viele fehlgeschlagene Versuche. Bitte warte 15 Minuten und versuche es dann erneut.';
       }
       if (action === 'register') {
         return 'Konto konnte nicht erstellt werden. Prüfe Einladung, E-Mail und Passwort.';
@@ -181,42 +217,94 @@
 
       if (!email || !pass) { showErr('Bitte E-Mail und Passwort eingeben.'); return; }
       if (mode === 'register' && !name) { showErr('Bitte deinen Namen eingeben.'); return; }
-      if (mode === 'register' && !inviteCode) { showErr('Bitte den Einladungscode eingeben.'); return; }
+      if (mode === 'login' && loginLockRemaining(localStorage) > 0) {
+        showErr(translateError('login-locked', mode));
+        return;
+      }
 
       $('submitBtn').disabled = true;
       $('submitBtn').textContent = 'Bitte warten…';
       authActionInProgress = true;
       let createdUser = null;
+      let registrationCommitted = false;
+      let loginAuthenticated = false;
 
       try {
         if (mode === 'register') {
           const cred = await createUserWithEmailAndPassword(auth, email, pass);
           createdUser = cred.user;
-          await setDoc(doc(db, 'users', cred.user.uid), {
+          let familyId = null;
+          let inviteRef = null;
+          if (inviteCode) {
+            inviteRef = doc(db, 'memberInvites', inviteCode);
+            const invite = await getDoc(inviteRef);
+            if (!invite.exists()) throw { code: 'permission-denied' };
+            familyId = typeof invite.data().familyId === 'string' ? invite.data().familyId : null;
+          }
+
+          const batch = writeBatch(db);
+          batch.set(doc(db, 'users', cred.user.uid), {
             displayName: name,
             email: email.toLowerCase(),
-            familyId: null,
+            familyId,
             role: 'member',
             isTimo: false,
             allowedModules: { ...DEFAULT_MODULES },
             modules: { ...DEFAULT_MODULES },
             createdAt: serverTimestamp(),
-            inviteCode
+            inviteCode: inviteCode || null
           });
+          if (familyId) {
+            batch.update(doc(db, 'families', familyId), {
+              members: arrayUnion(cred.user.uid)
+            });
+          }
+          if (inviteRef) batch.delete(inviteRef);
+          await batch.commit();
+          registrationCommitted = true;
+
+          const tvzaConfig = await getTvzaConfig();
+          if (requiresVerifiedEmail(tvzaConfig)) {
+            const verificationSent = await sendEmailVerification(cred.user, {
+              url: new URL('login.html?verified=1', location.href).href
+            }).then(() => true).catch(() => false);
+            await signOut(auth);
+            authActionInProgress = false;
+            $('loginForm').reset();
+            setMode('login');
+            showErr(verificationSent
+              ? 'Konto erstellt. Bitte öffne jetzt den Bestätigungslink in deiner E-Mail. Erst danach kannst du dich anmelden.'
+              : 'Konto erstellt, aber der Bestätigungslink konnte nicht gesendet werden. Melde dich einmal an, um den Versand erneut auszulösen.');
+            $('submitBtn').disabled = false;
+            return;
+          }
+          sessionStorage.setItem('tvza-send-verification', '1');
         } else {
           const cred = await signInWithEmailAndPassword(auth, email, pass);
+          loginAuthenticated = true;
+          await reloadUser(cred.user);
+          const tvzaConfig = await getTvzaConfig();
+          if (!emailAccessAllowed(cred.user, tvzaConfig)) {
+            await sendEmailVerification(cred.user, {
+              url: new URL('login.html?verified=1', location.href).href
+            }).catch(() => {});
+            await signOut(auth);
+            throw { code: 'email-not-verified' };
+          }
           const profile = await getDoc(doc(db, 'users', cred.user.uid));
           if (!profile.exists()) {
             await signOut(auth);
             throw { code: 'membership-required' };
           }
+          clearLoginFailures(localStorage);
         }
         sessionStorage.setItem('tvza-just-logged-in', '1'); // Welcome-Animation auslösen
         window.location.href = 'index.html';
       } catch (err) {
         // If profile creation is rejected, remove the just-created Auth account
         // so the invited person can correct the code and try again.
-        if (createdUser) await deleteUser(createdUser).catch(() => {});
+        if (createdUser && !registrationCommitted) await deleteUser(createdUser).catch(() => {});
+        if (mode === 'login' && !loginAuthenticated) recordLoginFailure(localStorage);
         authActionInProgress = false;
         showErr(translateError(err?.code, mode));
         $('submitBtn').disabled = false;

@@ -10,10 +10,11 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.31.1.0';
-// Shell revision 12: every calendar entry waits for data, then opens at Today.
+const CACHE = 'tvza-v.31.2.0';
+// Shell revision 13: reconcile v.31.1 group isolation with beta security flow.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js',
 ];
@@ -26,10 +27,13 @@ const SHELL = [
   './assets/css/matura.css',
   './assets/css/ui-fx.css',
   './assets/js/theme.js',
-  './assets/js/ui-fx.js?v=16',
+  './assets/js/ui-fx.js?v=17',
   './assets/js/welcome.js',
   './manifest.json',
   './assets/js/firebase-config.js',
+  './assets/js/email-verification-policy.js',
+  './assets/js/app-check-config.js',
+  './assets/js/auth-security.js',
   './assets/js/notifications.js',
   './assets/js/foods.js',
   './assets/js/itinerary.js',
