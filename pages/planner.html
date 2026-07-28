@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
-  <link rel="stylesheet" href="../assets/css/calendar.css?v=8" />
+  <link rel="stylesheet" href="../assets/css/calendar.css?v=9" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -542,13 +542,13 @@
       <p>Termine übernehmen immer die Farbe ihres Kalenders.</p>
       <div class="calendar-color-options" id="personalCalendarColors"></div>
     </fieldset>
-    <label class="calendar-feature-setting" for="showGroupFeatures">
+    <button class="calendar-feature-setting" id="showGroupFeatures" type="button" role="switch" aria-checked="false">
       <span>
         <strong>Gruppenfunktionen anzeigen</strong>
         <small>Wenn du noch keiner Gruppe angehörst, werden Optionen zum Erstellen und Beitreten im Kalender angezeigt.</small>
       </span>
-      <input id="showGroupFeatures" type="checkbox" role="switch" />
-    </label>
+      <span class="calendar-feature-switch" aria-hidden="true"><i></i></span>
+    </button>
     <button class="btn btn-primary btn-block" id="calendarSetupSave" type="button">Übernehmen</button>
   </div>
 
@@ -740,7 +740,7 @@
       document.querySelectorAll('[data-style]').forEach(card =>
         card.classList.toggle('is-selected', card.dataset.style === calendarPreference.style)
       );
-      $('showGroupFeatures').checked = calendarPreference.showGroupFeatures;
+      $('showGroupFeatures').setAttribute('aria-checked', String(calendarPreference.showGroupFeatures));
       updateNoGroupVisibility();
       renderPersonalColorOptions();
       renderCalendarSources();
@@ -2597,8 +2597,9 @@
         }
         applyCalendarPreference();
       });
-      $('showGroupFeatures').onchange=()=>{
-        calendarPreference.showGroupFeatures=$('showGroupFeatures').checked;
+      $('showGroupFeatures').onclick=()=>{
+        calendarPreference.showGroupFeatures=!calendarPreference.showGroupFeatures;
+        $('showGroupFeatures').setAttribute('aria-checked', String(calendarPreference.showGroupFeatures));
         updateNoGroupVisibility();
       };
       $('calendarSetupSave').onclick=()=>{ saveCalendarPreference(); closeCalendarSetup(); };
