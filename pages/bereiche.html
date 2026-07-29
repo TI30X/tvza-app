@@ -47,9 +47,6 @@
       <div class="rows" id="listPublic"></div>
     </section>
 
-    <section class="section">
-      <button class="b b--secondary b--block" id="manageBtn">Bereiche verwalten</button>
-    </section>
   </main>
 
   <script type="module">
@@ -156,8 +153,6 @@
           });
         }, () => console.warn('[public-projects] listen-failed'));
       }
-
-      $('manageBtn').onclick = openSettingsLayer;
     });
   </script>
 </body>

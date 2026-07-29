@@ -72,7 +72,12 @@ test('current area uses the same active band as Start and settings stay above th
   assert.match(dashboard, /personAvatarStyle\(s\.targetUid\|\|s\.targetEmail\)/);
   assert.match(dashboard, /personAvatarStyle\(invite\.email\)/);
   assert.match(areas, /onSettings:\s*openSettingsLayer/);
-  assert.match(areas, /manageBtn'\)\.onclick\s*=\s*openSettingsLayer/);
+  assert.doesNotMatch(areas, /manageBtn|Bereiche verwalten/);
+  assert.match(dashboard, /class="settings-section settings-section--share"/);
+  assert.match(dashboard, /class="settings-section-copy"/);
+  assert.match(dashboard, /class="settings-share-card"/);
+  assert.match(css, /\.settings-share-card \{/);
+  assert.match(css, /\.radio-row label:has\(input:checked\)/);
 });
 
 test('app destinations are prefetched and use a progressive page transition', async () => {

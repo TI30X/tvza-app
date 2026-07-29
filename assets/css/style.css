@@ -1223,8 +1223,8 @@ body.reorder-editing .reorder-fab {
   .reorder-fab svg { width:16px; height:16px; }
 }
 
-/* ── Settings menu layout — even vertical rhythm ── */
-#settingsModal .modal { padding: var(--s5); }
+/* ── Settings menu layout — compact cards with clear hierarchy ── */
+#settingsModal .modal { padding: clamp(20px, 5vw, 28px); }
 /* Header with title + X close */
 .modal-head {
   display: flex;
@@ -1253,12 +1253,13 @@ body.reorder-editing .reorder-fab {
   transition: background 150ms ease, color 150ms ease;
 }
 .modal-close:hover { background: var(--border); color: var(--ink); }
-#settingsModal .modal-title { margin-bottom: var(--s5); }
+#settingsModal .modal-head .modal-title { margin-bottom: 0; }
 /* Keep share / admin rows tidy inside the narrow modal */
 #settingsModal .link-row { padding: 10px 12px; }
 #settingsModal .link-title { min-width: 0; }
 #settingsModal .link-title small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-section { margin: 0; }
+.settings-section + .settings-section { margin-top: clamp(22px, 5vw, 28px); }
 .settings-section-title {
   font-size: 11px;
   font-weight: 700;
@@ -1267,10 +1268,42 @@ body.reorder-editing .reorder-fab {
   color: var(--ink-soft);
   margin: 0 0 12px;
 }
+.settings-section-head { margin-bottom: 14px; }
+.settings-section-head .settings-section-title { margin-bottom: 5px; }
+.settings-section-copy {
+  margin: 0;
+  max-width: 38ch;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
 #settingsModal .settings-divider { margin: var(--s5) 0; }
 #settingsModal .modal-actions { margin-top: var(--s4); }
 #settingsModal .form-group { margin-bottom: var(--s4); }
 #settingsModal #myShares:not(:empty) { margin-top: var(--s4); }
+.settings-share-card {
+  padding: clamp(14px, 4vw, 18px);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  background: var(--surface-2);
+}
+.settings-share-card .form-input,
+.settings-share-card .form-select { background: var(--surface); }
+.settings-share-card .form-group:last-of-type { margin-bottom: 14px; }
+#settingsModal .radio-row { gap: 8px; }
+#settingsModal .radio-row label {
+  flex: 1;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r1);
+  background: var(--surface);
+}
+#settingsModal .radio-row label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
 
 /* Theme toggle row inside the Settings menu */
 .settings-row {
@@ -1303,6 +1336,10 @@ body.reorder-editing .reorder-fab {
   flex-shrink: 0;
 }
 .theme-toggle-btn:hover { border-color: var(--ink-soft); }
+
+@media (max-width: 420px) {
+  #settingsModal .radio-row { align-items: stretch; flex-direction: column; }
+}
 
 /* Drag handles for sections: hidden until edit mode */
 .overview-drag { display: none; }
