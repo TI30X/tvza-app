@@ -2526,9 +2526,20 @@ html.tvza-content-frame body > main {
   width: 34px; height: 34px; border-radius: var(--r-icon); margin: 0;
 }
 .card-grid--quick .card-icon svg { width: 18px; height: 18px; }
+.card-grid--quick .card-content {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
 .card-grid--quick .card-content h3 {
   font-size: 11px; font-weight: 700; line-height: 1.25;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 /* The subtitle and the live footer do not fit a 4-up phone tile; the
    same numbers are one tap away and most of them are in Heute already. */
@@ -2546,6 +2557,16 @@ html.tvza-content-frame body > main {
   .card-grid--quick .card-content h3 { font-size: 14px; }
   .card-grid--quick .card-content p { display: block; font-size: 12px; color: var(--ink-soft); }
   .card-grid--quick .tile-live { display: block; width: 100%; }
+}
+
+.today-live-empty {
+  padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
 }
 
 /* Day groups in the Planer programme list. */

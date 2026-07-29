@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const css = fs.readFileSync(new URL('../assets/css/style.css', import.meta.url), 'utf8');
 
 test('dashboard state exists before modules are rendered', () => {
   assert.ok(
@@ -66,4 +67,19 @@ test('quick access shows four eligible tiles and never duplicates tabs', () => {
     visibleIds(),
     ['maturatracker', 'ski', 'food', 'weather']
   );
+});
+
+test('quick access names stay inside narrow cards', () => {
+  assert.match(css, /\.card-grid--quick \.card-content \{[\s\S]*width: 100%;[\s\S]*min-width: 0;[\s\S]*max-width: 100%/);
+  assert.match(css, /\.card-grid--quick \.card-content h3 \{[\s\S]*overflow-wrap: anywhere;[\s\S]*white-space: normal;[\s\S]*-webkit-line-clamp: 2/);
+});
+
+test('Today stays visible and collects every available live row', () => {
+  assert.match(html, /<section class="section" id="heuteSection">/);
+  assert.match(html, /const HEUTE_ORDER = \['cal', 'weather', 'food', 'matura', 'watch', 'ski'\]/);
+  assert.doesNotMatch(html, /HEUTE_ORDER[\s\S]{0,220}\.slice\(0, 5\)/);
+  assert.match(html, /pushHeute\('weather'/);
+  assert.match(html, /pushHeute\(`cal:\$\{item\.id \|\| index\}`/);
+  assert.match(html, /candidates\.filter\(item => item\.date === todayStr\)\.forEach/);
+  assert.match(html, /Heute gibt es noch keine Live-Infos/);
 });

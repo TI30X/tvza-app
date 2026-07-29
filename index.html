@@ -18,7 +18,7 @@
     }
   </script>
   <script src="assets/js/theme.js?v=3"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=6" />
+  <link rel="stylesheet" href="assets/css/style.css?v=7" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
   <title>TVZA</title>
   <style>
@@ -82,12 +82,13 @@
            together say something; an empty slot renders nothing. -->
       <div id="hintSlot"></div>
 
-      <!-- Heute (§6.1): at most five rows, and never a Nachrichten row —
-           that has its own tab, and "eine Sache, ein Ort" (§6.4) says a
-           thing with a tab does not also appear here. -->
-      <section class="section" id="heuteSection" hidden>
+      <!-- Heute (§6.1): live information for the current day. Nachrichten
+           stays in its own tab; all other available sources appear here. -->
+      <section class="section" id="heuteSection">
         <div class="marke">Heute</div>
-        <div class="rows" id="heuteList"></div>
+        <div class="rows" id="heuteList" aria-live="polite">
+          <div class="today-live-empty">Live-Infos werden geladen…</div>
+        </div>
       </section>
 
       <!-- Schnellzugriff (§6.1): the first four active Bereiche in the
@@ -1615,7 +1616,7 @@
 
   <!-- ═══ Live dashboard tile content (weather, watchlist, matura, food, calendar) ═══ -->
   <script type="module">
-  import { db, requireAuth, getFinnhubKey, getProfile, reportClientError } from './assets/js/firebase-config.js';
+  import { db, requireAuth, getFinnhubKey, getProfile, enabledModules, reportClientError } from './assets/js/firebase-config.js';
   import { weatherIcon } from './assets/js/shell.js';
   import { chooseHint, renderHint, markShown, dismissHint } from './assets/js/hints.js';
   import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -1626,21 +1627,23 @@
     if (!user) return;
     const uid = user.uid;
     const profile = await getProfile(user);
+    const mods = enabledModules(profile);
     const $ = id => document.getElementById(id);
     const show = el => { if (el) el.hidden = false; };
     const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
     const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
     /* ── Heute (§6.1) ────────────────────────────────────────────────
-       At most five rows, built from the data this module already loads
-       for the tiles — nothing is fetched a second time. Order is fixed
-       so the list does not reshuffle as the async sections land.
+       Built from the data this module already loads for the tiles —
+       nothing is fetched a second time. Order is fixed so the list does
+       not reshuffle as the async sections land.
 
        Nachrichten is deliberately absent: it has its own tab, and §6.4
        says a thing with a tab does not also appear here. The unread
        count reaches you through the dot on the bar instead. */
-    const HEUTE_ORDER = ['cal', 'food', 'matura', 'watch', 'ski'];
+    const HEUTE_ORDER = ['cal', 'weather', 'food', 'matura', 'watch', 'ski'];
     const heuteRows = new Map();
+    const heuteSource = key => String(key).split(':', 1)[0];
 
     function pushHeute(key, row) {
       if (!row) return;
@@ -1651,10 +1654,14 @@
     function renderHeute() {
       const list = $('heuteList'), sec = $('heuteSection');
       if (!list || !sec) return;
-      const rows = HEUTE_ORDER.filter(k => heuteRows.has(k)).map(k => heuteRows.get(k)).slice(0, 5);
-      // Rule §8.2 applies here too: nothing worth saying, nothing shown.
-      if (!rows.length) { sec.hidden = true; return; }
+      const rows = [...heuteRows.entries()]
+        .sort((a, b) => HEUTE_ORDER.indexOf(heuteSource(a[0])) - HEUTE_ORDER.indexOf(heuteSource(b[0])))
+        .map(([, row]) => row);
       sec.hidden = false;
+      if (!rows.length) {
+        list.innerHTML = '<div class="today-live-empty">Heute gibt es noch keine Live-Infos.</div>';
+        return;
+      }
       list.innerHTML = rows.map(r => `
         <a class="row" href="${esc(r.href)}" data-bereich="${esc(r.bereich)}">
           <span class="row__icon">${r.icon}</span>
@@ -1670,10 +1677,14 @@
         </a>`).join('');
     }
 
+    // Keep the section stable even if every live source is empty or offline.
+    setTimeout(() => { if (!heuteRows.size) renderHeute(); }, 1800);
+
     /* ── 1) Maturaarbeit: Fortschritt + Abgabe-Countdown (localStorage) ── */
     /* Jede Kachel spiegelt den Gesamtfortschritt ihres eigenen Moduls wider:
        tileMatura ← matura_v3 (Maturaarbeit-Modul), tileMaturaTracker ← matura_tracker (Tracker-Modul). */
     (function matura() {
+      if (!mods.matura && !mods.maturatracker) return;
       const paintTile = (idn, pct, days) => {
         if (pct == null) return;
         const el = $(idn); if (!el) return;
@@ -1681,16 +1692,17 @@
         el.innerHTML = `<div class="tl-head"><span class="tl-pct">${pct}%</span>${meta}</div><div class="tl-bar"><div class="tl-fill"></div></div>`;
         show(el);
         requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
-        // Only the Maturaarbeit module earns the Heute row; the Tracker
-        // is the same work counted twice and would read as two entries.
-        if (idn === 'tileMatura') {
+        // Avoid duplicate rows when both Maturaarbeit modules are enabled.
+        // If only the tracker is available, its own status represents the work.
+        if (idn === 'tileMatura' || (idn === 'tileMaturaTracker' && !mods.matura)) {
+          const trackerOnly = idn === 'tileMaturaTracker';
           window.tvzaMaturaPct = pct;
           pushHeute('matura', {
-            href: 'pages/maturaarbeit.html', bereich: 'matura',
+            href: trackerOnly ? 'pages/maturaarbeit-tracker.html' : 'pages/maturaarbeit.html', bereich: 'matura',
             icon: '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
-            title: days == null ? 'Maturaarbeit'
-                 : days === 0 ? 'Maturaarbeit — Abgabe heute'
-                 : `Maturaarbeit — noch ${days} Tage`,
+            title: days == null ? (trackerOnly ? 'Maturaarbeit-Tracker' : 'Maturaarbeit')
+                 : days === 0 ? `${trackerOnly ? 'Maturaarbeit-Tracker' : 'Maturaarbeit'} — Abgabe heute`
+                 : `${trackerOnly ? 'Maturaarbeit-Tracker' : 'Maturaarbeit'} — noch ${days} Tage`,
             bar: pct, end: pct + ' %',
           });
         }
@@ -1726,12 +1738,15 @@
       if (mPct == null) { mPct = tPct; mDays = tDays; }
 
       // Beide Kacheln zeigen immer einen Fortschritt.
-      paintTile('tileMatura', mPct, mDays);
-      paintTile('tileMaturaTracker', (tPct != null ? tPct : mPct), (tPct != null ? tDays : mDays));
+      if (mods.matura) paintTile('tileMatura', mPct, mDays);
+      if (mods.maturatracker) {
+        paintTile('tileMaturaTracker', (tPct != null ? tPct : mPct), (tPct != null ? tDays : mDays));
+      }
     })();
 
     /* ── 2) Wetter: aktuelle Bedingung + Regenwahrscheinlichkeit (keine Temperatur) ── */
     (async function weather() {
+      if (!mods.weather) return;
       const el = $('tileWeather'); if (!el) return;
       const EMOJI = c => weatherIcon(c, 15);
       const LABEL = c => c===0?'Klar':c===1?'Heiter':c===2?'Wolkig':c===3?'Bewölkt':(c===45||c===48)?'Nebel':(c>=51&&c<=57)?'Niesel':(c>=61&&c<=67)?'Regen':(c>=71&&c<=77)?'Schnee':(c>=80&&c<=82)?'Schauer':(c===85||c===86)?'Schnee':c>=95?'Gewitter':'Wechselnd';
@@ -1744,11 +1759,19 @@
         const popHtml = (pop != null) ? `<span class="wxl-pop">💧 ${pop}%</span>` : '';
         el.innerHTML = `<span class="wxl-ic">${EMOJI(code)}</span><span class="wxl-lab">${LABEL(code)}</span>${popHtml}`;
         show(el);
+        pushHeute('weather', {
+          href: 'pages/weather.html', bereich: 'weather',
+          icon: EMOJI(code),
+          title: LABEL(code),
+          sub: 'Wetter heute',
+          end: pop != null ? `${pop} % Regen` : '',
+        });
       } catch (e) {}
     })();
 
     /* ── 3) Watchlist: rotierende Live-Kurse (Finnhub / CoinGecko / Yahoo) ── */
     (async function watchlist() {
+      if (!mods.watch) return;
       const el = $('tileWatch'); if (!el) return;
       let items = [];
       try { const snap = await getDocs(collection(db, 'watchlist', uid, 'items')); items = snap.docs.map(d => ({ id:d.id, ...d.data() })); } catch (e) { return; }
@@ -1800,6 +1823,7 @@
 
     /* ── 4) Food: kcal heute (Firestore) ── */
     (async function food() {
+      if (!mods.food) return;
       const el = $('tileFood'); if (!el) return;
       try {
         const snap = await getDocs(query(collection(db, 'foodlog', uid, 'entries'), where('date','==',todayStr)));
@@ -1833,6 +1857,7 @@
 
     /* ── 5) Kalender: nächster Eintrag — besondere Tage + Familienreisen (Firestore) ── */
     (async function cal() {
+      if (!mods.trip) return;
       const el = $('tileTrip'); if (!el) return;
       try {
         const candidates = [];
@@ -1845,15 +1870,22 @@
         // until one exists. Everything else here is a plain appointment.
         window.tvzaCalendarEntries = daySnap.docs.map(d => d.data());
         window.tvzaRecurringEvents = window.tvzaCalendarEntries.filter(x => x && x.recurring === true);
-        daySnap.docs.forEach(d => { const x = d.data(); if (x.date && x.date >= todayStr) candidates.push({ date: x.date, title: x.title || 'Termin' }); });
+        daySnap.docs.forEach(d => {
+          const x = d.data();
+          if (x.date && x.date >= todayStr) {
+            candidates.push({ id:`event:${d.id}`, date:x.date, title:x.title || 'Termin', kind:'event' });
+          }
+        });
         try {
           const reminderSnap = await getDocs(collection(db, 'users', uid, 'reminders'));
           reminderSnap.docs.forEach(d => {
             const x = d.data();
             if (x.completed || !x.date) return;
             candidates.push({
+              id:`reminder:${d.id}`,
               date:x.date < todayStr ? todayStr : x.date,
               title:x.title || 'Erinnerung',
+              kind:'reminder',
               reminder:true,
               overdue:x.date < todayStr
             });
@@ -1872,12 +1904,17 @@
             if (!mine) return;
             // Bereits laufende Reisen (Start in der Vergangenheit, Ende noch nicht erreicht) zählen als "heute".
             const ongoing = x.startDate < todayStr && (!x.endDate || x.endDate >= todayStr);
-            if (ongoing) candidates.push({ date: todayStr, title: x.name || 'Reise' });
-            else if (x.startDate >= todayStr) candidates.push({ date: x.startDate, title: x.name || 'Reise' });
+            if (ongoing) {
+              candidates.push({ id:`trip:${d.id}`, date:todayStr, title:x.name || 'Reise', kind:'trip', ongoing:true });
+            } else if (x.startDate >= todayStr) {
+              candidates.push({ id:`trip:${d.id}`, date:x.startDate, title:x.name || 'Reise', kind:'trip' });
+            }
           });
         } catch (e) { reportClientError('calendar-tile-trips', e); }
         if (!candidates.length) return;
-        candidates.sort((a, b) => a.date < b.date ? -1 : 1);
+        candidates.sort((a, b) =>
+          a.date.localeCompare(b.date) || String(a.title).localeCompare(String(b.title), 'de-CH')
+        );
         const ev = candidates[0];
         const t = new Date(); t.setHours(0,0,0,0);
         const days = Math.ceil((new Date(ev.date + 'T00:00:00') - t) / 86400000);
@@ -1890,16 +1927,24 @@
         else when = `in ${Math.round(days / 30)} Monaten`;
         el.innerHTML = `<span class="tp-when">${when}</span><span class="tp-what">${esc(ev.title)}</span>`;
         show(el);
-        pushHeute('cal', {
-          href: 'pages/planner.html', bereich: 'kalender',
-          icon: '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
-          title: ev.title, sub: when,
+        candidates.filter(item => item.date === todayStr).forEach((item, index) => {
+          const sub = item.overdue ? 'Überfällige Erinnerung'
+            : item.reminder ? 'Heute fällig'
+            : item.ongoing ? 'Läuft heute'
+            : item.kind === 'trip' ? 'Beginnt heute'
+            : 'Termin heute';
+          pushHeute(`cal:${item.id || index}`, {
+            href: 'pages/planner.html', bereich: 'kalender',
+            icon: '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+            title: item.title, sub,
+          });
         });
       } catch (e) { reportClientError('calendar-tile', e); }
     })();
 
     /* ── 6) Nachrichten: letzte Unterhaltung (Firestore) ── */
     (async function dm() {
+      if (!mods.dm) return;
       const el = $('tileDm'); if (!el) return;
       const toMs = t => (t && t.toMillis) ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
       try {
@@ -1917,6 +1962,7 @@
 
     /* ── 7) Ski Tracker: Anzahl Skis + letzte Wartung (Firestore) ── */
     (async function ski() {
+      if (!mods.ski) return;
       const el = $('tileSki'); if (!el) return;
       const fmtDM = s => { const p = String(s).split('-'); return p.length === 3 ? `${p[2]}.${p[1]}.` : s; };
       try {
@@ -1953,7 +1999,6 @@
     setTimeout(() => {
       try {
         const slot = $('hintSlot'); if (!slot) return;
-        const cal = heuteRows.get('cal');
         const sources = {
           // Kalender × Wetter needs the hourly forecast, which only the
           // Wetter page fetches; until that is shared this pair stays
