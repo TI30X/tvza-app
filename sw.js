@@ -10,8 +10,8 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.31.2.18';
-// Shell revision 27: selected navigation stays TVZA blue across every area.
+const CACHE = 'tvza-v.31.2.19';
+// Shell revision 28: Start returns without a second content animation.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js',
@@ -22,12 +22,12 @@ const SHELL = [
   './',
   './index.html',
   './login.html',
-  './assets/css/style.css?v=11',
+  './assets/css/style.css?v=12',
   './assets/css/calendar.css?v=11',
   './assets/css/matura.css',
   './assets/css/ui-fx.css',
   './assets/js/theme.js',
-  './assets/js/ui-fx.js?v=23',
+  './assets/js/ui-fx.js?v=24',
   './assets/js/welcome.js',
   './manifest.json',
   './assets/js/firebase-config.js',
@@ -40,12 +40,12 @@ const SHELL = [
   './assets/js/calendar-interop.js',
   './assets/js/calendar-view.js',
   './assets/js/matura-sync.js',
-  './assets/js/shell.js?v=5',
-  './assets/js/router.js?v=5',
+  './assets/js/shell.js?v=6',
+  './assets/js/router.js?v=6',
   './assets/js/reminders-overlay.js',
   './assets/js/settings-layer.js',
   './assets/js/hints.js',
-  './assets/js/nav.js?v=5',
+  './assets/js/nav.js?v=6',
   './pages/bereiche.html',
   './pages/skitracker.html',
   './pages/foodtracker.html',

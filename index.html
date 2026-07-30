@@ -20,7 +20,7 @@
     }
   </script>
   <script src="assets/js/theme.js?v=3"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=11" />
+  <link rel="stylesheet" href="assets/css/style.css?v=12" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
   <title>TVZA</title>
   <style>
@@ -35,7 +35,7 @@
     .radio-row label { display:flex; gap:6px; align-items:center; cursor:pointer; }
   </style>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
-  <script src="assets/js/ui-fx.js?v=23" defer></script>
+  <script src="assets/js/ui-fx.js?v=24" defer></script>
 </head>
 <body>
   <script src="assets/js/welcome.js?v=5"></script>
@@ -427,8 +427,8 @@
       doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
       deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { ICONS, icon } from './assets/js/shell.js?v=5';
-    import { initialsOf } from './assets/js/nav.js?v=5';
+    import { ICONS, icon } from './assets/js/shell.js?v=6';
+    import { initialsOf } from './assets/js/nav.js?v=6';
 
     /* Modulschlüssel → Bereichsfarbe. Wie in nav.js ausgeschrieben,
        weil die beiden nicht deckungsgleich sind. */
@@ -1934,7 +1934,7 @@
 
   <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
   <script type="module">
-  import { weatherIcon } from './assets/js/shell.js?v=5';
+  import { weatherIcon } from './assets/js/shell.js?v=6';
   (() => {
     const chip = document.getElementById('wxChip');
     if (!chip) return;
@@ -1988,7 +1988,7 @@
   <!-- ═══ Live dashboard tile content (weather, watchlist, matura, food, calendar) ═══ -->
   <script type="module">
   import { db, requireAuth, getFinnhubKey, getProfile, reportClientError } from './assets/js/firebase-config.js';
-  import { weatherIcon } from './assets/js/shell.js?v=5';
+  import { weatherIcon } from './assets/js/shell.js?v=6';
   import { chooseHint, renderHint, markShown, dismissHint } from './assets/js/hints.js';
   import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -2348,6 +2348,6 @@
     }, 1200);
   })();
   </script>
-  <script type="module" src="./assets/js/nav.js?v=5"></script>
+  <script type="module" src="./assets/js/nav.js?v=6"></script>
 </body>
 </html>

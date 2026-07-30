@@ -280,19 +280,16 @@ export function mountAppRouter(nav) {
       const direction = routeDirection(currentUrl, target);
       currentFrame = null;
       old.classList.add('is-leaving', direction < 0 ? 'to-right' : 'to-left');
-      setTimeout(() => old.remove(), 220);
+      setTimeout(() => {
+        old.remove();
+        progress.classList.remove('is-loading');
+      }, 220);
+    } else {
+      progress.classList.remove('is-loading');
     }
     currentUrl = new URL(target.href);
     updateNavigation(nav, target);
     header.show(target, routeLabel(nav, target));
-    document.body.classList.remove('tvza-base-entering');
-    requestAnimationFrame(() => {
-      document.body.classList.add('tvza-base-entering');
-      setTimeout(() => {
-        document.body.classList.remove('tvza-base-entering');
-        progress.classList.remove('is-loading');
-      }, 220);
-    });
   };
 
   const navigate = (raw, historyMode = 'push') => {

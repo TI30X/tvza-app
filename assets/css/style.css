@@ -2697,13 +2697,6 @@ body.reorder-editing .module-tile::after {
   .tvza-route-frame.is-leaving {
     transform: translateY(-4px) scale(.998);
   }
-  body.tvza-base-entering > .app > .main {
-    animation: tvzaBaseReveal 220ms cubic-bezier(.2,.8,.2,1) both;
-  }
-}
-@keyframes tvzaBaseReveal {
-  from { opacity: .35; transform: translateY(7px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 .appbar--route-view .appbar__greet {
   font-size: clamp(14px, 4vw, 15px);
@@ -3097,7 +3090,6 @@ body .dm-compose textarea {
 }
 @media (prefers-reduced-motion: reduce) {
   .tvza-route-frame { transition: none; }
-  body.tvza-base-entering > .app > .main { animation: none; }
   ::view-transition-old(root),
   ::view-transition-new(root),
   ::view-transition-old(tvza-appbar),

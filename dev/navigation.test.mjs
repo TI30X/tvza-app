@@ -78,7 +78,8 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(router, /waitForCompleteContent/);
   assert.match(router, /classList\.contains\('fx-loading'\)/);
   assert.match(router, /setTimeout\(revealTogether, 80\)/);
-  assert.match(router, /tvza-base-entering/);
+  assert.doesNotMatch(router, /tvza-base-entering/);
+  assert.doesNotMatch(css, /tvzaBaseReveal/);
   assert.match(router, /history\.pushState/);
   assert.match(router, /window\.parent\.postMessage\(\{ type:'tvza-route-request'/);
   assert.match(router, /window\.tvzaNavigate = requestRoute/);
