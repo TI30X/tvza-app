@@ -250,7 +250,9 @@ test('admin tools are an admin-only Bereich and module toggles show their real s
   assert.match(css, /\.row--check input\[type="checkbox"\]:checked/);
   assert.match(css, /\.admin-health__state\[data-state="error"\]/);
   assert.doesNotMatch(css, /\.tvza-route-(?:loader|skeleton)/);
-  assert.match(css, /\.nav__item\.is-active \{ color: var\(--accent\); font-weight: 700; \}/);
+  assert.match(css, /--nav-active:\s*var\(--brand-navy-deep\)/);
+  assert.match(css, /\.nav__item\.is-active \{ color: var\(--nav-active\); font-weight: 700; \}/);
+  assert.match(css, /\.nav__bereich\.is-active \{[\s\S]*background: var\(--nav-active-bg\);[\s\S]*color: var\(--nav-active\)/);
   assert.doesNotMatch(css, /\.row--check input\[type="checkbox"\],\s*\n\.admin-mod input\[type="checkbox"\]:checked/);
 });
 

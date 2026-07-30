@@ -10,8 +10,8 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.31.2.17';
-// Shell revision 26: one-piece route swaps without artificial loading placeholders.
+const CACHE = 'tvza-v.31.2.18';
+// Shell revision 27: selected navigation stays TVZA blue across every area.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js',
@@ -22,12 +22,12 @@ const SHELL = [
   './',
   './index.html',
   './login.html',
-  './assets/css/style.css?v=10',
+  './assets/css/style.css?v=11',
   './assets/css/calendar.css?v=11',
   './assets/css/matura.css',
   './assets/css/ui-fx.css',
   './assets/js/theme.js',
-  './assets/js/ui-fx.js?v=22',
+  './assets/js/ui-fx.js?v=23',
   './assets/js/welcome.js',
   './manifest.json',
   './assets/js/firebase-config.js',

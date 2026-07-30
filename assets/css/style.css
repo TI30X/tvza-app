@@ -17,6 +17,10 @@
   --accent:    var(--brand-navy-deep);
   --accent-hover: var(--brand-navy-mid);
   --accent-bg: oklch(0.95 0.025 250);
+  /* The app shell always uses TVZA blue. Individual areas may override
+     --accent inside their content, but never the selected navigation. */
+  --nav-active: var(--brand-navy-deep);
+  --nav-active-bg: oklch(0.95 0.025 250);
   /* Danger / Löschen — eigenes Rot, passt sich pro Modus an */
   --danger:    oklch(0.52 0.19 25);
   --danger-bg: oklch(0.95 0.03 25);
@@ -107,6 +111,8 @@
   --accent:    oklch(0.76 0.06 250);
   --accent-hover: oklch(0.84 0.045 250);
   --accent-bg: oklch(0.28 0.04 250);
+  --nav-active: oklch(0.76 0.06 250);
+  --nav-active-bg: oklch(0.28 0.04 250);
   --danger:    oklch(0.64 0.15 25);
   --danger-bg: oklch(0.28 0.06 25);
   --border:    oklch(0.34 0.006 250);
@@ -2312,7 +2318,7 @@ body.reorder-editing .module-tile::after {
   background: none; border: none; cursor: pointer; position: relative;
 }
 .nav__item svg { width: 21px; height: 21px; stroke-width: 1.9; }
-.nav__item.is-active { color: var(--accent); font-weight: 700; }
+.nav__item.is-active { color: var(--nav-active); font-weight: 700; }
 .nav__dot {
   position: absolute; top: -2px; right: 50%; margin-right: -14px;
   width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--danger);
@@ -2793,7 +2799,7 @@ html.tvza-content-frame body > main {
     padding: 10px 12px; border-radius: var(--r-icon);
     font-size: 14px; font-weight: 700;
   }
-  .nav__item.is-active { background: var(--accent-bg); color: var(--accent); }
+  .nav__item.is-active { background: var(--nav-active-bg); color: var(--nav-active); }
   .nav__item[data-nav-tab="bereiche"] { display: none; }
   .nav__dot   { display: none; }
   .nav__count {
@@ -2812,8 +2818,8 @@ html.tvza-content-frame body > main {
   }
   .nav__bereich:hover { background: var(--surface-2); }
   .nav__bereich.is-active {
-    background: var(--accent-bg);
-    color: var(--accent);
+    background: var(--nav-active-bg);
+    color: var(--nav-active);
   }
   .nav__bereich-name {
     min-width: 0;
