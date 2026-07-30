@@ -205,6 +205,8 @@ test('direct and routed pages use one shared header action structure', async () 
   assert.doesNotMatch(watch, /id="settingsBtn"/);
   assert.doesNotMatch(watch, /id="wlSettings"/);
   assert.match(food, /Heute wurden noch keine Einträge erfasst\./);
+  assert.match(food, /query\(entriesCol, where\('date','==',str\)\)/);
+  assert.doesNotMatch(food, /where\('date','==',str\), orderBy\('createdAt'/);
   assert.match(food, /reportClientError\('food-day-load', error\)/);
 });
 

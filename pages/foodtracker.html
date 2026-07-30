@@ -400,9 +400,15 @@
       document.getElementById('listWrap').innerHTML = '<div class="spinner">Lade…</div>';
 
       unsubDay = onSnapshot(
-        query(entriesCol, where('date','==',str), orderBy('createdAt','asc')),
+        query(entriesCol, where('date','==',str)),
         snap => {
-          dayEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          dayEntries = snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => {
+              const aTime = a.createdAt?.toMillis?.() ?? Number(a.createdAt?.seconds || 0) * 1000;
+              const bTime = b.createdAt?.toMillis?.() ?? Number(b.createdAt?.seconds || 0) * 1000;
+              return aTime - bTime;
+            });
           renderDay(); renderKcalBar();
         },
         error => {
