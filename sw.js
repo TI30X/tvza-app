@@ -10,8 +10,8 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.31.2.13';
-// Shell revision 22: compact Admin health centre and unified desktop route reveal.
+const CACHE = 'tvza-v.31.2.14';
+// Shell revision 23: cache-busted navigation runtime and wide compact Admin dashboard.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js',
@@ -27,7 +27,7 @@ const SHELL = [
   './assets/css/matura.css',
   './assets/css/ui-fx.css',
   './assets/js/theme.js',
-  './assets/js/ui-fx.js?v=18',
+  './assets/js/ui-fx.js?v=19',
   './assets/js/welcome.js',
   './manifest.json',
   './assets/js/firebase-config.js',
@@ -40,12 +40,12 @@ const SHELL = [
   './assets/js/calendar-interop.js',
   './assets/js/calendar-view.js',
   './assets/js/matura-sync.js',
-  './assets/js/shell.js',
-  './assets/js/router.js',
+  './assets/js/shell.js?v=2',
+  './assets/js/router.js?v=2',
   './assets/js/reminders-overlay.js',
   './assets/js/settings-layer.js',
   './assets/js/hints.js',
-  './assets/js/nav.js',
+  './assets/js/nav.js?v=2',
   './pages/bereiche.html',
   './pages/skitracker.html',
   './pages/foodtracker.html',
