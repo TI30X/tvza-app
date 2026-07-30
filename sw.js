@@ -10,8 +10,8 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.31.2.20';
-// Shell revision 29: calendar is centered on today before its first visible frame.
+const CACHE = 'tvza-v.31.2.21';
+// Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js',
@@ -27,7 +27,7 @@ const SHELL = [
   './assets/css/matura.css',
   './assets/css/ui-fx.css',
   './assets/js/theme.js',
-  './assets/js/ui-fx.js?v=25',
+  './assets/js/ui-fx.js?v=26',
   './assets/js/welcome.js',
   './manifest.json',
   './assets/js/firebase-config.js',

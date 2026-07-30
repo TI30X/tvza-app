@@ -233,7 +233,7 @@
     }
   </style>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=25" defer></script>
+  <script src="../assets/js/ui-fx.js?v=26" defer></script>
 </head>
 <body class="planner-page">
   <div class="app">
@@ -1771,14 +1771,15 @@
           : target;
         const scrollerRect = scroller.getBoundingClientRect();
         const markerRect = marker.getBoundingClientRect();
-        const centerOffset = Math.max(8, (scroller.clientHeight - markerRect.height) / 2);
-        let top = scroller.scrollTop + markerRect.top - scrollerRect.top - centerOffset;
-        const head = box.querySelector('.agenda-scroll-head');
-        if (head && top < 0) {
-          head.style.height = `${Math.ceil(-top)}px`;
-          const adjustedMarkerRect = marker.getBoundingClientRect();
-          top = scroller.scrollTop + adjustedMarkerRect.top - scrollerRect.top - centerOffset;
+        /* A real bottom runway is required on desktop when only a few
+           future entries follow today; otherwise the browser clamps
+           scrollTop and leaves past days visible above the marker. */
+        const tail = box.querySelector('.agenda-scroll-tail');
+        if (tail) {
+          tail.style.height = `${Math.max(0, scroller.clientHeight - markerRect.height - 8)}px`;
         }
+        const adjustedMarkerRect = marker.getBoundingClientRect();
+        const top = scroller.scrollTop + adjustedMarkerRect.top - scrollerRect.top - 8;
         scroller.scrollTop = Math.max(0, top);
       };
       positionToday();

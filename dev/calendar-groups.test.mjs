@@ -91,7 +91,8 @@ test('mobile calendar starts with the readable list view', async () => {
   assert.match(planner, /isMobileCalendar\(\)[\s\S]*mobileView[\s\S]*'agenda'/);
   assert.match(planner, /data-calendar-view="agenda"[^>]*>Liste</);
   assert.match(planner, /data-agenda-focus/);
-  assert.match(planner, /const centerOffset = Math\.max\(8, \(scroller\.clientHeight - markerRect\.height\) \/ 2\)/);
+  assert.match(planner, /tail\.style\.height = `\$\{Math\.max\(0, scroller\.clientHeight - markerRect\.height - 8\)\}px`/);
+  assert.match(planner, /adjustedMarkerRect\.top - scrollerRect\.top - 8/);
   assert.match(planner, /scroller\.scrollTop = Math\.max\(0, top\)/);
   assert.match(planner, /dataset\.routeReady = 'false'/);
   assert.match(planner, /dataset\.routeReady = 'true'/);
@@ -155,7 +156,7 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(css, /@media \(min-width:900px\)[\s\S]*#groupView \.calendar-view \{[\s\S]*height:100%;[\s\S]*overflow:auto/);
   assert.match(planner, /const containsToday = from<=todayKey/);
   assert.match(planner, /class="agenda-scroll-head"/);
-  assert.match(planner, /head\.style\.height = `\$\{Math\.ceil\(-top\)\}px`/);
+  assert.match(planner, /class="agenda-scroll-tail"/);
   assert.match(planner, /scroller\.scrollTop = Math\.max\(0, top\)/);
   assert.doesNotMatch(planner, /target\.scrollIntoView/);
   assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
