@@ -260,7 +260,23 @@ export function mountAppRouter(nav) {
   loader.setAttribute('aria-live', 'polite');
   loader.innerHTML = `
     <div class="tvza-route-loader__content">
-      <span class="tvza-route-loader__mark" aria-hidden="true"><span></span></span>
+      <div class="tvza-route-skeleton" aria-hidden="true">
+        <div class="tvza-route-skeleton__heading">
+          <span class="tvza-route-skeleton__line is-title"></span>
+          <span class="tvza-route-skeleton__line is-subtitle"></span>
+        </div>
+        <div class="tvza-route-skeleton__cards">
+          <span class="tvza-route-skeleton__card"></span>
+          <span class="tvza-route-skeleton__card"></span>
+          <span class="tvza-route-skeleton__card"></span>
+        </div>
+        <div class="tvza-route-skeleton__panel">
+          <span class="tvza-route-skeleton__line is-panel-title"></span>
+          <span class="tvza-route-skeleton__row"></span>
+          <span class="tvza-route-skeleton__row"></span>
+          <span class="tvza-route-skeleton__row is-short"></span>
+        </div>
+      </div>
       <span class="tvza-route-loader__label">Bereich wird geöffnet</span>
     </div>`;
   document.body.appendChild(loader);
@@ -349,20 +365,45 @@ export function mountAppRouter(nav) {
         incoming.remove();
         return;
       }
-      const old = currentFrame;
-      currentFrame = incoming;
-      currentUrl = new URL(target.href);
-      updateNavigation(nav, target);
-      header.show(target, label);
-      progress.classList.remove('is-loading');
-      hideRouteLoader();
-      requestAnimationFrame(() => {
-        incoming.classList.remove('is-entering');
-        incoming.classList.add('is-active');
-        if (old) old.classList.add('is-leaving', direction < 0 ? 'to-right' : 'to-left');
-      });
-      if (old) setTimeout(() => old.remove(), 220);
-      if (historyMode === 'push') history.pushState({ tvzaRoute:target.href }, '', routeKey(target));
+      const loadedAt = performance.now();
+      const revealTogether = () => {
+        if (id !== navigationId) {
+          incoming.remove();
+          return;
+        }
+        const old = currentFrame;
+        currentFrame = incoming;
+        currentUrl = new URL(target.href);
+        updateNavigation(nav, target);
+        header.show(target, label);
+        progress.classList.remove('is-loading');
+        hideRouteLoader();
+        requestAnimationFrame(() => {
+          incoming.classList.remove('is-entering');
+          incoming.classList.add('is-active');
+          if (old) old.classList.add('is-leaving', direction < 0 ? 'to-right' : 'to-left');
+        });
+        if (old) setTimeout(() => old.remove(), 220);
+        if (historyMode === 'push') history.pushState({ tvzaRoute:target.href }, '', routeKey(target));
+      };
+      const waitForCompleteContent = () => {
+        if (id !== navigationId) {
+          incoming.remove();
+          return;
+        }
+        let stillLoading = false;
+        try {
+          stillLoading = contentFrame.contentDocument?.body?.classList.contains('fx-loading') || false;
+        } catch {}
+        if (stillLoading && performance.now() - loadedAt < 2400) {
+          setTimeout(waitForCompleteContent, 60);
+          return;
+        }
+        /* One short quiet frame prevents a final data mutation from appearing
+           after the rest of the page. The whole route is then revealed once. */
+        setTimeout(revealTogether, 80);
+      };
+      waitForCompleteContent();
     }, { once:true });
   };
 

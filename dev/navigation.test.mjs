@@ -75,7 +75,11 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(nav, /mountAppRouter\(nav\)/);
   assert.match(router, /className = `tvza-route-frame is-entering/);
   assert.match(router, /className = 'tvza-route-loader'/);
+  assert.match(router, /class="tvza-route-skeleton"/);
   assert.match(router, /showRouteLoader\(label\)/);
+  assert.match(router, /waitForCompleteContent/);
+  assert.match(router, /classList\.contains\('fx-loading'\)/);
+  assert.match(router, /setTimeout\(revealTogether, 80\)/);
   assert.match(router, /tvza-base-entering/);
   assert.match(router, /history\.pushState/);
   assert.match(router, /window\.parent\.postMessage\(\{ type:'tvza-route-request'/);
@@ -248,6 +252,9 @@ test('admin tools are an admin-only Bereich and module toggles show their real s
   assert.match(css, /\.row--check input\[type="checkbox"\]:checked/);
   assert.match(css, /\.admin-health__state\[data-state="error"\]/);
   assert.match(css, /\.tvza-route-loader\.is-visible/);
+  assert.match(css, /\.tvza-route-skeleton__cards/);
+  assert.match(css, /@keyframes tvzaRouteShimmer/);
+  assert.doesNotMatch(css, /@keyframes tvzaRouteOrbit/);
   assert.doesNotMatch(css, /\.row--check input\[type="checkbox"\],\s*\n\.admin-mod input\[type="checkbox"\]:checked/);
 });
 

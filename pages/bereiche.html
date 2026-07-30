@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
-  <link rel="stylesheet" href="../assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=8" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=19" defer></script>
+  <script src="../assets/js/ui-fx.js?v=20" defer></script>
   <title>Bereiche — TVZA</title>
   <!-- No <style> block. Everything on this page comes from the kit in
        assets/css/style.css — that is the point of the redesign. -->
@@ -58,7 +58,7 @@
       MODULES, enabledModules, getProfile, sharesForEmail
     } from '../assets/js/firebase-config.js';
     import { collection, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { mountShell, icon, ICONS, areaModuleKeys } from '../assets/js/shell.js?v=2';
+    import { mountShell, icon, ICONS, areaModuleKeys } from '../assets/js/shell.js?v=3';
     import { openSettingsLayer } from '../assets/js/settings-layer.js';
 
     const $ = id => document.getElementById(id);
