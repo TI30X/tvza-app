@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#1A1A2E" />
+  <script src="../assets/js/theme.js?v=3"></script>
+  <link rel="stylesheet" href="../assets/css/style.css?v=5" />
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=17" defer></script>
+  <title>Admin — TVZA</title>
+  <style>
+    .admin-main {
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+    .admin-frame-shell {
+      overflow: hidden;
+      min-height: calc(100dvh - var(--tvza-shell-top, 72px) - var(--tvza-shell-bottom, 0px) - 32px);
+      border: 1px solid var(--border);
+      border-radius: var(--r-panel);
+      background: var(--surface);
+    }
+    .admin-frame {
+      display: block;
+      width: 100%;
+      min-height: inherit;
+      border: 0;
+      background: var(--surface);
+    }
+    html.tvza-content-frame .admin-main { padding: 12px 0; }
+    html.tvza-content-frame .admin-frame-shell {
+      min-height: calc(100dvh - 24px);
+      border-radius: 0;
+      border-left: 0;
+      border-right: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="appbar appbar--bereich" data-bereich="admin">
+      <div class="appbar__inner">
+        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück">
+          <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        </a>
+        <span class="appbar__title">Admin</span>
+        <span class="appbar__end">
+          <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+        </span>
+      </div>
+      <div class="appbar__accent"></div>
+    </header>
+
+    <main class="main admin-main">
+      <div class="admin-frame-shell">
+        <iframe
+          class="admin-frame"
+          src="../index.html?embed=admin#admin"
+          title="Admin-Bereich"
+          referrerpolicy="same-origin"
+        ></iframe>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="../assets/js/nav.js"></script>
+</body>
+</html>

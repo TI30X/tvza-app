@@ -13,8 +13,10 @@
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script>
-    if (window.parent !== window && new URLSearchParams(location.search).get('embed') === 'settings') {
-      document.documentElement.classList.add('settings-embed');
+    if (window.parent !== window) {
+      const embeddedSurface = new URLSearchParams(location.search).get('embed');
+      if (embeddedSurface === 'settings') document.documentElement.classList.add('settings-embed');
+      if (embeddedSurface === 'admin') document.documentElement.classList.add('admin-embed');
     }
   </script>
   <script src="assets/js/theme.js?v=3"></script>
@@ -407,7 +409,7 @@
        weil die beiden nicht deckungsgleich sind. */
     const BEREICH_OF = {
       ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
-      trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura',
+      trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura', admin: 'admin',
       publicProjects: 'kalender',
     };
     const PERSON_AVATAR_COLORS = [
@@ -926,6 +928,8 @@
     const settingsModal = document.getElementById('settingsModal');
     const embeddedSettings = window.parent !== window &&
       new URLSearchParams(location.search).get('embed') === 'settings';
+    const embeddedAdmin = window.parent !== window &&
+      new URLSearchParams(location.search).get('embed') === 'admin';
     const tellSettingsParent = message => {
       if (embeddedSettings) {
         window.parent.postMessage(message, location.origin === 'null' ? '*' : location.origin);
@@ -958,20 +962,27 @@
       document.getElementById('adminSection').style.display = 'none';
       settingsModal.classList.add('visible');
       focusSettingsSection(section);
-      loadInviteFamilies().then(() => {
-        const canInvite = profile.isTimo === true || inviteFamilies.length > 0;
-        document.getElementById('adminSection').style.display = canInvite ? '' : 'none';
-        document.getElementById('memberInviteSection').style.display = canInvite ? '' : 'none';
-        document.getElementById('superAdminUserSection').style.display = profile.isTimo === true ? '' : 'none';
-        document.getElementById('superAdminFoodSection').style.display = profile.isTimo === true ? '' : 'none';
-        if (canInvite) renderMemberInvites();
-      });
       loadAppUsers().then(() => {
         renderUserSuggestions();
-        if (profile.isTimo === true) {
-          renderAdminUsers();
-          renderFoodRequests();
-        }
+      });
+    }
+    function openAdmin() {
+      document.querySelector('#settingsModal .modal-title').textContent = 'Admin';
+      settingsModal.classList.add('visible');
+      if (profile.isTimo !== true) {
+        document.getElementById('adminSection').style.display = '';
+        document.getElementById('adminSection').innerHTML =
+          '<section class="settings-section"><p class="settings-section-title">Kein Zugriff</p><p class="form-hint">Dieser Bereich ist nur für Administratoren verfügbar.</p></section>';
+        return;
+      }
+      document.getElementById('adminSection').style.display = '';
+      document.getElementById('memberInviteSection').style.display = '';
+      document.getElementById('superAdminUserSection').style.display = '';
+      document.getElementById('superAdminFoodSection').style.display = '';
+      loadInviteFamilies().then(renderMemberInvites);
+      loadAppUsers().then(() => {
+        renderAdminUsers();
+        renderFoodRequests();
       });
     }
     document.getElementById('acctSettings').addEventListener('click', () => { closeAcct(); openSettings(); });
@@ -981,6 +992,10 @@
     if (location.hash === '#settings') {
       history.replaceState(null, '', location.pathname + location.search);
       openSettings(new URLSearchParams(location.search).get('section') || '');
+    }
+    if (location.hash === '#admin' && embeddedAdmin) {
+      history.replaceState(null, '', location.pathname + location.search);
+      queueMicrotask(openAdmin);
     }
     if (embeddedSettings) {
       window.addEventListener('message', event => {
@@ -1030,19 +1045,21 @@
     function renderModuleToggles() {
       const allowed = allowedModules(profile);
       const mods = enabledModules(profile);
-      const availableModules = Object.values(MODULES).filter(m => allowed[m.key]);
+      const availableModules = Object.values(MODULES)
+        .filter(m => m.key !== 'admin' && allowed[m.key]);
       if (!availableModules.length) {
         document.getElementById('moduleToggles').innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch keine Module freigeschaltet.</p>';
         return;
       }
       document.getElementById('moduleToggles').innerHTML = availableModules.map(m => `
-        <label class="row row--check" data-bereich="${BEREICH_OF[m.key] || ''}">
+        <label class="row row--check${mods[m.key] ? ' is-checked' : ''}" data-bereich="${BEREICH_OF[m.key] || ''}">
           <span class="row__icon">${icon(ICONS[m.key] ? m.key : 'bereiche', 18)}</span>
           <span class="row__body">
             <span class="row__title">${escHtml(m.name)}</span>
             <span class="row__sub">${escHtml(m.sub)}</span>
           </span>
           <span class="row__end">
+            <span class="module-toggle-state">${mods[m.key] ? 'Sichtbar' : 'Ausgeblendet'}</span>
             <input type="checkbox" data-mod="${m.key}" ${mods[m.key] ? 'checked' : ''} />
           </span>
         </label>`).join('');
@@ -1079,7 +1096,12 @@
       });
     }
     document.getElementById('moduleToggles').addEventListener('change', event => {
-      if (event.target.matches('[data-mod]')) savePersonalModules();
+      if (!event.target.matches('[data-mod]')) return;
+      const row = event.target.closest('.row--check');
+      row?.classList.toggle('is-checked', event.target.checked);
+      const state = row?.querySelector('.module-toggle-state');
+      if (state) state.textContent = event.target.checked ? 'Sichtbar' : 'Ausgeblendet';
+      savePersonalModules();
     });
 
     /* ════ Bereich-specific settings, inside the one Settings surface ════ */
@@ -1364,7 +1386,7 @@
           </summary>
           <div class="admin-user__body">
             <div class="admin-mods">
-              ${Object.values(MODULES).map(m => `
+              ${Object.values(MODULES).filter(m => m.key !== 'admin').map(m => `
                 <label class="admin-mod" data-bereich="${BEREICH_OF[m.key] || ''}">
                   <input type="checkbox" data-admin-allowed="${m.key}" ${allowed[m.key] ? 'checked' : ''} />
                   <span class="admin-mod__icon">${icon(ICONS[m.key] ? m.key : 'bereiche', 15)}</span>
@@ -1388,7 +1410,7 @@
         row.querySelectorAll('[data-admin-allowed]').forEach(cb => allowedModulesNext[cb.dataset.adminAllowed] = cb.checked);
         const isTimo = row.querySelector('[data-admin-timo]').checked;
         if (uid === user.uid && !isTimo) { alert('Du kannst dir selbst den Admin-Zugriff nicht entfernen.'); return; }
-        const moduleKeys = Object.keys(MODULES);
+        const moduleKeys = Object.keys(MODULES).filter(key => key !== 'admin');
         const allowedKeys = Object.keys(allowedModulesNext);
         const validPayload = Object.getPrototypeOf(allowedModulesNext) === Object.prototype
           && allowedKeys.length === moduleKeys.length

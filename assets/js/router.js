@@ -18,6 +18,7 @@ const APP_FILES = new Set([
   'weather.html',
   'maturaarbeit.html',
   'maturaarbeit-tracker.html',
+  'admin.html',
 ]);
 // Bereich preferences live in the one global Settings surface. A routed
 // page therefore never adds a second, competing settings gear to the header.
@@ -127,6 +128,7 @@ function routeLabel(nav, target) {
       'weather.html':'Wetter',
       'maturaarbeit.html':'Maturaarbeit',
       'maturaarbeit-tracker.html':'Maturaarbeit Tracker',
+      'admin.html':'Admin',
     })[fileOf(target)] ||
     document.title.split('—')[0].trim();
 }

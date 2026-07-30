@@ -10,8 +10,8 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.31.2.10';
-// Shell revision 19: Food empty days load without a composite Firestore index.
+const CACHE = 'tvza-v.31.2.11';
+// Shell revision 20: admin-only Bereich and unambiguous personal visibility toggles.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js',
@@ -56,6 +56,7 @@ const SHELL = [
   './pages/guest.html',
   './pages/maturaarbeit.html',
   './pages/maturaarbeit-tracker.html',
+  './pages/admin.html',
   './public.html',
   './assets/icons/TvZ_Logo.svg',
   './assets/icons/icon-192.png',

@@ -138,11 +138,12 @@ export const MODULES = {
   matura: { key:'matura', name:'Maturaarbeit', sub:'Status & Fortschritt', emoji:'📊', page:'pages/maturaarbeit.html', perUser:false, shareable:false },
   maturatracker: { key:'maturatracker', name:'Maturaarbeit-Tracker', sub:'To-dos & Countdown', emoji:'🧵', page:'pages/maturaarbeit-tracker.html', perUser:true, shareable:false },
   publicProjects: { key:'publicProjects', name:'Öffentliche Projekte', sub:'Von allen geteilt', emoji:'🌐', perUser:false, shareable:false },
+  admin: { key:'admin', name:'Admin', sub:'Benutzer, Einladungen & Food-Anfragen', emoji:'🛡️', page:'pages/admin.html', perUser:false, shareable:false },
 };
 
 // Neue Nutzer starten schlank: nur Familien-Planer, Watchlist und Food sind
 // standardmässig an — alles andere muss angefragt / vom Admin freigeschaltet werden.
-export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:false, publicProjects:false, watch:true, weather:true, dm:true };
+export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:false, publicProjects:false, watch:true, weather:true, dm:true, admin:false };
 export const ALL_MODULES = Object.fromEntries(Object.keys(MODULES).map(key => [key, true]));
 // Persönliche Standardansicht, getrennt von der Zugriffsfreigabe:
 // Maturaarbeit ist für den Admin sichtbar, der zusätzliche Tracker erst
@@ -152,6 +153,7 @@ export const DEFAULT_VISIBLE_MODULES = {
   ...DEFAULT_MODULES,
   matura:true,
   maturatracker:false,
+  admin:true,
 };
 
 export async function getProfile(user) {
@@ -164,13 +166,14 @@ export async function getProfile(user) {
 // Admin-Freigabe eines Nutzers.
 export function allowedModules(profile) {
   if (profile?.isTimo === true) return { ...ALL_MODULES };
-  return { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}) };
+  return { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}), admin:false };
 }
 
 // Effektive Modul-Auswahl: Admin-Freigabe UND persönliche Sichtbarkeit.
 export function enabledModules(profile) {
   const allowed = allowedModules(profile);
   const visible = { ...DEFAULT_VISIBLE_MODULES, ...(profile?.modules || {}) };
+  if (profile?.isTimo === true) visible.admin = true;
   return Object.fromEntries(Object.keys(MODULES).map(key => [key, !!allowed[key] && !!visible[key]]));
 }
 

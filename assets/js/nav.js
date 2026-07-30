@@ -30,7 +30,7 @@ import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 
 const BEREICH_OF = {
   ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
-  trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura',
+  trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura', admin: 'admin',
   publicProjects: 'kalender',
 };
 

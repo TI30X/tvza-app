@@ -210,6 +210,35 @@ test('direct and routed pages use one shared header action structure', async () 
   assert.match(food, /reportClientError\('food-day-load', error\)/);
 });
 
+test('admin tools are an admin-only Bereich and module toggles show their real state', async () => {
+  const [firebase, dashboard, adminPage, router, css, sw] = await Promise.all([
+    read('assets/js/firebase-config.js'),
+    read('index.html'),
+    read('pages/admin.html'),
+    read('assets/js/router.js'),
+    read('assets/css/style.css'),
+    read('sw.js'),
+  ]);
+
+  assert.match(firebase, /admin:\s*\{ key:'admin', name:'Admin'/);
+  assert.match(firebase, /admin:false \}/);
+  assert.match(firebase, /profile\?\.isTimo === true\) visible\.admin = true/);
+  assert.match(firebase, /admin:false \};\s*\n\}/);
+  assert.match(adminPage, /index\.html\?embed=admin#admin/);
+  assert.match(adminPage, /data-bereich="admin"/);
+  assert.match(router, /'admin\.html'/);
+  assert.match(sw, /pages\/admin\.html/);
+  assert.match(dashboard, /function openAdmin\(\)/);
+  const openSettings = dashboard.match(/function openSettings\(section = ''\) \{[\s\S]*?\n    \}/)?.[0] || '';
+  assert.doesNotMatch(openSettings, /renderAdminUsers|renderFoodRequests|renderMemberInvites/);
+  assert.match(dashboard, /m\.key !== 'admin'/);
+  assert.match(dashboard, /module-toggle-state/);
+  assert.match(dashboard, /event\.target\.checked \? 'Sichtbar' : 'Ausgeblendet'/);
+  assert.match(css, /\.row--check input\[type="checkbox"\]::after/);
+  assert.match(css, /\.row--check input\[type="checkbox"\]:checked/);
+  assert.doesNotMatch(css, /\.row--check input\[type="checkbox"\],\s*\n\.admin-mod input\[type="checkbox"\]:checked/);
+});
+
 test('loaded content only fades in once instead of blinking after updates', async () => {
   const ui = await read('assets/js/ui-fx.js');
   assert.match(ui, /if \(el\.dataset\.fxRevealed\) return/);

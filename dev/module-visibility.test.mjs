@@ -35,16 +35,16 @@ function visibilityHelpers() {
 
   const context = {
     MODULES: {
-      ski:{}, food:{}, matura:{}, maturatracker:{},
+      ski:{}, food:{}, matura:{}, maturatracker:{}, admin:{},
     },
     DEFAULT_MODULES: {
-      ski:false, food:true, matura:false, maturatracker:false,
+      ski:false, food:true, matura:false, maturatracker:false, admin:false,
     },
     ALL_MODULES: {
-      ski:true, food:true, matura:true, maturatracker:true,
+      ski:true, food:true, matura:true, maturatracker:true, admin:true,
     },
     DEFAULT_VISIBLE_MODULES: {
-      ski:false, food:true, matura:true, maturatracker:false,
+      ski:false, food:true, matura:true, maturatracker:false, admin:true,
     },
   };
   vm.runInNewContext(
@@ -96,6 +96,8 @@ test('admin defaults to Maturaarbeit without the optional tracker', () => {
   const admin = enabledModules({ isTimo:true });
   assert.equal(admin.matura, true);
   assert.equal(admin.maturatracker, false);
+  assert.equal(admin.admin, true);
+  assert.equal(enabledModules({ allowedModules:{ admin:true } }).admin, false);
 });
 
 test('saved visibility refreshes the dashboard, Bereiche page, and shell navigation', () => {
