@@ -14,6 +14,10 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
 
 (() => {
   'use strict';
+  // A routed Bereich runs inside a content-only iframe. Its header is hidden,
+  // and the parent document owns the one visible notification control.
+  if (new URLSearchParams(location.search).get('tvzaFrame') === '1') return;
+
   const BASE  = location.pathname.includes('/pages/') ? '../' : './';
   const READ  = 'tvza-notif-read';
   const MOVERS_CACHE = 'tvza-notif-movers';
@@ -232,15 +236,29 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
 
   /* ── UI ── */
   function mountBell(){
+    const existing = document.querySelector('.tvzn-bell');
+    if (existing) return existing;
+
     const bell = document.createElement('button');
     bell.className = 'tvzn-bell';
     bell.type = 'button';
     bell.title = 'Benachrichtigungen';
+    bell.setAttribute('aria-label', 'Benachrichtigungen');
     bell.innerHTML = BELL_SVG + `<span class="tvzn-badge tvzn-hide">0</span>`;
 
     const actions = document.querySelector('.header-actions');
+    const appbarEnd = document.querySelector('.appbar__end');
+    const appbarInner = document.querySelector('.appbar__inner');
     const themeT  = document.getElementById('themeToggle');
     if (actions) actions.insertBefore(bell, actions.firstChild);
+    else if (appbarEnd) {
+      const before = appbarEnd.querySelector('#profileBtn, #settingsBtn, #shellGear, .tvza-route-page-action, .acct');
+      appbarEnd.insertBefore(bell, before);
+    }
+    else if (appbarInner) {
+      const before = appbarInner.querySelector('.tvza-route-page-action, .acct, .avatar');
+      appbarInner.insertBefore(bell, before);
+    }
     else if (themeT) themeT.insertAdjacentElement('afterend', bell);
     else { bell.classList.add('tvzn-float'); document.body.appendChild(bell); }
     return bell;

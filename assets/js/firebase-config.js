@@ -126,8 +126,8 @@ export function reportClientError(context, error) {
 }
 
 /* ── Module-Registry (erweiterbar) ─────────────────
-   Neue Module hier ergänzen — Dashboard, Bereiche,
-   Admin-Freigaben und Teilen ziehen sich daraus.         */
+   Neue Module hier ergänzen — Dashboard, Einstellungen
+   und Teilen ziehen sich automatisch daraus.            */
 export const MODULES = {
   ski:  { key:'ski',  name:'Ski Tracker',    sub:'Schliff & Wachs',        emoji:'🎿', page:'pages/skitracker.html',  perUser:true,  shareable:true  },
   food: { key:'food', name:'Food Tracker',   sub:'Kalorien & Nährstoffe',  emoji:'🍎', page:'pages/foodtracker.html', perUser:true,  shareable:true  },
@@ -144,6 +144,15 @@ export const MODULES = {
 // standardmässig an — alles andere muss angefragt / vom Admin freigeschaltet werden.
 export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:false, publicProjects:false, watch:true, weather:true, dm:true };
 export const ALL_MODULES = Object.fromEntries(Object.keys(MODULES).map(key => [key, true]));
+// Persönliche Standardansicht, getrennt von der Zugriffsfreigabe:
+// Maturaarbeit ist für den Admin sichtbar, der zusätzliche Tracker erst
+// nach einer bewussten Auswahl. Neu freigegebene optionale Module tauchen
+// dadurch ebenfalls nicht ungefragt in der Navigation auf.
+export const DEFAULT_VISIBLE_MODULES = {
+  ...DEFAULT_MODULES,
+  matura:true,
+  maturatracker:false,
+};
 
 export async function getProfile(user) {
   try {
@@ -158,12 +167,11 @@ export function allowedModules(profile) {
   return { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}) };
 }
 
-// Die Admin-Freigabe ist die einzige Sichtbarkeitsquelle. Das frühere
-// persönliche profile.modules-Feld wird absichtlich ignoriert, damit ein
-// freigegebenes Modul auf Dashboard und Bereiche-Seite zuverlässig erscheint.
+// Effektive Modul-Auswahl: Admin-Freigabe UND persönliche Sichtbarkeit.
 export function enabledModules(profile) {
   const allowed = allowedModules(profile);
-  return Object.fromEntries(Object.keys(MODULES).map(key => [key, !!allowed[key]]));
+  const visible = { ...DEFAULT_VISIBLE_MODULES, ...(profile?.modules || {}) };
+  return Object.fromEntries(Object.keys(MODULES).map(key => [key, !!allowed[key] && !!visible[key]]));
 }
 
 /* ── Teilen (Module mit anderen Nutzern) ──────────── */

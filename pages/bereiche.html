@@ -47,6 +47,9 @@
       <div class="rows" id="listPublic"></div>
     </section>
 
+    <section class="section">
+      <button class="b b--secondary b--block" id="manageBtn">Bereiche verwalten</button>
+    </section>
   </main>
 
   <script type="module">
@@ -54,7 +57,7 @@
       auth, db, requireAuth, wireOfflineBanner, escHtml,
       MODULES, enabledModules, getProfile, sharesForEmail
     } from '../assets/js/firebase-config.js';
-    import { collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { collection, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { mountShell, icon, ICONS, areaModuleKeys } from '../assets/js/shell.js';
     import { openSettingsLayer } from '../assets/js/settings-layer.js';
 
@@ -86,8 +89,8 @@
 
     requireAuth('../login.html').then(async user => {
       wireOfflineBanner();
-      const profile = await getProfile(user);
-      const mods = enabledModules(profile);
+      let profile = await getProfile(user);
+      let mods = enabledModules(profile);
 
       mountShell({
         variant: 'bereich',
@@ -100,17 +103,31 @@
       /* Genau dieselbe Quelle und Reihenfolge wie die Desktop-Seitenleiste.
          Kalender und Nachrichten besitzen eigene Tabs und werden daher
          nicht als Bereich dupliziert. */
-      const keys = areaModuleKeys(profile);
+      function renderMine() {
+        mods = enabledModules(profile);
+        const keys = areaModuleKeys(profile);
+        $('listMine').innerHTML = keys.length
+          ? keys.map(k => row({
+              href: `../${MODULES[k].page}`,
+              bereich: BEREICH_OF[k],
+              iconKey: k,
+              title: MODULES[k].name,
+              sub: MODULES[k].sub,
+            })).join('')
+          : '<p class="empty-hint" style="padding:12px">Keine Bereiche eingeblendet.</p>';
+      }
+      renderMine();
 
-      $('listMine').innerHTML = keys.length
-        ? keys.map(k => row({
-            href: `../${MODULES[k].page}`,
-            bereich: BEREICH_OF[k],
-            iconKey: k,
-            title: MODULES[k].name,
-            sub: MODULES[k].sub,
-          })).join('')
-        : '<p class="empty-hint" style="padding:12px">Noch keine Bereiche freigeschaltet.</p>';
+      window.addEventListener('tvza-modules-change', event => {
+        if (!event.detail || typeof event.detail !== 'object') return;
+        profile = { ...profile, modules:event.detail };
+        renderMine();
+      });
+      onSnapshot(doc(db, 'users', user.uid), snapshot => {
+        if (!snapshot.exists()) return;
+        profile = snapshot.data();
+        renderMine();
+      }, () => { /* the local settings event remains the immediate fallback */ });
 
       /* ── Mit mir geteilt ────────────────────────────────────────*/
       const shares = await sharesForEmail(user.email);
@@ -153,6 +170,8 @@
           });
         }, () => console.warn('[public-projects] listen-failed'));
       }
+
+      $('manageBtn').onclick = openSettingsLayer;
     });
   </script>
 </body>

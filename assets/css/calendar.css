@@ -685,16 +685,11 @@
   display:flex;
   align-items:center;
   justify-content:space-between;
-  width:100%;
   gap:18px;
   margin:0 0 16px;
   padding:14px;
   border:1px solid var(--border);
   border-radius:var(--r-row);
-  background:var(--surface);
-  color:var(--ink);
-  font:inherit;
-  text-align:left;
   cursor:pointer;
 }
 .calendar-feature-setting strong { display:block; font-size:13px; }
@@ -705,18 +700,21 @@
   font-size:12px;
   line-height:1.4;
 }
-.calendar-feature-switch {
-  display:block;
+.calendar-feature-setting input {
+  appearance:none;
   flex:0 0 auto;
   width:42px;
   height:24px;
+  margin:0;
   padding:2px;
   border:1px solid var(--border);
   border-radius:var(--r-pill);
   background:var(--surface-2);
+  cursor:pointer;
   transition:background 160ms ease,border-color 160ms ease;
 }
-.calendar-feature-switch i {
+.calendar-feature-setting input::before {
+  content:'';
   display:block;
   width:18px;
   height:18px;
@@ -725,12 +723,12 @@
   box-shadow:0 1px 4px rgba(0,0,0,.2);
   transition:transform 160ms ease;
 }
-.calendar-feature-setting[aria-checked="true"] .calendar-feature-switch {
+.calendar-feature-setting input:checked {
   border-color:var(--cal-accent);
   background:var(--cal-accent);
 }
-.calendar-feature-setting[aria-checked="true"] .calendar-feature-switch i { transform:translateX(18px); }
-.calendar-feature-setting:focus-visible {
+.calendar-feature-setting input:checked::before { transform:translateX(18px); }
+.calendar-feature-setting input:focus-visible {
   outline:3px solid color-mix(in oklab, var(--cal-accent) 30%, transparent);
   outline-offset:2px;
 }
@@ -1031,6 +1029,42 @@
   .calendar-month .cell { min-height:124px; }
 }
 
+/* Desktop behaves like a calendar application, not like one very long
+   document. The workspace owns the scrolling so Today, view switching,
+   navigation and Create stay available while the agenda moves beneath
+   them. The panels below remain reachable through normal page scrolling. */
+@media (min-width:900px) {
+  .planner-page[data-calendar-workspace="true"] #groupView .calendar-workspace {
+    display:flex;
+    flex-direction:column;
+    height:clamp(600px,calc(100dvh - 120px),900px);
+    min-height:0;
+  }
+  html.tvza-content-frame body.planner-page[data-calendar-workspace="true"] #groupView .calendar-workspace {
+    height:clamp(600px,calc(100dvh - 56px),900px);
+  }
+  .planner-page #groupView .calendar-commandbar {
+    position:relative;
+    z-index:20;
+    flex:none;
+    box-shadow:0 8px 18px color-mix(in srgb,var(--ink) 5%,transparent);
+  }
+  .planner-page #groupView .calendar-stage {
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+  }
+  .planner-page #groupView .calendar-view {
+    height:100%;
+    overflow:auto;
+    overscroll-behavior:contain;
+    scrollbar-gutter:stable;
+  }
+  .planner-page #groupView .calendar-agenda .agenda-date {
+    top:0;
+  }
+}
+
 @media (max-width:899px) {
   html:not(.tvza-content-frame) body.planner-page.has-nav {
     height:100vh;
@@ -1274,19 +1308,12 @@
     display:flex;
     flex-direction:column;
   }
-  .planner-page .reminder-hub-sheet:not(.visible) {
-    transform:translateY(calc(100% + var(--tvza-shell-bottom, calc(64px + env(safe-area-inset-bottom)))));
-    pointer-events:none;
-  }
   .planner-page #reminderHubBackdrop {
     bottom:var(--tvza-shell-bottom, calc(64px + env(safe-area-inset-bottom)));
   }
   html.tvza-content-frame .planner-page .reminder-hub-sheet {
     bottom:0;
     padding-bottom:clamp(16px, 5vw, 24px);
-  }
-  html.tvza-content-frame .planner-page .reminder-hub-sheet:not(.visible) {
-    transform:translateY(100%);
   }
   html.tvza-content-frame .planner-page #reminderHubBackdrop { bottom:0; }
   .planner-page .reminder-hub-sheet .sheet-head {

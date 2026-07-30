@@ -22,7 +22,7 @@
 
 import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ICONS, icon, areaModuleKeys } from './shell.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { mountAppRouter } from './router.js';
@@ -209,19 +209,14 @@ function primeNavigation(profile, nav) {
    Hier wird dasselbe Menü nachgerüstet — an einer Stelle statt in acht
    Dateien.
 
-   Die alten Knöpfe bleiben im DOM und werden nur versteckt: jede
-   Seite hat eigene Handler daran hängen (foodtracker öffnet sein
-   Profil, watchlist seine Einstellungen). Der Menüeintrag löst den
-   Originalknopf per click() aus, statt seine Logik nachzubauen — so
-   kann hier nichts kaputtgehen, was vorher lief. */
+   Bereichsoptionen liegen inzwischen ebenfalls in dieser einen
+   Einstellungsoberfläche. */
 function mountAccountMenu(user, profile) {
   const bar = document.querySelector('.appbar--bereich .appbar__end');
   if (!bar || bar.querySelector('.acct')) return;
 
-  /* Der Sonne/Mond-Knopf verschwindet: das Erscheinungsbild steht im
-     Einstellungsdialog unter "Erscheinungsbild". Ein seitenei­gener
-     Zahnradknopf (Food, Watchlist) bleibt sichtbar — der öffnet die
-     Einstellungen DIESER Seite, nicht die des Kontos. */
+  /* Der Sonne/Mond-Knopf verschwindet: Erscheinungsbild und alle
+     Bereichsoptionen stehen gemeinsam im einen Einstellungsdialog. */
   const theme = bar.querySelector('#themeToggle, [data-theme-toggle]');
   if (theme) theme.hidden = true;
 
@@ -248,7 +243,6 @@ function mountAccountMenu(user, profile) {
 
   const btn = wrap.querySelector('.avatar');
   const menu = wrap.querySelector('.acct__menu');
-  const settingsLayer = mountSettingsLayer();
   const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
 
   btn.addEventListener('click', e => {
@@ -263,7 +257,7 @@ function mountAccountMenu(user, profile) {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
     close();
-    if (act === 'settings') settingsLayer.open();
+    if (act === 'settings') window.tvzaOpenSettings?.();
     if (act === 'logout' && confirm('Abmelden?')) {
       try { localStorage.removeItem('tvza-name'); } catch {}
       const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
@@ -331,9 +325,25 @@ if (!SKIP.includes(file)) {
     if (!user) return;                       // signed out: requireAuth redirects
     let profile = null;
     try { profile = await getProfile(user); } catch { /* rail just stays empty */ }
+    const framed = window.parent !== window &&
+      new URLSearchParams(location.search).get('tvzaFrame') === '1';
+    if (!framed) {
+      const settingsLayer = mountSettingsLayer();
+      window.tvzaOpenSettings = section => settingsLayer.open(section || '');
+    }
     mount(profile);
     mountAccountMenu(user, profile);
     watchUnread(user);
     watchKeyboard();
+    window.addEventListener('tvza-modules-change', event => {
+      if (!event.detail || typeof event.detail !== 'object') return;
+      profile = { ...(profile || {}), modules:event.detail };
+      refreshAreaNavigation(profile);
+    });
+    onSnapshot(doc(db, 'users', user.uid), snapshot => {
+      if (!snapshot.exists()) return;
+      profile = snapshot.data();
+      refreshAreaNavigation(profile);
+    }, () => { /* preference events still provide an immediate fallback */ });
   });
 }

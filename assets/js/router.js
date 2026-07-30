@@ -19,10 +19,9 @@ const APP_FILES = new Set([
   'maturaarbeit.html',
   'maturaarbeit-tracker.html',
 ]);
-const PAGE_ACTIONS = {
-  'foodtracker.html': { targetId:'profileBtn', label:'Food-Einstellungen' },
-  'watchlist.html': { targetId:'settingsBtn', label:'Watchlist-Einstellungen' },
-};
+// Bereich preferences live in the one global Settings surface. A routed
+// page therefore never adds a second, competing settings gear to the header.
+const PAGE_ACTIONS = {};
 
 const routeKey = url => `${url.pathname}${url.search}${url.hash}`;
 const fileOf = url => url.pathname.split('/').pop() || 'index.html';
@@ -57,6 +56,12 @@ function wireContentBridge() {
     return true;
   };
   window.tvzaNavigate = requestRoute;
+  window.tvzaOpenSettings = section => {
+    window.parent.postMessage(
+      { type:'tvza-open-settings', section:section || '' },
+      location.origin
+    );
+  };
   addEventListener('message', event => {
     if (event.origin !== location.origin || event.data?.type !== 'tvza-header-action') return;
     if (!['profileBtn', 'settingsBtn'].includes(event.data.targetId)) return;
@@ -350,7 +355,10 @@ export function mountAppRouter(nav) {
     if (target) navigate(target.href, 'none');
   });
   addEventListener('message', event => {
-    if (event.origin !== location.origin || event.data?.type !== 'tvza-route-request') return;
-    navigate(event.data.href);
+    if (event.origin !== location.origin) return;
+    if (event.data?.type === 'tvza-route-request') navigate(event.data.href);
+    if (event.data?.type === 'tvza-open-settings') {
+      window.tvzaOpenSettings?.(event.data.section || '');
+    }
   });
 }

@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css" />
-  <link rel="stylesheet" href="../assets/css/calendar.css?v=10" />
+  <link rel="stylesheet" href="../assets/css/calendar.css?v=11" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -446,7 +446,7 @@
 
   <!-- Reminders remain reachable without scrolling past the calendar -->
   <div class="backdrop" id="reminderHubBackdrop"></div>
-  <div class="sheet reminder-hub-sheet" id="reminderHubSheet" aria-hidden="true" inert>
+  <div class="sheet reminder-hub-sheet" id="reminderHubSheet">
     <div class="sheet-head"><span class="sheet-title">Erinnerungen</span>
       <button class="icon-pill" id="reminderHubClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="reminder-list reminder-hub-list" id="reminderHubList"></div>
@@ -542,13 +542,13 @@
       <p>Termine übernehmen immer die Farbe ihres Kalenders.</p>
       <div class="calendar-color-options" id="personalCalendarColors"></div>
     </fieldset>
-    <button class="calendar-feature-setting" id="showGroupFeatures" type="button" role="switch" aria-checked="false">
+    <label class="calendar-feature-setting" for="showGroupFeatures">
       <span>
         <strong>Gruppenfunktionen anzeigen</strong>
         <small>Wenn du noch keiner Gruppe angehörst, werden Optionen zum Erstellen und Beitreten im Kalender angezeigt.</small>
       </span>
-      <span class="calendar-feature-switch" aria-hidden="true"><i></i></span>
-    </button>
+      <input id="showGroupFeatures" type="checkbox" role="switch" />
+    </label>
     <button class="btn btn-primary btn-block" id="calendarSetupSave" type="button">Übernehmen</button>
   </div>
 
@@ -740,7 +740,7 @@
       document.querySelectorAll('[data-style]').forEach(card =>
         card.classList.toggle('is-selected', card.dataset.style === calendarPreference.style)
       );
-      $('showGroupFeatures').setAttribute('aria-checked', String(calendarPreference.showGroupFeatures));
+      $('showGroupFeatures').checked = calendarPreference.showGroupFeatures;
       updateNoGroupVisibility();
       renderPersonalColorOptions();
       renderCalendarSources();
@@ -1404,16 +1404,12 @@
     }
     function openReminderHub() {
       renderReminders();
-      $('reminderHubSheet').inert = false;
-      $('reminderHubSheet').setAttribute('aria-hidden', 'false');
       $('reminderHubBackdrop').classList.add('visible');
       $('reminderHubSheet').classList.add('visible');
     }
     function closeReminderHub() {
       $('reminderHubBackdrop').classList.remove('visible');
       $('reminderHubSheet').classList.remove('visible');
-      $('reminderHubSheet').inert = true;
-      $('reminderHubSheet').setAttribute('aria-hidden', 'true');
     }
     function openCreateSheet() {
       $('createGroupEventOption').style.display = groups.length ? '' : 'none';
@@ -1752,12 +1748,8 @@
       requestAnimationFrame(() => requestAnimationFrame(() => {
         const scroller = $('listView');
         if (!target.isConnected || !scroller) return;
-        if (isMobileCalendar()) {
-          const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
-          scroller.scrollTo({ top:Math.max(0,top), behavior:'auto' });
-        } else {
-          target.scrollIntoView({ block:'start', behavior:'auto' });
-        }
+        const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
+        scroller.scrollTo({ top:Math.max(0,top), behavior:'auto' });
       }));
     }
 
@@ -1768,7 +1760,7 @@
       const from = `${anchorKey.slice(0,7)}-01`;
       const keys = Object.keys(map).filter(k=>k>=from).sort();
       const box=$('agenda');
-      const containsToday = anchorKey.slice(0,7)===todayKey.slice(0,7);
+      const containsToday = from<=todayKey;
       const scrollTail = '<div class="agenda-scroll-tail" aria-hidden="true"></div>';
       if(!keys.length){
         const todayMarker = containsToday
@@ -2601,9 +2593,8 @@
         }
         applyCalendarPreference();
       });
-      $('showGroupFeatures').onclick=()=>{
-        calendarPreference.showGroupFeatures=!calendarPreference.showGroupFeatures;
-        $('showGroupFeatures').setAttribute('aria-checked', String(calendarPreference.showGroupFeatures));
+      $('showGroupFeatures').onchange=()=>{
+        calendarPreference.showGroupFeatures=$('showGroupFeatures').checked;
         updateNoGroupVisibility();
       };
       $('calendarSetupSave').onclick=()=>{ saveCalendarPreference(); closeCalendarSetup(); };
@@ -2685,7 +2676,6 @@
     }
 
   </script>
-  <script type="module" src="../assets/js/notifications.js?v=2"></script>
   <script type="module" src="../assets/js/nav.js"></script>
 </body>
 </html>

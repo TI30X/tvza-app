@@ -20,6 +20,9 @@
 import { MODULES, enabledModules } from './firebase-config.js';
 import { mountAppRouter } from './router.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
+// Notifications belong to the shared shell, not to individual Bereich pages.
+// The module skips content frames, so routed pages mount exactly one bell.
+import './notifications.js';
 
 /* ── Icons (§4.5) ──────────────────────────────────────────────────
    One set, Feather-like. The Bereich glyphs are the ones already in
@@ -122,6 +125,54 @@ function base() {
   return location.pathname.includes('/pages/') ? '../' : './';
 }
 
+function shellAreaLinks(profile, linkBase, currentFile) {
+  return areaModuleKeys(profile)
+    .map(k => {
+      const m = MODULES[k];
+      const isCurrent = m.page.split('/').pop() === currentFile;
+      return `<a class="nav__bereich${isCurrent ? ' is-active' : ''}" href="${linkBase}${m.page}"
+                 data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
+                <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
+                <span class="nav__bereich-name">${esc(m.name)}</span>
+              </a>`;
+    }).join('');
+}
+
+/** Refresh the open desktop area list after a personal visibility change. */
+export function refreshShellAreaNavigation(profile) {
+  const nav = document.querySelector('.nav');
+  if (!nav) return;
+
+  const links = shellAreaLinks(
+    profile,
+    base(),
+    location.pathname.split('/').pop() || 'index.html'
+  );
+  let section = nav.querySelector('.nav__section');
+  let list = nav.querySelector('.nav__bereiche');
+
+  if (!links) {
+    section?.remove();
+    list?.remove();
+    return;
+  }
+
+  const settings = nav.querySelector('.nav__settings');
+  if (!section) {
+    section = document.createElement('div');
+    section.className = 'nav__section marke';
+    section.textContent = 'Bereiche';
+    nav.insertBefore(section, settings);
+  }
+  if (!list) {
+    list = document.createElement('div');
+    list.className = 'nav__bereiche';
+    nav.insertBefore(list, settings);
+  }
+  list.innerHTML = links;
+  list.querySelectorAll('a[href]').forEach(link => { link.href = link.href; });
+}
+
 /** Which tab should be lit for the page we are on. */
 function activeTab() {
   const f = location.pathname.split('/').pop() || 'index.html';
@@ -203,17 +254,7 @@ export function mountShell(o = {}) {
      reaching one is a single click. On a phone they are not rendered
      at all — the Bereiche tab is the way there. */
   const currentFile = location.pathname.split('/').pop() || 'index.html';
-  const bereiche = areaModuleKeys(o.profile)
-    .map(k => {
-      const m = MODULES[k];
-      const moduleFile = m.page.split('/').pop();
-      const isCurrent = moduleFile === currentFile;
-      return `<a class="nav__bereich${isCurrent ? ' is-active' : ''}" href="${b}${m.page}"
-                 data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
-                <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
-                <span class="nav__bereich-name">${esc(m.name)}</span>
-              </a>`;
-    }).join('');
+  const bereiche = shellAreaLinks(o.profile, b, currentFile);
 
   nav.innerHTML = tabs + (bereiche
     ? `<div class="nav__section marke">Bereiche</div><div class="nav__bereiche">${bereiche}</div>`
@@ -242,6 +283,16 @@ export function mountShell(o = {}) {
   if (navSettings && o.onSettings) navSettings.onclick = e => { e.preventDefault(); o.onSettings(); };
   const avatar = document.getElementById('shellAvatar');
   if (avatar) avatar.onclick = o.onAccount || o.onSettings || null;
+
+  if (window.tvzaShellModulesHandler) {
+    window.removeEventListener('tvza-modules-change', window.tvzaShellModulesHandler);
+  }
+  window.tvzaShellModulesHandler = event => {
+    if (!event.detail || typeof event.detail !== 'object') return;
+    shellState.profile = { ...(shellState.profile || {}), modules:event.detail };
+    refreshShellAreaNavigation(shellState.profile);
+  };
+  window.addEventListener('tvza-modules-change', window.tvzaShellModulesHandler);
 
   setUnread(shellState.unread);
   return bar;

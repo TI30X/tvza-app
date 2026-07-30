@@ -10,7 +10,7 @@ const base = () => (location.pathname.includes('/pages/') ? '../' : './');
 export function mountSettingsLayer() {
   let layer = document.getElementById('globalSettingsLayer');
   if (layer) return {
-    open: () => layer.dispatchEvent(new CustomEvent('tvza-open-settings')),
+    open: section => layer.dispatchEvent(new CustomEvent('tvza-open-settings', { detail:{ section } })),
   };
 
   layer = document.createElement('div');
@@ -39,17 +39,26 @@ export function mountSettingsLayer() {
     document.body.classList.remove('settings-layer-open');
     returnFocus?.focus?.();
   };
-  const open = () => {
+  const open = (section = '') => {
     returnFocus = document.activeElement;
     layer.hidden = false;
     document.body.classList.add('settings-layer-open');
     if (!frame.getAttribute('src')) {
-      frame.src = base() + 'index.html?embed=settings#settings';
+      const url = new URL(base() + 'index.html', location.href);
+      url.searchParams.set('embed', 'settings');
+      if (section) url.searchParams.set('section', section);
+      url.hash = 'settings';
+      frame.src = url.href;
+    } else if (frame.contentWindow) {
+      frame.contentWindow.postMessage(
+        { type:'tvza-settings-section', section:section || '' },
+        location.origin === 'null' ? '*' : location.origin
+      );
     }
     closeButton.focus();
   };
 
-  layer.addEventListener('tvza-open-settings', open);
+  layer.addEventListener('tvza-open-settings', event => open(event.detail?.section || ''));
   closeButton.addEventListener('click', close);
   layer.addEventListener('click', event => { if (event.target === layer) close(); });
   shell.addEventListener('click', event => event.stopPropagation());
@@ -63,11 +72,21 @@ export function mountSettingsLayer() {
     if (event.data?.type === 'tvza-settings-theme') {
       window.TVZATheme?.applyTheme(event.data.mode);
     }
+    if (event.data?.type === 'tvza-settings-modules') {
+      window.dispatchEvent(new CustomEvent('tvza-modules-change', { detail:event.data.modules || {} }));
+    }
+    if (event.data?.type === 'tvza-settings-food' || event.data?.type === 'tvza-settings-watch') {
+      const routeFrame = document.querySelector('.tvza-route-frame.is-active iframe');
+      routeFrame?.contentWindow?.postMessage(
+        event.data,
+        location.origin === 'null' ? '*' : location.origin
+      );
+    }
   });
 
   return { open, close };
 }
 
-export function openSettingsLayer() {
-  mountSettingsLayer().open();
+export function openSettingsLayer(section = '') {
+  mountSettingsLayer().open(section);
 }

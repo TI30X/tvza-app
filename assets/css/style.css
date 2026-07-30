@@ -1223,8 +1223,8 @@ body.reorder-editing .reorder-fab {
   .reorder-fab svg { width:16px; height:16px; }
 }
 
-/* ── Settings menu layout — compact cards with clear hierarchy ── */
-#settingsModal .modal { padding: clamp(20px, 5vw, 28px); }
+/* ── Settings menu layout — even vertical rhythm ── */
+#settingsModal .modal { padding: var(--s5); }
 /* Header with title + X close */
 .modal-head {
   display: flex;
@@ -1253,13 +1253,19 @@ body.reorder-editing .reorder-fab {
   transition: background 150ms ease, color 150ms ease;
 }
 .modal-close:hover { background: var(--border); color: var(--ink); }
-#settingsModal .modal-head .modal-title { margin-bottom: 0; }
+#settingsModal .modal-title { margin-bottom: var(--s5); }
 /* Keep share / admin rows tidy inside the narrow modal */
 #settingsModal .link-row { padding: 10px 12px; }
 #settingsModal .link-title { min-width: 0; }
 #settingsModal .link-title small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.settings-section { margin: 0; }
-.settings-section + .settings-section { margin-top: clamp(22px, 5vw, 28px); }
+.settings-section {
+  margin: 0;
+  border-radius: var(--r-row);
+  transition: background-color 180ms ease;
+}
+.settings-section--focused {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
 .settings-section-title {
   font-size: 11px;
   font-weight: 700;
@@ -1268,42 +1274,11 @@ body.reorder-editing .reorder-fab {
   color: var(--ink-soft);
   margin: 0 0 12px;
 }
-.settings-section-head { margin-bottom: 14px; }
-.settings-section-head .settings-section-title { margin-bottom: 5px; }
-.settings-section-copy {
-  margin: 0;
-  max-width: 38ch;
-  color: var(--ink-soft);
-  font-size: 13px;
-  line-height: 1.45;
-}
 #settingsModal .settings-divider { margin: var(--s5) 0; }
+#settingsModal #moduleToggles { display: flex; flex-direction: column; gap: 6px; }
 #settingsModal .modal-actions { margin-top: var(--s4); }
 #settingsModal .form-group { margin-bottom: var(--s4); }
 #settingsModal #myShares:not(:empty) { margin-top: var(--s4); }
-.settings-share-card {
-  padding: clamp(14px, 4vw, 18px);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  background: var(--surface-2);
-}
-.settings-share-card .form-input,
-.settings-share-card .form-select { background: var(--surface); }
-.settings-share-card .form-group:last-of-type { margin-bottom: 14px; }
-#settingsModal .radio-row { gap: 8px; }
-#settingsModal .radio-row label {
-  flex: 1;
-  min-height: 42px;
-  padding: 9px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--r1);
-  background: var(--surface);
-}
-#settingsModal .radio-row label:has(input:checked) {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  color: var(--accent);
-}
 
 /* Theme toggle row inside the Settings menu */
 .settings-row {
@@ -1336,10 +1311,6 @@ body.reorder-editing .reorder-fab {
   flex-shrink: 0;
 }
 .theme-toggle-btn:hover { border-color: var(--ink-soft); }
-
-@media (max-width: 420px) {
-  #settingsModal .radio-row { align-items: stretch; flex-direction: column; }
-}
 
 /* Drag handles for sections: hidden until edit mode */
 .overview-drag { display: none; }
@@ -1883,6 +1854,22 @@ body.reorder-editing .module-tile::after {
   font-size: clamp(12px, 3.4vw, 13px); font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .wx-pill svg { width: 16px; height: 16px; flex: none; stroke-width: 1.7; }
+.appbar .tvzn-bell {
+  width: var(--ctl, 32px);
+  height: var(--ctl, 32px);
+  flex: none;
+  color: #fff;
+}
+/* Header controls have one stable order on direct and client-routed pages. */
+.appbar__inner > .wx-pill { order: 10; }
+.appbar__inner > .tvzn-bell,
+.appbar__end > .tvzn-bell { order: 20; }
+.appbar__inner > .tvza-route-page-action,
+.appbar__end > #profileBtn,
+.appbar__end > #settingsBtn,
+.appbar__end > #shellGear { order: 30; }
+.appbar__inner > .acct,
+.appbar__end > .acct { order: 40; }
 .avatar {
   width: var(--ctl, 32px); height: var(--ctl, 32px); flex: none;
   display: inline-flex; align-items: center; justify-content: center;
@@ -2340,6 +2327,10 @@ body.reorder-editing .module-tile::after {
   font-weight: 700;
   letter-spacing: 0;
 }
+/* Weather is Start-page information, not a different Bereich shell action. */
+.appbar--route-view .wx-pill {
+  display: none !important;
+}
 
 /* A content frame runs the real page code, but its duplicate shell is
    hidden before first paint by theme.js. */
@@ -2526,20 +2517,9 @@ html.tvza-content-frame body > main {
   width: 34px; height: 34px; border-radius: var(--r-icon); margin: 0;
 }
 .card-grid--quick .card-icon svg { width: 18px; height: 18px; }
-.card-grid--quick .card-content {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-}
 .card-grid--quick .card-content h3 {
   font-size: 11px; font-weight: 700; line-height: 1.25;
-  max-width: 100%;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* The subtitle and the live footer do not fit a 4-up phone tile; the
    same numbers are one tap away and most of them are in Heute already. */
@@ -2557,16 +2537,6 @@ html.tvza-content-frame body > main {
   .card-grid--quick .card-content h3 { font-size: 14px; }
   .card-grid--quick .card-content p { display: block; font-size: 12px; color: var(--ink-soft); }
   .card-grid--quick .tile-live { display: block; width: 100%; }
-}
-
-.today-live-empty {
-  padding: 14px 16px;
-  border: 1px dashed var(--border);
-  border-radius: var(--r-row);
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  font-size: 13px;
-  text-align: center;
 }
 
 /* Day groups in the Planer programme list. */

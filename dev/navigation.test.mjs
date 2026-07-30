@@ -18,21 +18,6 @@ test('areas page and sidebar share one module ordering source', async () => {
   assert.doesNotMatch(areas, /quick_access_order/);
 });
 
-test('admin approval is the only module visibility source', async () => {
-  const [firebase, dashboard, nav, settingsLayer] = await Promise.all([
-    read('assets/js/firebase-config.js'),
-    read('index.html'),
-    read('assets/js/nav.js'),
-    read('assets/js/settings-layer.js'),
-  ]);
-
-  assert.match(firebase, /export function enabledModules\(profile\) \{[\s\S]*const allowed = allowedModules\(profile\);[\s\S]*\[key, !!allowed\[key\]\]/);
-  assert.doesNotMatch(firebase, /profile\?\.modules/);
-  assert.doesNotMatch(dashboard, /moduleToggles|modulesSave|renderModuleToggles|tvza-settings-modules/);
-  assert.doesNotMatch(nav, /tvza-modules-change/);
-  assert.doesNotMatch(settingsLayer, /tvza-settings-modules|tvza-modules-change/);
-});
-
 test('desktop hides the redundant areas tab while mobile keeps its nav marker', async () => {
   const [css, nav, shell] = await Promise.all([
     read('assets/css/style.css'),
@@ -64,7 +49,8 @@ test('current area uses the same active band as Start and settings stay above th
   assert.doesNotMatch(css, /\.nav__bereich\.is-active[^}]*box-shadow/s);
   assert.match(css, /\.appbar--bereich \.back-btn,[\s\S]*#shellBack\s*\{\s*display:\s*none/);
   assert.match(css, /\.appbar \.appbar__inner::before/);
-  assert.match(settingsLayer, /index\.html\?embed=settings#settings/);
+  assert.match(settingsLayer, /url\.searchParams\.set\('embed', 'settings'\)/);
+  assert.match(settingsLayer, /url\.hash = 'settings'/);
   assert.match(settingsLayer, /tvza-settings-close/);
   assert.doesNotMatch(nav, /location\.href\s*=\s*base\(\)\s*\+\s*'index\.html#settings'/);
   assert.match(dashboard, /classList\.add\('settings-embed'\)/);
@@ -72,12 +58,7 @@ test('current area uses the same active band as Start and settings stay above th
   assert.match(dashboard, /personAvatarStyle\(s\.targetUid\|\|s\.targetEmail\)/);
   assert.match(dashboard, /personAvatarStyle\(invite\.email\)/);
   assert.match(areas, /onSettings:\s*openSettingsLayer/);
-  assert.doesNotMatch(areas, /manageBtn|Bereiche verwalten/);
-  assert.match(dashboard, /class="settings-section settings-section--share"/);
-  assert.match(dashboard, /class="settings-section-copy"/);
-  assert.match(dashboard, /class="settings-share-card"/);
-  assert.match(css, /\.settings-share-card \{/);
-  assert.match(css, /\.radio-row label:has\(input:checked\)/);
+  assert.match(areas, /manageBtn'\)\.onclick\s*=\s*openSettingsLayer/);
 });
 
 test('app destinations are prefetched and use a progressive page transition', async () => {
@@ -96,9 +77,8 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(router, /history\.pushState/);
   assert.match(router, /window\.parent\.postMessage\(\{ type:'tvza-route-request'/);
   assert.match(router, /window\.tvzaNavigate = requestRoute/);
-  assert.match(router, /type:'tvza-header-action'/);
-  assert.match(router, /'foodtracker\.html': \{ targetId:'profileBtn'/);
-  assert.match(router, /'watchlist\.html': \{ targetId:'settingsBtn'/);
+  assert.match(router, /const PAGE_ACTIONS = \{\};/);
+  assert.match(router, /type:'tvza-open-settings'/);
   assert.match(router, /document\.addEventListener\('click'[\s\S]*\{ capture:true \}\)/);
   assert.match(nav, /refreshAreaNavigation\(profile\)/);
   assert.doesNotMatch(nav, /document\.querySelector\('\.nav'\)\?\.remove\(\)/);
@@ -193,6 +173,39 @@ test('the header weather glyph stays readable at mobile size', async () => {
 
   assert.match(shell, /part:\s*'<path d="M12 2v2"\/>[\s\S]*M13 22H7/);
   assert.match(css, /\.wx-pill svg \{ width: 16px; height: 16px; flex: none; stroke-width: 1\.7; \}/);
+});
+
+test('direct and routed pages use one shared header action structure', async () => {
+  const [shell, notifications, router, settings, css, dashboard, food, watch] = await Promise.all([
+    read('assets/js/shell.js'),
+    read('assets/js/notifications.js'),
+    read('assets/js/router.js'),
+    read('assets/js/settings-layer.js'),
+    read('assets/css/style.css'),
+    read('index.html'),
+    read('pages/foodtracker.html'),
+    read('pages/watchlist.html'),
+  ]);
+
+  assert.match(shell, /import '\.\/notifications\.js';/);
+  assert.match(notifications, /get\('tvzaFrame'\) === '1'/);
+  assert.match(notifications, /document\.querySelector\('\.appbar__end'\)/);
+  assert.match(notifications, /document\.querySelector\('\.appbar__inner'\)/);
+  assert.match(notifications, /aria-label', 'Benachrichtigungen'/);
+  assert.match(css, /\.appbar--route-view \.wx-pill\s*\{\s*display:\s*none !important/);
+  assert.match(css, /\.appbar__end > \.tvzn-bell \{ order: 20; \}/);
+  assert.match(router, /bar\?\.classList\.toggle\('appbar--route-view', !start\)/);
+  assert.match(router, /const PAGE_ACTIONS = \{\};/);
+  assert.match(settings, /type:'tvza-settings-section'/);
+  assert.match(settings, /type === 'tvza-settings-food'/);
+  assert.match(dashboard, /data-settings-section="food"/);
+  assert.match(dashboard, /data-settings-section="watch"/);
+  assert.doesNotMatch(food, /src="\.\.\/assets\/js\/notifications\.js/);
+  assert.doesNotMatch(food, /id="profileBtn"/);
+  assert.doesNotMatch(watch, /id="settingsBtn"/);
+  assert.doesNotMatch(watch, /id="wlSettings"/);
+  assert.match(food, /Heute wurden noch keine Einträge erfasst\./);
+  assert.match(food, /reportClientError\('food-day-load', error\)/);
 });
 
 test('loaded content only fades in once instead of blinking after updates', async () => {
