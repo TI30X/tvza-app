@@ -255,6 +255,29 @@ export function mountAppRouter(nav) {
   progress.className = 'tvza-route-progress';
   progress.setAttribute('aria-hidden', 'true');
   document.body.appendChild(progress);
+  const loader = document.createElement('div');
+  loader.className = 'tvza-route-loader';
+  loader.setAttribute('aria-live', 'polite');
+  loader.innerHTML = `
+    <div class="tvza-route-loader__content">
+      <span class="tvza-route-loader__mark" aria-hidden="true"><span></span></span>
+      <span class="tvza-route-loader__label">Bereich wird geöffnet</span>
+    </div>`;
+  document.body.appendChild(loader);
+  const loaderLabel = loader.querySelector('.tvza-route-loader__label');
+  let loaderShownAt = 0;
+  let loaderHideTimer = 0;
+  const showRouteLoader = label => {
+    clearTimeout(loaderHideTimer);
+    loaderLabel.textContent = `${label} wird geöffnet`;
+    loaderShownAt = performance.now();
+    loader.classList.add('is-visible');
+  };
+  const hideRouteLoader = () => {
+    clearTimeout(loaderHideTimer);
+    const delay = Math.max(0, 180 - (performance.now() - loaderShownAt));
+    loaderHideTimer = setTimeout(() => loader.classList.remove('is-visible'), delay);
+  };
 
   const syncShellBounds = () => {
     const top = Math.max(0, header.bar?.getBoundingClientRect().bottom || 0);
@@ -274,7 +297,8 @@ export function mountAppRouter(nav) {
 
   const revealBasePage = target => {
     navigationId++;
-    progress.classList.remove('is-loading');
+    showRouteLoader(routeLabel(nav, target));
+    progress.classList.add('is-loading');
     if (currentFrame) {
       const old = currentFrame;
       const direction = routeDirection(currentUrl, target);
@@ -285,6 +309,15 @@ export function mountAppRouter(nav) {
     currentUrl = new URL(target.href);
     updateNavigation(nav, target);
     header.show(target, routeLabel(nav, target));
+    document.body.classList.remove('tvza-base-entering');
+    requestAnimationFrame(() => {
+      document.body.classList.add('tvza-base-entering');
+      setTimeout(() => {
+        document.body.classList.remove('tvza-base-entering');
+        progress.classList.remove('is-loading');
+        hideRouteLoader();
+      }, 220);
+    });
   };
 
   const navigate = (raw, historyMode = 'push') => {
@@ -307,6 +340,7 @@ export function mountAppRouter(nav) {
     contentFrame.src = frameUrl(target).href;
     contentFrame.setAttribute('aria-label', contentFrame.title);
     incoming.appendChild(contentFrame);
+    showRouteLoader(label);
     progress.classList.add('is-loading');
     document.body.appendChild(incoming);
 
@@ -321,6 +355,7 @@ export function mountAppRouter(nav) {
       updateNavigation(nav, target);
       header.show(target, label);
       progress.classList.remove('is-loading');
+      hideRouteLoader();
       requestAnimationFrame(() => {
         incoming.classList.remove('is-entering');
         incoming.classList.add('is-active');

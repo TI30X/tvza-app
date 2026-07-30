@@ -5,21 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#1A1A2E" />
   <script src="../assets/js/theme.js?v=3"></script>
-  <link rel="stylesheet" href="../assets/css/style.css?v=6" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=7" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=17" defer></script>
+  <script src="../assets/js/ui-fx.js?v=18" defer></script>
   <title>Admin — TVZA</title>
   <style>
     .admin-main {
       padding-top: 24px;
-      padding-bottom: 48px;
+      padding-bottom: 28px;
     }
     .admin-intro {
       display: flex;
       align-items: center;
       gap: 16px;
-      margin: 0 0 20px;
-      padding: 20px;
+      margin: 0 0 16px;
+      padding: 18px 20px;
       border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
       border-radius: var(--r-panel);
       background:
@@ -58,19 +58,19 @@
     }
     .admin-frame-shell {
       overflow: visible;
-      min-height: 420px;
+      min-height: 320px;
     }
     .admin-frame {
       display: block;
       width: 100%;
-      height: 420px;
+      height: 320px;
       border: 0;
       overflow: hidden;
       background: transparent;
     }
     html.tvza-content-frame .admin-main { padding-top: 18px; }
     html.tvza-content-frame .admin-frame-shell {
-      min-height: 420px;
+      min-height: 320px;
     }
     @media (max-width: 640px) {
       .admin-main { padding-top: 14px; }
@@ -122,11 +122,9 @@
       try {
         const doc = adminFrame.contentDocument;
         if (!doc) return;
-        const height = Math.max(
-          doc.documentElement.scrollHeight,
-          doc.body?.scrollHeight || 0,
-          420
-        );
+        const content = doc.getElementById('adminSection');
+        const contentBottom = content?.getBoundingClientRect().bottom || 0;
+        const height = Math.max(Math.ceil(contentBottom + 2), 320);
         adminFrame.style.height = `${height}px`;
       } catch {}
     }
@@ -135,8 +133,10 @@
       try {
         const doc = adminFrame.contentDocument;
         if (!doc) return;
-        new ResizeObserver(syncAdminFrameHeight).observe(doc.documentElement);
-        new MutationObserver(syncAdminFrameHeight).observe(doc.body, {
+        const content = doc.getElementById('adminSection');
+        if (!content) return;
+        new ResizeObserver(syncAdminFrameHeight).observe(content);
+        new MutationObserver(syncAdminFrameHeight).observe(content, {
           childList:true, subtree:true, attributes:true
         });
       } catch {}

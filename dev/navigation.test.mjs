@@ -74,6 +74,9 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(nav, /link\.as\s*=\s*'document'/);
   assert.match(nav, /mountAppRouter\(nav\)/);
   assert.match(router, /className = `tvza-route-frame is-entering/);
+  assert.match(router, /className = 'tvza-route-loader'/);
+  assert.match(router, /showRouteLoader\(label\)/);
+  assert.match(router, /tvza-base-entering/);
   assert.match(router, /history\.pushState/);
   assert.match(router, /window\.parent\.postMessage\(\{ type:'tvza-route-request'/);
   assert.match(router, /window\.tvzaNavigate = requestRoute/);
@@ -228,10 +231,14 @@ test('admin tools are an admin-only Bereich and module toggles show their real s
   assert.match(adminPage, /index\.html\?embed=admin#admin/);
   assert.match(adminPage, /scrolling="no"/);
   assert.match(adminPage, /ResizeObserver\(syncAdminFrameHeight\)/);
+  assert.match(adminPage, /getElementById\('adminSection'\)/);
   assert.match(adminPage, /data-bereich="admin"/);
   assert.match(router, /'admin\.html'/);
   assert.match(sw, /pages\/admin\.html/);
   assert.match(dashboard, /function openAdmin\(\)/);
+  assert.match(dashboard, /id="adminHealthSection"/);
+  assert.match(dashboard, /function renderAdminHealth\(\)/);
+  assert.match(dashboard, /Keine aktiven Warnungen/);
   const openSettings = dashboard.match(/function openSettings\(section = ''\) \{[\s\S]*?\n    \}/)?.[0] || '';
   assert.doesNotMatch(openSettings, /renderAdminUsers|renderFoodRequests|renderMemberInvites/);
   assert.match(dashboard, /!CORE_MODULE_KEYS\.includes\(m\.key\)/);
@@ -239,6 +246,8 @@ test('admin tools are an admin-only Bereich and module toggles show their real s
   assert.match(dashboard, /event\.target\.checked \? 'Sichtbar' : 'Ausgeblendet'/);
   assert.match(css, /\.row--check input\[type="checkbox"\]::after/);
   assert.match(css, /\.row--check input\[type="checkbox"\]:checked/);
+  assert.match(css, /\.admin-health__state\[data-state="error"\]/);
+  assert.match(css, /\.tvza-route-loader\.is-visible/);
   assert.doesNotMatch(css, /\.row--check input\[type="checkbox"\],\s*\n\.admin-mod input\[type="checkbox"\]:checked/);
 });
 

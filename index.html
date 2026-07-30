@@ -20,7 +20,7 @@
     }
   </script>
   <script src="assets/js/theme.js?v=3"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=6" />
+  <link rel="stylesheet" href="assets/css/style.css?v=7" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
   <title>TVZA</title>
   <style>
@@ -35,7 +35,7 @@
     .radio-row label { display:flex; gap:6px; align-items:center; cursor:pointer; }
   </style>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
-  <script src="assets/js/ui-fx.js?v=17" defer></script>
+  <script src="assets/js/ui-fx.js?v=18" defer></script>
 </head>
 <body>
   <script src="assets/js/welcome.js?v=5"></script>
@@ -368,6 +368,20 @@
       </div>
 
       <div id="adminSection" style="display:none">
+        <section class="settings-section admin-health" id="adminHealthSection">
+          <div class="admin-health__head">
+            <span class="admin-health__icon" aria-hidden="true">
+              <svg class="ic" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+            </span>
+            <span class="admin-health__title">
+              <strong>Sicherheitsstatus</strong>
+              <small>Verbindung, Zugriffe und offene Hinweise</small>
+            </span>
+            <span class="admin-health__state" id="adminHealthState" data-state="checking">Prüfung läuft</span>
+          </div>
+          <div class="admin-health__checks" id="adminHealthChecks"></div>
+          <div class="admin-health__alerts" id="adminHealthAlerts" role="status" aria-live="polite"></div>
+        </section>
         <hr class="settings-divider" />
         <section class="settings-section" id="memberInviteSection">
           <p class="settings-section-title">Einladungen</p>
@@ -977,6 +991,91 @@
         renderUserSuggestions();
       });
     }
+    const adminHealthData = {
+      families:'checking',
+      invites:'checking',
+      users:'checking',
+      food:'checking',
+      inviteCount:0,
+      foodCount:0,
+    };
+    function resetAdminHealth() {
+      adminHealthData.families = 'checking';
+      adminHealthData.invites = 'checking';
+      adminHealthData.users = 'checking';
+      adminHealthData.food = 'checking';
+      adminHealthData.inviteCount = 0;
+      adminHealthData.foodCount = 0;
+      renderAdminHealth();
+    }
+    function renderAdminHealth() {
+      const state = document.getElementById('adminHealthState');
+      const checks = document.getElementById('adminHealthChecks');
+      const alerts = document.getElementById('adminHealthAlerts');
+      if (!state || !checks || !alerts) return;
+      const secureTransport = location.protocol === 'https:' ||
+        ['localhost', '127.0.0.1'].includes(location.hostname);
+      const isOnline = navigator.onLine;
+      const componentStates = [
+        adminHealthData.families,
+        adminHealthData.invites,
+        adminHealthData.users,
+        adminHealthData.food,
+      ];
+      const hasError = componentStates.includes('error');
+      const isChecking = componentStates.includes('checking');
+      const statusItems = [
+        {
+          label: secureTransport ? 'Verbindung verschlüsselt' : 'Verbindung nicht verschlüsselt',
+          kind: secureTransport ? 'ok' : 'error',
+        },
+        {
+          label: profile.isTimo === true ? 'Adminzugriff bestätigt' : 'Adminzugriff fehlt',
+          kind: profile.isTimo === true ? 'ok' : 'error',
+        },
+        {
+          label: isChecking ? 'Daten werden geprüft' : hasError ? 'Prüfung unvollständig' : 'Daten erfolgreich geprüft',
+          kind: isChecking ? 'checking' : hasError ? 'error' : 'ok',
+        },
+      ];
+      checks.innerHTML = statusItems.map(item => `
+        <span class="admin-health-check is-${item.kind}">
+          <span aria-hidden="true">${item.kind === 'ok' ? '✓' : item.kind === 'checking' ? '•' : '!'}</span>
+          ${escHtml(item.label)}
+        </span>`).join('');
+
+      const messages = [];
+      if (!isOnline) messages.push({ kind:'warning', text:'Keine Netzwerkverbindung. Änderungen werden erst nach der Verbindung synchronisiert.' });
+      if (!secureTransport) messages.push({ kind:'error', text:'Die Verbindung ist nicht verschlüsselt. Keine Admin-Aktionen ausführen.' });
+      if (hasError) messages.push({ kind:'error', text:'Mindestens ein Verwaltungsbereich konnte nicht vollständig geprüft werden. Seite neu laden und erneut kontrollieren.' });
+      if (adminHealthData.foodCount > 0) {
+        messages.push({
+          kind:'warning',
+          text:`${adminHealthData.foodCount} Food-${adminHealthData.foodCount === 1 ? 'Anfrage wartet' : 'Anfragen warten'} auf eine Prüfung.`,
+        });
+      }
+      if (adminHealthData.inviteCount > 0) {
+        messages.push({
+          kind:'info',
+          text:`${adminHealthData.inviteCount} offene ${adminHealthData.inviteCount === 1 ? 'Einladung' : 'Einladungen'}.`,
+        });
+      }
+      if (!messages.length && !isChecking) {
+        messages.push({ kind:'safe', text:'Keine aktiven Warnungen. Alle geprüften Bereiche sind in Ordnung.' });
+      } else if (!messages.length) {
+        messages.push({ kind:'info', text:'Die Verwaltungsdaten werden gerade geprüft.' });
+      }
+      alerts.innerHTML = messages.map(message => `
+        <div class="admin-health-alert is-${message.kind}">
+          <span class="admin-health-alert__mark" aria-hidden="true">${message.kind === 'safe' ? '✓' : message.kind === 'error' ? '!' : message.kind === 'warning' ? '!' : 'i'}</span>
+          <span>${escHtml(message.text)}</span>
+        </div>`).join('');
+
+      const needsAction = !secureTransport || hasError || profile.isTimo !== true;
+      const hasWarning = !isOnline || adminHealthData.foodCount > 0;
+      state.dataset.state = needsAction ? 'error' : isChecking ? 'checking' : hasWarning ? 'warning' : 'safe';
+      state.textContent = needsAction ? 'Handlung nötig' : isChecking ? 'Prüfung läuft' : hasWarning ? 'Bitte prüfen' : 'Geschützt';
+    }
     function openAdmin() {
       document.querySelector('#settingsModal .modal-title').textContent = 'Admin';
       settingsModal.classList.add('visible');
@@ -986,6 +1085,7 @@
           '<section class="settings-section"><p class="settings-section-title">Kein Zugriff</p><p class="form-hint">Dieser Bereich ist nur für Administratoren verfügbar.</p></section>';
         return;
       }
+      resetAdminHealth();
       document.getElementById('adminSection').style.display = '';
       document.getElementById('memberInviteSection').style.display = '';
       document.getElementById('superAdminUserSection').style.display = '';
@@ -1018,17 +1118,24 @@
     settingsModal.addEventListener('click', e => { if (e.target === settingsModal) closeSettings(); });
 
     async function loadAppUsers(force = false) {
-      if (appUsersLoaded && !force) return appUsers;
+      if (appUsersLoaded && !force) {
+        adminHealthData.users = 'ok';
+        renderAdminHealth();
+        return appUsers;
+      }
       try {
         const qs = await getDocs(collection(db, 'users'));
         appUsers = qs.docs.map(d => ({ uid: d.id, ...d.data() }))
           .filter(u => u.email)
           .sort((a, b) => String(a.displayName || a.email).localeCompare(String(b.displayName || b.email), 'de-CH'));
         appUsersLoaded = true;
+        adminHealthData.users = 'ok';
       } catch (e) {
         reportClientError('users-load', e);
         appUsers = [];
+        adminHealthData.users = 'error';
       }
+      renderAdminHealth();
       return appUsers;
     }
 
@@ -1270,9 +1377,11 @@
           .map(item => ({ id:item.id, ...item.data() }))
           .filter(item => item.headUid === user.uid || (item.managers || []).includes(user.uid))
           .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
+        adminHealthData.families = 'ok';
       } catch (error) {
         reportClientError('invite-families', error);
         inviteFamilies = [];
+        adminHealthData.families = 'error';
       }
       const picker = document.getElementById('memberInviteFamily');
       const noGroup = profile.isTimo === true
@@ -1282,6 +1391,7 @@
         .map(item => `<option value="${escHtml(item.id)}">${escHtml(item.name || 'Unbenannte Gruppe')}</option>`)
         .join('');
       if (profile.isTimo !== true && inviteFamilies.length) picker.value = inviteFamilies[0].id;
+      renderAdminHealth();
       return inviteFamilies;
     }
 
@@ -1295,6 +1405,9 @@
         const snap = await getDocs(inviteQuery);
         const invites = snap.docs.map(d => ({ code: d.id, ...d.data() }))
           .sort((a, b) => String(a.email || '').localeCompare(String(b.email || ''), 'de-CH'));
+        adminHealthData.invites = 'ok';
+        adminHealthData.inviteCount = invites.length;
+        renderAdminHealth();
         if (!invites.length) {
           wrap.innerHTML = '<p class="form-hint" style="margin-top:10px">Keine offenen Einladungen.</p>';
           return;
@@ -1334,6 +1447,8 @@
         }));
       } catch (error) {
         reportClientError('member-invites', error);
+        adminHealthData.invites = 'error';
+        renderAdminHealth();
         wrap.innerHTML = '<p class="form-hint" style="margin-top:10px">Einladungen konnten nicht geladen werden.</p>';
       }
     }
@@ -1498,7 +1613,15 @@
         const qs = await getDocs(collection(db, 'foodRequests'));
         reqs = qs.docs.map(d => ({ id: d.id, ...d.data() }))
           .sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-      } catch (e) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Konnte nicht laden.</p>'; return; }
+        adminHealthData.food = 'ok';
+        adminHealthData.foodCount = reqs.length;
+        renderAdminHealth();
+      } catch (e) {
+        adminHealthData.food = 'error';
+        renderAdminHealth();
+        wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Konnte nicht laden.</p>';
+        return;
+      }
 
       if (badge) { badge.style.display = reqs.length ? '' : 'none'; badge.textContent = reqs.length + ' offen'; }
       if (!reqs.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Keine offenen Anfragen.</p>'; return; }
