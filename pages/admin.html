@@ -5,35 +5,77 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#1A1A2E" />
   <script src="../assets/js/theme.js?v=3"></script>
-  <link rel="stylesheet" href="../assets/css/style.css?v=5" />
+  <link rel="stylesheet" href="../assets/css/style.css?v=6" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=17" defer></script>
   <title>Admin — TVZA</title>
   <style>
     .admin-main {
-      padding-top: 16px;
-      padding-bottom: 16px;
+      padding-top: 24px;
+      padding-bottom: 48px;
+    }
+    .admin-intro {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 0 0 20px;
+      padding: 20px;
+      border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+      border-radius: var(--r-panel);
+      background:
+        radial-gradient(circle at 92% 10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 36%),
+        var(--surface);
+    }
+    .admin-intro__icon {
+      width: 52px;
+      height: 52px;
+      flex: none;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+    .admin-intro__icon svg { width: 26px; height: 26px; }
+    .admin-intro__eyebrow {
+      margin: 0 0 3px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .admin-intro h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 30px);
+      line-height: 1.15;
+    }
+    .admin-intro p:last-child {
+      margin: 5px 0 0;
+      color: var(--ink-soft);
+      font-size: 14px;
     }
     .admin-frame-shell {
-      overflow: hidden;
-      min-height: calc(100dvh - var(--tvza-shell-top, 72px) - var(--tvza-shell-bottom, 0px) - 32px);
-      border: 1px solid var(--border);
-      border-radius: var(--r-panel);
-      background: var(--surface);
+      overflow: visible;
+      min-height: 420px;
     }
     .admin-frame {
       display: block;
       width: 100%;
-      min-height: inherit;
+      height: 420px;
       border: 0;
-      background: var(--surface);
+      overflow: hidden;
+      background: transparent;
     }
-    html.tvza-content-frame .admin-main { padding: 12px 0; }
+    html.tvza-content-frame .admin-main { padding-top: 18px; }
     html.tvza-content-frame .admin-frame-shell {
-      min-height: calc(100dvh - 24px);
-      border-radius: 0;
-      border-left: 0;
-      border-right: 0;
+      min-height: 420px;
+    }
+    @media (max-width: 640px) {
+      .admin-main { padding-top: 14px; }
+      .admin-intro { align-items: flex-start; padding: 16px; }
+      .admin-intro__icon { width: 44px; height: 44px; border-radius: 14px; }
     }
   </style>
 </head>
@@ -53,16 +95,54 @@
     </header>
 
     <main class="main admin-main">
+      <section class="admin-intro" aria-labelledby="adminTitle">
+        <span class="admin-intro__icon" aria-hidden="true">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </span>
+        <div>
+          <p class="admin-intro__eyebrow">Verwaltung</p>
+          <h1 id="adminTitle">Admin-Zentrale</h1>
+          <p>Einladungen, Benutzerrechte und offene Anfragen an einem Ort.</p>
+        </div>
+      </section>
       <div class="admin-frame-shell">
         <iframe
           class="admin-frame"
           src="../index.html?embed=admin#admin"
           title="Admin-Bereich"
           referrerpolicy="same-origin"
+          scrolling="no"
         ></iframe>
       </div>
     </main>
   </div>
+  <script>
+    const adminFrame = document.querySelector('.admin-frame');
+    function syncAdminFrameHeight() {
+      try {
+        const doc = adminFrame.contentDocument;
+        if (!doc) return;
+        const height = Math.max(
+          doc.documentElement.scrollHeight,
+          doc.body?.scrollHeight || 0,
+          420
+        );
+        adminFrame.style.height = `${height}px`;
+      } catch {}
+    }
+    adminFrame.addEventListener('load', () => {
+      syncAdminFrameHeight();
+      try {
+        const doc = adminFrame.contentDocument;
+        if (!doc) return;
+        new ResizeObserver(syncAdminFrameHeight).observe(doc.documentElement);
+        new MutationObserver(syncAdminFrameHeight).observe(doc.body, {
+          childList:true, subtree:true, attributes:true
+        });
+      } catch {}
+    });
+    window.addEventListener('resize', syncAdminFrameHeight);
+  </script>
   <script type="module" src="../assets/js/nav.js"></script>
 </body>
 </html>

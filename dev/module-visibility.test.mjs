@@ -35,17 +35,18 @@ function visibilityHelpers() {
 
   const context = {
     MODULES: {
-      ski:{}, food:{}, matura:{}, maturatracker:{}, admin:{},
+      ski:{}, food:{}, trip:{}, dm:{}, matura:{}, maturatracker:{}, admin:{},
     },
     DEFAULT_MODULES: {
-      ski:false, food:true, matura:false, maturatracker:false, admin:false,
+      ski:false, food:true, trip:true, dm:true, matura:false, maturatracker:false, admin:false,
     },
     ALL_MODULES: {
-      ski:true, food:true, matura:true, maturatracker:true, admin:true,
+      ski:true, food:true, trip:true, dm:true, matura:true, maturatracker:true, admin:true,
     },
     DEFAULT_VISIBLE_MODULES: {
-      ski:false, food:true, matura:true, maturatracker:false, admin:true,
+      ski:false, food:true, trip:true, dm:true, matura:true, maturatracker:false, admin:true,
     },
+    CORE_MODULE_KEYS: ['trip', 'dm'],
   };
   vm.runInNewContext(
     `${allowedSource.replace('export ', '')}
@@ -100,9 +101,21 @@ test('admin defaults to Maturaarbeit without the optional tracker', () => {
   assert.equal(enabledModules({ allowedModules:{ admin:true } }).admin, false);
 });
 
+test('calendar and direct messages remain enabled regardless of saved flags', () => {
+  const { allowedModules, enabledModules } = visibilityHelpers();
+  const profile = {
+    allowedModules:{ trip:false, dm:false },
+    modules:{ trip:false, dm:false },
+  };
+  assert.equal(allowedModules(profile).trip, true);
+  assert.equal(allowedModules(profile).dm, true);
+  assert.equal(enabledModules(profile).trip, true);
+  assert.equal(enabledModules(profile).dm, true);
+});
+
 test('saved visibility refreshes the dashboard, Bereiche page, and shell navigation', () => {
   assert.match(dashboard, />Meine Bereiche</);
-  assert.match(dashboard, /id="moduleToggles"[\s\S]*id="modulesSaveStatus"/);
+  assert.match(dashboard, /id="modulesSaveStatus"[\s\S]*id="moduleToggles"/);
   assert.match(dashboard, /moduleToggles'\)\.addEventListener\('change'/);
   assert.match(dashboard, /setDoc\(doc\(db, 'users', user\.uid\), \{ modules \}, \{ merge:true \}\)/);
   assert.match(

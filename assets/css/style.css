@@ -886,7 +886,7 @@ body.dm-thread .app {
 .global-settings-layer[hidden] { display: none !important; }
 .global-settings-shell {
   position: relative;
-  width: min(500px, 100%);
+  width: min(720px, 100%);
   height: min(900px, calc(100dvh - 32px));
   overflow: hidden;
   border-radius: var(--r3);
@@ -976,17 +976,48 @@ html.admin-embed #settingsModal {
 html.settings-embed #settingsModal .modal,
 html.admin-embed #settingsModal .modal { max-height: 100dvh; }
 html.admin-embed #settingsModal .modal {
-  max-width: 960px;
-  min-height: 100dvh;
+  max-width: none;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
   border: 0;
   border-radius: 0;
+  background: transparent;
+  padding: 0;
   animation: none;
+}
+html.admin-embed,
+html.admin-embed body { overflow: visible !important; }
+html.admin-embed #settingsModal {
+  position: static;
+  min-height: 0;
+  overflow: visible;
 }
 html.admin-embed #settingsModal .modal > :not(.modal-head):not(#adminSection) {
   display: none !important;
 }
+html.admin-embed #settingsModal .modal-head { display: none !important; }
 html.admin-embed #settingsClose { display: none !important; }
-html.admin-embed #adminSection { display: block !important; }
+html.admin-embed #adminSection {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, .8fr);
+  grid-template-areas:
+    "users invites"
+    "users food";
+  gap: 16px;
+  align-items: start;
+}
+html.admin-embed #adminSection > .settings-divider { display: none !important; }
+html.admin-embed #memberInviteSection { grid-area: invites; }
+html.admin-embed #superAdminUserSection { grid-area: users; }
+html.admin-embed #superAdminFoodSection { grid-area: food; }
+html.admin-embed #adminSection > .settings-section {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, .05);
+}
 .modal-title { font-size: var(--text-base); font-weight: 700; margin-bottom: var(--s4); }
 .modal-actions { display: flex; gap: var(--s2); margin-top: var(--s4); }
 .modal-actions .btn { flex: 1; }
@@ -1242,16 +1273,35 @@ body.reorder-editing .reorder-fab {
 }
 
 /* ── Settings menu layout — even vertical rhythm ── */
-#settingsModal .modal { padding: var(--s5); }
+#settingsModal .modal {
+  max-width: 720px;
+  padding: 20px;
+  background: var(--surface-2);
+}
 /* Header with title + X close */
 .modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: var(--s5);
+  margin-bottom: 16px;
+  padding: 4px 2px 10px;
 }
 .modal-head .modal-title { margin-bottom: 0; }
+.modal-kicker {
+  margin-bottom: 3px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.modal-subtitle {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+}
 .modal-close {
   flex-shrink: 0;
   width: 34px;
@@ -1271,14 +1321,22 @@ body.reorder-editing .reorder-fab {
   transition: background 150ms ease, color 150ms ease;
 }
 .modal-close:hover { background: var(--border); color: var(--ink); }
-#settingsModal .modal-title { margin-bottom: var(--s5); }
+#settingsModal .modal-title {
+  margin-bottom: 0;
+  font-size: 22px;
+  line-height: 1.15;
+}
 /* Keep share / admin rows tidy inside the narrow modal */
 #settingsModal .link-row { padding: 10px 12px; }
 #settingsModal .link-title { min-width: 0; }
 #settingsModal .link-title small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-section {
+  min-width: 0;
   margin: 0;
-  border-radius: var(--r-row);
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  background: var(--surface);
   transition: background-color 180ms ease;
 }
 .settings-section--focused {
@@ -1292,8 +1350,81 @@ body.reorder-editing .reorder-fab {
   color: var(--ink-soft);
   margin: 0 0 12px;
 }
-#settingsModal .settings-divider { margin: var(--s5) 0; }
-#settingsModal #moduleToggles { display: flex; flex-direction: column; gap: 6px; }
+.settings-layout {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+.settings-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.settings-section-head .settings-section-title { margin-bottom: 4px; }
+.settings-section-copy {
+  max-width: 520px;
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.settings-section-head .settings-section-copy { margin-bottom: 0; }
+.settings-save-state {
+  flex: none;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--kurs-up) 10%, var(--surface));
+  color: var(--kurs-up);
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.settings-save-state::before {
+  content: "✓";
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--kurs-up);
+  color: white;
+  font-size: 9px;
+  line-height: 1;
+}
+.settings-save-state[data-state="saving"] {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.settings-save-state[data-state="saving"]::before {
+  content: "";
+  box-sizing: border-box;
+  border: 2px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-top-color: var(--accent);
+  background: transparent;
+  animation: globalSettingsSpin 650ms linear infinite;
+}
+.settings-save-state[data-state="error"] {
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  color: var(--danger);
+}
+.settings-save-state[data-state="error"]::before {
+  content: "!";
+  background: var(--danger);
+}
+#settingsModal .settings-divider { display: none; }
+#settingsModal #moduleToggles {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
 #settingsModal .modal-actions { margin-top: var(--s4); }
 #settingsModal .form-group { margin-bottom: var(--s4); }
 #settingsModal #myShares:not(:empty) { margin-top: var(--s4); }
@@ -1304,7 +1435,7 @@ body.reorder-editing .reorder-fab {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface-2) 68%, var(--surface));
   border: 1px solid var(--border);
   border-radius: var(--r2);
   padding: 12px 14px;
@@ -1618,13 +1749,19 @@ body.reorder-editing .module-tile::after {
 .admin-mod__icon svg { width: 15px; height: 15px; stroke-width: 1.8; }
 .admin-mod--admin { font-weight: 700; }
 
-.row--check { cursor: pointer; user-select: none; }
+.row--check {
+  width: 100%;
+  min-width: 0;
+  min-height: 70px;
+  cursor: pointer;
+  user-select: none;
+}
 .row--check.is-checked {
   background: color-mix(in srgb, var(--accent) 6%, var(--surface));
   border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
 }
 .module-toggle-state {
-  min-width: 76px;
+  min-width: 64px;
   color: var(--ink-soft);
   font-size: 11px;
   font-weight: 700;
@@ -1642,6 +1779,16 @@ body.reorder-editing .module-tile::after {
   display: inline-grid; place-content: center;
   transition: background 140ms ease, border-color 140ms ease;
 }
+.row--check input[type="checkbox"] {
+  width: 42px;
+  height: 24px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
 .row--check input[type="checkbox"]::after,
 .admin-mod input[type="checkbox"]::after {
   content: ""; width: 11px; height: 11px;
@@ -1649,15 +1796,54 @@ body.reorder-editing .module-tile::after {
   background: #fff; transform: scale(0);
   transition: transform 140ms cubic-bezier(0.2, 0.85, 0.25, 1);
 }
+.row--check input[type="checkbox"]::after {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  clip-path: none;
+  background: white;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .2);
+  transform: translateX(0);
+}
 .row--check input[type="checkbox"]:checked,
 .admin-mod input[type="checkbox"]:checked {
   background: var(--accent); border-color: var(--accent);
 }
 .row--check input[type="checkbox"]:checked::after,
 .admin-mod input[type="checkbox"]:checked::after { transform: scale(1); }
+.row--check input[type="checkbox"]:checked::after {
+  transform: translateX(18px);
+}
 .row--check input[type="checkbox"]:focus-visible,
 .admin-mod input[type="checkbox"]:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  #settingsModal .modal {
+    max-width: none;
+    max-height: 100dvh;
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    padding: 16px;
+  }
+  #settingsModal #moduleToggles { grid-template-columns: 1fr; }
+  .settings-section-head { display: block; }
+  .settings-save-state { margin-top: 10px; }
+  html.admin-embed #settingsModal .modal {
+    min-height: 0;
+    padding: 0;
+  }
+  html.admin-embed #adminSection {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "invites"
+      "users"
+      "food";
+  }
+}
+@media (max-width: 480px) {
+  .module-toggle-state { display: none; }
 }
 .row__chev  { width: 16px; height: 16px; color: var(--ink-soft); stroke-width: 1.8; }
 .row__num   { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }

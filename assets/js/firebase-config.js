@@ -155,6 +155,7 @@ export const DEFAULT_VISIBLE_MODULES = {
   maturatracker:false,
   admin:true,
 };
+export const CORE_MODULE_KEYS = Object.freeze(['trip', 'dm']);
 
 export async function getProfile(user) {
   try {
@@ -165,14 +166,18 @@ export async function getProfile(user) {
 
 // Admin-Freigabe eines Nutzers.
 export function allowedModules(profile) {
-  if (profile?.isTimo === true) return { ...ALL_MODULES };
-  return { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}), admin:false };
+  const allowed = profile?.isTimo === true
+    ? { ...ALL_MODULES }
+    : { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}), admin:false };
+  CORE_MODULE_KEYS.forEach(key => { allowed[key] = true; });
+  return allowed;
 }
 
 // Effektive Modul-Auswahl: Admin-Freigabe UND persönliche Sichtbarkeit.
 export function enabledModules(profile) {
   const allowed = allowedModules(profile);
   const visible = { ...DEFAULT_VISIBLE_MODULES, ...(profile?.modules || {}) };
+  CORE_MODULE_KEYS.forEach(key => { visible[key] = true; });
   if (profile?.isTimo === true) visible.admin = true;
   return Object.fromEntries(Object.keys(MODULES).map(key => [key, !!allowed[key] && !!visible[key]]));
 }

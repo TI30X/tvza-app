@@ -20,7 +20,7 @@
     }
   </script>
   <script src="assets/js/theme.js?v=3"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=5" />
+  <link rel="stylesheet" href="assets/css/style.css?v=6" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
   <title>TVZA</title>
   <style>
@@ -265,11 +265,16 @@
   <div class="modal-backdrop" id="settingsModal">
     <div class="modal">
       <div class="modal-head">
-        <div class="modal-title">Einstellungen</div>
+        <div>
+          <div class="modal-kicker">TVZA</div>
+          <div class="modal-title">Einstellungen</div>
+          <p class="modal-subtitle">Passe deine Ansicht und deine Tracker an.</p>
+        </div>
         <button class="modal-close" id="settingsClose" type="button" aria-label="Einstellungen schliessen" title="Schliessen">&times;</button>
       </div>
 
-      <section class="settings-section">
+      <div class="settings-layout">
+      <section class="settings-section settings-section--appearance">
         <p class="settings-section-title">Erscheinungsbild</p>
         <div class="settings-row">
           <span class="settings-row-label">Design <small>hell, dunkel oder automatisch</small></span>
@@ -279,11 +284,15 @@
 
       <hr class="settings-divider" />
 
-      <section class="settings-section">
-        <p class="settings-section-title">Meine Bereiche</p>
-        <p class="form-hint">Wähle selbst, welche freigeschalteten Bereiche in deiner Navigation erscheinen. Änderungen werden automatisch gespeichert.</p>
+      <section class="settings-section settings-section--modules">
+        <div class="settings-section-head">
+          <div>
+            <p class="settings-section-title">Meine Bereiche</p>
+            <p class="settings-section-copy">Wähle nur die optionalen Bereiche, die du wirklich sehen möchtest.</p>
+          </div>
+          <p class="settings-save-state" id="modulesSaveStatus" data-state="saved" role="status" aria-live="polite">Gespeichert</p>
+        </div>
         <div class="rows" id="moduleToggles"></div>
-        <p class="form-hint" id="modulesSaveStatus" role="status" aria-live="polite">Alle Änderungen gespeichert.</p>
       </section>
 
       <hr class="settings-divider" />
@@ -335,7 +344,8 @@
       <hr class="settings-divider" />
 
       <section class="settings-section">
-        <p class="settings-section-title">Modul teilen — mit Ansehen oder Bearbeiten</p>
+        <p class="settings-section-title">Bereich teilen</p>
+        <p class="settings-section-copy">Gib einer Person Lese- oder Bearbeitungszugriff auf einen deiner Tracker.</p>
         <div class="form-group">
           <label class="form-label" for="shareModule">Modul</label>
           <select class="form-select" id="shareModule"></select>
@@ -355,12 +365,13 @@
         <button class="btn btn-primary btn-block" id="shareCreate">Teilen</button>
         <div id="myShares"></div>
       </section>
+      </div>
 
       <div id="adminSection" style="display:none">
         <hr class="settings-divider" />
         <section class="settings-section" id="memberInviteSection">
-          <p class="settings-section-title">Admin · Familien-Einladungen</p>
-          <p class="form-hint">Erstellt einen einmaligen Link und legt die Einladungs-E-Mail sicher zum Versand ab.</p>
+          <p class="settings-section-title">Einladungen</p>
+          <p class="settings-section-copy">Erstelle einen einmaligen Zugang für ein neues Familienmitglied.</p>
           <div class="form-group">
             <label class="form-label" for="memberInviteEmail">E-Mail</label>
             <input class="form-input" id="memberInviteEmail" type="email"
@@ -376,13 +387,13 @@
         </section>
         <hr class="settings-divider" />
         <section class="settings-section" id="superAdminUserSection">
-          <p class="settings-section-title">Admin · Benutzer verwalten</p>
-          <p class="form-hint">Diese Schalter vergeben Zugriffsrechte. Was du selbst in der Navigation siehst, stellst du oben unter „Meine Bereiche“ ein.</p>
+          <p class="settings-section-title">Benutzer & Zugriffe</p>
+          <p class="settings-section-copy">Vergib optionale Bereiche. Kalender und Direktnachrichten stehen allen immer zur Verfügung.</p>
           <div id="adminUsers"><div class="spinner">Lade…</div></div>
         </section>
         <hr class="settings-divider" />
         <section class="settings-section" id="superAdminFoodSection">
-          <p class="settings-section-title">Admin · Food-Anfragen <span id="reqCount" class="role-badge" style="display:none"></span></p>
+          <p class="settings-section-title">Food-Anfragen <span id="reqCount" class="role-badge" style="display:none"></span></p>
           <div id="adminFoodRequests"><div class="spinner">Lade…</div></div>
         </section>
       </div>
@@ -392,7 +403,7 @@
   <script type="module">
     import {
       auth, db, requireAuth, wireOfflineBanner, escHtml,
-      MODULES, allowedModules, enabledModules, getProfile, sharesForEmail,
+      MODULES, CORE_MODULE_KEYS, allowedModules, enabledModules, getProfile, sharesForEmail,
       sharesByOwner, reportClientError
     } from './assets/js/firebase-config.js';
     import {
@@ -1046,7 +1057,7 @@
       const allowed = allowedModules(profile);
       const mods = enabledModules(profile);
       const availableModules = Object.values(MODULES)
-        .filter(m => m.key !== 'admin' && allowed[m.key]);
+        .filter(m => m.key !== 'admin' && !CORE_MODULE_KEYS.includes(m.key) && allowed[m.key]);
       if (!availableModules.length) {
         document.getElementById('moduleToggles').innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch keine Module freigeschaltet.</p>';
         return;
@@ -1076,7 +1087,8 @@
       const modules = selectedPersonalModules();
       const version = ++modulesSaveVersion;
       const status = document.getElementById('modulesSaveStatus');
-      status.textContent = 'Speichert…';
+      status.dataset.state = 'saving';
+      status.textContent = 'Speichert';
       modulesSaveQueue = modulesSaveQueue.then(async () => {
         try {
           await setDoc(doc(db, 'users', user.uid), { modules }, { merge:true });
@@ -1085,11 +1097,15 @@
           syncPublicFeed();
           window.dispatchEvent(new CustomEvent('tvza-modules-change', { detail:modules }));
           tellSettingsParent({ type:'tvza-settings-modules', modules });
-          if (version === modulesSaveVersion) status.textContent = 'Alle Änderungen gespeichert.';
+          if (version === modulesSaveVersion) {
+            status.dataset.state = 'saved';
+            status.textContent = 'Gespeichert';
+          }
         } catch (error) {
           reportClientError('personal-modules-save', error);
           if (version === modulesSaveVersion) {
-            status.textContent = 'Konnte nicht gespeichert werden. Bitte erneut versuchen.';
+            status.dataset.state = 'error';
+            status.textContent = 'Nicht gespeichert';
             renderModuleToggles();
           }
         }
@@ -1370,10 +1386,12 @@
       const wrap = document.getElementById('adminUsers');
       await loadAppUsers();
       const manageableUsers = appUsers.filter(u => u.uid !== user.uid);
+      const manageableModuleKeys = Object.keys(MODULES)
+        .filter(key => key !== 'admin' && !CORE_MODULE_KEYS.includes(key));
       if (!manageableUsers.length) { wrap.innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Keine weiteren Benutzer gefunden.</p>'; return; }
       wrap.innerHTML = manageableUsers.map(u => {
         const allowed = allowedModules(u);
-        const enabledCount = Object.values(allowed).filter(Boolean).length;
+        const enabledCount = manageableModuleKeys.filter(key => allowed[key]).length;
         return `
         <details class="admin-user" data-admin-user="${escHtml(u.uid)}">
           <summary class="row admin-user__head">
@@ -1386,7 +1404,7 @@
           </summary>
           <div class="admin-user__body">
             <div class="admin-mods">
-              ${Object.values(MODULES).filter(m => m.key !== 'admin').map(m => `
+              ${Object.values(MODULES).filter(m => manageableModuleKeys.includes(m.key)).map(m => `
                 <label class="admin-mod" data-bereich="${BEREICH_OF[m.key] || ''}">
                   <input type="checkbox" data-admin-allowed="${m.key}" ${allowed[m.key] ? 'checked' : ''} />
                   <span class="admin-mod__icon">${icon(ICONS[m.key] ? m.key : 'bereiche', 15)}</span>
@@ -1410,7 +1428,7 @@
         row.querySelectorAll('[data-admin-allowed]').forEach(cb => allowedModulesNext[cb.dataset.adminAllowed] = cb.checked);
         const isTimo = row.querySelector('[data-admin-timo]').checked;
         if (uid === user.uid && !isTimo) { alert('Du kannst dir selbst den Admin-Zugriff nicht entfernen.'); return; }
-        const moduleKeys = Object.keys(MODULES).filter(key => key !== 'admin');
+        const moduleKeys = manageableModuleKeys;
         const allowedKeys = Object.keys(allowedModulesNext);
         const validPayload = Object.getPrototypeOf(allowedModulesNext) === Object.prototype
           && allowedKeys.length === moduleKeys.length
