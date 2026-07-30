@@ -2312,7 +2312,7 @@ body.reorder-editing .module-tile::after {
   background: none; border: none; cursor: pointer; position: relative;
 }
 .nav__item svg { width: 21px; height: 21px; stroke-width: 1.9; }
-.nav__item.is-active { color: var(--accent); font-weight: 800; }
+.nav__item.is-active { color: var(--accent); font-weight: 700; }
 .nav__dot {
   position: absolute; top: -2px; right: 50%; margin-right: -14px;
   width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--danger);
@@ -2723,6 +2723,16 @@ body.reorder-editing .module-tile::after {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
+.tvza-route-skeleton__split {
+  display: grid;
+  grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+  gap: 16px;
+  align-items: start;
+}
+.tvza-route-skeleton__stack {
+  display: grid;
+  gap: 16px;
+}
 .tvza-route-skeleton__card,
 .tvza-route-skeleton__panel {
   border: 1px solid var(--border);
@@ -2769,9 +2779,83 @@ body.reorder-editing .module-tile::after {
   border-radius: var(--r2);
 }
 .tvza-route-skeleton__row.is-short { width: 74%; }
+.tvza-route-skeleton__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.tvza-route-skeleton__toolbar span {
+  width: 76px;
+  height: 34px;
+  border-radius: var(--r-pill);
+}
+.tvza-route-skeleton__toolbar span.is-wide {
+  width: min(34%, 250px);
+  margin-right: auto;
+}
+.tvza-route-skeleton__bubble {
+  display: block;
+  width: 62%;
+  height: 68px;
+  border-radius: 18px 18px 18px 5px;
+}
+.tvza-route-skeleton__bubble.is-right {
+  justify-self: end;
+  border-radius: 18px 18px 5px 18px;
+}
+.tvza-route-skeleton__bubble.is-short { width: 43%; }
+.tvza-route-skeleton__toolbar span,
+.tvza-route-skeleton__bubble {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.tvza-route-skeleton[data-layout="start"] {
+  gap: 16px;
+}
+.tvza-route-skeleton[data-layout="start"] .tvza-route-skeleton__cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.tvza-route-skeleton[data-layout="start"] > .tvza-route-skeleton__cards:nth-child(2) .tvza-route-skeleton__card {
+  min-height: 82px;
+}
+.tvza-route-skeleton[data-layout="start"] > .tvza-route-skeleton__cards:nth-child(3) .tvza-route-skeleton__card {
+  min-height: 116px;
+}
+.tvza-route-skeleton[data-layout="calendar"] .tvza-route-skeleton__panel {
+  min-height: 510px;
+}
+.tvza-route-skeleton[data-layout="messages"] .tvza-route-skeleton__split {
+  grid-template-columns: minmax(280px, .72fr) minmax(0, 1.28fr);
+}
+.tvza-route-skeleton[data-layout="messages"] .tvza-route-skeleton__panel {
+  min-height: 440px;
+}
+.tvza-route-skeleton[data-layout="tracker"] .tvza-route-skeleton__split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.tvza-route-skeleton[data-layout="admin"] .tvza-route-skeleton__panel.is-status {
+  min-height: 132px;
+}
+.tvza-route-skeleton[data-layout="admin"] .tvza-route-skeleton__panel.is-status > .tvza-route-skeleton__cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.tvza-route-skeleton[data-layout="admin"] .tvza-route-skeleton__panel.is-status .tvza-route-skeleton__card {
+  min-height: 48px;
+  border: 0;
+  border-radius: var(--r-pill);
+}
+.tvza-route-skeleton[data-layout="admin"] .tvza-route-skeleton__split.is-admin {
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, .75fr);
+}
 .tvza-route-skeleton__line::after,
 .tvza-route-skeleton__row::after,
-.tvza-route-skeleton__card::after {
+.tvza-route-skeleton__card::after,
+.tvza-route-skeleton__toolbar span::after,
+.tvza-route-skeleton__bubble::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -3195,6 +3279,8 @@ body .dm-compose textarea {
   .tvza-route-skeleton__line::after,
   .tvza-route-skeleton__row::after,
   .tvza-route-skeleton__card::after,
+  .tvza-route-skeleton__toolbar span::after,
+  .tvza-route-skeleton__bubble::after,
   body.tvza-base-entering > .app > .main { animation: none; }
   ::view-transition-old(root),
   ::view-transition-new(root),
