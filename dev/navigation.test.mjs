@@ -74,14 +74,7 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(nav, /link\.as\s*=\s*'document'/);
   assert.match(nav, /mountAppRouter\(nav\)/);
   assert.match(router, /className = `tvza-route-frame is-entering/);
-  assert.match(router, /className = 'tvza-route-loader'/);
-  assert.match(router, /class="tvza-route-skeleton"/);
-  assert.match(router, /showRouteLoader\(label, target\)/);
-  assert.match(router, /layout:'start'/);
-  assert.match(router, /layout:'calendar'/);
-  assert.match(router, /layout:'messages'/);
-  assert.match(router, /layout:'tracker'/);
-  assert.match(router, /layout:'admin'/);
+  assert.doesNotMatch(router, /tvza-route-(?:loader|skeleton)/);
   assert.match(router, /waitForCompleteContent/);
   assert.match(router, /classList\.contains\('fx-loading'\)/);
   assert.match(router, /setTimeout\(revealTogether, 80\)/);
@@ -256,13 +249,8 @@ test('admin tools are an admin-only Bereich and module toggles show their real s
   assert.match(css, /\.row--check input\[type="checkbox"\]::after/);
   assert.match(css, /\.row--check input\[type="checkbox"\]:checked/);
   assert.match(css, /\.admin-health__state\[data-state="error"\]/);
-  assert.match(css, /\.tvza-route-loader\.is-visible/);
-  assert.match(css, /\.tvza-route-skeleton__cards/);
-  assert.match(css, /\.tvza-route-skeleton\[data-layout="calendar"\]/);
-  assert.match(css, /\.tvza-route-skeleton\[data-layout="messages"\]/);
+  assert.doesNotMatch(css, /\.tvza-route-(?:loader|skeleton)/);
   assert.match(css, /\.nav__item\.is-active \{ color: var\(--accent\); font-weight: 700; \}/);
-  assert.match(css, /@keyframes tvzaRouteShimmer/);
-  assert.doesNotMatch(css, /@keyframes tvzaRouteOrbit/);
   assert.doesNotMatch(css, /\.row--check input\[type="checkbox"\],\s*\n\.admin-mod input\[type="checkbox"\]:checked/);
 });
 

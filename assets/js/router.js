@@ -133,92 +133,6 @@ function routeLabel(nav, target) {
     document.title.split('—')[0].trim();
 }
 
-function skeletonRows(count = 3) {
-  return Array.from({ length:count }, (_, index) =>
-    `<span class="tvza-route-skeleton__row${index === count - 1 ? ' is-short' : ''}"></span>`
-  ).join('');
-}
-
-function routeSkeleton(target) {
-  const file = fileOf(target);
-  const heading = `
-    <div class="tvza-route-skeleton__heading">
-      <span class="tvza-route-skeleton__line is-title"></span>
-      <span class="tvza-route-skeleton__line is-subtitle"></span>
-    </div>`;
-  const cards = count => `
-    <div class="tvza-route-skeleton__cards">
-      ${Array.from({ length:count }, () => '<span class="tvza-route-skeleton__card"></span>').join('')}
-    </div>`;
-  const panel = (content, extra = '') =>
-    `<div class="tvza-route-skeleton__panel ${extra}">
-      <span class="tvza-route-skeleton__line is-panel-title"></span>
-      ${content}
-    </div>`;
-
-  if (file === 'index.html') {
-    return {
-      layout:'start',
-      markup:`${heading}${cards(4)}${cards(4)}${panel(skeletonRows(3))}`,
-    };
-  }
-  if (file === 'planner.html') {
-    return {
-      layout:'calendar',
-      markup:panel(`
-        <div class="tvza-route-skeleton__toolbar">
-          <span></span><span></span><span class="is-wide"></span><span></span>
-        </div>
-        ${skeletonRows(5)}
-      `, 'is-calendar'),
-    };
-  }
-  if (file === 'messages.html') {
-    return {
-      layout:'messages',
-      markup:`${heading}<div class="tvza-route-skeleton__split">
-        ${panel(skeletonRows(5), 'is-list')}
-        ${panel(`
-          <span class="tvza-route-skeleton__bubble is-left"></span>
-          <span class="tvza-route-skeleton__bubble is-right"></span>
-          <span class="tvza-route-skeleton__bubble is-left is-short"></span>
-        `, 'is-thread')}
-      </div>`,
-    };
-  }
-  if (file === 'admin.html') {
-    return {
-      layout:'admin',
-      markup:`${panel(cards(3), 'is-status')}<div class="tvza-route-skeleton__split is-admin">
-        ${panel(skeletonRows(4), 'is-list')}
-        <div class="tvza-route-skeleton__stack">
-          ${panel(skeletonRows(2))}
-          ${panel(skeletonRows(1))}
-        </div>
-      </div>`,
-    };
-  }
-  if (file === 'bereiche.html') {
-    return {
-      layout:'list',
-      markup:`${heading}${panel(skeletonRows(6), 'is-list')}`,
-    };
-  }
-  if (['skitracker.html', 'foodtracker.html', 'maturaarbeit.html', 'maturaarbeit-tracker.html'].includes(file)) {
-    return {
-      layout:'tracker',
-      markup:`${heading}${cards(3)}<div class="tvza-route-skeleton__split">
-        ${panel(skeletonRows(3))}
-        ${panel(skeletonRows(4), 'is-list')}
-      </div>`,
-    };
-  }
-  return {
-    layout:'dashboard',
-    markup:`${heading}${cards(3)}${panel(skeletonRows(4))}`,
-  };
-}
-
 function generatedStartHeader(bar) {
   let name = String(bar?.dataset.profileName || '').trim();
   if (!name) {
@@ -341,33 +255,6 @@ export function mountAppRouter(nav) {
   progress.className = 'tvza-route-progress';
   progress.setAttribute('aria-hidden', 'true');
   document.body.appendChild(progress);
-  const loader = document.createElement('div');
-  loader.className = 'tvza-route-loader';
-  loader.setAttribute('aria-live', 'polite');
-  loader.innerHTML = `
-    <div class="tvza-route-loader__content">
-      <div class="tvza-route-skeleton" aria-hidden="true"></div>
-      <span class="tvza-route-loader__label">Bereich wird geöffnet</span>
-    </div>`;
-  document.body.appendChild(loader);
-  const loaderSkeleton = loader.querySelector('.tvza-route-skeleton');
-  const loaderLabel = loader.querySelector('.tvza-route-loader__label');
-  let loaderShownAt = 0;
-  let loaderHideTimer = 0;
-  const showRouteLoader = (label, target) => {
-    clearTimeout(loaderHideTimer);
-    const skeleton = routeSkeleton(target);
-    loaderSkeleton.dataset.layout = skeleton.layout;
-    loaderSkeleton.innerHTML = skeleton.markup;
-    loaderLabel.textContent = `${label} wird geöffnet`;
-    loaderShownAt = performance.now();
-    loader.classList.add('is-visible');
-  };
-  const hideRouteLoader = () => {
-    clearTimeout(loaderHideTimer);
-    const delay = Math.max(0, 180 - (performance.now() - loaderShownAt));
-    loaderHideTimer = setTimeout(() => loader.classList.remove('is-visible'), delay);
-  };
 
   const syncShellBounds = () => {
     const top = Math.max(0, header.bar?.getBoundingClientRect().bottom || 0);
@@ -387,7 +274,6 @@ export function mountAppRouter(nav) {
 
   const revealBasePage = target => {
     navigationId++;
-    showRouteLoader(routeLabel(nav, target), target);
     progress.classList.add('is-loading');
     if (currentFrame) {
       const old = currentFrame;
@@ -405,7 +291,6 @@ export function mountAppRouter(nav) {
       setTimeout(() => {
         document.body.classList.remove('tvza-base-entering');
         progress.classList.remove('is-loading');
-        hideRouteLoader();
       }, 220);
     });
   };
@@ -430,7 +315,6 @@ export function mountAppRouter(nav) {
     contentFrame.src = frameUrl(target).href;
     contentFrame.setAttribute('aria-label', contentFrame.title);
     incoming.appendChild(contentFrame);
-    showRouteLoader(label, target);
     progress.classList.add('is-loading');
     document.body.appendChild(incoming);
 
@@ -451,7 +335,6 @@ export function mountAppRouter(nav) {
         updateNavigation(nav, target);
         header.show(target, label);
         progress.classList.remove('is-loading');
-        hideRouteLoader();
         requestAnimationFrame(() => {
           incoming.classList.remove('is-entering');
           incoming.classList.add('is-active');
