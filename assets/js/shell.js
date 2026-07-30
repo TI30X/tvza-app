@@ -18,7 +18,7 @@
    ══════════════════════════════════════════════════════════════════ */
 
 import { MODULES, enabledModules } from './firebase-config.js';
-import { mountAppRouter } from './router.js?v=6';
+import { mountAppRouter } from './router.js?v=7';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
 // The module skips content frames, so routed pages mount exactly one bell.

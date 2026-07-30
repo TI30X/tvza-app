@@ -422,6 +422,11 @@
 
 /* Agenda */
 .calendar-agenda { max-width:860px; margin:0 auto; }
+.calendar-agenda.is-positioning { visibility:hidden; }
+.calendar-agenda .agenda-scroll-head {
+  height:0;
+  pointer-events:none;
+}
 .calendar-agenda .agenda-date {
   position:sticky;
   top:0;

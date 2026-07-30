@@ -77,6 +77,7 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.doesNotMatch(router, /tvza-route-(?:loader|skeleton)/);
   assert.match(router, /waitForCompleteContent/);
   assert.match(router, /classList\.contains\('fx-loading'\)/);
+  assert.match(router, /dataset\.routeReady === 'false'/);
   assert.match(router, /setTimeout\(revealTogether, 80\)/);
   assert.doesNotMatch(router, /tvza-base-entering/);
   assert.doesNotMatch(css, /tvzaBaseReveal/);

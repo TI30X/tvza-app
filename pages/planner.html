@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <link rel="stylesheet" href="../assets/css/style.css?v=12" />
-  <link rel="stylesheet" href="../assets/css/calendar.css?v=11" />
+  <link rel="stylesheet" href="../assets/css/calendar.css?v=12" />
   <title>Kalender &amp; Erinnerungen — TVZA</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
@@ -233,7 +233,7 @@
     }
   </style>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=24" defer></script>
+  <script src="../assets/js/ui-fx.js?v=25" defer></script>
 </head>
 <body class="planner-page">
   <div class="app">
@@ -638,6 +638,9 @@
     const pad = n => String(n).padStart(2,'0');
     const keyOf = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
     const tdy = new Date(); const todayKey = keyOf(tdy.getFullYear(), tdy.getMonth(), tdy.getDate());
+    /* The app shell keeps this route hidden until the initial calendar data
+       has been rendered and the list is already positioned on today. */
+    document.documentElement.dataset.routeReady = 'false';
     const fmtDateKey = k => { if(!k) return ''; const [y,m,d]=k.split('-').map(Number); const dt=new Date(y,m-1,d); return `${WD[dt.getDay()].slice(0,2)}, ${d}. ${MONTHS[m-1]}`; };
     const esc = s => escHtml(s);
     const PERSON_COLORS = [
@@ -1319,12 +1322,17 @@
 
     /* ── Personal reminders ── */
     const reminderCollection = () => collection(db, 'users', user.uid, 'reminders');
+    function markCalendarRouteReady() {
+      document.documentElement.dataset.routeReady = 'true';
+      $('listView')?.classList.remove('is-positioning');
+    }
     function focusCalendarEntryWhenReady() {
       if (!calendarEntryFocusPending || !initialGroupsLoaded || !initialRemindersLoaded) return;
       calendarEntryFocusPending = false;
       anchorKey = todayKey;
       agendaShouldFocusToday = true;
       renderCurrentView();
+      if (curView !== 'agenda') markCalendarRouteReady();
     }
     function watchReminders() {
       if (reminderUnsub) reminderUnsub();
@@ -1701,6 +1709,7 @@
       document.body.dataset.calendarView = curView;
       renderMiniCalendars();
       const isMonth = curView==='month', isAgenda = curView==='agenda';
+      $('listView').classList.toggle('is-positioning', isAgenda && calendarEntryFocusPending);
       $('calView').hidden = !isMonth;
       $('timeView').hidden = isMonth || isAgenda;
       $('listView').hidden = !isAgenda;
@@ -1742,15 +1751,41 @@
 
     function focusAgendaOnToday(box) {
       if (!agendaShouldFocusToday) return;
+      const scroller = $('listView');
+      if (calendarEntryFocusPending) {
+        scroller?.classList.add('is-positioning');
+        return;
+      }
       const target = box.querySelector('[data-agenda-focus]');
-      if (!target) return;
+      if (!target || !scroller) {
+        agendaShouldFocusToday = false;
+        markCalendarRouteReady();
+        return;
+      }
       agendaShouldFocusToday = false;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        const scroller = $('listView');
-        if (!target.isConnected || !scroller) return;
-        const top = scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
-        scroller.scrollTo({ top:Math.max(0,top), behavior:'auto' });
-      }));
+      scroller.classList.add('is-positioning');
+      const positionToday = () => {
+        if (!target.isConnected) return;
+        const marker = target.nextElementSibling?.classList.contains('agenda-today-marker')
+          ? target.nextElementSibling
+          : target;
+        const scrollerRect = scroller.getBoundingClientRect();
+        const markerRect = marker.getBoundingClientRect();
+        const centerOffset = Math.max(8, (scroller.clientHeight - markerRect.height) / 2);
+        let top = scroller.scrollTop + markerRect.top - scrollerRect.top - centerOffset;
+        const head = box.querySelector('.agenda-scroll-head');
+        if (head && top < 0) {
+          head.style.height = `${Math.ceil(-top)}px`;
+          const adjustedMarkerRect = marker.getBoundingClientRect();
+          top = scroller.scrollTop + adjustedMarkerRect.top - scrollerRect.top - centerOffset;
+        }
+        scroller.scrollTop = Math.max(0, top);
+      };
+      positionToday();
+      requestAnimationFrame(() => {
+        positionToday();
+        markCalendarRouteReady();
+      });
     }
 
     function renderAgenda() {
@@ -1761,12 +1796,13 @@
       const keys = Object.keys(map).filter(k=>k>=from).sort();
       const box=$('agenda');
       const containsToday = from<=todayKey;
+      const scrollHead = '<div class="agenda-scroll-head" aria-hidden="true"></div>';
       const scrollTail = '<div class="agenda-scroll-tail" aria-hidden="true"></div>';
       if(!keys.length){
         const todayMarker = containsToday
           ? `<div class="agenda-today-anchor" data-agenda-focus aria-hidden="true"></div><div class="agenda-today-marker"><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine Einträge</small></div>`
           : '';
-        box.innerHTML=`${todayMarker}<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>${scrollTail}`;
+        box.innerHTML=`${scrollHead}${todayMarker}<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>${scrollTail}`;
         focusAgendaOnToday(box);
         return;
       }
@@ -1812,7 +1848,7 @@
       const endMarker = !focusKey && containsToday
         ? `<div class="agenda-today-anchor" data-agenda-focus aria-hidden="true"></div><div class="agenda-today-marker"><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine weiteren Einträge</small></div>`
         : '';
-      box.innerHTML = groupsHtml + endMarker + scrollTail;
+      box.innerHTML = scrollHead + groupsHtml + endMarker + scrollTail;
       box.querySelectorAll('[data-full-k]').forEach(b=>b.onclick=(ev)=>{
         ev.stopPropagation();
         const e=(map[b.dataset.fullK]||[])[+b.dataset.fullI]; if(e)openPlan(e.ref);
@@ -2676,6 +2712,6 @@
     }
 
   </script>
-  <script type="module" src="../assets/js/nav.js?v=6"></script>
+  <script type="module" src="../assets/js/nav.js?v=7"></script>
 </body>
 </html>

@@ -346,10 +346,13 @@ export function mountAppRouter(nav) {
           return;
         }
         let stillLoading = false;
+        let waitingForRouteReady = false;
         try {
           stillLoading = contentFrame.contentDocument?.body?.classList.contains('fx-loading') || false;
+          waitingForRouteReady =
+            contentFrame.contentDocument?.documentElement?.dataset.routeReady === 'false';
         } catch {}
-        if (stillLoading && performance.now() - loadedAt < 2400) {
+        if ((stillLoading || waitingForRouteReady) && performance.now() - loadedAt < 6000) {
           setTimeout(waitForCompleteContent, 60);
           return;
         }
