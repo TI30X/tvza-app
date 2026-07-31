@@ -1,0 +1,60 @@
+{
+ "fussgymnastik": {
+  "zehen-spreitzen": [
+   "fussgymnastik-zehen-spreitzen-1.webp"
+  ],
+  "grosse-zehe-isolieren": [
+   "fussgymnastik-grosse-zehe-isolieren-1.webp"
+  ],
+  "short-foot": [
+   "fussgymnastik-short-foot-1.webp"
+  ],
+  "handtuch-greifen": [
+   "fussgymnastik-handtuch-greifen-1.webp"
+  ],
+  "fuss-drehen-ueber-tennisball": [
+   "fussgymnastik-fuss-drehen-ueber-tennisball-1.webp",
+   "fussgymnastik-fuss-drehen-ueber-tennisball-2.webp",
+   "fussgymnastik-fuss-drehen-ueber-tennisball-3.webp",
+   "fussgymnastik-fuss-drehen-ueber-tennisball-4.webp"
+  ],
+  "pinguinstand": [
+   "fussgymnastik-pinguinstand-1.webp"
+  ],
+  "schienbeinmuskel": [
+   "fussgymnastik-schienbeinmuskel-1.webp"
+  ],
+  "wadenheben-einbeinig": [
+   "fussgymnastik-wadenheben-einbeinig-1.webp"
+  ]
+ },
+ "neuroathletik": {
+  "schienbeinnerv": [
+   "neuroathletik-schienbeinnerv-1.webp"
+  ],
+  "peroneusnerv": [
+   "neuroathletik-peroneusnerv-1.webp"
+  ],
+  "suralnerv": [
+   "neuroathletik-suralnerv-1.webp"
+  ],
+  "obturatorverv": [
+   "neuroathletik-obturatorverv-1.webp"
+  ],
+  "oberschenkelnerv": [
+   "neuroathletik-oberschenkelnerv-1.webp"
+  ],
+  "optilmale-zungenposition": [
+   "neuroathletik-optilmale-zungenposition-1.webp"
+  ],
+  "zungenkreisen": [
+   "neuroathletik-zungenkreisen-1.webp"
+  ],
+  "zungeschieben-vor-und-zurueck": [
+   "neuroathletik-zungeschieben-vor-und-zurueck-1.webp"
+  ],
+  "zungependel-rechts-und-links": [
+   "neuroathletik-zungependel-rechts-und-links-1.webp"
+  ]
+ }
+}

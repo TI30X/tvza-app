@@ -17,7 +17,8 @@ import { sheetToGrid } from '../assets/js/training-import.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const grid = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
-const program = parseProgram(grid);
+const pictures = JSON.parse(await readFile(join(root, 'assets/data/training/images.json'), 'utf8'));
+const program = parseProgram(grid, { images: pictures });
 
 const unit = id => {
   const found = program.units[id];
@@ -94,9 +95,9 @@ test('Sprungprogramm bleibt eine Tabelle', () => {
   const jump = unit('sprungprogramm');
   assert.equal(jump.kind, 'table');
   assert.deepEqual(jump.columns, ['Übung', 'Serien', 'Wiederholungen', 'Sprünge Total', 'Video']);
-  assert.equal(jump.items.length, 7);
-  assert.equal(jump.items[0].values[0], 'Beidbeinige Hürdensprünge mit Zwischensprung');
-  assert.equal(jump.items[0].links[4], 'https://www.youtube.com/shorts/l0dxQVbwnXU');
+  assert.equal(jump.rows.length, 7);
+  assert.equal(jump.rows[0].values[0], 'Beidbeinige Hürdensprünge mit Zwischensprung');
+  assert.equal(jump.rows[0].links[4], 'https://www.youtube.com/shorts/l0dxQVbwnXU');
 });
 
 test('Kraftübung: Sätze, Wiederholungen und Gewicht der aktuellen Woche', () => {
@@ -207,6 +208,96 @@ test('Mobi: Videoliste mit Dauer', () => {
 test('jede Einheit behält die Originaltabelle', () => {
   Object.values(program.units).forEach(u => {
     assert.ok(Array.isArray(u.raw?.rows) && u.raw.rows.length > 0, `${u.id} ohne Rohdaten`);
+  });
+});
+
+/* Die Seite behandelt jede Einheit gleich — Kraft, Zirkel, Tabelle, Ausdauer,
+   Videos, Anleitung. Dafür muss jedes Blatt dieselbe items-Liste liefern. */
+test('jede Einheit liefert eine einheitliche items-Liste', () => {
+  const counts = Object.fromEntries(
+    Object.values(program.units).map(u => [u.id, u.items.length]));
+  assert.deepEqual(counts, {
+    'kraft-beine': 8, 'kraft-oberkoerper': 7, ausdauer: 9, rumpf: 6,
+    sprungprogramm: 7, fussgymnastik: 9, mobi: 7, neuroathletik: 9,
+  });
+  Object.values(program.units).forEach(u => u.items.forEach(item => {
+    assert.ok(item.key, `${u.id}: Übung ohne Schlüssel`);
+    assert.ok(item.name, `${u.id}: Übung ohne Namen`);
+    assert.ok(['sets', 'rounds', 'timed', 'block', 'video', 'note'].includes(item.mode),
+      `${u.id}: unbekannter Modus ${item.mode}`);
+  }));
+});
+
+test('Schlüssel sind über alle Einheiten eindeutig', () => {
+  const keys = Object.values(program.units).flatMap(u => u.items.map(i => i.key));
+  assert.equal(new Set(keys).size, keys.length);
+  /* Das Intervall hat viermal "5 Minuten" — die dürfen sich im Protokoll
+     nicht denselben Eintrag teilen. */
+  const ausdauer = unit('ausdauer').items.map(i => i.key);
+  assert.ok(ausdauer.includes('ausdauer-5-minuten'));
+  assert.ok(ausdauer.includes('ausdauer-5-minuten-4'));
+});
+
+test('Kraftübung wird zu einem Item mit Sätzen', () => {
+  const zug = unit('kraft-beine').items.find(i => i.name === 'Zug eng');
+  assert.equal(zug.mode, 'sets');
+  assert.equal(zug.sets.length, 4);
+  assert.equal(zug.pause, '120-180 Sec');
+  assert.deepEqual(zug.params, [{ label: 'TUT', value: '2010' }]);
+});
+
+test('Sprungprogramm wird zu Items mit Kennzahlen', () => {
+  const first = unit('sprungprogramm').items[0];
+  assert.equal(first.mode, 'rounds');
+  assert.equal(first.video, 'https://www.youtube.com/shorts/l0dxQVbwnXU');
+  assert.deepEqual(first.params, [
+    { label: 'Serien', value: '3' },
+    { label: 'Wiederholungen', value: '6' },
+    { label: 'Sprünge Total', value: '18' },
+  ]);
+});
+
+test('Ausdauer wird zu abhakbaren Intervallabschnitten', () => {
+  const items = unit('ausdauer').items;
+  assert.equal(items[0].mode, 'block');
+  assert.equal(items[0].name, '20 Minuten einlaufen');
+  assert.deepEqual(items[0].params, [
+    { label: 'Intensität', value: 'Zone 1' },
+    { label: 'Puls', value: '< 139' },
+  ]);
+  assert.deepEqual(items[0].lines, ['Intensiv · Joggen']);
+});
+
+test('Mobi-Videos bekommen Namen aus ihrer Überschrift', () => {
+  const items = unit('mobi').items;
+  assert.equal(items[0].mode, 'video');
+  assert.equal(items[0].name, 'Mobi 1');
+  assert.equal(items[0].video, 'https://www.youtube.com/watch?v=qti526J8YXY');
+  /* Unter "NEUROATHLETIK" steht nur ein Link — der braucht keine Nummer. */
+  assert.equal(items[6].name, 'NEUROATHLETIK');
+});
+
+/* Ohne Bilder wären "Zungenkreisen" und Co. leere Abschnitte und würden als
+   Überschrift weggefiltert. Deshalb kennt der Parser die Bildzuordnung. */
+test('Neuroathletik: Überschriften werden von Übungen getrennt', () => {
+  const neuro = unit('neuroathletik');
+  assert.equal(neuro.note, 'Wichtig: nicht bei Schwellungen oder Entzündungen durchführen');
+  assert.equal(neuro.items.length, 9);
+  assert.equal(neuro.items[0].name, 'Schienbeinnerv');
+  assert.equal(neuro.items[0].group, 'Nervdehnung der Beine');
+  assert.equal(neuro.items[8].group, 'Zunge');
+  /* "Für?" ist eine Spaltenüberschrift, kein Inhalt. */
+  assert.deepEqual(neuro.items[0].lines, [
+    'verbessert Streckfähigkeit, für schwache/schmerzende Beinbeuger- und Wadenmuskulatur, positiv für Plantarfaszien und Fersensporn',
+  ]);
+});
+
+test('jedes hinterlegte Bild findet seine Übung', () => {
+  Object.entries(pictures).forEach(([unitId, byExercise]) => {
+    const slugs = new Set(unit(unitId).items.map(i => i.slug));
+    Object.keys(byExercise).forEach(key => {
+      assert.ok(slugs.has(key), `${unitId}: kein Item für Bild "${key}"`);
+    });
   });
 });
 

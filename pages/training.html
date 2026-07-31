@@ -3,607 +3,816 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
-  <meta name="theme-color" content="#1A1A2E" />
+  <meta name="theme-color" content="#0e1014" />
   <link rel="icon" href="../icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
-  <script src="../assets/js/theme.js"></script>
-  <link rel="stylesheet" href="../assets/css/style.css" />
   <title>Training — TVZA</title>
-  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=17" defer></script>
 
   <style>
-    /* Nur was der Kit nicht kennt: Sätze, Übungskarten, Wochenraster.
-       Alles andere kommt aus assets/css/style.css. */
-    .tr-week { display:flex; align-items:baseline; gap:var(--s3); flex-wrap:wrap; margin-bottom:var(--s3); }
-    .tr-week__label { font-weight:700; font-size:1.05rem; }
-    .tr-week__range { color:var(--ink-soft); font-size:.85rem; }
+    /* Eigenständiger Trainingsbereich.
 
-    .tr-day { border:1px solid var(--border); border-radius:var(--r-panel); background:var(--surface); margin-bottom:var(--s3); overflow:hidden; }
-    .tr-day.is-today { border-color:var(--accent); }
-    .tr-day__head { display:flex; align-items:center; gap:var(--s2); padding:var(--s3) var(--s4); background:var(--surface-2); }
-    .tr-day__name { font-weight:700; }
-    .tr-day__date { color:var(--ink-soft); font-size:.82rem; }
-    .tr-day__count { margin-left:auto; font-size:.78rem; color:var(--ink-soft); }
-    .tr-day__body { padding:var(--s2) var(--s3) var(--s3); }
-    .tr-slot { margin-top:var(--s2); }
-    .tr-slot__name { font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin:var(--s2) var(--s1); }
-    .tr-rest { color:var(--ink-soft); font-size:.88rem; padding:var(--s3) var(--s2); }
+       Diese Seite benutzt bewusst nicht assets/css/style.css: in der Halle
+       zählen dunkler Grund, grosse Zahlen und Touch-Ziele, die man mit
+       schwitzigen Händen trifft. Alles hier ist auf .tr beschränkt, damit
+       nichts in den Rest der App ausläuft. */
 
-    .tr-item { display:flex; align-items:center; gap:var(--s3); width:100%; text-align:left;
-               padding:var(--s3); border:1px solid var(--border); border-radius:var(--r-row);
-               background:var(--surface); margin-bottom:var(--s2); cursor:pointer; font:inherit; color:inherit; }
-    .tr-item:hover { border-color:var(--accent); }
-    .tr-item--plain { cursor:default; }
-    .tr-item__title { font-weight:600; }
-    .tr-item__sub { font-size:.78rem; color:var(--ink-soft); }
-    .tr-item__end { margin-left:auto; display:flex; align-items:center; gap:var(--s2); }
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
 
-    .tr-check { width:22px; height:22px; flex:none; border-radius:7px; border:1.5px solid var(--border);
-                background:var(--surface); display:grid; place-items:center; cursor:pointer; padding:0; }
-    .tr-check[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:#fff; }
-    .tr-check span { font-size:.8rem; line-height:1; visibility:hidden; }
-    .tr-check[aria-pressed="true"] span { visibility:visible; }
+    body {
+      background: #0e1014;
+      color: #e9ecf2;
+      font-family: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
 
-    .tr-ex { border:1px solid var(--border); border-radius:var(--r-panel); background:var(--surface); margin-bottom:var(--s3); }
-    .tr-ex__head { display:flex; align-items:flex-start; gap:var(--s3); padding:var(--s3) var(--s4); border-bottom:1px solid var(--border); }
-    .tr-ex__no { font-weight:700; color:var(--ink-soft); min-width:2.2em; }
-    .tr-ex__name { font-weight:700; }
-    .tr-ex__alt { font-size:.8rem; color:var(--ink-soft); }
-    .tr-ex__meta { display:flex; gap:var(--s2); flex-wrap:wrap; margin-top:var(--s1); }
-    .tr-tag { font-size:.72rem; padding:2px 8px; border-radius:var(--r-pill); background:var(--surface-2); color:var(--ink-soft); border:1px solid var(--border); }
-    .tr-ex__body { padding:var(--s3) var(--s4) var(--s4); }
+    .tr {
+      --bg: #0e1014;
+      --card: #171a21;
+      --card-2: #1f232c;
+      --line: #2b303b;
+      --text: #e9ecf2;
+      --muted: #99a2b3;
+      --accent: #4f8cff;
+      --done: #35c46e;
+      --warn: #ffb020;
+      --pad: 16px;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 var(--pad) 96px;
+    }
 
-    .tr-set { display:grid; grid-template-columns:auto 1fr 1fr auto; gap:var(--s2); align-items:center; margin-bottom:var(--s2); }
-    .tr-set__label { font-size:.78rem; color:var(--ink-soft); min-width:4.5em; }
-    .tr-set input { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:var(--r-row);
-                    background:var(--surface); color:var(--ink); font:inherit; font-size:.9rem; }
-    .tr-set input::placeholder { color:var(--ink-soft); opacity:.8; }
-    .tr-sethead { display:grid; grid-template-columns:auto 1fr 1fr auto; gap:var(--s2);
-                  font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:var(--s1); }
-    .tr-hist { font-size:.78rem; color:var(--ink-soft); margin-top:var(--s2); }
+    /* ── Kopf ─────────────────────────────────────────────────────── */
+    .tr-top { display: flex; align-items: center; gap: 12px; padding: 18px 0 12px; }
+    .tr-top__back {
+      width: 40px; height: 40px; flex: none; border-radius: 12px;
+      border: 1px solid var(--line); background: var(--card);
+      color: var(--text); display: grid; place-items: center; cursor: pointer;
+      text-decoration: none; font-size: 18px;
+    }
+    .tr-top__title { font-size: 20px; font-weight: 700; line-height: 1.2; }
+    .tr-top__sub { font-size: 13px; color: var(--muted); }
 
-    .tr-table { width:100%; border-collapse:collapse; font-size:.88rem; }
-    .tr-table th, .tr-table td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
-    .tr-table th { font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); }
-    .tr-scroll { overflow-x:auto; }
+    .tr-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+    .tr-tabs button {
+      flex: 1; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--line);
+      background: var(--card); color: var(--muted); font: inherit; font-size: 14px;
+      font-weight: 600; cursor: pointer;
+    }
+    .tr-tabs button[aria-selected="true"] { background: var(--card-2); color: var(--text); border-color: #3b4354; }
 
-    .tr-note { font-size:.85rem; color:var(--ink-soft); margin:var(--s2) 0; }
-    .tr-block { border:1px solid var(--border); border-radius:var(--r-panel); background:var(--surface); padding:var(--s4); margin-bottom:var(--s3); }
-    .tr-block h3 { margin:0 0 var(--s2); font-size:.95rem; }
-    .tr-list { margin:0; padding-left:1.1rem; }
-    .tr-list li { margin-bottom:var(--s1); }
-    details.tr-block > summary { cursor:pointer; font-weight:600; }
-    .tr-drop { border:1.5px dashed var(--border); border-radius:var(--r-panel); padding:var(--s6) var(--s4);
-               text-align:center; color:var(--ink-soft); background:var(--surface-2); }
-    .tr-drop.is-over { border-color:var(--accent); color:var(--ink); }
-    .tr-status { margin-top:var(--s3); font-size:.88rem; }
-    .tr-status[data-state="error"] { color:var(--danger); }
+    /* ── Tagesleiste ──────────────────────────────────────────────── */
+    .tr-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 20px; }
+    .tr-day {
+      padding: 10px 4px; border-radius: 12px; border: 1px solid var(--line);
+      background: var(--card); cursor: pointer; text-align: center; color: var(--muted);
+      font: inherit;
+    }
+    .tr-day[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .tr-day.is-today:not([aria-selected="true"]) { border-color: var(--accent); color: var(--text); }
+    .tr-day__name { font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+    .tr-day__date { font-size: 11px; opacity: .75; margin-top: 2px; }
+    .tr-day__dots { display: flex; gap: 3px; justify-content: center; margin-top: 6px; height: 5px; }
+    .tr-day__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .45; }
+    .tr-day__dot.is-done { opacity: 1; background: var(--done); }
+
+    /* ── Karten ───────────────────────────────────────────────────── */
+    .tr-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 16px; margin-bottom: 12px; width: 100%; text-align: left; color: inherit;
+      font: inherit; display: block; cursor: pointer;
+    }
+    .tr-card--flat { cursor: default; }
+    .tr-card__row { display: flex; align-items: center; gap: 12px; }
+    .tr-card__name { font-size: 17px; font-weight: 700; }
+    .tr-card__meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .tr-card__end { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+    .tr-bar { height: 4px; border-radius: 999px; background: var(--card-2); margin-top: 12px; overflow: hidden; }
+    .tr-bar__fill { height: 100%; background: var(--done); border-radius: 999px; transition: width .2s; }
+
+    .tr-pill {
+      font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+      background: var(--card-2); color: var(--muted); border: 1px solid var(--line);
+      display: inline-block;
+    }
+    .tr-pill--done { background: rgba(53,196,110,.14); color: var(--done); border-color: rgba(53,196,110,.35); }
+
+    .tr-check {
+      width: 34px; height: 34px; flex: none; border-radius: 11px; border: 1.5px solid var(--line);
+      background: var(--card-2); color: var(--muted); font-size: 16px; cursor: pointer;
+      display: grid; place-items: center; padding: 0;
+    }
+    .tr-check[aria-pressed="true"] { background: var(--done); border-color: var(--done); color: #08210f; }
+
+    .tr-num {
+      width: 34px; height: 34px; flex: none; border-radius: 11px; background: var(--card-2);
+      color: var(--muted); font-size: 13px; font-weight: 700; display: grid; place-items: center;
+    }
+
+    .tr-thumb {
+      width: 100%; border-radius: 12px; margin-top: 12px; display: block;
+      background: var(--card-2); border: 1px solid var(--line);
+    }
+    .tr-thumbs { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+    .tr-params { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+    /* ── Sätze ────────────────────────────────────────────────────── */
+    .tr-sets { margin-top: 14px; display: grid; gap: 8px; }
+    .tr-set { display: grid; grid-template-columns: 44px 1fr 1fr 44px; gap: 8px; align-items: center; }
+    .tr-set__label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .tr-set__target { font-size: 13px; color: var(--muted); }
+    .tr-set input {
+      width: 100%; height: 44px; padding: 0 12px; border-radius: 12px;
+      border: 1px solid var(--line); background: var(--card-2); color: var(--text);
+      font: inherit; font-size: 16px; font-weight: 600; text-align: center;
+    }
+    .tr-set input:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .tr-set input::placeholder { color: #5c6577; font-weight: 400; }
+    .tr-sets__head { display: grid; grid-template-columns: 44px 1fr 1fr 44px; gap: 8px;
+                     font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6b7484; }
+
+    .tr-note { font-size: 14px; color: var(--muted); line-height: 1.6; margin: 8px 0 0; }
+    .tr-hist { font-size: 12px; color: #6b7484; margin-top: 10px; }
+
+    .tr-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 48px; padding: 0 20px; border-radius: 14px; border: 1px solid var(--line);
+      background: var(--card-2); color: var(--text); font: inherit; font-size: 15px;
+      font-weight: 700; cursor: pointer; text-decoration: none;
+    }
+    .tr-btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .tr-btn--done { background: var(--done); border-color: var(--done); color: #08210f; }
+    .tr-btn--block { display: flex; width: 100%; }
+
+    .tr-section { font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+                  color: #6b7484; margin: 22px 0 10px; font-weight: 700; }
+
+    details.tr-card { cursor: default; }
+    details.tr-card > summary { cursor: pointer; font-weight: 700; list-style: none; }
+    details.tr-card > summary::-webkit-details-marker { display: none; }
+    details.tr-card > summary::after { content: ' ▾'; color: var(--muted); }
+
+    /* ── Fokusmodus ───────────────────────────────────────────────── */
+    .tr-focus__head { display: flex; align-items: center; gap: 12px; padding: 18px 0 12px; }
+    .tr-focus__count { margin-left: auto; font-size: 14px; color: var(--muted); font-weight: 700; }
+    .tr-focus__name { font-size: 26px; font-weight: 800; line-height: 1.15; margin: 6px 0 4px; }
+    .tr-focus__alt { font-size: 14px; color: var(--muted); }
+    .tr-focus__nav { display: flex; gap: 10px; margin-top: 20px; }
+
+    .tr-timer {
+      position: sticky; bottom: 12px; margin-top: 20px; background: var(--card-2);
+      border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .tr-timer__value { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 90px; }
+    .tr-timer--ring { border-color: var(--done); color: var(--done); }
+    .tr-timer__btns { margin-left: auto; display: flex; gap: 8px; }
+    .tr-timer__btns button {
+      height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line);
+      background: var(--card); color: var(--text); font: inherit; font-weight: 700; cursor: pointer;
+    }
+
+    /* ── Import ───────────────────────────────────────────────────── */
+    .tr-drop {
+      display: block; border: 1.5px dashed var(--line); border-radius: 16px; padding: 34px 16px;
+      text-align: center; color: var(--muted); background: var(--card); cursor: pointer;
+    }
+    .tr-drop.is-over { border-color: var(--accent); color: var(--text); }
+    .tr-status { margin-top: 12px; font-size: 14px; color: var(--muted); }
+    .tr-status[data-state="error"] { color: #ff6b6b; }
+
+    .tr-raw { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+    .tr-raw td { border-bottom: 1px solid var(--line); padding: 6px 8px; color: var(--muted); vertical-align: top; }
+    .tr-scroll { overflow-x: auto; }
+
+    /* wireOfflineBanner() aus firebase-config.js schaltet .visible um. */
+    .tr-offline { display: none; background: var(--warn); color: #21160a; font-size: 13px;
+                  font-weight: 700; padding: 8px 16px; text-align: center; }
+    .tr-offline.visible { display: block; }
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="tr-offline" id="offlineBanner">Offline — Eingaben bleiben auf diesem Gerät gespeichert.</div>
 
-    <div class="offline-banner" id="offlineBanner">Offline – Änderungen werden lokal gespeichert.</div>
-
-    <header class="appbar appbar--bereich" data-bereich="ski">
-      <div class="appbar__inner">
-        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-        <span class="appbar__title">Training</span>
-        <span class="appbar__end"></span>
+  <div class="tr" id="app">
+    <div class="tr-top">
+      <a class="tr-top__back" href="../index.html" aria-label="Zurück">←</a>
+      <div>
+        <div class="tr-top__title">Training</div>
+        <div class="tr-top__sub" id="topSub">Lade…</div>
       </div>
-      <div class="appbar__accent"></div>
-    </header>
-    <div class="accent-bar accent-bar--ski"></div>
-
-    <main class="main">
-
-      <div class="tabs" id="tabs">
-        <div class="tab active" data-tab="woche">Woche</div>
-        <div class="tab" data-tab="einheiten">Einheiten</div>
-        <div class="tab" data-tab="import">Import</div>
-      </div>
-
-      <!-- ═══ Wochenplan ═══ -->
-      <section id="panelWoche">
-        <div class="tr-week" id="weekHead"></div>
-        <div id="dayList"><div class="spinner">Lade…</div></div>
-      </section>
-
-      <!-- ═══ Alle Einheiten ═══ -->
-      <section id="panelEinheiten" hidden>
-        <div id="unitList"></div>
-      </section>
-
-      <!-- ═══ Import ═══ -->
-      <section id="panelImport" hidden>
-        <div class="form-card">
-          <p class="form-title">Excel-Programm einlesen</p>
-          <p class="tr-note">Die Wochendatei des Verbands (.xlsx) hier ablegen oder auswählen.
-             Sie wird direkt auf diesem Gerät gelesen — es wird nichts hochgeladen.</p>
-          <label class="tr-drop" id="drop" for="fileInput">
-            <span id="dropText">Datei hierher ziehen oder klicken</span>
-            <input type="file" id="fileInput" accept=".xlsx,.xlsm" hidden />
-          </label>
-          <div class="tr-status" id="importStatus"></div>
-          <div id="importPreview"></div>
-        </div>
-
-        <div class="form-card">
-          <p class="form-title">Aktuelles Programm</p>
-          <div id="programInfo" class="tr-note"></div>
-          <button class="btn btn-secondary" id="resetProgram">Auf mitgeliefertes Programm zurücksetzen</button>
-        </div>
-      </section>
-
-      <!-- ═══ Detail einer Einheit ═══ -->
-      <section id="panelDetail" hidden>
-        <button class="btn btn-secondary" id="detailBack" style="margin-bottom:var(--s3)">← Zurück</button>
-        <div id="detailBody"></div>
-      </section>
-
-    </main>
+    </div>
+    <div id="view"></div>
   </div>
 
   <script type="module">
     import { requireAuth, wireOfflineBanner, escHtml } from '../assets/js/firebase-config.js';
     import { parseProgram, SCHEMA_VERSION } from '../assets/js/training-parser.js';
 
-    const $ = id => document.getElementById(id);
     const BUNDLED = '../assets/data/training/kw31-2026.json';
+    const IMAGES = '../assets/data/training/images.json';
+    const IMG_BASE = '../assets/img/training/';
+
+    const $ = id => document.getElementById(id);
+    const view = () => $('view');
 
     let uid = 'anon';
     let program = null;
+    let images = {};
     let logs = {};
-    let currentDay = null;
+    let state = { tab: 'woche', from: 'woche', day: '', unit: '', focus: 0 };
 
-    /* ── Speicher (vorerst lokal; Firestore-Sync folgt) ─────────────── */
+    /* ── Speicher ───────────────────────────────────────────────────
+       Vorerst lokal. Der Firestore-Sync kommt beim Verdrahten dazu;
+       die Form der Einträge ist schon darauf ausgelegt. */
 
     const keyProgram = () => `tvza-training-program-v${SCHEMA_VERSION}-${uid}`;
     const keyLogs = () => `tvza-training-logs-v${SCHEMA_VERSION}-${uid}`;
 
-    function readStore(key, fallback) {
-      try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-      } catch { return fallback; }
-    }
-    function writeStore(key, value) {
-      try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
-    }
+    const read = (key, fallback) => {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+      catch { return fallback; }
+    };
+    const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+    const saveLogs = () => write(keyLogs(), logs);
 
-    const logKey = (date, unitId) => `${date}|${unitId}`;
-    function logFor(date, unitId) {
-      const k = logKey(date, unitId);
-      if (!logs[k]) logs[k] = { done: false, ex: {} };
+    function entryFor(date, unitId) {
+      const k = `${date}|${unitId}`;
+      if (!logs[k]) logs[k] = { items: {} };
+      if (!logs[k].items) logs[k].items = {};
       return logs[k];
     }
-    function saveLogs() { writeStore(keyLogs(), logs); }
+    function itemLog(date, unitId, itemKey) {
+      const entry = entryFor(date, unitId);
+      if (!entry.items[itemKey]) entry.items[itemKey] = { done: false, sets: [], note: '' };
+      return entry.items[itemKey];
+    }
 
-    /* ── Hilfen ─────────────────────────────────────────────────────── */
+    /* ── Hilfen ─────────────────────────────────────────────────── */
 
-    const todayISO = () => {
-      const d = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    };
-    const fmtDate = iso => {
+    const pad = n => String(n).padStart(2, '0');
+    const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+    const shortDate = iso => {
       if (!iso) return '';
       const d = new Date(`${iso}T12:00:00`);
-      return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' });
+      return Number.isNaN(d.getTime()) ? '' : `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.`;
     };
-    const link = (url, label) =>
-      `<a href="${escHtml(url)}" target="_blank" rel="noopener" class="tr-tag">${escHtml(label || 'Video')}</a>`;
+    const dayOf = key => program.days.find(d => d.key === key);
+    const unitOf = id => program.units[id];
 
-    /* ── Wochenplan ─────────────────────────────────────────────────── */
+    const picturesFor = (unitId, slug) =>
+      (images?.[unitId]?.[slug] || []).map(f => IMG_BASE + f);
 
-    function unitItems(day) {
-      return day.slots.flatMap(s => s.items);
+    /* Für ein Tagesprogramm: alle Einheiten, die tatsächlich ein Blatt haben. */
+    function unitsOfDay(day) {
+      const seen = new Set();
+      return day.slots.flatMap(slot => slot.items.map(item => ({ ...item, slot: slot.name })))
+        .filter(item => {
+          if (!item.unit || seen.has(item.unit)) return !item.unit;
+          seen.add(item.unit);
+          return true;
+        });
     }
 
-    function dayProgress(day) {
-      const items = unitItems(day).filter(i => i.unit);
-      const done = items.filter(i => logFor(day.date, i.unit).done).length;
-      return { done, total: items.length };
+    function progressOf(date, unit) {
+      const entry = entryFor(date, unit.id);
+      const done = unit.items.filter(i => entry.items[i.key]?.done).length;
+      return { done, total: unit.items.length };
     }
+
+    /* "120-180 Sec" → 120. Ohne Zahl kein Timer. */
+    function pauseSeconds(text) {
+      const m = String(text || '').match(/(\d+)/);
+      if (!m) return 0;
+      const n = Number(m[1]);
+      return /min/i.test(text) ? n * 60 : n;
+    }
+
+    /* ── Wochenansicht ──────────────────────────────────────────── */
 
     function renderWeek() {
-      $('weekHead').innerHTML = `
-        <span class="tr-week__label">${escHtml(program.weekLabel || 'Woche')}</span>
-        <span class="tr-week__range">${escHtml(program.dateRange.raw || '')}</span>
-        ${program.athlete ? `<span class="tr-week__range">· ${escHtml(program.athlete)}</span>` : ''}`;
-
       const today = todayISO();
-      $('dayList').innerHTML = program.days.map(day => {
-        const p = dayProgress(day);
-        const slots = day.slots.filter(s => s.items.length);
-        const body = slots.length
-          ? slots.map(slot => `
-              <div class="tr-slot">
-                <div class="tr-slot__name">${escHtml(slot.name)}</div>
-                ${slot.items.map(item => renderItem(day, item)).join('')}
-              </div>`).join('')
-          : '<div class="tr-rest">Ruhetag</div>';
+      if (!state.day) {
+        state.day = (program.days.find(d => d.date === today) || program.days[0]).key;
+      }
+      const active = dayOf(state.day);
+
+      const strip = program.days.map(day => {
+        const units = unitsOfDay(day).filter(i => i.unit);
+        const dots = units.map(i => {
+          const p = progressOf(day.date, unitOf(i.unit));
+          return `<span class="tr-day__dot ${p.total && p.done === p.total ? 'is-done' : ''}"></span>`;
+        }).join('');
         return `
-          <article class="tr-day ${day.date === today ? 'is-today' : ''}">
-            <div class="tr-day__head">
-              <span class="tr-day__name">${escHtml(day.name)}</span>
-              <span class="tr-day__date">${escHtml(fmtDate(day.date))}</span>
-              ${p.total ? `<span class="tr-day__count">${p.done}/${p.total}</span>` : ''}
-            </div>
-            <div class="tr-day__body">${body}</div>
-          </article>`;
+          <button class="tr-day ${day.date === today ? 'is-today' : ''}" data-day="${escHtml(day.key)}"
+                  aria-selected="${day.key === state.day}">
+            <span class="tr-day__name">${escHtml(day.name.slice(0, 2))}</span>
+            <span class="tr-day__date">${escHtml(shortDate(day.date))}</span>
+            <span class="tr-day__dots">${dots}</span>
+          </button>`;
       }).join('');
 
-      $('dayList').querySelectorAll('[data-open]').forEach(el => {
-        el.addEventListener('click', ev => {
-          if (ev.target.closest('.tr-check')) return;
-          openUnit(el.dataset.open, el.dataset.date);
-        });
-      });
-      $('dayList').querySelectorAll('.tr-check').forEach(el => {
-        el.addEventListener('click', () => {
-          const entry = logFor(el.dataset.date, el.dataset.unit);
-          entry.done = !entry.done;
-          saveLogs();
-          renderWeek();
-        });
-      });
+      const entries = unitsOfDay(active);
+      const cards = entries.length ? entries.map(item => {
+        if (!item.unit) {
+          return `
+            <div class="tr-card tr-card--flat">
+              <div class="tr-card__row">
+                <span class="tr-num">–</span>
+                <span>
+                  <span class="tr-card__name">${escHtml(item.title)}</span>
+                  <span class="tr-card__meta">${escHtml(item.slot)} · kein Blatt hinterlegt</span>
+                </span>
+              </div>
+            </div>`;
+        }
+        const unit = unitOf(item.unit);
+        const p = progressOf(active.date, unit);
+        const complete = p.total && p.done === p.total;
+        return `
+          <button class="tr-card" data-unit="${escHtml(unit.id)}">
+            <div class="tr-card__row">
+              <span>
+                <span class="tr-card__name">${escHtml(item.title)}</span>
+                <span class="tr-card__meta">${escHtml(item.slot)} · ${p.total} Übungen</span>
+              </span>
+              <span class="tr-card__end">
+                <span class="tr-pill ${complete ? 'tr-pill--done' : ''}">${p.done}/${p.total}</span>
+              </span>
+            </div>
+            <div class="tr-bar"><div class="tr-bar__fill" style="width:${p.total ? Math.round(p.done / p.total * 100) : 0}%"></div></div>
+          </button>`;
+      }).join('') : '<div class="tr-card tr-card--flat"><div class="tr-card__name">Ruhetag</div><p class="tr-note">Nichts geplant. Mobi oder Neuroathletik gehen trotzdem immer.</p></div>';
+
+      view().innerHTML = `
+        ${tabs()}
+        <div class="tr-days">${strip}</div>
+        <div class="tr-section">${escHtml(active.name)}${active.date ? ' · ' + escHtml(shortDate(active.date)) : ''}</div>
+        ${cards}`;
+
+      wireTabs();
+      view().querySelectorAll('[data-day]').forEach(el => el.addEventListener('click', () => {
+        state.day = el.dataset.day; renderWeek();
+      }));
+      view().querySelectorAll('[data-unit]').forEach(el => el.addEventListener('click', () => {
+        openUnit(el.dataset.unit);
+      }));
     }
 
-    function renderItem(day, item) {
-      const unit = item.unit ? program.units[item.unit] : null;
-      if (!unit) {
-        return `<div class="tr-item tr-item--plain">
-                  <span><span class="tr-item__title">${escHtml(item.title)}</span>
-                  <span class="tr-item__sub">frei / kein Blatt hinterlegt</span></span>
-                </div>`;
-      }
-      const entry = logFor(day.date, unit.id);
-      return `
-        <button type="button" class="tr-item" data-open="${escHtml(unit.id)}" data-date="${escHtml(day.date)}">
-          <span>
-            <span class="tr-item__title">${escHtml(item.title)}</span>
-            ${item.title !== unit.title ? `<span class="tr-item__sub">${escHtml(unit.title)}</span>` : ''}
-          </span>
-          <span class="tr-item__end">
-            <span class="tr-check" role="button" aria-pressed="${entry.done}"
-                  data-unit="${escHtml(unit.id)}" data-date="${escHtml(day.date)}"
-                  aria-label="Erledigt"><span>✓</span></span>
-          </span>
-        </button>`;
+    /* ── Alle Einheiten ─────────────────────────────────────────── */
+
+    const KIND = { strength: 'Kraft', table: 'Übungstabelle', circuit: 'Zirkel',
+                   endurance: 'Ausdauer', links: 'Videos', notes: 'Anleitung' };
+
+    function renderUnits() {
+      view().innerHTML = `
+        ${tabs()}
+        ${Object.values(program.units).map(unit => `
+          <button class="tr-card" data-unit="${escHtml(unit.id)}">
+            <div class="tr-card__row">
+              <span>
+                <span class="tr-card__name">${escHtml(unit.title)}</span>
+                <span class="tr-card__meta">${escHtml(KIND[unit.kind] || unit.kind)} · ${unit.items.length} Übungen</span>
+              </span>
+              <span class="tr-card__end"><span class="tr-pill">›</span></span>
+            </div>
+          </button>`).join('')}`;
+      wireTabs();
+      view().querySelectorAll('[data-unit]').forEach(el => el.addEventListener('click', () => openUnit(el.dataset.unit)));
     }
 
-    /* ── Einheiten-Liste ────────────────────────────────────────────── */
+    /* ── Einheit als Liste ──────────────────────────────────────── */
 
-    const KIND_LABEL = {
-      strength: 'Kraft', table: 'Tabelle', circuit: 'Zirkel',
-      endurance: 'Ausdauer', links: 'Videos', notes: 'Notizen',
-    };
-
-    function renderUnitList() {
-      $('unitList').innerHTML = Object.values(program.units).map(u => `
-        <button type="button" class="tr-item" data-open="${escHtml(u.id)}" data-date="">
-          <span>
-            <span class="tr-item__title">${escHtml(u.title)}</span>
-            <span class="tr-item__sub">${escHtml(KIND_LABEL[u.kind] || u.kind)}${
-              u.kind === 'strength' ? ` · ${u.exercises.length} Übungen` : ''}</span>
-          </span>
-        </button>`).join('');
-      $('unitList').querySelectorAll('[data-open]').forEach(el => {
-        el.addEventListener('click', () => openUnit(el.dataset.open, todayISO()));
-      });
-    }
-
-    /* ── Detailansichten ────────────────────────────────────────────── */
-
-    function openUnit(unitId, date) {
-      const unit = program.units[unitId];
-      if (!unit) return;
-      currentDay = date || todayISO();
-      $('detailBody').innerHTML = renderUnit(unit, currentDay);
-      wireDetail(unit, currentDay);
-      showPanel('detail');
+    function openUnit(unitId) {
+      /* Zurück führt dorthin, wo die Einheit geöffnet wurde — Wochenplan
+         oder Einheitenliste. */
+      state.from = state.tab === 'einheiten' ? 'einheiten' : 'woche';
+      state.unit = unitId;
+      state.tab = 'unit';
+      renderUnit();
       window.scrollTo({ top: 0 });
     }
 
-    function renderUnit(unit, date) {
-      const head = `
-        <div class="tr-week">
-          <span class="tr-week__label">${escHtml(unit.title)}</span>
-          <span class="tr-week__range">${escHtml(fmtDate(date))}</span>
-        </div>`;
-      const body =
-        unit.kind === 'strength' ? renderStrength(unit, date)
-        : unit.kind === 'table' ? renderTable(unit)
-        : unit.kind === 'circuit' ? renderCircuit(unit)
-        : unit.kind === 'endurance' ? renderEndurance(unit)
-        : unit.kind === 'links' ? renderLinks(unit)
-        : renderNotes(unit);
-      return head + body + renderRaw(unit);
+    function currentDate() {
+      const day = dayOf(state.day);
+      return day?.date || todayISO();
     }
 
-    function renderStrength(unit, date) {
-      const entry = logFor(date, unit.id);
-      const warm = unit.warmup && unit.warmup.items.length ? `
-        <details class="tr-block">
+    function renderUnit() {
+      const unit = unitOf(state.unit);
+      const date = currentDate();
+      const p = progressOf(date, unit);
+
+      const warm = unit.warmup?.items?.length ? `
+        <details class="tr-card">
           <summary>${escHtml(unit.warmup.title || 'Aufwärmen')}</summary>
-          <ol class="tr-list" style="margin-top:var(--s2)">
-            ${unit.warmup.items.map(i => `<li><strong>${escHtml(i.name)}</strong>${
-              i.details.length ? ` — ${escHtml(i.details.join(' · '))}` : ''}${
-              i.lines.length ? `<br><span class="tr-note">${escHtml(i.lines.join(' · '))}</span>` : ''}</li>`).join('')}
-          </ol>
+          <div style="margin-top:12px">
+            ${unit.warmup.items.map(w => `
+              <p class="tr-note" style="margin:0 0 8px">
+                <strong style="color:var(--text)">${escHtml(w.no)}. ${escHtml(w.name)}</strong>
+                ${w.details.length ? ' — ' + escHtml(w.details.join(' · ')) : ''}
+                ${w.lines.length ? '<br>' + escHtml(w.lines.join(' · ')) : ''}
+              </p>`).join('')}
+          </div>
         </details>` : '';
 
-      const note = unit.note ? `<p class="tr-note">${escHtml(unit.note)}</p>` : '';
+      const reference = unit.kind === 'endurance' ? renderZones(unit) : '';
 
-      const list = unit.exercises.map(ex => {
-        const log = entry.ex[ex.key] || { done: false, sets: [], note: '' };
-        const tags = [
-          ex.pause ? `Pause ${ex.pause}` : '',
-          ex.tut ? `TUT ${ex.tut}` : '',
-        ].filter(Boolean).map(t => `<span class="tr-tag">${escHtml(t)}</span>`).join('');
-        const hist = ex.history.length
-          ? `<div class="tr-hist">${escHtml(ex.history[ex.history.length - 1].week || 'zuletzt')}: ${
-              escHtml(ex.history[ex.history.length - 1].values.filter(Boolean).join(' · ') || '—')}</div>`
-          : '';
-        return `
-          <article class="tr-ex" data-ex="${escHtml(ex.key)}">
-            <div class="tr-ex__head">
-              <span class="tr-ex__no">${escHtml(ex.no)}</span>
-              <span style="flex:1">
-                <span class="tr-ex__name">${escHtml(ex.name)}</span>
-                ${ex.altName ? `<div class="tr-ex__alt">${escHtml(ex.altName)}</div>` : ''}
-                <div class="tr-ex__meta">${tags}${ex.video ? link(ex.video, 'Video') : ''}</div>
-              </span>
-              <button type="button" class="tr-check" data-done="${escHtml(ex.key)}"
-                      aria-pressed="${!!log.done}" aria-label="Übung erledigt"><span>✓</span></button>
-            </div>
-            <div class="tr-ex__body">
-              <div class="tr-sethead"><span></span><span>Vorgabe</span><span>${escHtml(ex.valueUnit)} — Ist</span><span></span></div>
-              ${ex.sets.map((set, i) => {
-                const done = (log.sets[i] || {});
-                const target = [set.reps ? `${set.reps} Wdh.` : '', set.weight ? `${set.weight}` : '']
-                  .filter(Boolean).join(' · ') || '—';
-                return `
-                  <div class="tr-set">
-                    <span class="tr-set__label">${escHtml(set.label)}</span>
-                    <span class="tr-note" style="margin:0">${escHtml(target)}</span>
-                    <input type="text" inputmode="decimal" placeholder="${escHtml(set.weight || '—')}"
-                           value="${escHtml(done.weight || '')}" data-set="${i}" data-field="weight" />
-                    <input type="text" inputmode="numeric" placeholder="Wdh."
-                           value="${escHtml(done.reps || '')}" data-set="${i}" data-field="reps"
-                           style="max-width:5.5em" />
-                  </div>`;
-              }).join('')}
-              ${hist}
-              <input type="text" class="form-input" style="margin-top:var(--s2)" placeholder="Bemerkung"
-                     value="${escHtml(log.note || '')}" data-field="note" />
-            </div>
-          </article>`;
-      }).join('');
-
-      return note + warm + list;
-    }
-
-    function renderTable(unit) {
-      const intro = unit.intro.map(t => `<p class="tr-note">${escHtml(t)}</p>`).join('');
-      const rows = unit.items.map(item => `
-        <tr>${item.values.map((v, c) => `<td>${
-          item.links[c] ? link(item.links[c], v || 'Video') : escHtml(v)
-        }</td>`).join('')}</tr>`).join('');
-      const notes = unit.notes.map(n => `<p class="tr-note">${escHtml(n)}</p>`).join('');
-      return `${intro}
-        <div class="tr-block tr-scroll">
-          <table class="tr-table">
-            <thead><tr>${unit.columns.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>${notes}`;
-    }
-
-    function renderCircuit(unit) {
-      return `
-        ${unit.duration ? `<p class="tr-note">Dauer: ${escHtml(unit.duration)}</p>` : ''}
-        ${unit.exercises.map(ex => `
-          <article class="tr-ex">
-            <div class="tr-ex__head">
-              <span class="tr-ex__no">${escHtml(ex.no)}</span>
-              <span style="flex:1">
-                <span class="tr-ex__name">${escHtml(ex.name)}</span>
-                <div class="tr-ex__meta">${ex.params.map(p =>
-                  `<span class="tr-tag">${escHtml(p.label)}: ${escHtml(p.value)}</span>`).join('')}</div>
-              </span>
-            </div>
-            ${ex.lines.length ? `<div class="tr-ex__body"><p class="tr-note" style="margin:0">${
-              escHtml(ex.lines.join(' · '))}</p></div>` : ''}
-          </article>`).join('')}`;
-    }
-
-    function renderEndurance(unit) {
-      const zones = unit.zones.length ? `
-        <div class="tr-block tr-scroll">
-          <h3>Trainingsbereiche</h3>
-          <table class="tr-table">
-            <thead><tr><th>#</th><th>Bereich</th>${
-              unit.zoneColumns.map(c => `<th>${escHtml(c)}</th>`).join('')}<th>Gefühl</th></tr></thead>
-            <tbody>${unit.zones.map(z => `
-              <tr><td>${escHtml(z.no)}</td><td>${escHtml(z.name)}</td>${
-                z.values.map(v => `<td>${escHtml(v)}</td>`).join('')}<td>${escHtml(z.hint)}</td></tr>`).join('')}
-            </tbody>
-          </table>
-        </div>` : '';
-      const dur = unit.durations.length ? `
-        <div class="tr-block">
-          <h3>Dauer in Minuten</h3>
-          <div class="tr-ex__meta">${unit.durations.map(d =>
-            `<span class="tr-tag">${escHtml(d.mode)}: ${escHtml(d.value)}</span>`).join('')}</div>
-        </div>` : '';
-      const iv = unit.intervals.map(i => `
-        <div class="tr-block">
-          <h3>${escHtml(i.title)}</h3>
-          <table class="tr-table">
-            <tbody>${i.steps.map(s => `<tr><td>${escHtml(s.duration)}</td><td>${
-              escHtml(s.zone)}</td><td>${escHtml(s.hf)}</td></tr>`).join('')}</tbody>
-          </table>
-        </div>`).join('');
-      return zones + dur + iv;
-    }
-
-    function renderLinks(unit) {
-      return `
-        <div class="tr-block">
-          ${unit.links.map(l => `
-            <div class="tr-item tr-item--plain">
-              <span>
-                <a href="${escHtml(l.url)}" target="_blank" rel="noopener" class="tr-item__title">${
-                  escHtml(l.label || l.url.replace(/^https?:\/\/(www\.)?/, ''))}</a>
-                ${l.meta ? `<span class="tr-item__sub">${escHtml(l.meta)}</span>` : ''}
-              </span>
-            </div>`).join('')}
+      view().innerHTML = `
+        <div class="tr-focus__head">
+          <button class="tr-top__back" data-back aria-label="Zurück">←</button>
+          <div>
+            <div class="tr-top__title">${escHtml(unit.title)}</div>
+            <div class="tr-top__sub">${escHtml(shortDate(date))} · ${p.done}/${p.total} erledigt</div>
+          </div>
         </div>
-        ${unit.notes.map(n => `<p class="tr-note">${escHtml(n)}</p>`).join('')}`;
+        <div class="tr-bar" style="margin-bottom:16px"><div class="tr-bar__fill" style="width:${p.total ? Math.round(p.done / p.total * 100) : 0}%"></div></div>
+        ${unit.note ? `<p class="tr-note" style="margin-bottom:14px">${escHtml(unit.note)}</p>` : ''}
+        <button class="tr-btn tr-btn--primary tr-btn--block" data-focus style="margin-bottom:16px">
+          ${p.done ? 'Weitermachen' : 'Einheit starten'}
+        </button>
+        ${warm}
+        ${reference}
+        ${unit.items.map((item, i) => itemCard(unit, item, i, date)).join('')}
+        ${rawTable(unit)}`;
+
+      view().querySelector('[data-back]').addEventListener('click', () => {
+        state.tab = state.from || 'woche';
+        render();
+      });
+      view().querySelector('[data-focus]').addEventListener('click', () => {
+        const first = unit.items.findIndex(i => !itemLog(date, unit.id, i.key).done);
+        state.focus = first < 0 ? 0 : first;
+        state.tab = 'focus';
+        render();
+      });
+      /* Beim Abhaken nur den Fortschritt nachziehen — ein Neuaufbau der
+         Liste würde die Scrollposition mitten in der Einheit verlieren. */
+      wireItemCards(unit, date, () => {
+        const now = progressOf(date, unit);
+        view().querySelector('.tr-bar__fill').style.width =
+          `${now.total ? Math.round(now.done / now.total * 100) : 0}%`;
+        view().querySelector('.tr-top__sub').textContent =
+          `${shortDate(date)} · ${now.done}/${now.total} erledigt`;
+      });
     }
 
-    function renderNotes(unit) {
-      return unit.sections.map(s => `
-        <div class="tr-block">
-          ${s.title ? `<h3>${escHtml(s.title)}</h3>` : ''}
-          ${s.lines.map(l => `<p class="tr-note" style="margin:0 0 var(--s1)">${escHtml(l)}</p>`).join('')}
-        </div>`).join('');
+    function renderZones(unit) {
+      if (!unit.zones?.length) return '';
+      return `
+        <details class="tr-card">
+          <summary>Trainingsbereiche und Dauer</summary>
+          <div class="tr-scroll" style="margin-top:12px">
+            <table class="tr-raw">
+              <tr><td style="color:var(--text)">Bereich</td>${unit.zoneColumns.map(c => `<td style="color:var(--text)">${escHtml(c)}</td>`).join('')}<td style="color:var(--text)">Gefühl</td></tr>
+              ${unit.zones.map(z => `<tr><td>${escHtml(z.no)} ${escHtml(z.name)}</td>${
+                z.values.map(v => `<td>${escHtml(v)}</td>`).join('')}<td>${escHtml(z.hint)}</td></tr>`).join('')}
+            </table>
+          </div>
+          ${unit.durations?.length ? `<div class="tr-params">${unit.durations.map(d =>
+            `<span class="tr-pill">${escHtml(d.mode)}: ${escHtml(d.value)} min</span>`).join('')}</div>` : ''}
+        </details>`;
     }
 
-    /* Sicherheitsnetz: was der Parser nicht verstanden hat, bleibt lesbar. */
-    function renderRaw(unit) {
+    /* Eine Übungskarte. Sätze bekommen Eingabefelder, alles andere
+       Kennzahlen — die Karte selbst sieht in jeder Einheit gleich aus. */
+    function itemCard(unit, item, index, date) {
+      const log = itemLog(date, unit.id, item.key);
+      const pics = picturesFor(unit.id, item.slug);
+
+      const params = item.params.map(p =>
+        `<span class="tr-pill">${escHtml(p.label)}: ${escHtml(p.value)}</span>`).join('');
+      const pause = item.pause ? `<span class="tr-pill">Pause ${escHtml(item.pause)}</span>` : '';
+      const video = item.video
+        ? `<a class="tr-pill" href="${escHtml(item.video)}" target="_blank" rel="noopener">▶ Video</a>` : '';
+
+      const sets = item.mode === 'sets' ? `
+        <div class="tr-sets">
+          <div class="tr-sets__head"><span>Satz</span><span>Vorgabe</span><span>Gewicht</span><span></span></div>
+          ${item.sets.map((set, i) => {
+            const done = log.sets[i] || {};
+            return `
+              <div class="tr-set">
+                <span class="tr-set__label">${escHtml(String(i + 1))}.</span>
+                <span class="tr-set__target">${escHtml(set.reps || '—')}${set.weight ? ` · ${escHtml(set.weight)}` : ''}</span>
+                <input type="text" inputmode="decimal" placeholder="${escHtml(set.weight || 'kg')}"
+                       value="${escHtml(done.weight || '')}" data-item="${escHtml(item.key)}" data-set="${i}" data-field="weight" />
+                <input type="text" inputmode="numeric" placeholder="Wdh"
+                       value="${escHtml(done.reps || '')}" data-item="${escHtml(item.key)}" data-set="${i}" data-field="reps" />
+              </div>`;
+          }).join('')}
+        </div>` : '';
+
+      const history = item.history?.length ? (() => {
+        const last = item.history[item.history.length - 1];
+        const values = last.values.filter(Boolean).join(' · ');
+        return values ? `<div class="tr-hist">${escHtml(last.week || 'zuletzt')}: ${escHtml(values)}</div>` : '';
+      })() : '';
+
+      const thumbs = pics.length ? `
+        <div class="tr-thumbs" style="margin-top:12px">
+          ${pics.map(src => `<img class="tr-thumb" style="margin:0" loading="lazy" src="${escHtml(src)}" alt="${escHtml(item.name)}" />`).join('')}
+        </div>` : '';
+
+      return `
+        <div class="tr-card tr-card--flat" data-card="${escHtml(item.key)}">
+          <div class="tr-card__row">
+            <span class="tr-num">${escHtml(item.no || String(index + 1))}</span>
+            <span>
+              <span class="tr-card__name">${escHtml(item.name)}</span>
+              ${item.alt ? `<span class="tr-card__meta">${escHtml(item.alt)}</span>` : ''}
+              ${item.group ? `<span class="tr-card__meta">${escHtml(item.group)}</span>` : ''}
+            </span>
+            <span class="tr-card__end">
+              <button class="tr-check" data-done="${escHtml(item.key)}" aria-pressed="${!!log.done}"
+                      aria-label="Erledigt">✓</button>
+            </span>
+          </div>
+          ${(params || pause || video) ? `<div class="tr-params">${params}${pause}${video}</div>` : ''}
+          ${item.lines.length ? `<p class="tr-note">${escHtml(item.lines.join(' · '))}</p>` : ''}
+          ${sets}
+          ${history}
+          ${thumbs}
+        </div>`;
+    }
+
+    function wireItemCards(unit, date, rerender) {
+      view().querySelectorAll('[data-done]').forEach(el => el.addEventListener('click', () => {
+        const log = itemLog(date, unit.id, el.dataset.done);
+        log.done = !log.done;
+        saveLogs();
+        el.setAttribute('aria-pressed', String(log.done));
+        if (rerender) rerender();
+      }));
+      view().querySelectorAll('input[data-set]').forEach(input => input.addEventListener('change', () => {
+        const log = itemLog(date, unit.id, input.dataset.item);
+        const i = Number(input.dataset.set);
+        log.sets[i] = log.sets[i] || {};
+        log.sets[i][input.dataset.field] = input.value.trim();
+        saveLogs();
+      }));
+    }
+
+    function rawTable(unit) {
       const rows = (unit.raw?.rows || []).filter(r => r.some(c => String(c).trim() !== ''));
       if (!rows.length) return '';
       return `
-        <details class="tr-block">
-          <summary>Originaltabelle</summary>
-          <div class="tr-scroll" style="margin-top:var(--s2)">
-            <table class="tr-table"><tbody>${rows.map(r =>
-              `<tr>${r.map(c => `<td>${escHtml(String(c))}</td>`).join('')}</tr>`).join('')}</tbody></table>
+        <details class="tr-card">
+          <summary>Originaltabelle aus der Excel</summary>
+          <div class="tr-scroll">
+            <table class="tr-raw">${rows.map(r =>
+              `<tr>${r.map(c => `<td>${escHtml(String(c))}</td>`).join('')}</tr>`).join('')}</table>
           </div>
         </details>`;
     }
 
-    function wireDetail(unit, date) {
-      if (unit.kind !== 'strength') return;
-      const entry = logFor(date, unit.id);
-      $('detailBody').querySelectorAll('.tr-ex').forEach(card => {
-        const key = card.dataset.ex;
-        if (!entry.ex[key]) entry.ex[key] = { done: false, sets: [], note: '' };
-        const log = entry.ex[key];
+    /* ── Fokusmodus ─────────────────────────────────────────────── */
 
-        card.querySelector('[data-done]')?.addEventListener('click', ev => {
-          log.done = !log.done;
-          ev.currentTarget.setAttribute('aria-pressed', String(log.done));
-          saveLogs();
-        });
-        card.querySelectorAll('input[data-set]').forEach(input => {
-          input.addEventListener('change', () => {
-            const i = Number(input.dataset.set);
-            log.sets[i] = log.sets[i] || {};
-            log.sets[i][input.dataset.field] = input.value.trim();
-            saveLogs();
+    let timer = { id: 0, left: 0, total: 0 };
+
+    function stopTimer() {
+      if (timer.id) clearInterval(timer.id);
+      timer = { id: 0, left: 0, total: 0 };
+    }
+
+    function startTimer(seconds) {
+      stopTimer();
+      if (!seconds) return;
+      timer.left = seconds;
+      timer.total = seconds;
+      timer.id = setInterval(() => {
+        timer.left -= 1;
+        if (timer.left <= 0) { clearInterval(timer.id); timer.id = 0; timer.left = 0; }
+        paintTimer();
+      }, 1000);
+      paintTimer();
+    }
+
+    function paintTimer() {
+      const box = $('timer');
+      if (!box) return;
+      const label = box.querySelector('.tr-timer__value');
+      if (!timer.total) { box.hidden = true; return; }
+      box.hidden = false;
+      box.classList.toggle('tr-timer--ring', timer.left === 0);
+      label.textContent = timer.left > 0
+        ? `${Math.floor(timer.left / 60)}:${pad(timer.left % 60)}`
+        : 'Los!';
+    }
+
+    function renderFocus() {
+      const unit = unitOf(state.unit);
+      const date = currentDate();
+      const item = unit.items[state.focus];
+      if (!item) { state.tab = 'unit'; return render(); }
+      const log = itemLog(date, unit.id, item.key);
+      const pics = picturesFor(unit.id, item.slug);
+      const seconds = pauseSeconds(item.pause);
+
+      view().innerHTML = `
+        <div class="tr-focus__head">
+          <button class="tr-top__back" data-back aria-label="Zurück zur Liste">←</button>
+          <div>
+            <div class="tr-top__sub">${escHtml(unit.title)}</div>
+            ${item.group ? `<div class="tr-top__sub">${escHtml(item.group)}</div>` : ''}
+          </div>
+          <div class="tr-focus__count">${state.focus + 1}/${unit.items.length}</div>
+        </div>
+        <div class="tr-bar" style="margin-bottom:18px">
+          <div class="tr-bar__fill" style="width:${Math.round((state.focus + 1) / unit.items.length * 100)}%"></div>
+        </div>
+
+        <div class="tr-focus__name">${escHtml(item.name)}</div>
+        ${item.alt ? `<div class="tr-focus__alt">${escHtml(item.alt)}</div>` : ''}
+
+        <div class="tr-params">
+          ${item.params.map(p => `<span class="tr-pill">${escHtml(p.label)}: ${escHtml(p.value)}</span>`).join('')}
+          ${item.pause ? `<span class="tr-pill">Pause ${escHtml(item.pause)}</span>` : ''}
+          ${item.video ? `<a class="tr-pill" href="${escHtml(item.video)}" target="_blank" rel="noopener">▶ Video</a>` : ''}
+        </div>
+
+        ${item.lines.length ? `<p class="tr-note">${escHtml(item.lines.join(' · '))}</p>` : ''}
+
+        ${pics.map(src => `<img class="tr-thumb" loading="lazy" src="${escHtml(src)}" alt="${escHtml(item.name)}" />`).join('')}
+
+        ${item.mode === 'sets' ? `
+          <div class="tr-sets" style="margin-top:18px">
+            <div class="tr-sets__head"><span>Satz</span><span>Vorgabe</span><span>Gewicht</span><span>Wdh</span></div>
+            ${item.sets.map((set, i) => {
+              const done = log.sets[i] || {};
+              return `
+                <div class="tr-set">
+                  <span class="tr-set__label">${i + 1}.</span>
+                  <span class="tr-set__target">${escHtml(set.reps || '—')}${set.weight ? ` · ${escHtml(set.weight)}` : ''}</span>
+                  <input type="text" inputmode="decimal" placeholder="${escHtml(set.weight || 'kg')}"
+                         value="${escHtml(done.weight || '')}" data-item="${escHtml(item.key)}" data-set="${i}" data-field="weight" />
+                  <input type="text" inputmode="numeric" placeholder="Wdh"
+                         value="${escHtml(done.reps || '')}" data-item="${escHtml(item.key)}" data-set="${i}" data-field="reps" />
+                </div>`;
+            }).join('')}
+          </div>
+          ${seconds ? `<button class="tr-btn tr-btn--block" data-pause style="margin-top:14px">Pause starten (${seconds} s)</button>` : ''}
+        ` : ''}
+
+        ${item.history?.length ? `<div class="tr-hist">${escHtml(item.history[item.history.length - 1].week || 'zuletzt')}: ${
+          escHtml(item.history[item.history.length - 1].values.filter(Boolean).join(' · ') || '—')}</div>` : ''}
+
+        <div class="tr-focus__nav">
+          <button class="tr-btn" data-prev ${state.focus === 0 ? 'disabled style="opacity:.4"' : ''}>Zurück</button>
+          <button class="tr-btn ${log.done ? 'tr-btn--done' : 'tr-btn--primary'} tr-btn--block" data-next>
+            ${log.done ? '✓ Erledigt — weiter' : 'Erledigt und weiter'}
+          </button>
+        </div>
+
+        <div class="tr-timer" id="timer" hidden>
+          <span class="tr-timer__value">0:00</span>
+          <span class="tr-note" style="margin:0">Pause</span>
+          <span class="tr-timer__btns">
+            <button data-plus>+30 s</button>
+            <button data-stop>Stopp</button>
+          </span>
+        </div>`;
+
+      paintTimer();
+
+      view().querySelector('[data-back]').addEventListener('click', () => { stopTimer(); state.tab = 'unit'; render(); });
+      view().querySelector('[data-prev]')?.addEventListener('click', () => {
+        if (state.focus > 0) { state.focus -= 1; stopTimer(); renderFocus(); window.scrollTo({ top: 0 }); }
+      });
+      view().querySelector('[data-next]').addEventListener('click', () => {
+        log.done = true;
+        saveLogs();
+        if (state.focus + 1 < unit.items.length) {
+          state.focus += 1;
+          if (seconds) startTimer(seconds); else stopTimer();
+          renderFocus();
+          window.scrollTo({ top: 0 });
+        } else {
+          stopTimer();
+          state.tab = 'unit';
+          render();
+        }
+      });
+      view().querySelector('[data-pause]')?.addEventListener('click', () => startTimer(seconds));
+      view().querySelector('[data-plus]')?.addEventListener('click', () => {
+        timer.left += 30; timer.total = Math.max(timer.total, timer.left);
+        if (!timer.id) startTimer(timer.left);
+        paintTimer();
+      });
+      view().querySelector('[data-stop]')?.addEventListener('click', () => { stopTimer(); paintTimer(); $('timer').hidden = true; });
+      view().querySelectorAll('input[data-set]').forEach(input => input.addEventListener('change', () => {
+        const i = Number(input.dataset.set);
+        log.sets[i] = log.sets[i] || {};
+        log.sets[i][input.dataset.field] = input.value.trim();
+        saveLogs();
+      }));
+    }
+
+    /* ── Import ─────────────────────────────────────────────────── */
+
+    function renderImport() {
+      const stored = read(keyProgram(), null);
+      view().innerHTML = `
+        ${tabs()}
+        <div class="tr-card tr-card--flat">
+          <div class="tr-card__name">Excel einlesen</div>
+          <p class="tr-note">Die Wochendatei des Verbands hier ablegen. Sie wird auf diesem
+             Gerät gelesen — hochgeladen wird nichts.</p>
+          <label class="tr-drop" for="fileInput" id="drop" style="margin-top:14px">
+            Datei hierher ziehen oder tippen
+            <input type="file" id="fileInput" accept=".xlsx,.xlsm" hidden />
+          </label>
+          <div class="tr-status" id="importStatus"></div>
+          <div id="importPreview"></div>
+        </div>
+        <div class="tr-card tr-card--flat">
+          <div class="tr-card__name">Aktuelles Programm</div>
+          <p class="tr-note">${escHtml(program.weekLabel || '—')} · ${escHtml(program.dateRange.raw || '')}<br>
+             Quelle: ${escHtml(stored ? (program.source || 'eigener Import') : 'mitgeliefert (KW 31)')}</p>
+          <button class="tr-btn tr-btn--block" id="resetProgram" style="margin-top:12px">
+            Auf mitgeliefertes Programm zurücksetzen</button>
+          <p class="tr-note" style="margin-top:12px">Übungsbilder gehören zur App, nicht zur Excel —
+             sie bleiben bei einem Import erhalten, solange die Übung gleich heisst.</p>
+        </div>`;
+      wireTabs();
+
+      const setStatus = (message, state = '') => {
+        const el = $('importStatus');
+        el.textContent = message;
+        el.dataset.state = state;
+      };
+
+      const handle = async file => {
+        if (!file) return;
+        setStatus('Datei wird gelesen…');
+        $('importPreview').innerHTML = '';
+        try {
+          const { gridFromFile } = await import('../assets/js/training-import.js');
+          const parsed = parseProgram(await gridFromFile(file), { images });
+          const count = Object.values(parsed.units).reduce((n, u) => n + u.items.length, 0);
+          setStatus(`${parsed.weekLabel || 'Woche'} gelesen — ${Object.keys(parsed.units).length} Blätter, ${count} Übungen.`);
+          $('importPreview').innerHTML = `
+            <div style="margin-top:14px">
+              ${parsed.days.map(d => `<p class="tr-note" style="margin:0 0 4px"><strong style="color:var(--text)">${
+                escHtml(d.name)}</strong> ${escHtml(d.slots.flatMap(s => s.items.map(i => i.title)).join(', ') || 'frei')}</p>`).join('')}
+              <button class="tr-btn tr-btn--primary tr-btn--block" id="applyImport" style="margin-top:14px">Programm übernehmen</button>
+            </div>`;
+          $('applyImport').addEventListener('click', () => {
+            program = parsed;
+            write(keyProgram(), parsed);
+            state = { tab: 'woche', day: '', unit: '', focus: 0 };
+            render();
           });
-        });
-        card.querySelector('input[data-field="note"]:not([data-set])')?.addEventListener('change', ev => {
-          log.note = ev.target.value.trim();
-          saveLogs();
-        });
+        } catch (err) {
+          console.error('[training] Import fehlgeschlagen', err);
+          setStatus(`Import fehlgeschlagen: ${err.message}`, 'error');
+        }
+      };
+
+      $('fileInput').addEventListener('change', ev => handle(ev.target.files?.[0]));
+      const drop = $('drop');
+      ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, ev => { ev.preventDefault(); drop.classList.add('is-over'); }));
+      ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, ev => { ev.preventDefault(); drop.classList.remove('is-over'); }));
+      drop.addEventListener('drop', ev => handle(ev.dataTransfer?.files?.[0]));
+      $('resetProgram').addEventListener('click', async () => {
+        try { localStorage.removeItem(keyProgram()); } catch {}
+        program = await loadBundled();
+        state = { tab: 'import', day: '', unit: '', focus: 0 };
+        render();
       });
     }
 
-    /* ── Panels ─────────────────────────────────────────────────────── */
+    /* ── Rahmen ─────────────────────────────────────────────────── */
 
-    const PANELS = { woche: 'panelWoche', einheiten: 'panelEinheiten', import: 'panelImport', detail: 'panelDetail' };
-    function showPanel(name) {
-      Object.entries(PANELS).forEach(([key, id]) => { $(id).hidden = key !== name; });
-      $('tabs').hidden = name === 'detail';
-      $('tabs').querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    const TABS = [['woche', 'Woche'], ['einheiten', 'Einheiten'], ['import', 'Import']];
+    const tabs = () => `
+      <div class="tr-tabs">
+        ${TABS.map(([key, label]) =>
+          `<button data-tab="${key}" aria-selected="${state.tab === key}">${label}</button>`).join('')}
+      </div>`;
+
+    function wireTabs() {
+      view().querySelectorAll('[data-tab]').forEach(el => el.addEventListener('click', () => {
+        state.tab = el.dataset.tab;
+        render();
+      }));
     }
 
-    $('tabs').addEventListener('click', ev => {
-      const tab = ev.target.closest('.tab');
-      if (!tab) return;
-      showPanel(tab.dataset.tab);
-      if (tab.dataset.tab === 'woche') renderWeek();
-      if (tab.dataset.tab === 'einheiten') renderUnitList();
-      if (tab.dataset.tab === 'import') renderProgramInfo();
-    });
-    $('detailBack').addEventListener('click', () => { showPanel('woche'); renderWeek(); });
-
-    /* ── Import ─────────────────────────────────────────────────────── */
-
-    function renderProgramInfo() {
-      const stored = readStore(keyProgram(), null);
-      $('programInfo').innerHTML = `
-        ${escHtml(program.weekLabel || '—')} · ${escHtml(program.dateRange.raw || '')}<br>
-        Quelle: ${escHtml(stored ? (program.source || 'eigener Import') : 'mitgeliefert (KW 31)')}`;
+    function render() {
+      $('topSub').textContent = [program.weekLabel, program.athlete].filter(Boolean).join(' · ');
+      if (state.tab === 'unit') return renderUnit();
+      if (state.tab === 'focus') return renderFocus();
+      if (state.tab === 'einheiten') return renderUnits();
+      if (state.tab === 'import') return renderImport();
+      return renderWeek();
     }
-
-    function setStatus(message, state = '') {
-      const el = $('importStatus');
-      el.textContent = message;
-      el.dataset.state = state;
-    }
-
-    async function handleFile(file) {
-      if (!file) return;
-      setStatus('Datei wird gelesen…');
-      $('importPreview').innerHTML = '';
-      try {
-        const { gridFromFile } = await import('../assets/js/training-import.js');
-        const grid = await gridFromFile(file);
-        const parsed = parseProgram(grid);
-        setStatus(`${parsed.weekLabel || 'Woche'} gelesen — ${Object.keys(parsed.units).length} Blätter.`);
-        $('importPreview').innerHTML = `
-          <div class="tr-block">
-            <h3>${escHtml(parsed.weekLabel || 'Woche')}</h3>
-            <p class="tr-note">${escHtml(parsed.athlete || '')} · ${escHtml(parsed.dateRange.raw || '')}</p>
-            <ul class="tr-list">
-              ${parsed.days.map(d => `<li>${escHtml(d.name)}: ${
-                escHtml(d.slots.flatMap(s => s.items.map(i => i.title)).join(', ') || 'frei')}</li>`).join('')}
-            </ul>
-            <button class="btn btn-primary" id="applyImport">Programm übernehmen</button>
-          </div>`;
-        $('applyImport').addEventListener('click', () => {
-          program = parsed;
-          writeStore(keyProgram(), parsed);
-          setStatus('Programm übernommen.');
-          renderProgramInfo();
-          showPanel('woche');
-          renderWeek();
-        });
-      } catch (err) {
-        console.error('[training] Import fehlgeschlagen', err);
-        setStatus(`Import fehlgeschlagen: ${err.message}`, 'error');
-      }
-    }
-
-    $('fileInput').addEventListener('change', ev => handleFile(ev.target.files?.[0]));
-    const drop = $('drop');
-    ['dragenter', 'dragover'].forEach(type => drop.addEventListener(type, ev => {
-      ev.preventDefault(); drop.classList.add('is-over');
-    }));
-    ['dragleave', 'drop'].forEach(type => drop.addEventListener(type, ev => {
-      ev.preventDefault(); drop.classList.remove('is-over');
-    }));
-    drop.addEventListener('drop', ev => handleFile(ev.dataTransfer?.files?.[0]));
-
-    $('resetProgram').addEventListener('click', async () => {
-      try { localStorage.removeItem(keyProgram()); } catch {}
-      program = await loadBundled();
-      renderProgramInfo();
-      renderWeek();
-      setStatus('Auf das mitgelieferte Programm zurückgesetzt.');
-    });
-
-    /* ── Start ──────────────────────────────────────────────────────── */
 
     async function loadBundled() {
       const res = await fetch(BUNDLED, { cache: 'no-cache' });
@@ -614,15 +823,17 @@
     requireAuth('../login.html').then(async user => {
       wireOfflineBanner();
       uid = user.uid;
-      logs = readStore(keyLogs(), {});
+      logs = read(keyLogs(), {});
       try {
-        program = readStore(keyProgram(), null) || await loadBundled();
+        images = await fetch(IMAGES, { cache: 'no-cache' }).then(r => (r.ok ? r.json() : {}));
+      } catch { images = {}; }
+      try {
+        program = read(keyProgram(), null) || await loadBundled();
       } catch (err) {
-        $('dayList').innerHTML = `<p class="tr-note">Programm konnte nicht geladen werden: ${escHtml(err.message)}</p>`;
+        view().innerHTML = `<p class="tr-note">Programm konnte nicht geladen werden: ${escHtml(err.message)}</p>`;
         return;
       }
-      renderWeek();
-      renderProgramInfo();
+      render();
     });
   </script>
 </body>

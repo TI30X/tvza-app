@@ -422,7 +422,7 @@ function parseTable(view) {
     const links = columns.map((_, c) => view.urlAt(r, c));
     items.push({ values, links, name: values[0] });
   }
-  return { kind: 'table', intro, columns, items, notes };
+  return { kind: 'table', intro, columns, rows: items, notes };
 }
 
 /* ── Ausdauer: Zonen, Dauer, Intervalle ───────────────────────────────── */
@@ -510,6 +510,9 @@ function parseLinkList(view) {
   const { rows } = view;
   const links = [];
   const notes = [];
+  /* Zwischenüberschriften gruppieren die Videos. "Link zu den Videos" ist
+     eine Bedienungsanleitung und taugt nicht als Gruppenname. */
+  let group = txt(view.name);
   for (let r = 0; r < rows.length; r++) {
     const row = rows[r] || [];
     if (!rowHasContent(row)) continue;
@@ -520,13 +523,18 @@ function parseLinkList(view) {
       if (u) { url = u; urlCol = c; break; }
     }
     if (!url) {
-      notes.push((row || []).map(txt).filter(Boolean).join(' '));
+      const heading = dropRepeats(row.map(txt).filter(Boolean)).join(' ');
+      if (heading) {
+        notes.push(heading);
+        if (!/^link/i.test(heading)) group = heading;
+      }
       continue;
     }
-    const rest = row.map(txt).slice(urlCol + 1).filter(v => v !== '' && v !== url);
+    const rest = dropRepeats(row.map(txt).slice(urlCol + 1).filter(v => v !== '' && v !== url));
     const label = txt(row[urlCol]);
     links.push({
       url,
+      group,
       label: isUrl(label) ? '' : label,
       meta: rest.join(' '),
     });
@@ -557,6 +565,145 @@ function parseNotes(view) {
   return { kind: 'notes', sections };
 }
 
+/* ── Vereinheitlichung ────────────────────────────────────────────────────
+
+   Jede Einheit — Kraft, Zirkel, Sprungtabelle, Ausdauer, Videoliste,
+   Notizblatt — bekommt dieselbe items-Liste. Nur so kann die Seite alle
+   Übungen gleich darstellen, abhaken und im Fokusmodus durchlaufen.
+
+   mode:
+     sets   Sätze mit Wiederholungen und Gewicht (Kraft, Rumpf)
+     rounds Serien × Wiederholungen ohne Gewicht (Sprungprogramm)
+     timed  Zeit bzw. Sätze je Übung (Fußgymnastik)
+     block  Abschnitt eines Ausdauerprogramms
+     video  ein Video zum Mitmachen (Mobi)
+     note   Erklärung mit Bild (Neuroathletik)
+*/
+
+function makeItem(unitId, index, data) {
+  const name = txt(data.name) || `Übung ${index + 1}`;
+  const itemSlug = slug(name) || `pos-${index + 1}`;
+  return {
+    key: `${unitId}-${data.no ? slug(data.no) : ''}${data.no ? '-' : ''}${itemSlug}`,
+    slug: itemSlug,
+    no: txt(data.no),
+    name,
+    alt: txt(data.alt),
+    video: txt(data.video),
+    mode: data.mode,
+    sets: data.sets || [],
+    params: data.params || [],
+    lines: (data.lines || []).filter(Boolean),
+    pause: txt(data.pause),
+    tut: txt(data.tut),
+    history: data.history || [],
+  };
+}
+
+function normalizeItems(unitId, body, images) {
+  const make = (index, data) => makeItem(unitId, index, data);
+
+  if (body.kind === 'strength') {
+    return body.exercises.map((ex, i) => make(i, {
+      no: ex.no,
+      name: ex.name,
+      alt: ex.altName,
+      video: ex.video,
+      mode: 'sets',
+      sets: ex.sets,
+      params: [
+        ex.valueUnit && ex.valueUnit !== 'Gewicht' ? { label: 'Einheit', value: ex.valueUnit } : null,
+        ex.tut ? { label: 'TUT', value: ex.tut } : null,
+      ].filter(Boolean),
+      pause: ex.pause,
+      tut: ex.tut,
+      history: ex.history,
+    }));
+  }
+
+  if (body.kind === 'table') {
+    /* Erste Spalte ist der Name, die letzte oft das Video — alles
+       dazwischen wird zu Kennzahlen. */
+    return body.rows.map((row, i) => {
+      const params = body.columns.slice(1).map((label, c) => ({
+        label,
+        value: row.values[c + 1] || '',
+      })).filter(p => p.value && !row.links[body.columns.indexOf(p.label)]);
+      const videoCol = row.links.findIndex(Boolean);
+      return make(i, {
+        name: row.values[0],
+        mode: 'rounds',
+        video: videoCol >= 0 ? row.links[videoCol] : '',
+        params: params.filter(p => norm(p.label) !== 'video'),
+      });
+    });
+  }
+
+  if (body.kind === 'circuit') {
+    return body.exercises.map((ex, i) => make(i, {
+      no: ex.no,
+      name: ex.name,
+      mode: 'timed',
+      params: ex.params,
+      lines: ex.lines,
+    }));
+  }
+
+  if (body.kind === 'endurance') {
+    return body.intervals.flatMap(interval => interval.steps.map((step, i) => ({
+      interval: interval.title, step, i,
+    }))).map((entry, i) => make(i, {
+      name: entry.step.duration,
+      mode: 'block',
+      params: [
+        entry.step.zone ? { label: 'Intensität', value: entry.step.zone } : null,
+        entry.step.hf ? { label: 'Puls', value: entry.step.hf } : null,
+      ].filter(Boolean),
+      lines: [entry.interval],
+    }));
+  }
+
+  if (body.kind === 'links') {
+    const total = {};
+    body.links.forEach(l => { const g = l.group || 'Video'; total[g] = (total[g] || 0) + 1; });
+    const counter = {};
+    return body.links.map((l, i) => {
+      const group = l.group || 'Video';
+      counter[group] = (counter[group] || 0) + 1;
+      /* Steht nur ein Video unter einer Überschrift, braucht es keine Nummer. */
+      const fallback = total[group] > 1 ? `${group} ${counter[group]}` : group;
+      return make(i, {
+        name: l.label || fallback,
+        mode: 'video',
+        video: l.url,
+        params: l.meta ? [{ label: 'Dauer', value: l.meta.replace(/^Dauer\s*/i, '') }] : [],
+      });
+    });
+  }
+
+  /* Notizblatt: Abschnitte ohne Text und ohne Bild sind Überschriften und
+     keine Übungen — sie gruppieren, was danach kommt. */
+  const pictures = images?.[unitId] || {};
+  const out = [];
+  let group = '';
+  body.sections.forEach((section, i) => {
+    if (!section.title) return;
+    const key = slug(section.title);
+    const hasPicture = Array.isArray(pictures[key]) && pictures[key].length > 0;
+    if (!section.lines.length && !hasPicture) {
+      if (/^(wichtig|achtung)/i.test(section.title) && !body.note) body.note = section.title;
+      else group = section.title;
+      return;
+    }
+    /* "Für?" ist die Spaltenüberschrift der Erklärung, kein Inhalt. */
+    const lines = section.lines.filter(l => !/^f(ue|ü)r\?$/i.test(norm(l)));
+    const item = make(i, { name: section.title, mode: 'note', lines });
+    item.group = group;
+    out.push(item);
+  });
+  return out;
+}
+
 /* ── Blatt-Erkennung ──────────────────────────────────────────────────── */
 
 function classify(view) {
@@ -571,7 +718,7 @@ function classify(view) {
   return 'notes';
 }
 
-function parseUnit(sheet, currentWeek) {
+function parseUnit(sheet, currentWeek, images) {
   const view = sheetView(sheet);
   const kind = classify(view);
   let body = null;
@@ -587,10 +734,25 @@ function parseUnit(sheet, currentWeek) {
   }
   if (!body) body = parseNotes(view);
 
+  const id = slug(view.name);
+  const items = normalizeItems(id, body, images);
+  /* Gleichnamige Abschnitte — "5 Minuten" im Intervall — brauchen trotzdem
+     einen eindeutigen Schlüssel, sonst teilen sie sich einen Eintrag im
+     Trainingsprotokoll. */
+  const used = new Set();
+  items.forEach(item => {
+    let key = item.key;
+    let n = 2;
+    while (used.has(key)) key = `${item.key}-${n++}`;
+    used.add(key);
+    item.key = key;
+  });
+
   return {
-    id: slug(view.name),
+    id,
     title: txt(sheet?.name),
     ...body,
+    items,
     raw: { rows: view.rows, links: sheet?.links || {} },
   };
 }
@@ -622,9 +784,13 @@ export function matchUnit(title, unitIds) {
 
 /**
  * @param {{file?:string, sheets:Array<{name:string, rows:any[][], links?:Object}>}} grid
+ * @param {{images?:Object}} [options] Bilder je Einheit und Übung
+ *   ({ fussgymnastik: { 'short-foot': ['…webp'] } }). Sie stecken nicht im
+ *   Raster, entscheiden aber mit, ob ein Abschnitt eine Übung oder nur eine
+ *   Überschrift ist.
  * @returns {object} Programm
  */
-export function parseProgram(grid) {
+export function parseProgram(grid, options = {}) {
   const sheets = Array.isArray(grid?.sheets) ? grid.sheets : [];
   if (!sheets.length) throw new Error('Die Datei enthält keine Tabellenblätter.');
 
@@ -642,7 +808,7 @@ export function parseProgram(grid) {
   const units = {};
   sheets.forEach((sheet, i) => {
     if (i === planIdx) return;
-    const unit = parseUnit(sheet, currentWeek);
+    const unit = parseUnit(sheet, currentWeek, options.images);
     if (!unit.id) return;
     units[unit.id] = unit;
   });

@@ -14,6 +14,7 @@ Nothing in here ships as part of the app — no page links to it.
 | `itinerary.test.mjs` | Tests for `assets/js/itinerary.js`. |
 | `matura-ui.test.mjs` | Prüft beide Maturaarbeit-Ansichten, Kontrast, Phasenlogik und das einheitliche Plus. |
 | `training-parser.test.mjs` | Prüft den Trainings-Excel-Parser gegen `fixtures/kw31-grid.json`. |
+| `training-ui.test.mjs` | Klickt sich mit jsdom durch `pages/training.html` — Wochenplan, Einheit, Fokusmodus, Import. |
 | `fixtures/kw31-grid.json` | Zell-Raster der echten Wochendatei „Van Zanten Timothy KW 31.xlsx". |
 
 ## Tests laufen lassen
@@ -72,6 +73,18 @@ eine Spalte „Wiederholungen", ist aber keine Kraftübung; im Rumpfblatt steht
 die Trainingswoche unter der Überschrift „Datum"; „Vorher immer aufwärmen!!"
 ist ein Hinweis und kein Aufwärmprogramm; verbundene Zellen wiederholen ihren
 Inhalt.
+
+Die Trainingsseite selbst braucht jsdom, weil sie ein einziges Inline-Modul
+ist:
+
+```bash
+node --test training-ui.test.mjs
+```
+
+11 Tests. Der Test hängt `firebase-config.js` an einen Stub, legt die echten
+Programmdaten unter `fetch` und klickt dann durch alle Ansichten — inklusive
+Abhaken, Gewichtseingabe und Fokusmodus. Er prüft damit genau das, was der
+Syntaxtest nicht sieht.
 
 Die eingebetteten Module werden mit Nodes VM-Prüfung getestet:
 

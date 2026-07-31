@@ -565,6 +565,357 @@
      ]
     }
    ],
+   "items": [
+    {
+     "key": "kraft-beine-1-sprungabfolge",
+     "slug": "sprungabfolge",
+     "no": "1",
+     "name": "Sprungabfolge",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/VoLVTk7Eayw?is=bzEmd0DFRw4Hjfd7",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "5",
+       "weight": ""
+      },
+      {
+       "label": "2. Satz",
+       "reps": "5",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "5",
+       "weight": ""
+      }
+     ],
+     "params": [],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "kraft-beine-2-zug-eng",
+     "slug": "zug-eng",
+     "no": "2",
+     "name": "Zug eng",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=S5VSETifvoI",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "9",
+       "weight": "37"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "9",
+       "weight": "37"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "7",
+       "weight": "40"
+      },
+      {
+       "label": "4. Satz",
+       "reps": "7",
+       "weight": "40"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "2010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "2010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "35",
+        "35",
+        "37",
+        "37"
+       ],
+       "tut": "2010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-beine-3a-kniebeuge-hinten",
+     "slug": "kniebeuge-hinten",
+     "no": "3A",
+     "name": "Kniebeuge hinten",
+     "alt": "",
+     "video": "",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "9",
+       "weight": "50"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "9",
+       "weight": "50"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "7",
+       "weight": "52"
+      },
+      {
+       "label": "4.Satz",
+       "reps": "7",
+       "weight": "52"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "2010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "2010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "50",
+        "50",
+        "52",
+        "52"
+       ],
+       "tut": "2010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-beine-3b-huerdenspruenge",
+     "slug": "huerdenspruenge",
+     "no": "3B",
+     "name": "Hürdensprünge",
+     "alt": "",
+     "video": "",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "6",
+       "weight": ""
+      },
+      {
+       "label": "2. Satz",
+       "reps": "6",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "6",
+       "weight": ""
+      },
+      {
+       "label": "4.Satz",
+       "reps": "6",
+       "weight": ""
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "2010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "2010",
+     "history": []
+    },
+    {
+     "key": "kraft-beine-4-step-up-mit-ausstossen",
+     "slug": "step-up-mit-ausstossen",
+     "no": "4",
+     "name": "Step up mit ausstossen",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/Ytj01HeeZEg",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "8/Seite",
+       "weight": "12_12"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "8/Seite",
+       "weight": "12_12"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8/Seite",
+       "weight": "12_12"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "2010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "2010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "12_12",
+        "12_12",
+        "12_12"
+       ],
+       "tut": "2010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-beine-5-hamstring-curls-einbeinig",
+     "slug": "hamstring-curls-einbeinig",
+     "no": "5",
+     "name": "Hamstring curls einbeinig",
+     "alt": "oder hamstring curl ball einbeinig",
+     "video": "https://youtube.com/shorts/XkdOQecjscs?si=JiiBVtwaGifxxlSO",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "8/Seite",
+       "weight": ""
+      },
+      {
+       "label": "2. Satz",
+       "reps": "8/Seite",
+       "weight": ""
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "2010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "2010",
+     "history": []
+    },
+    {
+     "key": "kraft-beine-6-hip-thrust",
+     "slug": "hip-thrust",
+     "no": "6",
+     "name": "Hip Thrust",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=5S8SApGU_Lk",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10",
+       "weight": "??"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "10",
+       "weight": "??"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8",
+       "weight": "??"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "2010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "2010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "??",
+        "??",
+        "??"
+       ],
+       "tut": "2010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-beine-7-kabelzug-abduktor",
+     "slug": "kabelzug-abduktor",
+     "no": "7",
+     "name": "Kabelzug Abduktor",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=HOib2_a4erA",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10/Seite",
+       "weight": "??"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "10/Seite",
+       "weight": "??"
+      }
+     ],
+     "params": [
+      {
+       "label": "Einheit",
+       "value": "Miniband"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "??",
+        "??"
+       ],
+       "tut": "",
+       "date": "",
+       "note": ""
+      }
+     ]
+    }
+   ],
    "raw": {
     "rows": [
      [
@@ -1367,6 +1718,332 @@
      ]
     }
    ],
+   "items": [
+    {
+     "key": "kraft-oberkoerper-1-klimmzug-proniert",
+     "slug": "klimmzug-proniert",
+     "no": "1",
+     "name": "Klimmzug proniert",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/qZYfM65sqqI",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "8",
+       "weight": ""
+      },
+      {
+       "label": "2. Satz",
+       "reps": "8",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "5",
+       "weight": ""
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "3010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "3010",
+     "history": []
+    },
+    {
+     "key": "kraft-oberkoerper-2-vorgebeugtes-rudern-stehend-an-der-landmine",
+     "slug": "vorgebeugtes-rudern-stehend-an-der-landmine",
+     "no": "2",
+     "name": "Vorgebeugtes Rudern stehend an der Landmine",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=28okBhkaQfI",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10",
+       "weight": "30"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "10",
+       "weight": "30"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8",
+       "weight": "32"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "3010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "3010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "30",
+        "30",
+        "32"
+       ],
+       "tut": "3010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-oberkoerper-3-arnold-press-stehend",
+     "slug": "arnold-press-stehend",
+     "no": "3",
+     "name": "Arnold press stehend",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/55GkKIrGT6w",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10",
+       "weight": "12_12"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "10",
+       "weight": "12_12"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8",
+       "weight": "13_13"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "3010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "3010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "12_12",
+        "12_12",
+        "13_13"
+       ],
+       "tut": "3010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-oberkoerper-4-liegende-schulteruebung-auf-schraegbank",
+     "slug": "liegende-schulteruebung-auf-schraegbank",
+     "no": "4",
+     "name": "Liegende Schulterübung auf Schrägbank",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=rvPefutmJ4g",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10",
+       "weight": "6_6"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "10",
+       "weight": "6_6"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8",
+       "weight": "7_7"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "3010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "3010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "6_6",
+        "6_6",
+        "7_7"
+       ],
+       "tut": "3010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-oberkoerper-5-kurzhantel-druecken-auf-flachbank",
+     "slug": "kurzhantel-druecken-auf-flachbank",
+     "no": "5",
+     "name": "Kurzhantel drücken auf Flachbank",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=mKWMT8Q958o",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10",
+       "weight": "12_12"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "10",
+       "weight": "12_12"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8",
+       "weight": "13_13"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "3010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "3010",
+     "history": [
+      {
+       "week": "TW9",
+       "values": [
+        "12_12",
+        "12_12",
+        "13_13"
+       ],
+       "tut": "3010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-oberkoerper-6-ueberzuege",
+     "slug": "ueberzuege",
+     "no": "6",
+     "name": "Überzüge",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/ZT3MpFOa_uM",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10",
+       "weight": "10"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "10",
+       "weight": "10"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8",
+       "weight": "11"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "3010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "3010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "10",
+        "10",
+        "11"
+       ],
+       "tut": "3010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    },
+    {
+     "key": "kraft-oberkoerper-7-bizeps-curls-stehend",
+     "slug": "bizeps-curls-stehend",
+     "no": "7",
+     "name": "Bizeps curls stehend",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=6DeLZ6cbgWQ",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10",
+       "weight": "8_8"
+      },
+      {
+       "label": "2. Satz",
+       "reps": "10",
+       "weight": "8_8"
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8",
+       "weight": "9_9"
+      }
+     ],
+     "params": [
+      {
+       "label": "TUT",
+       "value": "3010"
+      }
+     ],
+     "lines": [],
+     "pause": "120-180 Sec",
+     "tut": "3010",
+     "history": [
+      {
+       "week": "TW11",
+       "values": [
+        "8_8",
+        "8_8",
+        "9_9"
+       ],
+       "tut": "3010",
+       "date": "",
+       "note": ""
+      }
+     ]
+    }
+   ],
    "raw": {
     "rows": [
      [
@@ -1874,6 +2551,238 @@
      ]
     }
    ],
+   "items": [
+    {
+     "key": "ausdauer-20-minuten-einlaufen",
+     "slug": "20-minuten-einlaufen",
+     "no": "",
+     "name": "20 Minuten einlaufen",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "Zone 1"
+      },
+      {
+       "label": "Puls",
+       "value": "< 139"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "ausdauer-5-minuten",
+     "slug": "5-minuten",
+     "no": "",
+     "name": "5 Minuten",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "Zone 3"
+      },
+      {
+       "label": "Puls",
+       "value": "155-171"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "ausdauer-3-minuten",
+     "slug": "3-minuten",
+     "no": "",
+     "name": "3 Minuten",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "locker"
+      },
+      {
+       "label": "Puls",
+       "value": "< 139"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "ausdauer-5-minuten-2",
+     "slug": "5-minuten",
+     "no": "",
+     "name": "5 Minuten",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "Zone 3"
+      },
+      {
+       "label": "Puls",
+       "value": "155-171"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "ausdauer-3-minuten-2",
+     "slug": "3-minuten",
+     "no": "",
+     "name": "3 Minuten",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "locker"
+      },
+      {
+       "label": "Puls",
+       "value": "< 139"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "ausdauer-5-minuten-3",
+     "slug": "5-minuten",
+     "no": "",
+     "name": "5 Minuten",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "Zone 3"
+      },
+      {
+       "label": "Puls",
+       "value": "155-171"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "ausdauer-3-minuten-3",
+     "slug": "3-minuten",
+     "no": "",
+     "name": "3 Minuten",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "locker"
+      },
+      {
+       "label": "Puls",
+       "value": "< 139"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "ausdauer-5-minuten-4",
+     "slug": "5-minuten",
+     "no": "",
+     "name": "5 Minuten",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "Zone 3"
+      },
+      {
+       "label": "Puls",
+       "value": "155-171"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "ausdauer-25-minuten-auslaufen",
+     "slug": "25-minuten-auslaufen",
+     "no": "",
+     "name": "25 Minuten auslaufen",
+     "alt": "",
+     "video": "",
+     "mode": "block",
+     "sets": [],
+     "params": [
+      {
+       "label": "Intensität",
+       "value": "locker"
+      }
+     ],
+     "lines": [
+      "Intensiv · Joggen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    }
+   ],
    "raw": {
     "rows": [
      [
@@ -2207,6 +3116,194 @@
        "weight": ""
       }
      ],
+     "history": []
+    }
+   ],
+   "items": [
+    {
+     "key": "rumpf-1-paloff-press-am-kabelzug",
+     "slug": "paloff-press-am-kabelzug",
+     "no": "1",
+     "name": "Paloff Press am Kabelzug",
+     "alt": "Cable Pallof Press",
+     "video": "https://www.youtube.com/shorts/fI0xAuGP64M",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      },
+      {
+       "label": "2.Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      }
+     ],
+     "params": [],
+     "lines": [],
+     "pause": "60-90 sec",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "rumpf-2-plank-rowing",
+     "slug": "plank-rowing",
+     "no": "2",
+     "name": "Plank rowing",
+     "alt": "Dumbbell Renegade Row",
+     "video": "https://www.youtube.com/shorts/kcQp0AmYeug",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      },
+      {
+       "label": "2.Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      }
+     ],
+     "params": [],
+     "lines": [],
+     "pause": "60-90 sec",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "rumpf-3-kettlebell-kniend-zum-stand",
+     "slug": "kettlebell-kniend-zum-stand",
+     "no": "3",
+     "name": "Kettlebell Kniend zum Stand",
+     "alt": "Kneeling to standing",
+     "video": "https://www.youtube.com/watch?v=CVMRq39KdK4",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "8/Seite",
+       "weight": ""
+      },
+      {
+       "label": "2.Satz",
+       "reps": "8/Seite",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8/Seite",
+       "weight": ""
+      }
+     ],
+     "params": [],
+     "lines": [],
+     "pause": "60-90 sec",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "rumpf-4-hantelrotation-mit-gewichtscheibe",
+     "slug": "hantelrotation-mit-gewichtscheibe",
+     "no": "4",
+     "name": "Hantelrotation mit Gewichtscheibe",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/4Dm-bKWrer8",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "8/Seite",
+       "weight": ""
+      },
+      {
+       "label": "2.Satz",
+       "reps": "8/Seite",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "8/Seite",
+       "weight": ""
+      }
+     ],
+     "params": [],
+     "lines": [],
+     "pause": "60-90 sec",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "rumpf-5-medball-smash-side-to-side",
+     "slug": "medball-smash-side-to-side",
+     "no": "5",
+     "name": "Medball smash side to side",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/XCEZo29DO24",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      },
+      {
+       "label": "2.Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      }
+     ],
+     "params": [],
+     "lines": [],
+     "pause": "60-90 sec",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "rumpf-6-dynamic-planking",
+     "slug": "dynamic-planking",
+     "no": "6",
+     "name": "Dynamic Planking",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/08AtykxbEwo",
+     "mode": "sets",
+     "sets": [
+      {
+       "label": "1. Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      },
+      {
+       "label": "2.Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      },
+      {
+       "label": "3. Satz",
+       "reps": "10/Seite",
+       "weight": ""
+      }
+     ],
+     "params": [],
+     "lines": [],
+     "pause": "60-90 sec",
+     "tut": "",
      "history": []
     }
    ],
@@ -2890,7 +3987,7 @@
     "Sprünge Total",
     "Video"
    ],
-   "items": [
+   "rows": [
     {
      "values": [
       "Beidbeinige Hürdensprünge mit Zwischensprung",
@@ -3013,6 +4110,196 @@
    ],
    "notes": [
     "WITCHTIG: Genügend Pause zwischen den Einsätzen ca. 90-150 Sekunden"
+   ],
+   "items": [
+    {
+     "key": "sprungprogramm-beidbeinige-huerdenspruenge-mit-zwischensprung",
+     "slug": "beidbeinige-huerdenspruenge-mit-zwischensprung",
+     "no": "",
+     "name": "Beidbeinige Hürdensprünge mit Zwischensprung",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/l0dxQVbwnXU",
+     "mode": "rounds",
+     "sets": [],
+     "params": [
+      {
+       "label": "Serien",
+       "value": "3"
+      },
+      {
+       "label": "Wiederholungen",
+       "value": "6"
+      },
+      {
+       "label": "Sprünge Total",
+       "value": "18"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "sprungprogramm-beidbeinige-huerdenspruenge-seitlich-mit-zwischensprung",
+     "slug": "beidbeinige-huerdenspruenge-seitlich-mit-zwischensprung",
+     "no": "",
+     "name": "Beidbeinige Hürdensprünge seitlich mit Zwischensprung",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/oew0x8rgIuA",
+     "mode": "rounds",
+     "sets": [],
+     "params": [
+      {
+       "label": "Serien",
+       "value": "2 li/re"
+      },
+      {
+       "label": "Wiederholungen",
+       "value": "6"
+      },
+      {
+       "label": "Sprünge Total",
+       "value": "18"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "sprungprogramm-einbeinige-huerdenspruenge-klein",
+     "slug": "einbeinige-huerdenspruenge-klein",
+     "no": "",
+     "name": "Einbeinige Hürdensprünge klein",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/wvKJvnQiBEw",
+     "mode": "rounds",
+     "sets": [],
+     "params": [
+      {
+       "label": "Serien",
+       "value": "3"
+      },
+      {
+       "label": "Wiederholungen",
+       "value": "6_6"
+      },
+      {
+       "label": "Sprünge Total",
+       "value": "36"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "sprungprogramm-bb-huerdenspruenge-abfolge",
+     "slug": "bb-huerdenspruenge-abfolge",
+     "no": "",
+     "name": "BB Hürdensprünge Abfolge",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/7MmP9sL1j28",
+     "mode": "rounds",
+     "sets": [],
+     "params": [
+      {
+       "label": "Serien",
+       "value": "3"
+      },
+      {
+       "label": "Wiederholungen",
+       "value": "6"
+      },
+      {
+       "label": "Sprünge Total",
+       "value": "18"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "sprungprogramm-eb-sprungabfolge",
+     "slug": "eb-sprungabfolge",
+     "no": "",
+     "name": "EB Sprungabfolge",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/8ZXsjSLkDH4",
+     "mode": "rounds",
+     "sets": [],
+     "params": [
+      {
+       "label": "Serien",
+       "value": "3"
+      },
+      {
+       "label": "Wiederholungen",
+       "value": "7_7"
+      },
+      {
+       "label": "Sprünge Total",
+       "value": "21"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "sprungprogramm-sprint",
+     "slug": "sprint",
+     "no": "",
+     "name": "Sprint",
+     "alt": "",
+     "video": "",
+     "mode": "rounds",
+     "sets": [],
+     "params": [
+      {
+       "label": "Serien",
+       "value": "2"
+      },
+      {
+       "label": "Wiederholungen",
+       "value": "30 Meter"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "sprungprogramm-stop-and-go",
+     "slug": "stop-and-go",
+     "no": "",
+     "name": "Stop and go",
+     "alt": "",
+     "video": "https://www.youtube.com/shorts/hKxpgm3zcZQ",
+     "mode": "rounds",
+     "sets": [],
+     "params": [
+      {
+       "label": "Serien",
+       "value": "3 Einsätze"
+      },
+      {
+       "label": "Sprünge Total",
+       "value": "10 Meter Distanz"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    }
    ],
    "raw": {
     "rows": [
@@ -3261,6 +4548,250 @@
      ]
     }
    ],
+   "items": [
+    {
+     "key": "fussgymnastik-1-zehen-spreitzen",
+     "slug": "zehen-spreitzen",
+     "no": "1",
+     "name": "Zehen spreitzen",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "30 sec pro Seite"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "Barfuß stehen",
+      "Zehen aktiv ausaneinder spreitzen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "fussgymnastik-2-grosse-zehe-isolieren",
+     "slug": "grosse-zehe-isolieren",
+     "no": "2",
+     "name": "Große Zehe isolieren",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "30 pro Seite"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "Große Zehe anheben und",
+      "kleine Zehen bleiben unten.",
+      "Dann wechseln"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "fussgymnastik-3-short-foot",
+     "slug": "short-foot",
+     "no": "3",
+     "name": "Short foot",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "30 Sec pro Seite"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "Zehenballen richtung Ferse ziehen,",
+      "ohne zu krallen (sitzend)"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "fussgymnastik-4-handtuch-greifen",
+     "slug": "handtuch-greifen",
+     "no": "4",
+     "name": "Handtuch greifen",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "30 Sec pro Seite"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "mit Zehen handtuch greifen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "fussgymnastik-5-fuss-drehen-ueber-tennisball",
+     "slug": "fuss-drehen-ueber-tennisball",
+     "no": "5",
+     "name": "Fuß Drehen über Tennisball",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "30 Sec pro Seite"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "ohne Resistance Band",
+      "Steigerung: Mit Resistance Band"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "fussgymnastik-6-pinguinstand",
+     "slug": "pinguinstand",
+     "no": "6",
+     "name": "Pinguinstand",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "60 Sec"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "Knie leichte Hoch Tief Bewegungen",
+      "Fersen bleiben oben und zusammen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "fussgymnastik-7-schienbeinmuskel",
+     "slug": "schienbeinmuskel",
+     "no": "7",
+     "name": "Schienbeinmuskel",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "30 Sec pro Seite"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "Mit theraband"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "fussgymnastik-10-wadenheben-einbeinig",
+     "slug": "wadenheben-einbeinig",
+     "no": "10",
+     "name": "Wadenheben einbeinig",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "30 Sec pro Seite"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "Ausführung: Full range of motion (FROM)"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "fussgymnastik-11-einbeinige-kniebeugen",
+     "slug": "einbeinige-kniebeugen",
+     "no": "11",
+     "name": "Einbeinige Kniebeugen",
+     "alt": "",
+     "video": "",
+     "mode": "timed",
+     "sets": [],
+     "params": [
+      {
+       "label": "Zeit",
+       "value": "30 Sec pro Seite"
+      },
+      {
+       "label": "Sätze",
+       "value": "2"
+      }
+     ],
+     "lines": [
+      "auf Wackelbrett/unstabile Unterlage",
+      "Hände an Hüfte",
+      "Steigerung= mit geschlossenen Augen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": []
+    }
+   ],
    "raw": {
     "rows": [
      [
@@ -3468,36 +4999,43 @@
    "links": [
     {
      "url": "https://www.youtube.com/watch?v=qti526J8YXY",
+     "group": "Mobi",
      "label": "",
      "meta": "Dauer 25 min"
     },
     {
      "url": "https://www.youtube.com/watch?v=WLqp-ENniCo",
+     "group": "Mobi",
      "label": "",
      "meta": "Dauer 25 min"
     },
     {
      "url": "https://www.youtube.com/watch?v=5F15GPCuqsg",
+     "group": "Mobi",
      "label": "",
      "meta": "Dauer 30 min"
     },
     {
      "url": "https://youtube.com/shorts/yTRnSJ5zKW4?si=bbuU-7J5eaf4LhyH",
+     "group": "Mobi",
      "label": "",
      "meta": ""
     },
     {
      "url": "https://www.youtube.com/watch?v=e21SZGmLsj0",
+     "group": "Mobi",
      "label": "",
      "meta": "Dauer 30 min"
     },
     {
      "url": "https://www.youtube.com/watch?v=Abv7M1sgNiU",
+     "group": "Mobi",
      "label": "",
      "meta": "Dauer 25 min"
     },
     {
      "url": "https://www.youtube.com/@neuroakademie",
+     "group": "NEUROATHLETIK",
      "label": "",
      "meta": ""
     }
@@ -3506,6 +5044,138 @@
     "Mobi",
     "Link zu den Videos",
     "NEUROATHLETIK"
+   ],
+   "items": [
+    {
+     "key": "mobi-mobi-1",
+     "slug": "mobi-1",
+     "no": "",
+     "name": "Mobi 1",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=qti526J8YXY",
+     "mode": "video",
+     "sets": [],
+     "params": [
+      {
+       "label": "Dauer",
+       "value": "25 min"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "mobi-mobi-2",
+     "slug": "mobi-2",
+     "no": "",
+     "name": "Mobi 2",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=WLqp-ENniCo",
+     "mode": "video",
+     "sets": [],
+     "params": [
+      {
+       "label": "Dauer",
+       "value": "25 min"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "mobi-mobi-3",
+     "slug": "mobi-3",
+     "no": "",
+     "name": "Mobi 3",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=5F15GPCuqsg",
+     "mode": "video",
+     "sets": [],
+     "params": [
+      {
+       "label": "Dauer",
+       "value": "30 min"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "mobi-mobi-4",
+     "slug": "mobi-4",
+     "no": "",
+     "name": "Mobi 4",
+     "alt": "",
+     "video": "https://youtube.com/shorts/yTRnSJ5zKW4?si=bbuU-7J5eaf4LhyH",
+     "mode": "video",
+     "sets": [],
+     "params": [],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "mobi-mobi-5",
+     "slug": "mobi-5",
+     "no": "",
+     "name": "Mobi 5",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=e21SZGmLsj0",
+     "mode": "video",
+     "sets": [],
+     "params": [
+      {
+       "label": "Dauer",
+       "value": "30 min"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "mobi-mobi-6",
+     "slug": "mobi-6",
+     "no": "",
+     "name": "Mobi 6",
+     "alt": "",
+     "video": "https://www.youtube.com/watch?v=Abv7M1sgNiU",
+     "mode": "video",
+     "sets": [],
+     "params": [
+      {
+       "label": "Dauer",
+       "value": "25 min"
+      }
+     ],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    },
+    {
+     "key": "mobi-neuroathletik",
+     "slug": "neuroathletik",
+     "no": "",
+     "name": "NEUROATHLETIK",
+     "alt": "",
+     "video": "https://www.youtube.com/@neuroakademie",
+     "mode": "video",
+     "sets": [],
+     "params": [],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": []
+    }
    ],
    "raw": {
     "rows": [
@@ -3649,6 +5319,163 @@
     {
      "title": "Zungependel rechts und links",
      "lines": []
+    }
+   ],
+   "note": "Wichtig: nicht bei Schwellungen oder Entzündungen durchführen",
+   "items": [
+    {
+     "key": "neuroathletik-schienbeinnerv",
+     "slug": "schienbeinnerv",
+     "no": "",
+     "name": "Schienbeinnerv",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [
+      "verbessert Streckfähigkeit, für schwache/schmerzende Beinbeuger- und Wadenmuskulatur, positiv für Plantarfaszien und Fersensporn"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Nervdehnung der Beine"
+    },
+    {
+     "key": "neuroathletik-peroneusnerv",
+     "slug": "peroneusnerv",
+     "no": "",
+     "name": "Peroneusnerv",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [
+      "mehr Stabilität im Sprunggelenk bei umknicken nach außen, positiv für Wadenmuskulatur, hilft bei Knieschmerzen"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Nervdehnung der Beine"
+    },
+    {
+     "key": "neuroathletik-suralnerv",
+     "slug": "suralnerv",
+     "no": "",
+     "name": "Suralnerv",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [
+      "hilft bei gereizten/entzündeten Achillessehnen, vorbeugung für umknicken"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Nervdehnung der Beine"
+    },
+    {
+     "key": "neuroathletik-obturatorverv",
+     "slug": "obturatorverv",
+     "no": "",
+     "name": "Obturatorverv",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [
+      "bei eingeschränkter Hüftbeweglichkeit, bei schmerzen innenseite knie, bei schwacher hüftbeugemuskulatur"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Nervdehnung der Beine"
+    },
+    {
+     "key": "neuroathletik-oberschenkelnerv",
+     "slug": "oberschenkelnerv",
+     "no": "",
+     "name": "Oberschenkelnerv",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [
+      "bei eingeschränkter Hüftbeweglichkeit, bei knieschmerzen, bei schwacher hüftbeugemuskulatur"
+     ],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Nervdehnung der Beine"
+    },
+    {
+     "key": "neuroathletik-optilmale-zungenposition",
+     "slug": "optilmale-zungenposition",
+     "no": "",
+     "name": "optilmale Zungenposition",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Zunge"
+    },
+    {
+     "key": "neuroathletik-zungenkreisen",
+     "slug": "zungenkreisen",
+     "no": "",
+     "name": "Zungenkreisen",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Zunge"
+    },
+    {
+     "key": "neuroathletik-zungeschieben-vor-und-zurueck",
+     "slug": "zungeschieben-vor-und-zurueck",
+     "no": "",
+     "name": "Zungeschieben vor und zurück",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Zunge"
+    },
+    {
+     "key": "neuroathletik-zungependel-rechts-und-links",
+     "slug": "zungependel-rechts-und-links",
+     "no": "",
+     "name": "Zungependel rechts und links",
+     "alt": "",
+     "video": "",
+     "mode": "note",
+     "sets": [],
+     "params": [],
+     "lines": [],
+     "pause": "",
+     "tut": "",
+     "history": [],
+     "group": "Zunge"
     }
    ],
    "raw": {
