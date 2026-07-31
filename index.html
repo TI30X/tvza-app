@@ -171,6 +171,14 @@
             </a>
           </div>
 
+          <div class="module-tile" data-tracker-tile="training">
+            <a href="pages/training.html" class="card card--training" id="cardTraining" draggable="false" style="display:none">
+            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></div>
+            <div class="card-content"><h3>Training</h3><p>Wochenplan &amp; Übungen</p></div>
+            <div class="tile-live tile-prog" id="tileTraining" hidden></div>
+            </a>
+          </div>
+
         </div>
         <p id="noModulesHint" style="display:none;color:var(--ink-soft);font-size:14px">
           Keine Module aktiviert. Öffne <a id="openSettingsLink" style="color:var(--accent);cursor:pointer">Einstellungen</a> im Konto-Menü, um Module zu aktivieren.
@@ -435,6 +443,7 @@
     const BEREICH_OF = {
       ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
       trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura', admin: 'admin',
+      training: 'training',
       publicProjects: 'kalender',
     };
     const PERSON_AVATAR_COLORS = [
@@ -500,7 +509,7 @@
     let appUsers = [];
     let appUsersLoaded = false;
     const overviewSectionDefaults = ['tracker', 'shared', 'projects', 'public'];
-    const trackerTileDefaults = ['ski', 'food', 'watch', 'weather', 'dm', 'trip', 'matura', 'maturatracker'];
+    const trackerTileDefaults = ['ski', 'food', 'watch', 'weather', 'dm', 'trip', 'matura', 'maturatracker', 'training'];
     const quickAccessExcluded = new Set(['dm', 'watch', 'trip']);
     let reorderEditing = false;
 
@@ -610,8 +619,9 @@
       setTrackerTile('trip', mods.trip);
       setTrackerTile('matura', mods.matura);
       setTrackerTile('maturatracker', mods.maturatracker);
+      setTrackerTile('training', mods.training);
       document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
-      const anyTracker = mods.ski || mods.food || mods.weather || mods.matura || mods.maturatracker;
+      const anyTracker = mods.ski || mods.food || mods.weather || mods.matura || mods.maturatracker || mods.training;
       // The chip may not have registered yet — it is a module too, and
       // module order is document order. Record the wanted state either
       // way; whichever runs second applies it.

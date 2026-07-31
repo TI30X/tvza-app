@@ -362,6 +362,40 @@ service cloud.firestore {
                                            && request.auth.uid == uid;
     }
 
+    // Trainingsbereich: das eingelesene Wochenprogramm liegt als
+    // JSON-Zeichenkette, weil Firestore keine Arrays in Arrays kennt und
+    // die Originaltabellen genau das sind. Die Grenze hält ein einzelnes
+    // Dokument klein genug (Firestore erlaubt 1 MiB).
+    match /users/{uid}/trainingPrograms/{programId} {
+      allow read, delete: if isMember()
+                           && request.auth.uid == uid;
+      allow create, update: if isMember()
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly([
+                              'schema', 'id', 'json', 'updatedAt'
+                            ])
+                            && request.resource.data.schema == 1
+                            && request.resource.data.json is string
+                            && request.resource.data.json.size() <= 900000;
+    }
+
+    // Ein Dokument je Trainingstag. units hält die Einheiten des Tages;
+    // die Grenze verhindert, dass ein Fehler im Client ein Dokument
+    // unbegrenzt wachsen lässt.
+    match /users/{uid}/trainingLogs/{trainingDate} {
+      allow read, delete: if isMember()
+                           && request.auth.uid == uid;
+      allow create, update: if isMember()
+                            && request.auth.uid == uid
+                            && trainingDate.matches('^\\d{4}-\\d{2}-\\d{2}$')
+                            && request.resource.data.keys().hasOnly([
+                              'schema', 'units', 'updatedAt'
+                            ])
+                            && request.resource.data.schema == 1
+                            && request.resource.data.units is map
+                            && request.resource.data.units.size() <= 20;
+    }
+
     match /users/{uid}/maturaProgress/{progressId} {
       allow read, delete: if isMember()
                            && request.auth.uid == uid;

@@ -18,6 +18,7 @@ const APP_FILES = new Set([
   'weather.html',
   'maturaarbeit.html',
   'maturaarbeit-tracker.html',
+  'training.html',
   'admin.html',
 ]);
 // Bereich preferences live in the one global Settings surface. A routed
@@ -128,6 +129,7 @@ function routeLabel(nav, target) {
       'weather.html':'Wetter',
       'maturaarbeit.html':'Maturaarbeit',
       'maturaarbeit-tracker.html':'Maturaarbeit Tracker',
+      'training.html':'Training',
       'admin.html':'Admin',
     })[fileOf(target)] ||
     document.title.split('—')[0].trim();

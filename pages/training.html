@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <!-- Setzt html.tvza-content-frame, wenn die Seite im App-Rahmen läuft.
+       Die Farben kommen weiter von hier, nicht aus dem Theme. -->
+  <script src="../assets/js/theme.js"></script>
   <title>Training — TVZA</title>
 
   <style>
@@ -49,6 +52,14 @@
 
     /* ── Kopf ─────────────────────────────────────────────────────── */
     .tr-top { display: flex; align-items: center; gap: 12px; padding: 18px 0 12px; }
+
+    /* Im App-Rahmen trägt die Kopfzeile der App schon Titel und Zurück —
+       hier bleibt nur die Wochenzeile stehen. */
+    html.tvza-content-frame .tr-top { padding: 12px 0 8px; }
+    html.tvza-content-frame .tr-top__back,
+    html.tvza-content-frame .tr-top__title { display: none; }
+    html.tvza-content-frame .tr { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+
     .tr-top__back {
       width: 40px; height: 40px; flex: none; border-radius: 12px;
       border: 1px solid var(--line); background: var(--card);
@@ -227,6 +238,7 @@
     let program = null;
     let images = {};
     let logs = {};
+    let sync = null;
     let state = { tab: 'woche', from: 'woche', day: '', unit: '', focus: 0 };
 
     /* ── Speicher ───────────────────────────────────────────────────
@@ -241,7 +253,39 @@
       catch { return fallback; }
     };
     const write = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
-    const saveLogs = () => write(keyLogs(), logs);
+
+    /* Lokal sofort, in der Cloud gesammelt. Ohne Datum wird nur der
+       lokale Zwischenstand geschrieben. */
+    function saveLogs(date) {
+      write(keyLogs(), logs);
+      if (!sync || !date) return;
+      const units = {};
+      Object.entries(logs).forEach(([key, entry]) => {
+        const [entryDate, unitId] = key.split('|');
+        if (entryDate === date) units[unitId] = entry;
+      });
+      sync.saveDay(date, units);
+    }
+
+    /* Was von einem anderen Gerät kommt, gewinnt — dort wurde später
+       trainiert. Während einer Eingabe wird nicht neu gezeichnet. */
+    function applyCloudLogs(byKey) {
+      const merged = { ...logs, ...byKey };
+      if (JSON.stringify(merged) === JSON.stringify(logs)) return;
+      logs = merged;
+      write(keyLogs(), logs);
+      if (document.activeElement?.tagName === 'INPUT') return;
+      if (program) render();
+    }
+
+    function applyCloudProgram(next) {
+      if (!next || !next.units) return;
+      if (program && JSON.stringify(next) === JSON.stringify(program)) return;
+      program = next;
+      write(keyProgram(), next);
+      state = { ...state, unit: '', focus: 0, tab: state.tab === 'import' ? 'import' : 'woche' };
+      render();
+    }
 
     function entryFor(date, unitId) {
       const k = `${date}|${unitId}`;
@@ -547,7 +591,7 @@
       view().querySelectorAll('[data-done]').forEach(el => el.addEventListener('click', () => {
         const log = itemLog(date, unit.id, el.dataset.done);
         log.done = !log.done;
-        saveLogs();
+        saveLogs(date);
         el.setAttribute('aria-pressed', String(log.done));
         if (rerender) rerender();
       }));
@@ -556,7 +600,7 @@
         const i = Number(input.dataset.set);
         log.sets[i] = log.sets[i] || {};
         log.sets[i][input.dataset.field] = input.value.trim();
-        saveLogs();
+        saveLogs(date);
       }));
     }
 
@@ -688,7 +732,7 @@
       });
       view().querySelector('[data-next]').addEventListener('click', () => {
         log.done = true;
-        saveLogs();
+        saveLogs(date);
         if (state.focus + 1 < unit.items.length) {
           state.focus += 1;
           if (seconds) startTimer(seconds); else stopTimer();
@@ -711,7 +755,7 @@
         const i = Number(input.dataset.set);
         log.sets[i] = log.sets[i] || {};
         log.sets[i][input.dataset.field] = input.value.trim();
-        saveLogs();
+        saveLogs(date);
       }));
     }
 
@@ -764,10 +808,12 @@
                 escHtml(d.name)}</strong> ${escHtml(d.slots.flatMap(s => s.items.map(i => i.title)).join(', ') || 'frei')}</p>`).join('')}
               <button class="tr-btn tr-btn--primary tr-btn--block" id="applyImport" style="margin-top:14px">Programm übernehmen</button>
             </div>`;
-          $('applyImport').addEventListener('click', () => {
+          $('applyImport').addEventListener('click', async () => {
             program = parsed;
             write(keyProgram(), parsed);
-            state = { tab: 'woche', day: '', unit: '', focus: 0 };
+            try { await sync?.saveProgram(parsed); }
+            catch (err) { setStatus(`Lokal übernommen, aber nicht synchronisiert: ${err.message}`, 'error'); }
+            state = { tab: 'woche', from: 'woche', day: '', unit: '', focus: 0 };
             render();
           });
         } catch (err) {
@@ -834,6 +880,20 @@
         return;
       }
       render();
+
+      /* Erst zeichnen, dann synchronisieren: die Seite steht sofort, auch
+         wenn Firestore hängt oder die Regeln noch nicht deployt sind. */
+      try {
+        const { connectTraining } = await import('../assets/js/training-sync.js');
+        sync = connectTraining({
+          user,
+          onProgram: applyCloudProgram,
+          onLogs: applyCloudLogs,
+        });
+        window.addEventListener('pagehide', () => sync?.stop(), { once: true });
+      } catch (err) {
+        console.warn('[training] Sync nicht verfügbar', err);
+      }
     });
   </script>
 </body>

@@ -28,6 +28,22 @@ const STUB = `
   export const wireOfflineBanner = () => {};
 `;
 
+/* Statt Firestore ein Mitschreiber: so lässt sich prüfen, dass die Seite
+   den Sync überhaupt füttert — und womit. */
+const SYNC_STUB = `
+  export function connectTraining({ onProgram, onLogs }) {
+    const calls = [];
+    globalThis.__training = { calls, onProgram, onLogs };
+    return {
+      saveDay: (date, units) => calls.push({ type: 'day', date, units }),
+      saveProgram: async program => calls.push({ type: 'program', id: program.id }),
+      stop() {},
+    };
+  }
+`;
+
+const dataUrl = source => 'data:text/javascript;base64,' + Buffer.from(source).toString('base64');
+
 async function bootPage() {
   const html = await readFile(join(root, 'pages/training.html'), 'utf8');
   const source = html.match(/<script\b[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/i)[1];
@@ -54,18 +70,18 @@ async function bootPage() {
   globalThis.fetch = fakeFetch;
   globalThis.location = window.location;
 
-  const stubUrl = 'data:text/javascript;base64,' + Buffer.from(STUB).toString('base64');
   const parserUrl = pathToFileURL(join(root, 'assets/js/training-parser.js')).href;
   const patched = source
-    .replace(/from '\.\.\/assets\/js\/firebase-config\.js'/, `from '${stubUrl}'`)
-    .replace(/from '\.\.\/assets\/js\/training-parser\.js'/, `from '${parserUrl}'`);
+    .replace(/from '\.\.\/assets\/js\/firebase-config\.js'/, `from '${dataUrl(STUB)}'`)
+    .replace(/from '\.\.\/assets\/js\/training-parser\.js'/, `from '${parserUrl}'`)
+    .replace(/'\.\.\/assets\/js\/training-sync\.js'/, `'${dataUrl(SYNC_STUB)}'`);
 
-  await import('data:text/javascript;base64,' + Buffer.from(patched).toString('base64'));
+  await import(dataUrl(patched));
 
   /* Die Seite wartet auf requireAuth und zwei fetch-Aufrufe, bevor sie
      zeichnet. Warten, bis der Kopf nicht mehr "Lade…" zeigt. */
   for (let i = 0; i < 100; i++) {
-    if (window.document.getElementById('topSub').textContent !== 'Lade…') break;
+    if (window.document.getElementById('topSub').textContent !== 'Lade…' && globalThis.__training) break;
     await new Promise(resolve => setTimeout(resolve, 20));
   }
   return window.document;
@@ -123,6 +139,15 @@ test('Abhaken landet im Protokoll und zieht den Fortschritt nach', () => {
   const logs = JSON.parse(localStorage.getItem('tvza-training-logs-v1-test'));
   const entry = Object.values(logs).find(e => Object.keys(e.items || {}).length);
   assert.ok(entry, 'kein Protokolleintrag geschrieben');
+});
+
+test('das Abhaken geht auch an den Sync — als Tagesdokument', () => {
+  const calls = globalThis.__training.calls.filter(c => c.type === 'day');
+  assert.ok(calls.length, 'nichts an den Sync gegeben');
+  const last = calls[calls.length - 1];
+  assert.match(last.date, /^\d{4}-\d{2}-\d{2}$/);
+  const items = last.units['kraft-beine']?.items || {};
+  assert.ok(Object.values(items).some(i => i.done === true));
 });
 
 test('Gewichtseingabe wird gespeichert', () => {
@@ -183,4 +208,22 @@ test('Importansicht ist erreichbar und nennt die Quelle', () => {
   assert.ok(doc.getElementById('drop'), 'kein Ablagefeld');
   assert.ok($('.tr-card').textContent.includes('Excel einlesen'));
   assert.ok(doc.getElementById('view').textContent.includes('mitgeliefert'));
+});
+
+/* Ein zweites Gerät hakt etwas ab — die Seite muss es übernehmen, ohne
+   dass jemand neu lädt. Steht am Ende, weil es den Stand überschreibt. */
+test('Änderungen aus der Cloud kommen in der Ansicht an', () => {
+  click($('[data-tab="einheiten"]'));
+  click($$('[data-unit]').find(el => el.dataset.unit === 'kraft-beine'));
+  const day = globalThis.__training.calls.filter(c => c.type === 'day').pop();
+  const keys = $$('[data-card]').map(el => el.dataset.card).slice(0, 3);
+
+  globalThis.__training.onLogs({
+    [`${day.date}|kraft-beine`]: {
+      items: Object.fromEntries(keys.map(key => [key, { done: true, sets: [], note: '' }])),
+    },
+  });
+
+  assert.equal($$('[data-done][aria-pressed="true"]').length, 3);
+  assert.ok($('.tr-top__sub').textContent.includes('3/8'));
 });

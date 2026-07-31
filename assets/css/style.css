@@ -34,6 +34,7 @@
   --tint-watch:  oklch(0.93 0.035 165);
   --tint-weather: oklch(0.93 0.04 230);
   --tint-msg:     oklch(0.94 0.03 300);
+  --tint-training: oklch(0.94 0.03 20);
 
   /* Stronger tracker hues (text, borders, fills) */
   --ski:    oklch(0.50 0.09 240);
@@ -43,6 +44,7 @@
   --watch:  oklch(0.42 0.09 165);
   --weather: oklch(0.45 0.11 235);
   --msg:     oklch(0.45 0.12 300);
+  --training: oklch(0.50 0.10 20);
   --ski-deep:  oklch(0.40 0.08 240);
   --food-deep: oklch(0.40 0.08 145);
   --trip-deep: oklch(0.45 0.09 60);
@@ -50,6 +52,7 @@
   --watch-deep: oklch(0.34 0.08 165);
   --weather-deep: oklch(0.45 0.11 235);
   --msg-deep:     oklch(0.45 0.12 300);
+  --training-deep: oklch(0.42 0.09 20);
 
   /* Kurs colours — Watchlist only */
   --kurs-up:   oklch(0.58 0.13 150);
@@ -132,6 +135,8 @@
   --watch-deep: oklch(0.80 0.09 165);
   --weather-deep: oklch(0.80 0.09 230);
   --msg-deep:     oklch(0.80 0.09 300);
+  --tint-training: oklch(0.30 0.04 20);
+  --training-deep: oklch(0.80 0.09 20);
   --kurs-up:   oklch(0.72 0.13 150);
   --kurs-down: oklch(0.70 0.15 25);
   --text-faint: oklch(0.58 0.01 250);
@@ -488,6 +493,7 @@ body.dm-thread .app {
 .card--food   .card-icon { background: var(--tint-food); color: var(--food-deep); }
 .card--trip   .card-icon { background: var(--tint-trip); color: var(--trip-deep); }
 .card--matura .card-icon { background: var(--tint-matura); color: var(--matura-deep); }
+.card--training .card-icon { background: var(--tint-training); color: var(--training-deep); }
 .card--watch  .card-icon { background: var(--tint-watch); color: var(--watch-deep); }
 .card--weather .card-icon { background: oklch(0.93 0.04 230); color: oklch(0.45 0.11 235); }
 :root[data-theme="dark"] .card--weather .card-icon { background: oklch(0.30 0.05 235); color: oklch(0.82 0.09 230); }
@@ -1793,6 +1799,7 @@ body.reorder-editing .module-tile::after {
 [data-bereich="watch"]    { --tint: var(--tint-watch);   --deep: var(--watch-deep); }
 [data-bereich="weather"]  { --tint: var(--tint-weather); --deep: var(--weather-deep); }
 [data-bereich="msg"]      { --tint: var(--tint-msg);     --deep: var(--msg-deep); }
+[data-bereich="training"] { --tint: var(--tint-training); --deep: var(--training-deep); }
 [data-bereich="admin"]    { --tint: var(--accent-bg);     --deep: var(--accent); }
 
 /* ── 4.1 Zeile — the one row component ─────────────────────────────

@@ -30,6 +30,30 @@ test('matura progress remains owner-only with a bounded schema', async () => {
   assert.match(block, /request\.resource\.data\.schema == 1/);
 });
 
+/* Trainingsdaten gehören nur dem Trainierenden. Der Programmtext ist eine
+   JSON-Zeichenkette und muss begrenzt bleiben, sonst sprengt ein Import mit
+   vielen Blättern die Dokumentgrenze von Firestore. */
+test('training data stays owner-only with bounded documents', async () => {
+  const rules = await readRules();
+  const programs = matchBlock(rules, '/users/{uid}/trainingPrograms/{programId}');
+  const logs = matchBlock(rules, '/users/{uid}/trainingLogs/{trainingDate}');
+
+  assert.match(programs, /request\.auth\.uid == uid/);
+  assert.match(programs, /hasOnly\(\[\s*'schema', 'id', 'json', 'updatedAt'\s*\]\)/);
+  assert.match(programs, /request\.resource\.data\.json is string/);
+  assert.match(programs, /json\.size\(\) <= 900000/);
+
+  assert.match(logs, /request\.auth\.uid == uid/);
+  assert.match(logs, /hasOnly\(\[\s*'schema', 'units', 'updatedAt'\s*\]\)/);
+  assert.match(logs, /request\.resource\.data\.units is map/);
+  /* Die Dokument-ID ist das Datum — ohne Prüfung könnte der Client dort
+     beliebige Schlüssel anlegen. */
+  assert.match(logs, /trainingDate\.matches\(/);
+
+  assert.doesNotMatch(programs, /allow read, write: if isMember\(\)/);
+  assert.doesNotMatch(logs, /allow read, write: if isMember\(\)/);
+});
+
 test('activities and attachments remain scoped through calendar membership', async () => {
   const rules = await readRules();
   const activities = matchBlock(rules, '/activities/{id}');
