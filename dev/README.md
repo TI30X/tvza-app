@@ -13,6 +13,8 @@ Nothing in here ships as part of the app — no page links to it.
 | `navigation.test.mjs` | Prüft die gemeinsame Bereiche-/Sidebar-Reihenfolge und die Desktop-Navigation. |
 | `itinerary.test.mjs` | Tests for `assets/js/itinerary.js`. |
 | `matura-ui.test.mjs` | Prüft beide Maturaarbeit-Ansichten, Kontrast, Phasenlogik und das einheitliche Plus. |
+| `training-parser.test.mjs` | Prüft den Trainings-Excel-Parser gegen `fixtures/kw31-grid.json`. |
+| `fixtures/kw31-grid.json` | Zell-Raster der echten Wochendatei „Van Zanten Timothy KW 31.xlsx". |
 
 ## Tests laufen lassen
 
@@ -57,6 +59,19 @@ Die beiden Maturaarbeit-Ansichten und die gemeinsamen Plus-Symbole:
 ```bash
 node --test matura-ui.test.mjs
 ```
+
+Der Trainings-Parser läuft ebenfalls ohne Installation:
+
+```bash
+node --test training-parser.test.mjs
+```
+
+32 Tests gegen die echte Wochendatei. Sie halten die Eigenheiten der Vorlage
+fest, an denen der Parser schon einmal gescheitert ist: das Sprungprogramm hat
+eine Spalte „Wiederholungen", ist aber keine Kraftübung; im Rumpfblatt steht
+die Trainingswoche unter der Überschrift „Datum"; „Vorher immer aufwärmen!!"
+ist ein Hinweis und kein Aufwärmprogramm; verbundene Zellen wiederholen ihren
+Inhalt.
 
 Die eingebetteten Module werden mit Nodes VM-Prüfung getestet:
 

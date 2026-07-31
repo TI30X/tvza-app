@@ -15,6 +15,7 @@ const files = [
   'pages/weather.html',
   'pages/watchlist.html',
   'pages/maturaarbeit-tracker.html',
+  'pages/training.html',
 ];
 
 for (const relative of files) {

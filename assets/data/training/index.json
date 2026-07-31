@@ -1,0 +1,14 @@
+{
+ "schema": 1,
+ "weeks": [
+  {
+   "id": "kw31-2026",
+   "label": "KW 31 TW 12",
+   "kw": 31,
+   "trainingWeek": 12,
+   "start": "2026-08-03",
+   "end": "2026-08-09",
+   "file": "kw31-2026.json"
+  }
+ ]
+}
