@@ -167,7 +167,9 @@ test('arranging is docked beside Schnellzugriff instead of floating over cards',
     read('assets/css/style.css'),
   ]);
 
-  assert.match(dashboard, /<h2 class="section-title">Schnellzugriff<\/h2>\s*<button class="reorder-fab" id="editModeBtn"/);
+  // Die Ueberschrift traegt seit v.32 einen i18n-Schluessel; geprueft wird
+  // weiterhin die Nachbarschaft, nicht die genaue Attributliste.
+  assert.match(dashboard, /<h2 class="section-title"[^>]*>Schnellzugriff<\/h2>\s*<button class="reorder-fab" id="editModeBtn"/);
   assert.match(css, /\.reorder-fab \{[\s\S]*position: static;[\s\S]*background: var\(--surface\)/);
   assert.doesNotMatch(css, /global-reminder-fab:not\(\[hidden\]\)\) \.reorder-fab/);
 });

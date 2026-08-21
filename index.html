@@ -20,6 +20,7 @@
     }
   </script>
   <script src="assets/js/theme.js?v=3"></script>
+  <script src="assets/js/i18n.js?v=1"></script>
   <link rel="stylesheet" href="assets/css/style.css?v=12" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
   <title>TVZA</title>
@@ -42,7 +43,7 @@
   <div class="app">
 
     <div class="offline-banner" id="offlineBanner">
-      <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – Daten werden synchronisiert, sobald du wieder online bist
+      <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> <span data-i18n="app.offline">Offline – Daten werden synchronisiert, sobald du wieder online bist</span>
     </div>
 
     <header class="appbar">
@@ -66,11 +67,11 @@
             </div>
             <button class="acct__item" id="acctSettings" type="button" role="menuitem">
               <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              <span>Einstellungen</span>
+              <span data-i18n="acct.einstellungen">Einstellungen</span>
             </button>
             <button class="acct__item acct__item--danger" id="acctLogout" type="button" role="menuitem">
               <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-              <span>Abmelden</span>
+              <span data-i18n="acct.abmelden">Abmelden</span>
             </button>
           </div>
         </div>
@@ -88,7 +89,7 @@
            that has its own tab, and "eine Sache, ein Ort" (§6.4) says a
            thing with a tab does not also appear here. -->
       <section class="section" id="heuteSection" hidden>
-        <div class="marke">Heute</div>
+        <div class="marke" data-i18n="home.heute">Heute</div>
         <div class="rows" id="heuteList"></div>
       </section>
 
@@ -96,13 +97,13 @@
            order the user already had. The rest live in the Bereiche tab. -->
       <section class="section" id="trackerSection" data-overview-section="tracker">
         <div class="section-head">
-          <button class="overview-toggle" type="button" data-section-toggle="tracker" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title">Schnellzugriff</h2>
-          <button class="reorder-fab" id="editModeBtn" type="button" aria-pressed="false" title="Kacheln &amp; Bereiche anordnen">
+          <button class="overview-toggle" type="button" data-section-toggle="tracker" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
+          <h2 class="section-title" data-i18n="home.schnellzugriff">Schnellzugriff</h2>
+          <button class="reorder-fab" id="editModeBtn" type="button" aria-pressed="false" data-i18n-attr="title:home.anordnenTitel" title="Kacheln &amp; Bereiche anordnen">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-            <span class="edit-label">Anordnen</span>
+            <span class="edit-label" data-i18n="home.anordnen">Anordnen</span>
           </button>
-          <button class="overview-drag" type="button" draggable="true" data-section-drag="tracker" title="Bereich ziehen"></button>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="tracker" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
         </div>
         <div class="card-grid card-grid--quick" id="trackerGrid">
 
@@ -188,9 +189,9 @@
       <!-- Shared with me -->
       <section class="section" id="sharedSection" data-overview-section="shared" hidden style="display:none">
         <div class="section-head">
-          <button class="overview-toggle" type="button" data-section-toggle="shared" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title">Mit mir geteilt</h2>
-          <button class="overview-drag" type="button" draggable="true" data-section-drag="shared" title="Bereich ziehen"></button>
+          <button class="overview-toggle" type="button" data-section-toggle="shared" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
+          <h2 class="section-title" data-i18n="home.mitMirGeteilt">Mit mir geteilt</h2>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="shared" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
         </div>
         <div class="link-list share-list" id="sharedList"></div>
       </section>
@@ -198,15 +199,15 @@
       <!-- My projects -->
       <section class="section" id="projectsSection" data-overview-section="projects">
         <div class="section-head">
-          <button class="overview-toggle" type="button" data-section-toggle="projects" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title">Meine Projekte</h2>
-          <button class="overview-drag" type="button" draggable="true" data-section-drag="projects" title="Bereich ziehen"></button>
+          <button class="overview-toggle" type="button" data-section-toggle="projects" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
+          <h2 class="section-title" data-i18n="home.meineProjekte">Meine Projekte</h2>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="projects" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
         </div>
         <div class="link-list" id="projectList">
-          <div class="spinner">Lade…</div>
+          <div class="spinner" data-i18n="common.laden">Lade…</div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" id="addProjectBtn"><span class="ui-plus" aria-hidden="true"></span><span>Projekt hinzufügen</span></button>
+          <button class="btn btn-primary" id="addProjectBtn"><span class="ui-plus" aria-hidden="true"></span><span data-i18n="home.projektHinzufuegen">Projekt hinzufügen</span></button>
           <a class="btn btn-secondary" id="publicPageLink" href="public.html"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> Öffentliche Seite ansehen</a>
         </div>
       </section>
@@ -214,19 +215,19 @@
       <!-- Global public feed -->
       <section class="section" id="publicFeedSection" data-overview-section="public" style="display:none">
         <div class="section-head">
-          <button class="overview-toggle" type="button" data-section-toggle="public" aria-expanded="true" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title">Öffentliche Projekte · von allen</h2>
-          <button class="overview-drag" type="button" draggable="true" data-section-drag="public" title="Bereich ziehen"></button>
+          <button class="overview-toggle" type="button" data-section-toggle="public" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
+          <h2 class="section-title" data-i18n="home.oeffentlich">Öffentliche Projekte · von allen</h2>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="public" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
         </div>
-        <div class="link-list" id="publicFeedList"><div class="spinner">Lade…</div></div>
+        <div class="link-list" id="publicFeedList"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
       </section>
 
     </main>
 
     <!-- Slim status bar shown only while arranging -->
     <div class="reorder-hint" id="reorderHint" role="status">
-      <span class="reorder-hint-text">Ziehe Kacheln &amp; Bereiche an ihren Platz</span>
-      <button type="button" id="reorderHintDone">Fertig</button>
+      <span class="reorder-hint-text" data-i18n="home.anordnenHint">Ziehe Kacheln &amp; Bereiche an ihren Platz</span>
+      <button type="button" id="reorderHintDone" data-i18n="common.fertig">Fertig</button>
     </div>
 
     <footer class="tvz-footer">
@@ -247,14 +248,14 @@
   <!-- Project modal -->
   <div class="modal-backdrop" id="projectModal">
     <div class="modal">
-      <div class="modal-title" id="modalTitle">Projekt hinzufügen</div>
+      <div class="modal-title" id="modalTitle" data-i18n="home.projektHinzufuegen">Projekt hinzufügen</div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label" for="pEmoji">Emoji</label>
+          <label class="form-label" for="pEmoji" data-i18n="common.emoji">Emoji</label>
           <input class="form-input" id="pEmoji" type="text" placeholder="🚀" maxlength="4" />
         </div>
         <div class="form-group">
-          <label class="form-label" for="pName">Name</label>
+          <label class="form-label" for="pName" data-i18n="common.name">Name</label>
           <input class="form-input" id="pName" type="text" placeholder="Mein Projekt" />
         </div>
       </div>
@@ -263,8 +264,8 @@
         <input class="form-input" id="pUrl" type="url" placeholder="https://..." />
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" id="modalCancel">Abbrechen</button>
-        <button class="btn btn-primary" id="modalSave">Speichern</button>
+        <button class="btn btn-secondary" id="modalCancel" data-i18n="common.abbrechen">Abbrechen</button>
+        <button class="btn btn-primary" id="modalSave" data-i18n="common.speichern">Speichern</button>
       </div>
     </div>
   </div>
@@ -275,19 +276,28 @@
       <div class="modal-head">
         <div>
           <div class="modal-kicker">TVZA</div>
-          <div class="modal-title">Einstellungen</div>
-          <p class="modal-subtitle">Passe deine Ansicht und deine Tracker an.</p>
+          <div class="modal-title" data-i18n="set.titel">Einstellungen</div>
+          <p class="modal-subtitle" data-i18n="set.untertitel">Passe deine Ansicht und deine Tracker an.</p>
         </div>
-        <button class="modal-close" id="settingsClose" type="button" aria-label="Einstellungen schliessen" title="Schliessen">&times;</button>
+        <button class="modal-close" id="settingsClose" type="button" data-i18n-attr="aria-label:a11y.schliessen;title:a11y.schliessen" aria-label="Einstellungen schliessen" title="Schliessen">&times;</button>
       </div>
 
       <div class="settings-layout">
-      <section class="settings-section settings-section--appearance">
-        <p class="settings-section-title">Erscheinungsbild</p>
+      <section class="settings-section settings-section--appearance" data-settings-section="darstellung">
+        <p class="settings-section-title" data-i18n="set.gruppeAllgemein">Allgemein</p>
         <div class="settings-row">
-          <span class="settings-row-label">Design <small>hell, dunkel oder automatisch</small></span>
-          <button class="icon-btn theme-toggle-btn" id="themeToggle" type="button" title="Theme wechseln">◐</button>
+          <span class="settings-row-label"><span data-i18n="set.erscheinungsbild">Erscheinungsbild</span>
+            <small data-i18n="set.erscheinungsbildSub">hell, dunkel oder automatisch</small></span>
+          <button class="icon-btn theme-toggle-btn" id="themeToggle" type="button"
+                  data-i18n-attr="title:set.erscheinungsbild" title="Theme wechseln">◐</button>
         </div>
+        <div class="settings-row">
+          <span class="settings-row-label"><span data-i18n="set.sprache">Sprache</span>
+            <small data-i18n="set.spracheSub">App-Sprache wählen</small></span>
+          <select class="form-select" id="settingsLanguage" style="width:auto;min-width:150px"
+                  data-i18n-attr="aria-label:set.sprache" aria-label="Sprache"></select>
+        </div>
+        <p class="form-hint" data-i18n="lang.hinweis">Datum, Wochentage und Zahlen folgen der gewählten Sprache. Selbst eingegebene Inhalte bleiben unverändert.</p>
       </section>
 
       <hr class="settings-divider" />
@@ -295,10 +305,10 @@
       <section class="settings-section settings-section--modules">
         <div class="settings-section-head">
           <div>
-            <p class="settings-section-title">Meine Bereiche</p>
-            <p class="settings-section-copy">Wähle nur die optionalen Bereiche, die du wirklich sehen möchtest.</p>
+            <p class="settings-section-title" data-i18n="set.meineBereiche">Meine Bereiche</p>
+            <p class="settings-section-copy" data-i18n="set.meineBereicheSub">Wähle nur die optionalen Bereiche, die du wirklich sehen möchtest.</p>
           </div>
-          <p class="settings-save-state" id="modulesSaveStatus" data-state="saved" role="status" aria-live="polite">Gespeichert</p>
+          <p class="settings-save-state" id="modulesSaveStatus" data-state="saved" role="status" aria-live="polite" data-i18n="common.gespeichert">Gespeichert</p>
         </div>
         <div class="rows" id="moduleToggles"></div>
       </section>
@@ -352,8 +362,8 @@
       <hr class="settings-divider" />
 
       <section class="settings-section">
-        <p class="settings-section-title">Bereich teilen</p>
-        <p class="settings-section-copy">Gib einer Person Lese- oder Bearbeitungszugriff auf einen deiner Tracker.</p>
+        <p class="settings-section-title" data-i18n="set.teilen">Bereich teilen</p>
+        <p class="settings-section-copy" data-i18n="set.teilenSub">Gib einer Person Lese- oder Bearbeitungszugriff auf einen deiner Tracker.</p>
         <div class="form-group">
           <label class="form-label" for="shareModule">Modul</label>
           <select class="form-select" id="shareModule"></select>
@@ -392,8 +402,8 @@
         </section>
         <hr class="settings-divider" />
         <section class="settings-section" id="memberInviteSection">
-          <p class="settings-section-title">Einladungen</p>
-          <p class="settings-section-copy">Erstelle einen einmaligen Zugang für ein neues Familienmitglied.</p>
+          <p class="settings-section-title" data-i18n="set.einladungen">Einladungen</p>
+          <p class="settings-section-copy" data-i18n="set.einladungenSub">Erstelle einen einmaligen Zugang für ein neues Familienmitglied.</p>
           <div class="form-group">
             <label class="form-label" for="memberInviteEmail">E-Mail</label>
             <input class="form-input" id="memberInviteEmail" type="email"
@@ -410,13 +420,13 @@
         <hr class="settings-divider" />
         <section class="settings-section" id="superAdminUserSection">
           <p class="settings-section-title">Benutzer & Zugriffe</p>
-          <p class="settings-section-copy">Vergib optionale Bereiche. Kalender und Direktnachrichten stehen allen immer zur Verfügung.</p>
-          <div id="adminUsers"><div class="spinner">Lade…</div></div>
+          <p class="settings-section-copy" data-i18n="set.benutzerSub">Vergib optionale Bereiche. Kalender und Direktnachrichten stehen allen immer zur Verfügung.</p>
+          <div id="adminUsers"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
         </section>
         <hr class="settings-divider" />
         <section class="settings-section" id="superAdminFoodSection">
           <p class="settings-section-title">Food-Anfragen <span id="reqCount" class="role-badge" style="display:none"></span></p>
-          <div id="adminFoodRequests"><div class="spinner">Lade…</div></div>
+          <div id="adminFoodRequests"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
         </section>
       </div>
     </div>
@@ -973,6 +983,42 @@
     if (embeddedSettings) {
       window.addEventListener('tvza-theme-change', event => {
         tellSettingsParent({ type:'tvza-settings-theme', mode:event.detail?.mode || 'auto' });
+      });
+    }
+
+    /* ── Sprache ──────────────────────────────────────────────────
+       Die Liste kommt aus i18n.js, damit es genau eine Stelle gibt, an
+       der eine neue Sprache eingetragen wird. Ohne eigene Wahl steht
+       "Systemsprache" oben und die App folgt dem Geraet. */
+    const languageSelect = document.getElementById('settingsLanguage');
+    if (languageSelect && window.TVZAI18n) {
+      const i18n = window.TVZAI18n;
+      const fillLanguages = () => {
+        const current = i18n.hasStoredChoice() ? i18n.lang : '';
+        languageSelect.innerHTML =
+          `<option value="">${i18n.t('lang.system')}</option>` +
+          i18n.LANGUAGES.map(l => `<option value="${l.id}">${l.native}</option>`).join('');
+        languageSelect.value = current;
+      };
+      fillLanguages();
+      window.addEventListener('tvza-lang-change', fillLanguages);
+
+      languageSelect.addEventListener('change', async () => {
+        const chosen = languageSelect.value || i18n.systemLanguage();
+        if (!languageSelect.value) {
+          try { localStorage.removeItem('tvza-lang'); } catch {}
+        }
+        await i18n.setLanguage(chosen);
+        if (!languageSelect.value) {
+          try { localStorage.removeItem('tvza-lang'); } catch {}
+        }
+        tellSettingsParent({ type:'tvza-settings-lang', lang:languageSelect.value || '' });
+        /* Ueber Geraete hinweg: still scheitern lassen, die App laeuft
+           auch ohne — localStorage traegt die Wahl auf diesem Geraet. */
+        try {
+          const user = auth.currentUser;
+          if (user) await setDoc(doc(db, 'users', user.uid), { lang: languageSelect.value || null }, { merge:true });
+        } catch (error) { reportClientError('lang-save', error); }
       });
     }
     function closeSettings() {

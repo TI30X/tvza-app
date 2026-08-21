@@ -101,6 +101,16 @@ const BEREICH_OF = {
 };
 
 /* ── The four destinations (§5.2) ──────────────────────────────────*/
+/* ── Sprache ────────────────────────────────────────────────────────
+   Die Leiste entsteht im Code, nicht im Markup. Sie traegt darum
+   dieselben data-i18n-Attribute wie eine statische Seite und wird nach
+   dem Einhaengen einmal durch applyTo geschickt. Faellt i18n.js aus,
+   bleiben die deutschen Beschriftungen im Template stehen. */
+const TAB_I18N = { start:'nav.start', kalender:'nav.kalender',
+                   nachrichten:'nav.nachrichten', bereiche:'nav.bereiche' };
+const label = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
+const relabel = root => window.TVZAI18n?.applyTo(root);
+
 const TABS = [
   { id: 'start',       label: 'Start',       icon: 'start',       href: 'index.html' },
   { id: 'kalender',    label: 'Kalender',    icon: 'kalender',    href: 'pages/planner.html' },
@@ -136,7 +146,7 @@ function shellAreaLinks(profile, linkBase, currentFile) {
       return `<a class="nav__bereich${isCurrent ? ' is-active' : ''}" href="${linkBase}${m.page}"
                  data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
                 <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
-                <span class="nav__bereich-name">${esc(m.name)}</span>
+                <span class="nav__bereich-name" data-i18n="mod.${k}.name">${esc(m.name)}</span>
               </a>`;
     }).join('');
 }
@@ -164,7 +174,8 @@ export function refreshShellAreaNavigation(profile) {
   if (!section) {
     section = document.createElement('div');
     section.className = 'nav__section marke';
-    section.textContent = 'Bereiche';
+    section.textContent = label('nav.bereiche', 'Bereiche');
+    section.dataset.i18n = 'nav.bereiche';
     nav.insertBefore(section, settings);
   }
   if (!list) {
@@ -173,6 +184,7 @@ export function refreshShellAreaNavigation(profile) {
     nav.insertBefore(list, settings);
   }
   list.innerHTML = links;
+  relabel(list);
   list.querySelectorAll('a[href]').forEach(link => { link.href = link.href; });
 }
 
@@ -217,10 +229,10 @@ export function mountShell(o = {}) {
   if (variant === 'bereich') {
     bar.innerHTML = `
       <div class="appbar__inner">
-        <button class="appbar__btn" id="shellBack" aria-label="Zurück">${icon('back')}</button>
+        <button class="appbar__btn" id="shellBack" data-i18n-attr="aria-label:a11y.zurueck" aria-label="Zurück">${icon('back')}</button>
         <span class="appbar__title">${esc(o.title || '')}</span>
         ${o.onSettings
-          ? `<button class="appbar__btn" id="shellGear" aria-label="Einstellungen">${icon('gear')}</button>`
+          ? `<button class="appbar__btn" id="shellGear" data-i18n-attr="aria-label:nav.einstellungen" aria-label="Einstellungen">${icon('gear')}</button>`
           : '<span class="appbar__btn" style="visibility:hidden"></span>'}
       </div>
       <div class="appbar__accent"></div>`;
@@ -233,23 +245,25 @@ export function mountShell(o = {}) {
       <div class="appbar__inner">
         <div class="appbar__spacer">${heading}</div>
         <a class="wx-pill" id="shellWx" href="${b}pages/weather.html" style="display:none"></a>
-        <button class="avatar" id="shellAvatar" aria-label="Konto">${esc(initials)}</button>
+        <button class="avatar" id="shellAvatar" data-i18n-attr="aria-label:a11y.konto" aria-label="Konto">${esc(initials)}</button>
       </div>`;
   }
   document.body.insertBefore(bar, document.body.firstChild);
+  relabel(bar);
 
   /* ── Navigation ─────────────────────────────────────────────── */
   const active = activeTab();
   const nav = document.createElement('nav');
   nav.className = 'nav';
-  nav.setAttribute('aria-label', 'Hauptnavigation');
+  nav.setAttribute('aria-label', label('nav.haupt', 'Hauptnavigation'));
+  nav.dataset.i18nAttr = 'aria-label:nav.haupt';
 
   const tabs = TABS.map(t => `
     <a class="nav__item${t.id === active ? ' is-active' : ''}" href="${b}${t.href}"
        data-nav-tab="${t.id}"
        ${t.id === active ? 'aria-current="page"' : ''}>
       ${icon(t.icon, 21)}
-      <span>${t.label}</span>
+      <span data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
       ${t.id === 'nachrichten' ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>' : ''}
     </a>`).join('');
 
@@ -260,12 +274,13 @@ export function mountShell(o = {}) {
   const bereiche = shellAreaLinks(o.profile, b, currentFile);
 
   nav.innerHTML = tabs + (bereiche
-    ? `<div class="nav__section marke">Bereiche</div><div class="nav__bereiche">${bereiche}</div>`
+    ? `<div class="nav__section marke" data-i18n="nav.bereiche">Bereiche</div><div class="nav__bereiche">${bereiche}</div>`
     : '') + (o.onSettings
-    ? `<a class="nav__item nav__settings" id="shellNavSettings" href="#">${icon('gear', 21)}<span>Einstellungen</span></a>`
+    ? `<a class="nav__item nav__settings" id="shellNavSettings" href="#">${icon('gear', 21)}<span data-i18n="nav.einstellungen">Einstellungen</span></a>`
     : '');
 
   document.body.appendChild(nav);
+  relabel(nav);
   mountGlobalReminderOverlay({ activeFile:currentFile });
   document.body.classList.add('has-nav');
   nav.addEventListener('click', event => {

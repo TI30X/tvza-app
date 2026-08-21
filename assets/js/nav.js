@@ -35,6 +35,16 @@ const BEREICH_OF = {
   publicProjects: 'kalender',
 };
 
+/* ── Sprache ────────────────────────────────────────────────────────
+   Die Leiste entsteht im Code, nicht im Markup. Sie traegt darum
+   dieselben data-i18n-Attribute wie eine statische Seite und wird nach
+   dem Einhaengen einmal durch applyTo geschickt. Faellt i18n.js aus,
+   bleiben die deutschen Beschriftungen im Template stehen. */
+const TAB_I18N = { start:'nav.start', kalender:'nav.kalender',
+                   nachrichten:'nav.nachrichten', bereiche:'nav.bereiche' };
+const label = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
+const relabel = root => window.TVZAI18n?.applyTo(root);
+
 const TABS = [
   { id: 'start',       label: 'Start',       icon: 'start',       href: 'index.html' },
   { id: 'kalender',    label: 'Kalender',    icon: 'kalender',    href: 'pages/planner.html' },
@@ -78,7 +88,7 @@ function areaLinks(profile) {
         <a class="nav__bereich${isCurrent ? ' is-active' : ''}" href="${b}${MODULES[k].page}"
            data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
           <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
-          <span class="nav__bereich-name">${esc(MODULES[k].name)}</span>
+          <span class="nav__bereich-name" data-i18n="mod.${k}.name">${esc(MODULES[k].name)}</span>
         </a>`;
     }).join('');
 }
@@ -98,7 +108,8 @@ function refreshAreaNavigation(profile) {
   if (!section) {
     section = document.createElement('div');
     section.className = 'nav__section marke';
-    section.textContent = 'Bereiche';
+    section.textContent = label('nav.bereiche', 'Bereiche');
+    section.dataset.i18n = 'nav.bereiche';
     nav.appendChild(section);
   }
   if (!list) {
@@ -107,6 +118,7 @@ function refreshAreaNavigation(profile) {
     nav.appendChild(list);
   }
   list.innerHTML = links;
+  relabel(list);
 
   /* pushState may have moved the address bar into /pages/. Freeze the
      freshly rendered relative destinations now, just like the router
@@ -135,7 +147,7 @@ function mount(profile) {
        data-nav-tab="${t.id}"
        ${t.id === active ? 'aria-current="page"' : ''}>
       ${icon(t.icon, 21)}
-      <span>${t.label}</span>
+      <span data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
       ${t.id === 'nachrichten'
         ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>'
         : ''}
@@ -148,12 +160,14 @@ function mount(profile) {
 
   const nav = document.createElement('nav');
   nav.className = 'nav';
-  nav.setAttribute('aria-label', 'Hauptnavigation');
+  nav.setAttribute('aria-label', label('nav.haupt', 'Hauptnavigation'));
+  nav.dataset.i18nAttr = 'aria-label:nav.haupt';
   nav.innerHTML = tabs + (bereiche
-    ? `<div class="nav__section marke">Bereiche</div><div class="nav__bereiche">${bereiche}</div>`
+    ? `<div class="nav__section marke" data-i18n="nav.bereiche">Bereiche</div><div class="nav__bereiche">${bereiche}</div>`
     : '');
 
   document.body.appendChild(nav);
+  relabel(nav);
   mountGlobalReminderOverlay({ activeFile:location.pathname.split('/').pop() || 'index.html' });
   document.body.classList.add('has-nav');
   nav.addEventListener('click', event => {
@@ -227,7 +241,7 @@ function mountAccountMenu(user, profile) {
   const wrap = document.createElement('div');
   wrap.className = 'acct';
   wrap.innerHTML = `
-    <button class="avatar" type="button" aria-haspopup="menu" aria-expanded="false" title="Konto"><span>${esc(ini)}</span></button>
+    <button class="avatar" type="button" aria-haspopup="menu" aria-expanded="false" data-i18n-attr="title:a11y.konto" title="Konto"><span>${esc(ini)}</span></button>
     <div class="acct__menu" role="menu" hidden>
       <div class="acct__head">
         <span class="acct__who">${esc(name)}</span>
@@ -235,12 +249,13 @@ function mountAccountMenu(user, profile) {
       </div>
       <button class="acct__item" data-act="settings" type="button" role="menuitem">
         <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Einstellungen</span></button>
+        <span data-i18n="acct.einstellungen">Einstellungen</span></button>
       <button class="acct__item acct__item--danger" data-act="logout" type="button" role="menuitem">
         <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-        <span>Abmelden</span></button>
+        <span data-i18n="acct.abmelden">Abmelden</span></button>
     </div>`;
   bar.appendChild(wrap);
+  relabel(wrap);
 
   const btn = wrap.querySelector('.avatar');
   const menu = wrap.querySelector('.acct__menu');
@@ -259,7 +274,7 @@ function mountAccountMenu(user, profile) {
     if (!act) return;
     close();
     if (act === 'settings') window.tvzaOpenSettings?.();
-    if (act === 'logout' && confirm('Abmelden?')) {
+    if (act === 'logout' && confirm(label('acct.abmeldenFrage', 'Abmelden?'))) {
       try { localStorage.removeItem('tvza-name'); } catch {}
       const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
       await signOut(auth);

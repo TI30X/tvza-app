@@ -19,3 +19,7 @@ mailer/service-account*.json
 **/*service-account*.json
 *.log
 dev/node_modules/
+
+# Einmal-Skripte aus einer Umbauaktion, gehoeren nicht ins Repo
+dev/_scratch/
+__pycache__/
