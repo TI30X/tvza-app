@@ -59,7 +59,7 @@
              Avatar, wie überall im Web. Das eigene Zahnrad in der
              Kopfzeile entfällt dadurch. -->
         <div class="acct" id="acct">
-          <button class="avatar" id="userChip" aria-haspopup="menu" aria-expanded="false" aria-controls="acctMenu" title="Konto"><span id="userInitials">·</span></button>
+          <button class="avatar" id="userChip" aria-haspopup="menu" aria-expanded="false" aria-controls="acctMenu" title="Konto" data-i18n-attr="title:set.gruppeKonto"><span id="userInitials">·</span></button>
           <div class="acct__menu" id="acctMenu" role="menu" hidden>
             <div class="acct__head">
               <span class="acct__who" id="acctWho">—</span>
@@ -110,7 +110,7 @@
           <div class="module-tile" data-tracker-tile="ski">
             <a href="pages/skitracker.html" class="card card--ski" id="cardSki" draggable="false" style="display:none">
               <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg></div>
-              <div class="card-content"><h3>Ski Tracker</h3><p>Schliff &amp; Wachs</p></div>
+              <div class="card-content"><h3 data-i18n="mod.ski.name">Ski Tracker</h3><p data-i18n="mod.ski.sub">Schliff &amp; Wachs</p></div>
             <div class="tile-live" id="tileSki" hidden></div>
             </a>
           </div>
@@ -118,7 +118,7 @@
           <div class="module-tile" data-tracker-tile="food">
             <a href="pages/foodtracker.html" class="card card--food" id="cardFood" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
-            <div class="card-content"><h3>Food Tracker</h3><p>Kalorien &amp; Nährstoffe</p></div>
+            <div class="card-content"><h3 data-i18n="mod.food.name">Food Tracker</h3><p data-i18n="mod.food.sub">Kalorien &amp; Nährstoffe</p></div>
             <div class="tile-live tile-prog" id="tileFood" hidden></div>
             </a>
           </div>
@@ -126,7 +126,7 @@
           <div class="module-tile" data-tracker-tile="watch">
             <a href="pages/watchlist.html" class="card card--watch" id="cardWatch" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
-            <div class="card-content"><h3>TVZA Watchlist</h3><p>Kurse, Märkte &amp; News</p></div>
+            <div class="card-content"><h3 data-i18n="mod.watch.name">TVZA Watchlist</h3><p data-i18n="mod.watch.sub">Kurse, Märkte &amp; News</p></div>
             <div class="tile-live tile-ticker" id="tileWatch" hidden></div>
             </a>
           </div>
@@ -134,7 +134,7 @@
           <div class="module-tile" data-tracker-tile="weather">
             <a href="pages/weather.html?v=3" class="card card--weather" id="cardWeather" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg></div>
-            <div class="card-content"><h3>Wetter</h3><p>Wetter &amp; Bergprognose</p></div>
+            <div class="card-content"><h3 data-i18n="mod.weather.name">Wetter</h3><p data-i18n="mod.weather.sub">Wetter &amp; Bergprognose</p></div>
             <div class="tile-live" id="tileWeather" hidden></div>
             </a>
           </div>
@@ -143,7 +143,7 @@
             <a href="pages/messages.html" class="card card--dm" id="cardDm" draggable="false" style="display:none">
             <span class="dm-tile-badge" id="dmTileBadge" style="display:none">0</span>
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
-            <div class="card-content"><h3>Nachrichten</h3><p>Direktnachrichten</p></div>
+            <div class="card-content"><h3 data-i18n="nav.nachrichten">Nachrichten</h3><p data-i18n="mod.dm.sub">Direktnachrichten</p></div>
             <div class="tile-live" id="tileDm" hidden></div>
             </a>
           </div>
@@ -151,7 +151,7 @@
           <div class="module-tile" data-tracker-tile="trip">
             <a href="pages/planner.html" class="card card--trip" id="cardTrip" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
-            <div class="card-content"><h3>Kalender &amp; Erinnerungen</h3><p>Termine, Reisen &amp; Erinnerungen</p></div>
+            <div class="card-content"><h3 data-i18n="mod.trip.name">Kalender &amp; Erinnerungen</h3><p data-i18n="mod.trip.sub">Termine, Reisen &amp; Erinnerungen</p></div>
             <div class="tile-live" id="tileTrip" hidden></div>
             </a>
           </div>
@@ -159,7 +159,7 @@
           <div class="module-tile" data-tracker-tile="matura">
             <a href="pages/maturaarbeit.html" class="card card--matura" id="cardMatura" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-            <div class="card-content"><h3>Maturaarbeit</h3><p>Status &amp; Fortschritt</p></div>
+            <div class="card-content"><h3 data-i18n="mod.matura.name">Maturaarbeit</h3><p data-i18n="mod.matura.sub">Status &amp; Fortschritt</p></div>
             <div class="tile-live tile-prog" id="tileMatura" hidden></div>
             </a>
           </div>
@@ -167,7 +167,7 @@
           <div class="module-tile" data-tracker-tile="maturatracker">
             <a href="pages/maturaarbeit-tracker.html" class="card card--matura" id="cardMaturaTracker" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-            <div class="card-content"><h3>Maturaarbeit-Tracker</h3><p>To-dos &amp; Countdown</p></div>
+            <div class="card-content"><h3 data-i18n="mod.maturatracker.name">Maturaarbeit-Tracker</h3><p data-i18n="mod.maturatracker.sub">To-dos &amp; Countdown</p></div>
             <div class="tile-live tile-prog" id="tileMaturaTracker" hidden></div>
             </a>
           </div>
@@ -175,14 +175,14 @@
           <div class="module-tile" data-tracker-tile="training">
             <a href="pages/training.html" class="card card--training" id="cardTraining" draggable="false" style="display:none">
             <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></div>
-            <div class="card-content"><h3>Training</h3><p>Wochenplan &amp; Übungen</p></div>
+            <div class="card-content"><h3 data-i18n="mod.training.name">Training</h3><p data-i18n="mod.training.sub">Wochenplan &amp; Übungen</p></div>
             <div class="tile-live tile-prog" id="tileTraining" hidden></div>
             </a>
           </div>
 
         </div>
         <p id="noModulesHint" style="display:none;color:var(--ink-soft);font-size:14px">
-          Keine Module aktiviert. Öffne <a id="openSettingsLink" style="color:var(--accent);cursor:pointer">Einstellungen</a> im Konto-Menü, um Module zu aktivieren.
+          Keine Module aktiviert. Öffne <a id="openSettingsLink" style="color:var(--accent);cursor:pointer" data-i18n="set.titel">Einstellungen</a> im Konto-Menü, um Module zu aktivieren.
         </p>
       </section>
 
@@ -256,7 +256,7 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="pName" data-i18n="common.name">Name</label>
-          <input class="form-input" id="pName" type="text" placeholder="Mein Projekt" />
+          <input class="form-input" id="pName" type="text" placeholder="Mein Projekt" data-i18n-attr="placeholder:home.projektName" />
         </div>
       </div>
       <div class="form-group">
@@ -316,7 +316,7 @@
       <hr class="settings-divider" />
 
       <section class="settings-section" id="foodSettingsSection" data-settings-section="food">
-        <p class="settings-section-title">Food Tracker</p>
+        <p class="settings-section-title" data-i18n="mod.food.name">Food Tracker</p>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="settingsFoodWeight">Gewicht (kg)</label>
@@ -339,7 +339,7 @@
       <hr class="settings-divider" id="watchSettingsDivider" />
 
       <section class="settings-section" id="watchSettingsSection" data-settings-section="watch">
-        <p class="settings-section-title">TVZA Watchlist</p>
+        <p class="settings-section-title" data-i18n="mod.watch.name">TVZA Watchlist</p>
         <div class="form-group">
           <label class="form-label" for="settingsWatchApiKey">Eigener Finnhub API-Key <small>(optional)</small></label>
           <input class="form-input" id="settingsWatchApiKey" type="text" placeholder="Gemeinsamer Schlüssel ist aktiv" autocomplete="off" />
@@ -419,7 +419,7 @@
         </section>
         <hr class="settings-divider" />
         <section class="settings-section" id="superAdminUserSection">
-          <p class="settings-section-title">Benutzer & Zugriffe</p>
+          <p class="settings-section-title" data-i18n="set.benutzer">Benutzer & Zugriffe</p>
           <p class="settings-section-copy" data-i18n="set.benutzerSub">Vergib optionale Bereiche. Kalender und Direktnachrichten stehen allen immer zur Verfügung.</p>
           <div id="adminUsers"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
         </section>

@@ -23,10 +23,10 @@
 
     <header class="appbar appbar--bereich" data-bereich="ski">
       <div class="appbar__inner">
-        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-        <span class="appbar__title">Ski Tracker</span>
+        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück" data-i18n-attr="aria-label:a11y.zurueck"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <span class="appbar__title" data-i18n="mod.ski.name">Ski Tracker</span>
         <span class="appbar__end">
-        <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+        <button class="appbar__btn" id="themeToggle" title="Theme wechseln" data-i18n-attr="title:pg.theme"></button>
         </span>
       </div>
       <div class="appbar__accent"></div>
@@ -37,101 +37,101 @@
 
       <div class="tabs">
         <div class="tab active" id="tabSkis" onclick="showTab('skis')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg> Meine Skis</div>
-        <div class="tab" id="tabLog" onclick="showTab('log')">🛠 Wartung</div>
+        <div class="tab" id="tabLog" onclick="showTab('log')" data-i18n="ski.wartung">🛠 Wartung</div>
       </div>
 
       <!-- ═══ Skis ═══ -->
       <div id="panelSkis">
         <div class="form-card">
-          <p class="form-title" id="skiFormTitle">Ski hinzufügen</p>
+          <p class="form-title" id="skiFormTitle" data-i18n="ski.hinzufuegen">Ski hinzufügen</p>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="skiName">Name / Modell</label>
-              <input class="form-input" id="skiName" type="text" placeholder="z.B. Atomic Redster SL" />
+              <label class="form-label" for="skiName" data-i18n="ski.nameModell">Name / Modell</label>
+              <input class="form-input" id="skiName" type="text" placeholder="z.B. Atomic Redster SL" data-i18n-attr="placeholder:ski.beispielName" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="skiNum">Nummer</label>
+              <label class="form-label" for="skiNum" data-i18n="ski.nummer">Nummer</label>
               <input class="form-input" id="skiNum" type="number" min="1" placeholder="1" />
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Disziplin</label>
+            <label class="form-label" data-i18n="ski.disziplin">Disziplin</label>
             <div class="seg" id="segDisziplin">
               <span class="seg-opt" data-val="SL">SL</span>
               <span class="seg-opt" data-val="GS">GS</span>
               <span class="seg-opt" data-val="SG">SG</span>
-              <span class="seg-opt" data-val="Abfahrt">Abfahrt</span>
+              <span class="seg-opt" data-val="Abfahrt" data-i18n="ski.abfahrt">Abfahrt</span>
             </div>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" id="saveSkiBtn" style="flex:1"><span class="ui-plus" aria-hidden="true"></span><span>Speichern</span></button>
-            <button class="btn btn-secondary" id="cancelEditBtn" style="display:none">Abbrechen</button>
+            <button class="btn btn-primary" id="saveSkiBtn" style="flex:1"><span class="ui-plus" aria-hidden="true"></span><span data-i18n="common.speichern">Speichern</span></button>
+            <button class="btn btn-secondary" id="cancelEditBtn" style="display:none" data-i18n="common.abbrechen">Abbrechen</button>
           </div>
         </div>
 
-        <h2 class="section-title">Skis</h2>
-        <div id="skiList"><div class="spinner">Lade…</div></div>
+        <h2 class="section-title" data-i18n="ski.skis">Skis</h2>
+        <div id="skiList"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
       </div>
 
       <!-- ═══ Maintenance log ═══ -->
       <div id="panelLog" style="display:none">
         <div class="form-card">
-          <p class="form-title">Wartungseintrag</p>
+          <p class="form-title" data-i18n="ski.eintrag">Wartungseintrag</p>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="logSki">Ski</label>
-              <select class="form-select" id="logSki"><option value="">— wählen —</option></select>
+              <label class="form-label" for="logSki" data-i18n="ski.ski">Ski</label>
+              <select class="form-select" id="logSki"><option value="" data-i18n="ski.waehlen">— wählen —</option></select>
             </div>
             <div class="form-group">
-              <label class="form-label" for="logDate">Datum</label>
+              <label class="form-label" for="logDate" data-i18n="ski.datum">Datum</label>
               <input class="form-input" id="logDate" type="date" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Schliff</label>
+            <label class="form-label" data-i18n="ski.schliff">Schliff</label>
             <div class="seg" id="segSchliff">
-              <span class="seg-opt" data-val="Feile">🪛 Feile</span>
-              <span class="seg-opt" data-val="Diamant">💎 Diamant</span>
+              <span class="seg-opt" data-val="Feile" data-i18n="ski.feile">🪛 Feile</span>
+              <span class="seg-opt" data-val="Diamant" data-i18n="ski.diamant">💎 Diamant</span>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Schärfe (1 = stumpf · 5 = sehr scharf)</label>
+            <label class="form-label" data-i18n="ski.schaerfe">Schärfe (1 = stumpf · 5 = sehr scharf)</label>
             <div class="stars" id="starsSchaerfe">
               <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Wachs</label>
+            <label class="form-label" data-i18n="ski.wachs">Wachs</label>
             <div class="seg" id="segWaxTyp">
-              <span class="seg-opt" data-val="Schnellwachs">⚡ Schnellwachs</span>
-              <span class="seg-opt" data-val="Heisswachs">🔥 Heisswachs</span>
+              <span class="seg-opt" data-val="Schnellwachs" data-i18n="ski.schnellwachs">⚡ Schnellwachs</span>
+              <span class="seg-opt" data-val="Heisswachs" data-i18n="ski.heisswachs">🔥 Heisswachs</span>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Wachs-Farbe</label>
+            <label class="form-label" data-i18n="ski.wachsFarbe">Wachs-Farbe</label>
             <div class="seg" id="segWaxFarbe">
-              <span class="seg-opt" data-val="Blau">Blau</span>
-              <span class="seg-opt" data-val="Gelb">Gelb</span>
-              <span class="seg-opt" data-val="Rot">Rot</span>
-              <span class="seg-opt" data-val="Grün">Grün</span>
+              <span class="seg-opt" data-val="Blau" data-i18n="ski.blau">Blau</span>
+              <span class="seg-opt" data-val="Gelb" data-i18n="ski.gelb">Gelb</span>
+              <span class="seg-opt" data-val="Rot" data-i18n="ski.rot">Rot</span>
+              <span class="seg-opt" data-val="Grün" data-i18n="ski.gruen">Grün</span>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="logNotes">Notizen (optional)</label>
-            <input class="form-input" id="logNotes" type="text" placeholder="z.B. für Rennen vorbereitet" />
+            <label class="form-label" for="logNotes" data-i18n="ski.notizen">Notizen (optional)</label>
+            <input class="form-input" id="logNotes" type="text" placeholder="z.B. für Rennen vorbereitet" data-i18n-attr="placeholder:ski.beispielNotiz" />
           </div>
 
-          <button class="btn btn-primary btn-block" id="addLogBtn"><span class="ui-plus" aria-hidden="true"></span><span>Eintrag speichern</span></button>
+          <button class="btn btn-primary btn-block" id="addLogBtn"><span class="ui-plus" aria-hidden="true"></span><span data-i18n="ski.speichern">Eintrag speichern</span></button>
         </div>
 
-        <h2 class="section-title">Protokoll</h2>
-        <div id="logList"><div class="spinner">Lade…</div></div>
+        <h2 class="section-title" data-i18n="ski.protokoll">Protokoll</h2>
+        <div id="logList"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
       </div>
 
     </main>

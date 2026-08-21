@@ -123,10 +123,20 @@ verification is not required. That's the intended beta default.
 
 Die Oberfläche gibt es in sieben Sprachen: de, en, fr, it, pl, nl, es.
 
-- **Quelle ist `dev/i18n-src/catalog.py`.** Eine Tabelle, sieben Spalten.
-  `python3 dev/i18n-src/build.py` erzeugt daraus `assets/i18n/<lang>.json`.
-  Die JSON-Dateien werden mitversioniert — die App hat weiterhin keinen
-  Build-Schritt, das Skript läuft nur, wenn jemand am Katalog arbeitet.
+- **Quelle sind die Tabellen in `dev/i18n-src/`:** `catalog.py` für Hülle,
+  Navigation und Einstellungen, `catalog_pages*.py` für die Bereichsseiten.
+  Alle haben dieselbe Form — Schlüssel auf ein Tupel `(de, en, fr, it, pl, nl,
+  es)`. `python3 dev/i18n-src/build.py` führt sie zusammen und erzeugt
+  `assets/i18n/<lang>.json`. Die JSON-Dateien werden mitversioniert — die App
+  hat weiterhin keinen Build-Schritt, das Skript läuft nur, wenn jemand am
+  Katalog arbeitet. Doppelte Schlüssel über zwei Tabellen brechen den Build.
+- **Schlüssel ins Markup setzen:** `python3 dev/i18n-src/apply_keys.py [seite …]`
+  annotiert Elemente, deren Inhalt reiner Text ist und genau einer deutschen
+  Beschriftung entspricht. `<script>` und `<style>` bleiben unberührt. Jede
+  Seite bekommt nur ihre eigenen Namensräume zugestanden — darum darf „Datum"
+  auf der Ski-Seite `ski.datum` und im Kalender `cal.datum` sein. Danach immer
+  gegenprüfen, dass wirklich nur Attribute dazugekommen sind (Tag-Folge und
+  sichtbarer Text müssen identisch bleiben).
 - **UI-Strings sind Schlüssel, `de.json` ist die Quelle.** Die alte Regel
   „UI-Strings sind deutsch" gilt für neue Texte nicht mehr. Kommentare und
   Commit-Messages bleiben deutsch.

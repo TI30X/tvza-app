@@ -44,7 +44,7 @@ KEYS = {
                      'Offline – dane zsynchronizują się, gdy wrócisz do sieci',
                      'Offline – gegevens synchroniseren zodra je weer online bent',
                      'Sin conexión – los datos se sincronizarán cuando vuelvas a estar en línea'),
-'common.laden':     ('Lädt…', 'Loading…', 'Chargement…', 'Caricamento…', 'Ładowanie…', 'Laden…', 'Cargando…'),
+'common.laden':     ('Lade…', 'Loading…', 'Chargement…', 'Caricamento…', 'Ładowanie…', 'Laden…', 'Cargando…'),
 'common.speichern': ('Speichern', 'Save', 'Enregistrer', 'Salva', 'Zapisz', 'Opslaan', 'Guardar'),
 'common.abbrechen': ('Abbrechen', 'Cancel', 'Annuler', 'Annulla', 'Anuluj', 'Annuleren', 'Cancelar'),
 'common.fertig':    ('Fertig', 'Done', 'Terminé', 'Fine', 'Gotowe', 'Klaar', 'Listo'),

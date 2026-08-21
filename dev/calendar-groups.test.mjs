@@ -111,7 +111,7 @@ test('mobile creation and reminders stay above long calendar content', async () 
   assert.match(planner, /id="mobileRemindersBtn"/);
   assert.match(planner, /class="calendar-thumb-actions"/);
   assert.match(planner, /id="mobileCalAddBtn"/);
-  assert.match(planner, /class="mobile-reminder-label">Erinnerungen</);
+  assert.match(planner, /class="mobile-reminder-label"[^>]*>Erinnerungen</);
   assert.match(planner, /id="mobileReminderCount"/);
   assert.match(planner, /id="reminderHubList"/);
   assert.match(planner, /id="reminderHubList"[\s\S]*id="reminderHubAdd"/);

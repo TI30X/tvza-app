@@ -85,12 +85,12 @@
   <div class="app">
     <header class="appbar appbar--bereich" data-bereich="admin">
       <div class="appbar__inner">
-        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück">
+        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück" data-i18n-attr="aria-label:a11y.zurueck">
           <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
         </a>
-        <span class="appbar__title">Admin</span>
+        <span class="appbar__title" data-i18n="mod.admin.name">Admin</span>
         <span class="appbar__end">
-          <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+          <button class="appbar__btn" id="themeToggle" title="Theme wechseln" data-i18n-attr="title:pg.theme"></button>
         </span>
       </div>
       <div class="appbar__accent"></div>
@@ -102,9 +102,9 @@
           <svg class="ic" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
         </span>
         <div>
-          <p class="admin-intro__eyebrow">Verwaltung</p>
-          <h1 id="adminTitle">Admin-Zentrale</h1>
-          <p>Einladungen, Benutzerrechte und offene Anfragen an einem Ort.</p>
+          <p class="admin-intro__eyebrow" data-i18n="adm.verwaltung">Verwaltung</p>
+          <h1 id="adminTitle" data-i18n="adm.zentrale">Admin-Zentrale</h1>
+          <p data-i18n="adm.zentraleSub">Einladungen, Benutzerrechte und offene Anfragen an einem Ort.</p>
         </div>
       </section>
       <div class="admin-frame-shell">
@@ -114,7 +114,7 @@
           title="Admin-Bereich"
           referrerpolicy="same-origin"
           scrolling="no"
-        ></iframe>
+         data-i18n-attr="title:adm.bereich"></iframe>
       </div>
     </main>
   </div>

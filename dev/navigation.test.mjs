@@ -276,8 +276,8 @@ test('splash skip hints are immediate and arranging stays on Start', async () =>
 
   assert.doesNotMatch(watchlist, /class="hint">Tippen zum Überspringen/);
   assert.doesNotMatch(weather, /class="hint">Tippen zum Überspringen/);
-  assert.match(watchlist, /class="skip-hint">Tippen zum Überspringen/);
-  assert.match(weather, /class="skip-hint">Tippen zum Überspringen/);
+  assert.match(watchlist, /class="skip-hint"[^>]*>Tippen zum Überspringen/);
+  assert.match(weather, /class="skip-hint"[^>]*>Tippen zum Überspringen/);
   assert.match(watchlist, /#wl-splash \.skip-hint[\s\S]*opacity:1/);
   assert.match(weather, /#wx-splash \.skip-hint[\s\S]*opacity:1/);
   assert.match(welcome, /#tvza-welcome \.tvza-hint[\s\S]*opacity:1/);

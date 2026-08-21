@@ -49,10 +49,10 @@
 
     <header class="appbar appbar--bereich" data-bereich="food">
       <div class="appbar__inner">
-        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-        <span class="appbar__title">Food Tracker</span>
+        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück" data-i18n-attr="aria-label:a11y.zurueck"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <span class="appbar__title" data-i18n="mod.food.name">Food Tracker</span>
         <span class="appbar__end">
-        <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+        <button class="appbar__btn" id="themeToggle" title="Theme wechseln" data-i18n-attr="title:pg.theme"></button>
         </span>
       </div>
       <div class="appbar__accent"></div>
@@ -63,7 +63,7 @@
 
       <div class="tabs">
         <div class="tab active" id="tabDay"   onclick="showView('day')"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Tag</div>
-        <div class="tab"        id="tabMonth" onclick="showView('month')">🗓 Monat</div>
+        <div class="tab"        id="tabMonth" onclick="showView('month')" data-i18n="fd.monat">🗓 Monat</div>
       </div>
 
       <!-- ═══ Day view ═══ -->
@@ -81,43 +81,43 @@
         <!-- Date navigation -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
           <button class="date-pill" onclick="changeDay(-1)">‹</button>
-          <div class="date-pill" style="flex:1;justify-content:center;" id="datePill">Heute</div>
+          <div class="date-pill" style="flex:1;justify-content:center;" id="datePill" data-i18n="home.heute">Heute</div>
           <button class="date-pill" onclick="changeDay(1)">›</button>
         </div>
 
         <!-- Entry form -->
         <div class="form-card" id="entryCard">
-          <p class="form-title" id="formTitle">Mahlzeit erfassen</p>
+          <p class="form-title" id="formTitle" data-i18n="fd.erfassen">Mahlzeit erfassen</p>
 
           <div class="form-group">
-            <label class="form-label" for="fMeal">Mahlzeit</label>
+            <label class="form-label" for="fMeal" data-i18n="fd.mahlzeit">Mahlzeit</label>
             <select class="form-select" id="fMeal">
-              <option>🌅 Frühstück</option>
-              <option>☀️ Mittagessen</option>
-              <option>🌙 Abendessen</option>
-              <option>🍎 Snack</option>
+              <option data-i18n="fd.fruehstueck">🌅 Frühstück</option>
+              <option data-i18n="fd.mittag">☀️ Mittagessen</option>
+              <option data-i18n="fd.abend">🌙 Abendessen</option>
+              <option data-i18n="fd.snack">🍎 Snack</option>
             </select>
           </div>
 
-          <label class="form-label">Zutaten (ungefähres Gewicht)</label>
+          <label class="form-label" data-i18n="fd.zutaten">Zutaten (ungefähres Gewicht)</label>
           <div id="ingRows"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
             <button class="btn btn-primary" id="scanBtn" style="font-size:13px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
               Scannen
             </button>
-            <button class="btn btn-secondary" id="addIngBtn" style="font-size:13px;padding:7px 14px"><span class="ui-plus" aria-hidden="true"></span><span>Zutat</span></button>
+            <button class="btn btn-secondary" id="addIngBtn" style="font-size:13px;padding:7px 14px"><span class="ui-plus" aria-hidden="true"></span><span data-i18n="fd.zutat">Zutat</span></button>
           </div>
 
           <div class="nutri-box" id="nutriBox" style="display:none"></div>
 
-          <button class="btn btn-primary btn-block" id="saveBtn">✓ Speichern</button>
-          <button class="btn btn-secondary btn-block" id="cancelEditBtn" style="display:none;margin-top:8px">Abbrechen</button>
+          <button class="btn btn-primary btn-block" id="saveBtn" data-i18n="fd.speichern">✓ Speichern</button>
+          <button class="btn btn-secondary btn-block" id="cancelEditBtn" style="display:none;margin-top:8px" data-i18n="common.abbrechen">Abbrechen</button>
         </div>
 
         <!-- Entries -->
-        <h2 class="section-title" id="dayLabel">Heutige Einträge</h2>
-        <div id="listWrap"><div class="spinner">Lade…</div></div>
+        <h2 class="section-title" id="dayLabel" data-i18n="fd.eintraegeHeute">Heutige Einträge</h2>
+        <div id="listWrap"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
 
       </div>
 
@@ -129,7 +129,7 @@
           <button class="date-pill" onclick="changeMonth(1)">›</button>
         </div>
         <div class="cal-grid" id="calGrid"></div>
-        <p style="font-size:11px;color:var(--ink-soft);margin-top:10px;text-align:center">
+        <p style="font-size:11px;color:var(--ink-soft);margin-top:10px;text-align:center" data-i18n="fd.tippeTag">
           Tippe auf einen Tag, um die Einträge zu sehen
         </p>
       </div>
@@ -146,23 +146,23 @@
   <!-- Scanner modal -->
   <div class="modal-backdrop" id="scanModal">
     <div class="modal">
-      <div class="modal-title">Barcode scannen</div>
+      <div class="modal-title" data-i18n="fd.barcode">Barcode scannen</div>
       <div id="reader" style="width:100%;border-radius:var(--r-row);overflow:hidden;background:#000;min-height:220px"></div>
-      <p id="scanStatus" style="font-size:13px;color:var(--ink-soft);margin:10px 0 6px;text-align:center">Kamera wird gestartet…</p>
+      <p id="scanStatus" style="font-size:13px;color:var(--ink-soft);margin:10px 0 6px;text-align:center" data-i18n="fd.kamera">Kamera wird gestartet…</p>
 
       <!-- Was bisher in dieser Mahlzeit erfasst wurde -->
       <div class="scan-summary" id="scanSummary" style="display:none"></div>
 
       <div class="form-group" style="margin-top:6px">
-        <label class="form-label" for="manualCode">Oder Code von Hand eingeben</label>
+        <label class="form-label" for="manualCode" data-i18n="fd.codeHand">Oder Code von Hand eingeben</label>
         <div style="display:flex;gap:8px">
-          <input class="form-input" id="manualCode" type="text" inputmode="numeric" placeholder="z.B. 7610200416014" />
+          <input class="form-input" id="manualCode" type="text" inputmode="numeric" placeholder="z.B. 7610200416014" data-i18n-attr="placeholder:fd.beispielCode" />
           <button class="btn btn-primary" id="manualCodeBtn" style="padding:9px 14px">OK</button>
         </div>
       </div>
       <button class="btn btn-primary btn-block" id="scanDoneBtn" style="margin-top:12px;display:none">✓ Das war's — speichern</button>
       <div class="modal-actions">
-        <button class="btn btn-secondary" id="scanClose">Schliessen</button>
+        <button class="btn btn-secondary" id="scanClose" data-i18n="a11y.schliessen">Schliessen</button>
       </div>
     </div>
   </div>
@@ -170,18 +170,18 @@
   <!-- Amount sheet -->
   <div class="modal-backdrop" id="amountModal">
     <div class="modal">
-      <div class="modal-title" id="amountTitle">Wie viel?</div>
+      <div class="modal-title" id="amountTitle" data-i18n="fd.wieViel">Wie viel?</div>
       <p id="amountSub" style="font-size:13px;color:var(--ink-soft);margin:-4px 0 14px"></p>
       <div id="amountBtns" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="form-group" style="margin-top:14px">
-        <label class="form-label" for="amountManual">Eigene Menge (g)</label>
+        <label class="form-label" for="amountManual" data-i18n="fd.eigeneMenge">Eigene Menge (g)</label>
         <div style="display:flex;gap:8px">
           <input class="form-input" id="amountManual" type="number" min="1" placeholder="g" />
-          <button class="btn btn-primary" id="amountManualBtn" style="padding:9px 14px">Hinzufügen</button>
+          <button class="btn btn-primary" id="amountManualBtn" style="padding:9px 14px" data-i18n="fd.hinzufuegen">Hinzufügen</button>
         </div>
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" id="amountCancel">Abbrechen</button>
+        <button class="btn btn-secondary" id="amountCancel" data-i18n="common.abbrechen">Abbrechen</button>
       </div>
     </div>
   </div>
@@ -189,21 +189,21 @@
   <!-- Request food modal -->
   <div class="modal-backdrop" id="reqModal">
     <div class="modal">
-      <div class="modal-title">Lebensmittel vorschlagen</div>
-      <p style="font-size:13px;color:var(--ink-soft);margin:-4px 0 14px">
+      <div class="modal-title" data-i18n="fd.vorschlagen">Lebensmittel vorschlagen</div>
+      <p style="font-size:13px;color:var(--ink-soft);margin:-4px 0 14px" data-i18n="fd.vorschlagenSub">
         Nicht gefunden? Schlag es vor — sobald es freigegeben ist, steht es allen zur Verfügung.
       </p>
       <div class="form-group">
-        <label class="form-label" for="reqName">Name</label>
-        <input class="form-input" id="reqName" type="text" placeholder="z.B. Skyr Vanille" />
+        <label class="form-label" for="reqName" data-i18n="common.name">Name</label>
+        <input class="form-input" id="reqName" type="text" placeholder="z.B. Skyr Vanille" data-i18n-attr="placeholder:fd.beispielName" />
       </div>
       <div class="form-group">
-        <label class="form-label" for="reqNote">Notiz (optional)</label>
-        <input class="form-input" id="reqNote" type="text" placeholder="Marke, Packungsgrösse, Geschmack …" />
+        <label class="form-label" for="reqNote" data-i18n="fd.notiz">Notiz (optional)</label>
+        <input class="form-input" id="reqNote" type="text" placeholder="Marke, Packungsgrösse, Geschmack …" data-i18n-attr="placeholder:fd.beispielMarke" />
       </div>
       <div class="modal-actions">
-        <button class="btn btn-secondary" id="reqCancel">Abbrechen</button>
-        <button class="btn btn-primary" id="reqSend">Vorschlag senden</button>
+        <button class="btn btn-secondary" id="reqCancel" data-i18n="common.abbrechen">Abbrechen</button>
+        <button class="btn btn-primary" id="reqSend" data-i18n="fd.vorschlagSenden">Vorschlag senden</button>
       </div>
     </div>
   </div>

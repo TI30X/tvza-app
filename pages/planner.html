@@ -242,10 +242,10 @@
 
     <header class="appbar appbar--bereich" data-bereich="kalender">
       <div class="appbar__inner">
-        <a href="../index.html" class="appbar__btn back-btn" id="backBtn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-        <span class="appbar__title" id="pageTitle">Kalender &amp; Erinnerungen</span>
+        <a href="../index.html" class="appbar__btn back-btn" id="backBtn" aria-label="Zurück" data-i18n-attr="aria-label:a11y.zurueck"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <span class="appbar__title" id="pageTitle" data-i18n="mod.trip.name">Kalender &amp; Erinnerungen</span>
         <span class="appbar__end">
-          <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+          <button class="appbar__btn" id="themeToggle" title="Theme wechseln" data-i18n-attr="title:pg.theme"></button>
         </span>
       </div>
       <div class="appbar__accent"></div>
@@ -258,14 +258,14 @@
       <!-- No group -->
       <div id="noGroup" style="display:none">
         <div class="grp-card">
-          <p class="sub-title">Gruppe erstellen</p>
-          <div class="field"><input class="form-input" id="newGrpName" type="text" placeholder="Name der Gruppe (z.B. Familie van Zanten)" /></div>
-          <button class="btn btn-primary btn-block" id="createGrpBtn">Gruppe erstellen</button>
+          <p class="sub-title" data-i18n="cal.gruppeErstellen">Gruppe erstellen</p>
+          <div class="field"><input class="form-input" id="newGrpName" type="text" placeholder="Name der Gruppe (z.B. Familie van Zanten)" data-i18n-attr="placeholder:cal.gruppennameBsp" /></div>
+          <button class="btn btn-primary btn-block" id="createGrpBtn" data-i18n="cal.gruppeErstellen">Gruppe erstellen</button>
         </div>
         <div class="grp-card">
-          <p class="sub-title">Gruppe beitreten</p>
-          <div class="field"><input class="form-input" id="joinGrpName" type="text" placeholder="Gruppenname eingeben" /></div>
-          <button class="btn btn-primary btn-block" id="joinGrpBtn">Beitritt anfragen</button>
+          <p class="sub-title" data-i18n="cal.gruppeBeitreten">Gruppe beitreten</p>
+          <div class="field"><input class="form-input" id="joinGrpName" type="text" placeholder="Gruppenname eingeben" data-i18n-attr="placeholder:cal.gruppennameEingeben" /></div>
+          <button class="btn btn-primary btn-block" id="joinGrpBtn" data-i18n="cal.beitrittAnfragen">Beitritt anfragen</button>
           <p id="joinStatus" style="font-size:12px;color:var(--ink-soft);margin-top:8px"></p>
         </div>
       </div>
@@ -273,23 +273,23 @@
       <!-- Group main -->
       <div id="groupView" style="display:none">
         <div class="calendar-layout">
-          <aside class="calendar-sidebar" aria-label="Kalender auswählen">
+          <aside class="calendar-sidebar" aria-label="Kalender auswählen" data-i18n-attr="aria-label:cal.kalenderWaehlen">
             <div class="calendar-side-card mini-calendar-card">
               <div id="miniCalendars"></div>
             </div>
             <button class="btn btn-primary btn-block calendar-action-with-icon" id="addTripBtn" type="button">
               <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-              <span>Neuer Termin</span>
+              <span data-i18n="cal.neuerTermin">Neuer Termin</span>
             </button>
             <div class="calendar-side-card calendar-source-card">
-              <div class="calendar-side-title"><span>Meine Kalender</span></div>
-              <div id="calendarSources"><div class="spinner">Lade…</div></div>
+              <div class="calendar-side-title"><span data-i18n="cal.meine">Meine Kalender</span></div>
+              <div id="calendarSources"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
               <div class="calendar-side-actions">
                 <button class="pill calendar-action-with-icon" id="addGroupBtn" type="button">
                   <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-                  <span>Gruppe hinzufügen</span>
+                  <span data-i18n="cal.gruppeHinzufuegen">Gruppe hinzufügen</span>
                 </button>
-                <button class="pill" id="manageGroupsBtn" type="button">Gruppen verwalten</button>
+                <button class="pill" id="manageGroupsBtn" type="button" data-i18n="cal.gruppenVerwalten">Gruppen verwalten</button>
               </div>
             </div>
           </aside>
@@ -297,32 +297,32 @@
           <section class="calendar-workspace" id="calendarWorkspace">
             <div class="calendar-commandbar">
               <div class="calendar-commandbar__nav">
-                <button class="icon-pill" id="prevBtn" aria-label="Vorheriger Zeitraum">‹</button>
-                <button class="icon-pill" id="nextBtn" aria-label="Nächster Zeitraum">›</button>
+                <button class="icon-pill" id="prevBtn" aria-label="Vorheriger Zeitraum" data-i18n-attr="aria-label:cal.vorheriger">‹</button>
+                <button class="icon-pill" id="nextBtn" aria-label="Nächster Zeitraum" data-i18n-attr="aria-label:cal.naechster">›</button>
               </div>
-              <button class="pill calendar-commandbar__today" id="todayBtn" type="button">Heute</button>
+              <button class="pill calendar-commandbar__today" id="todayBtn" type="button" data-i18n="home.heute">Heute</button>
               <h2 class="calendar-commandbar__title" id="monthTitle">—</h2>
-              <button class="icon-pill calendar-commandbar__settings" id="calendarSettingsBtn" type="button" aria-label="Kalenderdarstellung">
+              <button class="icon-pill calendar-commandbar__settings" id="calendarSettingsBtn" type="button" aria-label="Kalenderdarstellung" data-i18n-attr="aria-label:cal.darstellung">
                 <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
               </button>
               <div class="calendar-commandbar__views">
                 <div class="view-picker">
                   <button class="pill view-picker__button" id="viewPickerBtn" type="button" aria-haspopup="menu" aria-expanded="false">
-                    <span id="viewPickerLabel">Monat</span>
+                    <span id="viewPickerLabel" data-i18n="cal.monat">Monat</span>
                     <svg class="ic view-picker__chevron" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
                   </button>
                   <div class="view-menu" id="viewMenu" role="menu" hidden>
-                    <button type="button" data-calendar-view="day">Tag</button>
-                    <button type="button" data-calendar-view="3day">3 Tage</button>
-                    <button type="button" data-calendar-view="workweek">Arbeitswoche</button>
-                    <button type="button" data-calendar-view="week">Woche</button>
-                    <button type="button" data-calendar-view="month">Monat</button>
-                    <button type="button" data-calendar-view="agenda" id="agendaViewOption">Liste</button>
+                    <button type="button" data-calendar-view="day" data-i18n="cal.tag">Tag</button>
+                    <button type="button" data-calendar-view="3day" data-i18n="cal.dreiTage">3 Tage</button>
+                    <button type="button" data-calendar-view="workweek" data-i18n="cal.arbeitswoche">Arbeitswoche</button>
+                    <button type="button" data-calendar-view="week" data-i18n="cal.woche">Woche</button>
+                    <button type="button" data-calendar-view="month" data-i18n="cal.monat">Monat</button>
+                    <button type="button" data-calendar-view="agenda" id="agendaViewOption" data-i18n="cal.liste">Liste</button>
                   </div>
                 </div>
                 <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">
                   <span class="ui-plus calendar-action-icon calendar-commandbar__plus" aria-hidden="true"></span>
-                  <span class="calendar-commandbar__create-label">Erstellen</span>
+                  <span class="calendar-commandbar__create-label" data-i18n="cal.erstellen">Erstellen</span>
                 </button>
               </div>
             </div>
@@ -331,26 +331,26 @@
 
             <div class="calendar-stage">
               <div class="calendar-view calendar-month" id="calView">
-                <div class="weekdays"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
-                <div class="grid" id="grid"><div class="spinner" style="grid-column:1/-1">Lade…</div></div>
+                <div class="weekdays"><span data-i18n="cal.mo">Mo</span><span data-i18n="cal.di">Di</span><span data-i18n="cal.mi">Mi</span><span data-i18n="cal.do">Do</span><span data-i18n="cal.fr">Fr</span><span data-i18n="cal.sa">Sa</span><span data-i18n="cal.so">So</span></div>
+                <div class="grid" id="grid"><div class="spinner" style="grid-column:1/-1" data-i18n="common.laden">Lade…</div></div>
               </div>
 
               <div class="calendar-view" id="timeView" hidden>
-                <div class="time-calendar-wrap" id="timeCalendar"><div class="spinner">Lade…</div></div>
+                <div class="time-calendar-wrap" id="timeCalendar"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
               </div>
 
               <div class="calendar-view calendar-agenda" id="listView" hidden>
-                <div id="agenda"><div class="spinner">Lade…</div></div>
+                <div id="agenda"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
               </div>
             </div>
 
-            <div class="calendar-thumb-actions" aria-label="Schnellaktionen">
-              <button class="pill mobile-reminder-button" id="mobileRemindersBtn" type="button" aria-label="Erinnerungen öffnen">
+            <div class="calendar-thumb-actions" aria-label="Schnellaktionen" data-i18n-attr="aria-label:cal.schnellaktionen">
+              <button class="pill mobile-reminder-button" id="mobileRemindersBtn" type="button" aria-label="Erinnerungen öffnen" data-i18n-attr="aria-label:cal.erinnerungenOeffnen">
                 <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
-                <span class="mobile-reminder-label">Erinnerungen</span>
+                <span class="mobile-reminder-label" data-i18n="cal.erinnerungen">Erinnerungen</span>
                 <span class="mobile-reminder-count" id="mobileReminderCount" hidden></span>
               </button>
-              <button class="pill primary calendar-mobile-create" id="mobileCalAddBtn" type="button" aria-label="Erstellen">
+              <button class="pill primary calendar-mobile-create" id="mobileCalAddBtn" type="button" aria-label="Erstellen" data-i18n-attr="aria-label:cal.erstellen">
                 <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
               </button>
             </div>
@@ -362,32 +362,32 @@
         <section class="planner-panel" id="reminderSection">
           <div class="planner-section-head">
             <div>
-              <p class="marke">Erinnerungen</p>
-              <h2>Was als Nächstes ansteht</h2>
+              <p class="marke" data-i18n="cal.erinnerungen">Erinnerungen</p>
+              <h2 data-i18n="cal.wasNaechstes">Was als Nächstes ansteht</h2>
             </div>
             <button class="pill primary calendar-action-with-icon" id="addReminderBtn" type="button">
               <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-              <span>Erinnerung</span>
+              <span data-i18n="cal.erinnerung">Erinnerung</span>
             </button>
           </div>
-          <div class="reminder-list" id="reminderList"><div class="spinner">Lade…</div></div>
+          <div class="reminder-list" id="reminderList"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
         </section>
 
         <section class="planner-panel" id="calendarSync">
           <div class="planner-section-head">
             <div>
-              <p class="marke">Kalender abgleichen</p>
-              <h2>Mit anderen Kalendern</h2>
+              <p class="marke" data-i18n="cal.abgleichen">Kalender abgleichen</p>
+              <h2 data-i18n="cal.mitAnderen">Mit anderen Kalendern</h2>
             </div>
           </div>
-          <p class="sync-copy">ICS funktioniert mit Google, Outlook/Exchange, Apple und Samsung.</p>
+          <p class="sync-copy" data-i18n="cal.icsHinweis">ICS funktioniert mit Google, Outlook/Exchange, Apple und Samsung.</p>
           <div class="sync-actions">
-            <button class="pill primary" id="calendarImportBtn" type="button">ICS importieren</button>
-            <button class="pill" id="calendarExportBtn" type="button">TVZA exportieren</button>
+            <button class="pill primary" id="calendarImportBtn" type="button" data-i18n="cal.icsImport">ICS importieren</button>
+            <button class="pill" id="calendarExportBtn" type="button" data-i18n="cal.tvzaExport">TVZA exportieren</button>
             <input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden />
           </div>
           <p class="sync-status" id="calendarSyncStatus"></p>
-          <p class="sync-copy">Automatische Zweiweg-Synchronisierung benötigt später die geschützte Serververbindung.</p>
+          <p class="sync-copy" data-i18n="cal.zweiweg">Automatische Zweiweg-Synchronisierung benötigt später die geschützte Serververbindung.</p>
         </section>
       </div>
 
@@ -403,11 +403,11 @@
       <span style="display:flex;gap:6px">
         <button class="pill calendar-action-with-icon" id="daySheetReminder">
           <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-          <span>Erinnerung</span>
+          <span data-i18n="cal.erinnerung">Erinnerung</span>
         </button>
         <button class="pill primary calendar-action-with-icon" id="daySheetAdd">
           <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-          <span>Termin</span>
+          <span data-i18n="cal.termin">Termin</span>
         </button>
       </span></div>
     <div id="dayEvents"></div>
@@ -417,29 +417,29 @@
   <div class="backdrop" id="createBackdrop"></div>
   <div class="sheet create-sheet" id="createSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title">Erstellen</span>
-      <button class="icon-pill" id="createSheetClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <p class="create-sheet__copy">Was möchtest du hinzufügen?</p>
+    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.erstellen">Erstellen</span>
+      <button class="icon-pill" id="createSheetClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <p class="create-sheet__copy" data-i18n="cal.wasHinzufuegen">Was möchtest du hinzufügen?</p>
     <div class="create-options">
       <button class="create-option" id="createEventOption" type="button">
         <span class="create-option__icon create-option__icon--event" aria-hidden="true">
           <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
         </span>
-        <span><strong>Persönlicher Termin</strong><small>Nur in deinem eigenen Kalender</small></span>
+        <span><strong data-i18n="cal.persoenlich">Persönlicher Termin</strong><small data-i18n="cal.persoenlichSub">Nur in deinem eigenen Kalender</small></span>
         <span aria-hidden="true">›</span>
       </button>
       <button class="create-option" id="createGroupEventOption" type="button">
         <span class="create-option__icon create-option__icon--event" aria-hidden="true">
           <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </span>
-        <span><strong>Gruppentermin</strong><small>Ein gemeinsames Ereignis oder Programm</small></span>
+        <span><strong data-i18n="cal.gruppentermin">Gruppentermin</strong><small data-i18n="cal.gruppenterminSub">Ein gemeinsames Ereignis oder Programm</small></span>
         <span aria-hidden="true">›</span>
       </button>
       <button class="create-option" id="createReminderOption" type="button">
         <span class="create-option__icon create-option__icon--reminder" aria-hidden="true">
           <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
         </span>
-        <span><strong>Erinnerung</strong><small>Etwas, das du nicht vergessen möchtest</small></span>
+        <span><strong data-i18n="cal.erinnerung">Erinnerung</strong><small data-i18n="cal.erinnerungSub">Etwas, das du nicht vergessen möchtest</small></span>
         <span aria-hidden="true">›</span>
       </button>
     </div>
@@ -448,12 +448,12 @@
   <!-- Reminders remain reachable without scrolling past the calendar -->
   <div class="backdrop" id="reminderHubBackdrop"></div>
   <div class="sheet reminder-hub-sheet" id="reminderHubSheet">
-    <div class="sheet-head"><span class="sheet-title">Erinnerungen</span>
-      <button class="icon-pill" id="reminderHubClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.erinnerungen">Erinnerungen</span>
+      <button class="icon-pill" id="reminderHubClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="reminder-list reminder-hub-list" id="reminderHubList"></div>
     <button class="btn btn-primary btn-block calendar-action-with-icon reminder-hub-add" id="reminderHubAdd" type="button">
       <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-      <span>Neue Erinnerung</span>
+      <span data-i18n="cal.neueErinnerung">Neue Erinnerung</span>
     </button>
   </div>
 
@@ -461,51 +461,51 @@
   <div class="backdrop" id="tripBackdrop"></div>
   <div class="sheet" id="tripSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" id="tripFormTitle">Neuer Termin</span>
-      <button class="icon-pill" id="tripFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <div class="field"><label>Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" /></div>
-    <div class="field"><label>Ziel / Ort (optional)</label><input class="form-input" id="tDest" placeholder="Ort / Region — kann leer bleiben" /></div>
-    <div class="field"><label>Kalender</label><select class="form-input" id="tGroup"></select></div>
+    <div class="sheet-head"><span class="sheet-title" id="tripFormTitle" data-i18n="cal.neuerTermin">Neuer Termin</span>
+      <button class="icon-pill" id="tripFormClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="field"><label data-i18n="cal.titel">Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" data-i18n-attr="placeholder:cal.bspTitel" /></div>
+    <div class="field"><label data-i18n="cal.zielOrt">Ziel / Ort (optional)</label><input class="form-input" id="tDest" placeholder="Ort / Region — kann leer bleiben" data-i18n-attr="placeholder:cal.bspOrt" /></div>
+    <div class="field"><label data-i18n="cal.kalender">Kalender</label><select class="form-input" id="tGroup"></select></div>
     <div class="row2">
-      <div class="field"><label>Von</label><input class="form-input" id="tStart" type="date" /></div>
-      <div class="field"><label>Bis (optional)</label><input class="form-input" id="tEnd" type="date" placeholder="leer = eintägig"></div>
+      <div class="field"><label data-i18n="cal.von">Von</label><input class="form-input" id="tStart" type="date" /></div>
+      <div class="field"><label data-i18n="cal.bis">Bis (optional)</label><input class="form-input" id="tEnd" type="date" placeholder="leer = eintägig" data-i18n-attr="placeholder:cal.bspLeer"></div>
     </div>
     <div class="row2">
-      <div class="field"><label>Startzeit (optional)</label><input class="form-input" id="tStartTime" type="time" /></div>
-      <div class="field"><label>Endzeit (optional)</label><input class="form-input" id="tEndTime" type="time" /></div>
+      <div class="field"><label data-i18n="cal.startzeit">Startzeit (optional)</label><input class="form-input" id="tStartTime" type="time" /></div>
+      <div class="field"><label data-i18n="cal.endzeit">Endzeit (optional)</label><input class="form-input" id="tEndTime" type="time" /></div>
     </div>
-    <div class="field"><label>Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
+    <div class="field"><label data-i18n="cal.notizen">Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
     <div class="field">
-      <label>Programm / Info-Seite (optional)</label>
+      <label data-i18n="cal.programm">Programm / Info-Seite (optional)</label>
       <div class="tabs" id="tpTabs">
         <button class="tab active" data-tpane="paste">HTML</button>
-        <button class="tab" data-tpane="upload">Datei (.html)</button>
-        <button class="tab" data-tpane="url">Link</button>
+        <button class="tab" data-tpane="upload" data-i18n="cal.datei">Datei (.html)</button>
+        <button class="tab" data-tpane="url" data-i18n="cal.link">Link</button>
       </div>
-      <div data-tbody="paste"><textarea class="form-textarea" id="tpHtml" rows="4" placeholder="HTML hier einfügen — wird automatisch nach Tagen aufgeteilt…"></textarea></div>
-      <div data-tbody="upload" style="display:none"><label class="drop" id="tpDrop"><span id="tpDropText">HTML-Datei wählen</span><input type="file" id="tpFile" accept=".html,.htm,text/html" hidden /></label><p id="tpChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
+      <div data-tbody="paste"><textarea class="form-textarea" id="tpHtml" rows="4" placeholder="HTML hier einfügen — wird automatisch nach Tagen aufgeteilt…" data-i18n-attr="placeholder:cal.bspHtmlTage"></textarea></div>
+      <div data-tbody="upload" style="display:none"><label class="drop" id="tpDrop"><span id="tpDropText" data-i18n="cal.htmlWaehlen">HTML-Datei wählen</span><input type="file" id="tpFile" accept=".html,.htm,text/html" hidden /></label><p id="tpChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
       <div data-tbody="url" style="display:none"><input class="form-input" id="tpUrl" type="url" placeholder="https://…"></div>
-      <p class="html-import-feedback" id="tpImportStatus">Erkannte Tage und Programmpunkte erscheinen automatisch in der Terminübersicht. Die Originalseite bleibt zusätzlich öffnbar; enthaltene Skripte werden aus Sicherheitsgründen nicht ausgeführt.</p>
+      <p class="html-import-feedback" id="tpImportStatus" data-i18n="cal.htmlHinweis">Erkannte Tage und Programmpunkte erscheinen automatisch in der Terminübersicht. Die Originalseite bleibt zusätzlich öffnbar; enthaltene Skripte werden aus Sicherheitsgründen nicht ausgeführt.</p>
     </div>
-    <button class="btn btn-primary btn-block" id="tripSave">Speichern</button>
-    <button class="btn btn-danger btn-block" id="tripFormDelete" style="display:none;margin-top:8px">Termin löschen</button>
+    <button class="btn btn-primary btn-block" id="tripSave" data-i18n="common.speichern">Speichern</button>
+    <button class="btn btn-danger btn-block" id="tripFormDelete" style="display:none;margin-top:8px" data-i18n="cal.terminLoeschen">Termin löschen</button>
   </div>
 
   <!-- Group create/join sheet -->
   <div class="backdrop" id="groupBackdrop"></div>
   <div class="sheet" id="groupSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title">Kalendergruppe hinzufügen</span>
-      <button class="icon-pill" id="groupSheetClose" aria-label="Schliessen">×</button></div>
+    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.gruppeHinzufuegenTitel">Kalendergruppe hinzufügen</span>
+      <button class="icon-pill" id="groupSheetClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen">×</button></div>
     <div class="grp-card">
-      <p class="sub-title">Neue Gruppe</p>
-      <div class="field"><input class="form-input" id="newGrpNameMore" type="text" placeholder="z.B. Familie, Verein oder Arbeit" /></div>
-      <button class="btn btn-primary btn-block" id="createMoreGrpBtn" type="button">Gruppe erstellen</button>
+      <p class="sub-title" data-i18n="cal.neueGruppe">Neue Gruppe</p>
+      <div class="field"><input class="form-input" id="newGrpNameMore" type="text" placeholder="z.B. Familie, Verein oder Arbeit" data-i18n-attr="placeholder:cal.bspGruppe" /></div>
+      <button class="btn btn-primary btn-block" id="createMoreGrpBtn" type="button" data-i18n="cal.gruppeErstellen">Gruppe erstellen</button>
     </div>
     <div class="grp-card">
-      <p class="sub-title">Weiterer Gruppe beitreten</p>
-      <div class="field"><input class="form-input" id="joinGrpNameMore" type="text" placeholder="Gruppenname eingeben" /></div>
-      <button class="btn btn-secondary btn-block" id="joinMoreGrpBtn" type="button">Beitritt anfragen</button>
+      <p class="sub-title" data-i18n="cal.weitererGruppe">Weiterer Gruppe beitreten</p>
+      <div class="field"><input class="form-input" id="joinGrpNameMore" type="text" placeholder="Gruppenname eingeben" data-i18n-attr="placeholder:cal.gruppennameEingeben" /></div>
+      <button class="btn btn-secondary btn-block" id="joinMoreGrpBtn" type="button" data-i18n="cal.beitrittAnfragen">Beitritt anfragen</button>
       <p id="joinMoreStatus" style="font-size:12px;color:var(--ink-soft);margin-top:8px"></p>
     </div>
   </div>
@@ -514,8 +514,8 @@
   <div class="backdrop" id="groupManageBackdrop"></div>
   <div class="sheet group-management-sheet" id="groupManageSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title">Gruppen &amp; Familien verwalten</span>
-      <button class="icon-pill" id="groupManageClose" aria-label="Schliessen">×</button></div>
+    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.gruppenFamilien">Gruppen &amp; Familien verwalten</span>
+      <button class="icon-pill" id="groupManageClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen">×</button></div>
     <div id="grpCard"></div>
   </div>
 
@@ -523,96 +523,96 @@
   <div class="backdrop" id="calendarSetupBackdrop"></div>
   <div class="sheet calendar-setup-sheet" id="calendarSetupSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title">Wie soll sich dein Kalender anfühlen?</span>
-      <button class="icon-pill" id="calendarSetupClose" aria-label="Schliessen">×</button></div>
-    <p class="calendar-setup-copy">Wähle die Umgebung, die du bereits kennst. Du kannst dies jederzeit über „Darstellung“ ändern.</p>
+    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.anfuehlen">Wie soll sich dein Kalender anfühlen?</span>
+      <button class="icon-pill" id="calendarSetupClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen">×</button></div>
+    <p class="calendar-setup-copy" data-i18n="cal.anfuehlenSub">Wähle die Umgebung, die du bereits kennst. Du kannst dies jederzeit über „Darstellung“ ändern.</p>
     <div class="calendar-style-options">
       <button class="calendar-style-card" type="button" data-style="google">
         <strong>Google Kalender</strong>
-        <span>Ruhige Flächen, runde Bedienelemente und „Terminübersicht“.</span>
+        <span data-i18n="cal.googleSub">Ruhige Flächen, runde Bedienelemente und „Terminübersicht“.</span>
         <span class="calendar-style-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       </button>
       <button class="calendar-style-card" type="button" data-style="outlook">
         <strong>Outlook</strong>
-        <span>Kompakter, geradliniger und mit „Arbeitswoche“ als Start.</span>
+        <span data-i18n="cal.outlookSub">Kompakter, geradliniger und mit „Arbeitswoche“ als Start.</span>
         <span class="calendar-style-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       </button>
     </div>
     <fieldset class="calendar-color-setting">
-      <legend>Farbe für „Persönlich &amp; Erinnerungen“</legend>
-      <p>Termine übernehmen immer die Farbe ihres Kalenders.</p>
+      <legend data-i18n="cal.farbe">Farbe für „Persönlich &amp; Erinnerungen“</legend>
+      <p data-i18n="cal.farbeSub">Termine übernehmen immer die Farbe ihres Kalenders.</p>
       <div class="calendar-color-options" id="personalCalendarColors"></div>
     </fieldset>
     <label class="calendar-feature-setting" for="showGroupFeatures">
       <span>
-        <strong>Gruppenfunktionen anzeigen</strong>
-        <small>Wenn du noch keiner Gruppe angehörst, werden Optionen zum Erstellen und Beitreten im Kalender angezeigt.</small>
+        <strong data-i18n="cal.gruppenAnzeigen">Gruppenfunktionen anzeigen</strong>
+        <small data-i18n="cal.gruppenAnzeigenSub">Wenn du noch keiner Gruppe angehörst, werden Optionen zum Erstellen und Beitreten im Kalender angezeigt.</small>
       </span>
       <input id="showGroupFeatures" type="checkbox" role="switch" />
     </label>
-    <button class="btn btn-primary btn-block" id="calendarSetupSave" type="button">Übernehmen</button>
+    <button class="btn btn-primary btn-block" id="calendarSetupSave" type="button" data-i18n="cal.uebernehmen">Übernehmen</button>
   </div>
 
   <!-- Reminder form sheet -->
   <div class="backdrop" id="reminderBackdrop"></div>
   <div class="sheet reminder-form-sheet" id="reminderSheet">
-    <div class="sheet-head"><span class="sheet-title" id="reminderFormTitle">Neue Erinnerung</span>
-      <button class="icon-pill" id="reminderFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <div class="field"><label>Titel</label><input class="form-input" id="rTitle" placeholder="z.B. Versicherung bezahlen" /></div>
+    <div class="sheet-head"><span class="sheet-title" id="reminderFormTitle" data-i18n="cal.neueErinnerung">Neue Erinnerung</span>
+      <button class="icon-pill" id="reminderFormClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="field"><label data-i18n="cal.titel">Titel</label><input class="form-input" id="rTitle" placeholder="z.B. Versicherung bezahlen" data-i18n-attr="placeholder:cal.bspErinnerung" /></div>
     <div class="row2">
-      <div class="field"><label>Datum</label><input class="form-input" id="rDate" type="date" /></div>
-      <div class="field"><label>Zeit (optional)</label><input class="form-input" id="rTime" type="time" /></div>
+      <div class="field"><label data-i18n="cal.datum">Datum</label><input class="form-input" id="rDate" type="date" /></div>
+      <div class="field"><label data-i18n="cal.zeit">Zeit (optional)</label><input class="form-input" id="rTime" type="time" /></div>
     </div>
-    <div class="field"><label>Notiz (optional)</label><textarea class="form-textarea" id="rNotes" rows="3"></textarea></div>
-    <button class="btn btn-primary btn-block" id="reminderSave">Speichern</button>
+    <div class="field"><label data-i18n="cal.notiz">Notiz (optional)</label><textarea class="form-textarea" id="rNotes" rows="3"></textarea></div>
+    <button class="btn btn-primary btn-block" id="reminderSave" data-i18n="common.speichern">Speichern</button>
     <button class="btn btn-block reminder-complete-button" id="reminderComplete" type="button" hidden>
       <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      <span id="reminderCompleteLabel">Als erledigt markieren</span>
+      <span id="reminderCompleteLabel" data-i18n="cal.erledigt">Als erledigt markieren</span>
     </button>
-    <button class="btn btn-danger btn-block" id="reminderDelete" style="display:none;margin-top:8px">Erinnerung löschen</button>
+    <button class="btn btn-danger btn-block" id="reminderDelete" style="display:none;margin-top:8px" data-i18n="cal.erinnerungLoeschen">Erinnerung löschen</button>
   </div>
 
   <!-- Personal calendar event form sheet -->
   <div class="backdrop" id="dayFormBackdrop"></div>
   <div class="sheet" id="dayForm">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" id="dayFormTitle">Persönlicher Termin</span>
-      <button class="icon-pill" id="dayFormClose" aria-label="Schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <div class="field"><label>Titel</label><input class="form-input" id="dTitle" placeholder="z.B. Geburtstag, Konzert…" /></div>
-    <div class="field"><label>Datum</label><input class="form-input" id="dDate" type="date" /></div>
+    <div class="sheet-head"><span class="sheet-title" id="dayFormTitle" data-i18n="cal.persoenlich">Persönlicher Termin</span>
+      <button class="icon-pill" id="dayFormClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="field"><label data-i18n="cal.titel">Titel</label><input class="form-input" id="dTitle" placeholder="z.B. Geburtstag, Konzert…" data-i18n-attr="placeholder:cal.bspGeburtstag" /></div>
+    <div class="field"><label data-i18n="cal.datum">Datum</label><input class="form-input" id="dDate" type="date" /></div>
     <div class="row2">
-      <div class="field"><label>Beginn (optional)</label><input class="form-input" id="dStartTime" type="time" /></div>
-      <div class="field"><label>Ende (optional)</label><input class="form-input" id="dEndTime" type="time" /></div>
+      <div class="field"><label data-i18n="cal.beginn">Beginn (optional)</label><input class="form-input" id="dStartTime" type="time" /></div>
+      <div class="field"><label data-i18n="cal.ende">Ende (optional)</label><input class="form-input" id="dEndTime" type="time" /></div>
     </div>
-    <div class="field"><label>Ort (optional)</label><input class="form-input" id="dLocation" /></div>
-    <div class="field"><label>Notiz (optional)</label><textarea class="form-textarea" id="dNotes" rows="3"></textarea></div>
+    <div class="field"><label data-i18n="cal.ort">Ort (optional)</label><input class="form-input" id="dLocation" /></div>
+    <div class="field"><label data-i18n="cal.notiz">Notiz (optional)</label><textarea class="form-textarea" id="dNotes" rows="3"></textarea></div>
     <div class="field">
-      <label>Info-Seite (optional)</label>
+      <label data-i18n="cal.infoSeite">Info-Seite (optional)</label>
       <div class="tabs">
         <button class="tab active" data-pane="paste">HTML</button>
-        <button class="tab" data-pane="upload">Datei (.html)</button>
-        <button class="tab" data-pane="url">Link</button>
+        <button class="tab" data-pane="upload" data-i18n="cal.datei">Datei (.html)</button>
+        <button class="tab" data-pane="url" data-i18n="cal.link">Link</button>
       </div>
-      <div data-body="paste"><textarea class="form-textarea" id="dHtml" rows="4" placeholder="HTML hier einfügen…"></textarea></div>
-      <div data-body="upload" style="display:none"><label class="drop" id="dDrop"><span id="dDropText">HTML-Datei wählen</span><input type="file" id="dHtmlFile" accept=".html,.htm,text/html" hidden /></label><p id="dHtmlChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
+      <div data-body="paste"><textarea class="form-textarea" id="dHtml" rows="4" placeholder="HTML hier einfügen…" data-i18n-attr="placeholder:cal.bspHtml"></textarea></div>
+      <div data-body="upload" style="display:none"><label class="drop" id="dDrop"><span id="dDropText" data-i18n="cal.htmlWaehlen">HTML-Datei wählen</span><input type="file" id="dHtmlFile" accept=".html,.htm,text/html" hidden /></label><p id="dHtmlChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
       <div data-body="url" style="display:none"><input class="form-input" id="dUrl" type="url" placeholder="https://…" /></div>
     </div>
     <div class="field">
-      <label>Dateien anhängen</label>
-      <div class="info-banner" id="dayStoreWarn">Datei-Uploads brauchen Firebase Storage. Sobald es aktiviert ist, funktioniert dies automatisch.</div>
-      <label class="drop" id="dFileDrop"><span>📎 Datei wählen (PDF, Bild, …)</span><input type="file" id="dFiles" multiple hidden /></label>
+      <label data-i18n="cal.dateienAnhaengen">Dateien anhängen</label>
+      <div class="info-banner" id="dayStoreWarn" data-i18n="cal.uploadHinweis">Datei-Uploads brauchen Firebase Storage. Sobald es aktiviert ist, funktioniert dies automatisch.</div>
+      <label class="drop" id="dFileDrop"><span data-i18n="cal.dateiWaehlen">📎 Datei wählen (PDF, Bild, …)</span><input type="file" id="dFiles" multiple hidden /></label>
       <div id="dFileList" style="margin-top:8px"></div>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn btn-primary" id="dayFormSave" style="flex:1">Speichern</button>
-      <button class="btn btn-danger" id="dayFormDelete" style="display:none">Löschen</button>
+      <button class="btn btn-primary" id="dayFormSave" style="flex:1" data-i18n="common.speichern">Speichern</button>
+      <button class="btn btn-danger" id="dayFormDelete" style="display:none" data-i18n="cal.loeschen">Löschen</button>
     </div>
   </div>
 
   <!-- HTML viewer -->
   <div class="viewer" id="viewer">
-    <div class="viewer-bar"><button class="icon-pill" id="viewerClose">‹</button><span class="vt" id="viewerTitle">Info</span>
-      <button id="viewerMode" type="button" class="pill" hidden>Original</button></div>
+    <div class="viewer-bar"><button class="icon-pill" id="viewerClose">‹</button><span class="vt" id="viewerTitle" data-i18n="cal.info">Info</span>
+      <button id="viewerMode" type="button" class="pill" hidden data-i18n="cal.original">Original</button></div>
     <div class="viewer-plan" id="viewerPlan" hidden></div>
     <iframe id="viewerFrame" sandbox="allow-popups" referrerpolicy="no-referrer" hidden></iframe>
   </div>

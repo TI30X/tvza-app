@@ -188,7 +188,7 @@
 <body class="wx">
 
   <!-- ═══ Weather-dependent entry splash (plays every visit, tap to skip) ═══ -->
-  <div id="wx-splash" role="dialog" aria-label="Wetter">
+  <div id="wx-splash" role="dialog" aria-label="Wetter" data-i18n-attr="aria-label:mod.weather.name">
     <div class="wx-bg" id="wxBgA"></div>
     <div class="wx-bg" id="wxBgB"></div>
     <script>
@@ -251,10 +251,10 @@
         <!-- lightning -->
         <path class="s-bolt" d="M118 128 L104 150 L116 150 L108 168 L134 144 L120 144 L130 128 Z"/>
       </svg>
-      <div class="mark">Wetter</div>
-      <div class="sub" id="wxSplashSub">Standort wird ermittelt…</div>
+      <div class="mark" data-i18n="mod.weather.name">Wetter</div>
+      <div class="sub" id="wxSplashSub" data-i18n="wt.standortSuche">Standort wird ermittelt…</div>
     </div>
-    <div class="skip-hint">Tippen zum Überspringen</div>
+    <div class="skip-hint" data-i18n="wt.ueberspringen">Tippen zum Überspringen</div>
   </div>
 
   <div class="app">
@@ -262,10 +262,10 @@
 
     <header class="appbar appbar--bereich" data-bereich="weather">
       <div class="appbar__inner">
-        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-        <span class="appbar__title">Wetter</span>
+        <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück" data-i18n-attr="aria-label:a11y.zurueck"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <span class="appbar__title" data-i18n="mod.weather.name">Wetter</span>
         <span class="appbar__end">
-        <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+        <button class="appbar__btn" id="themeToggle" title="Theme wechseln" data-i18n-attr="title:pg.theme"></button>
         </span>
       </div>
       <div class="appbar__accent"></div>
@@ -276,28 +276,28 @@
 
       <div class="form-card">
         <div class="wx-seg" id="modeSeg">
-          <button type="button" data-mode="here" class="active">📍 Hier &amp; Region</button>
-          <button type="button" data-mode="mountain">🏔️ Berg &amp; Schnee</button>
+          <button type="button" data-mode="here" class="active" data-i18n="wt.hier">📍 Hier &amp; Region</button>
+          <button type="button" data-mode="mountain" data-i18n="wt.berg">🏔️ Berg &amp; Schnee</button>
         </div>
         <div class="wx-find">
           <div class="ac-wrap">
-            <input class="form-input" id="placeInput" type="text" placeholder="Ort suchen: Vaduz, Zermatt, Davos…" autocomplete="off" style="width:100%" />
+            <input class="form-input" id="placeInput" type="text" placeholder="Ort suchen: Vaduz, Zermatt, Davos…" autocomplete="off" style="width:100%" data-i18n-attr="placeholder:wt.ortSuchen" />
             <div class="ac-list" id="acList"></div>
           </div>
-          <button class="btn btn-secondary wx-loc-btn" id="geoBtn" title="Mein Standort">📍 Standort</button>
+          <button class="btn btn-secondary wx-loc-btn" id="geoBtn" title="Mein Standort" data-i18n-attr="title:wt.meinStandort" data-i18n="wt.standort">📍 Standort</button>
         </div>
         <div class="wx-quick" id="quickPicks"></div>
       </div>
 
       <div class="wx-meta">
         <span id="wxUpdated">—</span>
-        <button class="wx-refresh" id="refreshBtn" title="Aktualisieren">
+        <button class="wx-refresh" id="refreshBtn" title="Aktualisieren" data-i18n-attr="title:pg.aktualisieren">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
           Aktualisieren
         </button>
       </div>
 
-      <div id="content"><div class="spinner">Lade Wetter…</div></div>
+      <div id="content"><div class="spinner" data-i18n="wt.laden">Lade Wetter…</div></div>
 
     </main>
 
