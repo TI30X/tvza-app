@@ -1,0 +1,337 @@
+/* ================================
+   TVZA — feature/access.css
+   Admin (pages/admin.html) fragments already sitting in style.css.
+   Login/guest/public don't have page-specific rules in style.css yet
+   (Phase C extracts from their own <style> blocks later) — per
+   01-STRUKTUR.md §2 this file will eventually cover all four.
+   ================================ */
+
+/* Embedded settings are still the real dashboard dialog, only without a
+   second dashboard and navigation behind it. These rules shared one
+   comma-selector with the generic html.settings-embed mechanism in
+   kit.css in the original file; declarations duplicated here verbatim
+   under the admin-embed-only selector. */
+html.admin-embed,
+html.admin-embed body {
+  min-height: 100%;
+  background: transparent !important;
+}
+html.admin-embed body {
+  padding: 0 !important;
+  overflow: hidden;
+}
+html.admin-embed body > :not(#settingsModal):not(script) { display: none !important; }
+html.admin-embed #settingsModal {
+  display: flex !important;
+  position: fixed;
+  inset: 0;
+  padding: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html.admin-embed #settingsModal .modal { max-height: 100dvh; }
+html.admin-embed #settingsModal .modal {
+  max-width: none;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  animation: none;
+}
+html.admin-embed,
+html.admin-embed body { overflow: visible !important; }
+html.admin-embed #settingsModal {
+  position: static;
+  min-height: 0;
+  overflow: visible;
+}
+html.admin-embed #settingsModal .modal > :not(.modal-head):not(#adminSection) {
+  display: none !important;
+}
+html.admin-embed #settingsModal .modal-head { display: none !important; }
+html.admin-embed #settingsClose { display: none !important; }
+html.admin-embed #adminSection {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, .8fr);
+  grid-template-areas:
+    "health health"
+    "users invites"
+    "users food";
+  gap: 16px;
+  align-items: start;
+}
+html.admin-embed #adminSection > .settings-divider { display: none !important; }
+html.admin-embed #adminHealthSection { grid-area: health; }
+html.admin-embed #memberInviteSection { grid-area: invites; }
+html.admin-embed #superAdminUserSection { grid-area: users; }
+html.admin-embed #superAdminFoodSection { grid-area: food; }
+html.admin-embed #adminSection > .settings-section {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, .05);
+}
+.admin-health {
+  display: grid;
+  gap: 12px;
+}
+.admin-health__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.admin-health__icon {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.admin-health__icon svg { width: 20px; height: 20px; }
+.admin-health__title {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.admin-health__title strong {
+  font-size: 14px;
+  line-height: 1.3;
+}
+.admin-health__title small {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.admin-health__state {
+  flex: none;
+  padding: 5px 10px;
+  border-radius: var(--r-pill);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+.admin-health__state[data-state="safe"] {
+  background: color-mix(in srgb, var(--kurs-up) 11%, var(--surface));
+  color: var(--kurs-up);
+}
+.admin-health__state[data-state="warning"] {
+  background: var(--tint-trip);
+  color: var(--trip-deep);
+}
+.admin-health__state[data-state="error"] {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.admin-health__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.admin-health-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+.admin-health-check > span {
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--ink);
+  font-size: 9px;
+}
+.admin-health-check.is-ok > span {
+  background: var(--kurs-up);
+  color: white;
+}
+.admin-health-check.is-error > span {
+  background: var(--danger);
+  color: white;
+}
+.admin-health-check.is-checking > span {
+  background: var(--accent);
+  color: white;
+  animation: adminHealthPulse 850ms ease-in-out infinite alternate;
+}
+@keyframes adminHealthPulse { to { opacity: .38; } }
+.admin-health__alerts {
+  display: grid;
+  gap: 7px;
+}
+.admin-health-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.admin-health-alert__mark {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 900;
+}
+.admin-health-alert.is-safe {
+  background: color-mix(in srgb, var(--kurs-up) 7%, var(--surface));
+  color: color-mix(in srgb, var(--kurs-up) 78%, var(--ink));
+}
+.admin-health-alert.is-safe .admin-health-alert__mark {
+  background: var(--kurs-up);
+  color: white;
+}
+.admin-health-alert.is-warning {
+  background: color-mix(in srgb, var(--trip) 9%, var(--surface));
+  color: var(--trip-deep);
+}
+.admin-health-alert.is-warning .admin-health-alert__mark {
+  background: var(--trip);
+  color: white;
+}
+.admin-health-alert.is-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.admin-health-alert.is-error .admin-health-alert__mark {
+  background: var(--danger);
+  color: white;
+}
+
+/* ─── Benutzerverwaltung (Admin) ───
+   Die Einträge standen als dichte Liste ohne Luft untereinander und
+   trugen ein Personensymbol statt der Initialen, die überall sonst für
+   eine Person stehen. */
+.admin-user { border-radius: var(--r-row); }
+.admin-user + .admin-user { margin-top: 8px; }
+.admin-user__head { list-style: none; }
+.admin-user__head::-webkit-details-marker { display: none; }
+.avatar.avatar--ink {
+  background: var(--tint, var(--surface-2));
+  color: var(--deep, var(--ink-soft));
+  width: 36px; height: 36px; font-size: 13px;
+  cursor: default;
+}
+.shared-identity {
+  position: relative;
+  width: 48px;
+  height: 40px;
+  display: inline-flex;
+  align-items: flex-start;
+  flex: none;
+}
+.shared-identity .row__icon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+}
+.shared-identity__person {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 3px rgba(15,23,42,0.18);
+  font-size: 9px;
+}
+.admin-user__body { padding: 4px 14px 14px; }
+@media (min-width: 900px) {
+  html.admin-embed #adminUsers {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  html.admin-embed #adminUsers .admin-user + .admin-user { margin-top: 0; }
+  html.admin-embed #adminUsers .admin-user[open] { grid-column: 1 / -1; }
+}
+.admin-mods {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 6px; margin: 10px 0 14px;
+}
+.admin-mod {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; min-height: 40px;
+  border: 1px solid var(--border); border-radius: var(--r-icon);
+  background: var(--surface);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.admin-mod__icon {
+  width: 26px; height: 26px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-icon);
+  background: var(--tint, var(--surface-2)); color: var(--deep, var(--ink-soft));
+}
+.admin-mod__icon svg { width: 15px; height: 15px; stroke-width: 1.8; }
+.admin-mod--admin { font-weight: 700; }
+
+/* Shares the checkbox look defined for .row--check in kit.css — these
+   rules were comma-fused with it in the original file. */
+.admin-mod input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  width: 22px; height: 22px; flex: none; margin: 0;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-icon);
+  background: var(--surface);
+  cursor: pointer;
+  display: inline-grid; place-content: center;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.admin-mod input[type="checkbox"]::after {
+  content: ""; width: 11px; height: 11px;
+  clip-path: polygon(14% 45%, 0 60%, 40% 100%, 100% 22%, 85% 8%, 38% 71%);
+  background: #fff; transform: scale(0);
+  transition: transform 140ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+.admin-mod input[type="checkbox"]:checked {
+  background: var(--accent); border-color: var(--accent);
+}
+.admin-mod input[type="checkbox"]:checked::after { transform: scale(1); }
+.admin-mod input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  html.admin-embed #settingsModal .modal {
+    min-height: 0;
+    padding: 0;
+  }
+  html.admin-embed #adminSection {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "health"
+      "invites"
+      "users"
+      "food";
+  }
+}
+@media (max-width: 480px) {
+  .admin-health__head { align-items: flex-start; }
+  .admin-health__state { margin-left: auto; }
+  .admin-health__title small { display: none; }
+}

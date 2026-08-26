@@ -1,0 +1,363 @@
+/* ================================
+   TVZA — legacy.css
+   Alias custom properties and old class names, kept so pages that
+   haven't been migrated onto kit.css still render. Shrinks in Phase C,
+   deleted in Phase D. Load this AFTER kit.css.
+   ================================ */
+
+:root {
+  /* ── Legacy aliases (keep older selectors & inline styles working) ── */
+  --primary:      var(--brand-navy);
+  --primary-mid:  var(--brand-navy-mid);
+  --primary-deep: var(--brand-navy-deep);
+  --text:         var(--ink);
+  --text-muted:   var(--ink-soft);
+  --text-faint:   oklch(0.60 0.01 250);
+  --radius:       var(--r2);
+  --radius-sm:    var(--r1);
+  --radius-xs:    var(--r-icon);
+  /* --r1/--r2/--r3 lived next to the real radius tokens in style.css;
+     moved here since they're pure aliases, per spec. */
+  --r1: var(--r-icon); --r2: var(--r-row); --r3: var(--r-panel);
+  --ski-l:    var(--tint-ski);
+  --food-l:   var(--tint-food);
+  --trip-l:   var(--tint-trip);
+}
+
+:root[data-theme="dark"] {
+  --text-faint: oklch(0.58 0.01 250);
+}
+
+/* ─── Header ───
+   Superseded by .appbar (kit.css) — kept because pages/guest.html still
+   uses this markup. */
+.header {
+  background: var(--brand-gradient);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 0;
+  /* Flush to the very top — also paint into the status-bar / notch safe
+     area on mobile + installed PWA (needs viewport-fit=cover; 0 elsewhere). */
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.header-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  min-height: 60px;
+  padding: 0 var(--s4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header .tvz-wordmark,
+.header .logo,
+.header .page-title,
+.header .back-btn:hover {
+  color: white;
+}
+.header .tvz-mark,
+.header .back-btn,
+.header .icon-btn {
+  color: rgba(255,255,255,0.74);
+}
+
+/* Der alte Farbbalken lag doppelt: .appbar__accent sitzt schon im Kopf
+   und trägt den 3px-Streifen in der Bereichsfläche. Dieser hier kam als
+   zweiter, kräftiger Verlaufsbalken darunter — daher die zwei Streifen.
+   Er entfällt; die Seiten behalten ihr Markup, es zeigt nur nichts mehr. */
+.accent-bar { display: none; }
+.accent-bar-legacy { height: 3px; }
+.accent-bar--ski    { background: var(--tint-ski); }
+.accent-bar--food   { background: var(--tint-food); }
+.accent-bar--trip   { background: var(--tint-trip); }
+.accent-bar--watch  { background: var(--tint-watch); }
+
+.page-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+/* Keep share / admin rows tidy inside the narrow modal */
+#settingsModal .link-row { padding: 10px 12px; }
+#settingsModal .link-title { min-width: 0; }
+#settingsModal .link-title small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ─── Link rows (external projects) ─── */
+.link-row {
+  background: var(--surface);
+  border-radius: var(--r3);
+  border: 1px solid var(--border);
+  padding: var(--s4) 18px;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  transition: border-color 150ms ease;
+}
+.link-row:hover { border-color: var(--ink-soft); }
+
+.link-icon  { font-size: 22px; width: 34px; text-align: center; }
+.link-title { flex: 1; font-size: var(--text-base); font-weight: 700; min-width: 140px; }
+.link-title small { display: block; margin-top: 3px; color: var(--ink-soft); font-size: var(--text-xs); font-weight: 500; }
+
+/* ─── Item list ─── */
+.item-list { display: flex; flex-direction: column; gap: var(--s2); }
+
+.item-card {
+  background: var(--surface);
+  border-radius: var(--r2);
+  border: 1px solid var(--border);
+  padding: var(--s3) var(--s4);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+}
+
+.item-check {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  margin-top: 1px;
+  font-size: var(--text-xs);
+}
+
+.item-check.done { background: var(--food); border-color: var(--food); color: white; animation: checkFill 0.18s ease; }
+@keyframes checkFill {
+  0%   { transform: scale(0.8); }
+  60%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.item-content { flex: 1; min-width: 0; }
+.item-title   { font-size: 14px; font-weight: 700; }
+.item-title.done { text-decoration: line-through; color: var(--ink-soft); }
+.item-sub     { font-size: var(--text-xs); color: var(--ink-soft); margin-top: 2px; }
+.item-actions { display: flex; align-items: center; gap: var(--s1); flex-shrink: 0; }
+.item-actions svg, .btn-danger svg { display: block; }
+
+/* ─── Spinner ─── */
+/* .spinner is retired: ui-fx.js swaps these hosts for skeletons, and the
+   text flashed as a second waiting state before it did. Kept as a hidden
+   hook so pages that still ship the markup don't show stray "Lade…". */
+.spinner { display: none; }
+
+/* ─── Trip card ───
+   No page markup uses this any more (superseded by .itin-item /
+   .card--trip) — kept as found, not deleted. */
+.trip-card {
+  background: var(--surface);
+  border-radius: var(--r3);
+  border: 1px solid var(--border);
+  padding: var(--s4);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 150ms ease;
+  border-left: 3px solid var(--trip);
+}
+.trip-card:hover { border-color: var(--ink-soft); }
+.trip-name { font-size: var(--text-base); font-weight: 700; }
+.trip-meta { font-size: var(--text-xs); color: var(--ink-soft); margin-top: var(--s1); }
+
+@media (max-width: 899px) {
+  /* Tracker bars (Zurück + Titel + Icons): stay a clean, flush single row. */
+  .header-inner { align-items: center; flex-direction: row; justify-content: space-between; gap: 6px; min-height: 54px; padding: 0 12px; }
+  /* Reset the desktop absolute-centering — otherwise .page-title stays
+     positioned (out of flex flow) and visually overlaps the back button
+     or icon buttons instead of sharing the row with them. */
+  .header-inner .page-title { position: static; transform: none; flex: 1; text-align: center; pointer-events: auto; }
+}
+
+/* Pending request card */
+.pending-card {
+  background: var(--tint-trip);
+  border: 1px solid var(--border);
+  border-radius: var(--r1);
+  padding: var(--s3) 14px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: var(--s2); font-size: var(--text-sm);
+}
+.pending-card .btn { padding: 6px var(--s3); font-size: var(--text-xs); min-height: 38px; }
+
+/* ── Legacy aliases ────────────────────────────────────────────────
+   Five components did the job of one. Until each page is migrated,
+   the old names borrow the new row's look so nothing regresses. */
+.link-row, .item-card, .file-row, .grp-card, .pending-card {
+  border-radius: var(--r-row);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.link-row:hover, .item-card:hover, .file-row:hover,
+.grp-card:hover, .pending-card:hover { border-color: var(--ink-soft); }
+.pill, .mini { border-radius: var(--r-pill); }
+
+/* ══════════════════════════════════════════════════════════════════
+   Angleichung der Seitenbauteile
+
+   Ten pages grew ten sets of row and card classes — .dm-conv, .wl-stat,
+   .wx-card, .grp-card, .item-card, .itin-item, .meeting-card, .line and
+   the rest. They do the same job as .row and .panel but each picked its
+   own radius, border and hover.
+
+   Rewriting every page's markup onto .row is the clean end state, but it
+   is ten separate rewrites of pages the family is using. This layer does
+   the visible half now: it takes over the *design* properties — radius,
+   border, surface, hover — and leaves each page's layout alone, so the
+   app is consistent without any page changing shape.
+
+   Each page's <style> comes after this file in the document, so these
+   rules carry a `body` prefix to win on specificity. Once a page is
+   migrated onto .row properly, its entry here can go.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Rows and cards → the .row / .panel treatment ──────────────────*/
+body .dm-conv,          /* Nachrichten */
+body .dm-empty,
+body .wl-stat,          /* Watchlist */
+body .wl-market-note,
+body .wl-hint,
+/* .wx-hero und .deadline-box stehen bewusst NICHT hier: beide tragen
+   eine eigene farbige Fläche und weisse Schrift. Die Flächenfarbe
+   drüberzulegen hat genau das erzeugt — weiss auf weiss. */
+body .wx-card,
+body .wx-fact,
+body .wx-msg,
+body .grp-card,         /* Planer */
+body .item-card,
+body .sub-card,
+body .cell,
+body .file-row,
+body .pending-card,
+body .itin-item,        /* Reisen */
+body .reminder-card,
+body .invite-strip,
+body .trip-card,
+body .meeting-card,     /* Maturaarbeit */
+body .pm-details {
+  border-radius: var(--r-row);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+/* Panels group several blocks, so they take the larger radius. */
+body .wx-hero,
+body .sub-card,
+body .pm-details {
+  border-radius: var(--r-panel);
+}
+
+/* Hover changes colour, never position (§9). There is no hover on a
+   phone, and with no shadow there is nothing to lift into. */
+body .dm-conv:hover,
+body .item-card:hover,
+body .grp-card:hover,
+body .trip-card:hover,
+body .itin-item:hover,
+body .meeting-card:hover,
+body .file-row:hover,
+body .wl-stat:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--ink-soft);
+}
+
+/* ── Pills, chips and badges → --r-pill ────────────────────────────*/
+body .pill,
+body .mini,
+body .chip,
+body .pill-btn,
+body .wl-chip,
+body .wl-src-tag,
+body .wx-chip,
+body .dm-badge,
+body .role-badge,
+body .status-badge,
+body .date-pill,
+body .icon-pill {
+  border-radius: var(--r-pill);
+}
+
+/* ── Icon plates and avatars ───────────────────────────────────────*/
+body .dm-ava,
+body .card-icon,
+body .link-icon,
+body .mc-date {
+  border-radius: var(--r-icon);
+}
+/* An avatar is a circle, not a rounded square. */
+body .dm-ava { border-radius: var(--r-pill); }
+
+/* ── Segmented controls ────────────────────────────────────────────*/
+body .seg,
+body .wl-seg,
+body .wx-seg,
+body .wx-alt-seg,
+body .tabs {
+  border-radius: var(--r-row);
+}
+body .seg button,
+body .wl-seg button,
+body .wx-seg button,
+body .wx-alt-seg button {
+  border-radius: var(--r-icon);
+}
+
+/* ── Buttons that predate the three in §4.4 ────────────────────────*/
+body .reset-btn,
+body .pm-info-btn,
+body .lang-sel,
+body .action-btn {
+  border-radius: var(--r-row);
+  box-shadow: none;
+}
+body .reset-btn:hover,
+body .pm-info-btn:hover,
+body .action-btn:hover {
+  transform: none;
+}
+
+/* ── Inputs share one radius with everything else ──────────────────*/
+body .form-input,
+body .form-select,
+body .form-textarea,
+body .dm-compose textarea {
+  border-radius: var(--r-row);
+}
+
+/* .card,.tile,.link-list > a,.link-list > .link-row shared one rule in
+   the original file (legacy class fused with kit classes in one
+   comma-selector); the kit-owned selectors and their :hover/:active
+   variants are duplicated in kit.css. Only the legacy-owned selector
+   is kept here, and — as in the original — it did NOT get a :hover
+   variant, only the base rule. */
+.link-list > .link-row {
+  border-radius: 20px;
+  border-color: var(--rule-soft, var(--border));
+  box-shadow: var(--sh-card);
+  transition: transform 180ms cubic-bezier(.22,.61,.36,1),
+              border-color 180ms cubic-bezier(.22,.61,.36,1),
+              box-shadow 180ms cubic-bezier(.22,.61,.36,1);
+}
+
+/* Status ist keine Modulfarbe. Ein Haken war bisher gruen, weil Food gruen
+   ist — im roten Trainingsbereich waere derselbe Haken rot geworden und
+   haette wie ein Fehler ausgesehen. Overrides the legacy .item-check. */
+.item-check.done {
+  background: var(--ok);
+  border-color: var(--ok);
+}

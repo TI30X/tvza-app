@@ -1,0 +1,79 @@
+/* ================================
+   TVZA — feature/food.css
+   Foodtracker fragments already sitting in style.css (Phase A).
+   ================================ */
+
+/* ─── Date pill ───
+   Only used by pages/foodtracker.html's day navigation. */
+.date-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 6px 14px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: var(--s4);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.date-pill:hover { background: var(--surface-2); }
+
+/* Ingredient rows */
+.ing-row {
+  display: flex; gap: var(--s2); align-items: center; margin-bottom: var(--s2);
+}
+.ing-row .form-input { margin: 0; }
+.ing-name { flex: 1; }
+.ing-grams { width: 90px; }
+
+/* Nutrition summary */
+.nutri-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r1);
+  padding: var(--s3) 14px;
+  font-size: var(--text-sm);
+  margin-bottom: var(--s3);
+}
+.nutri-kcal { font-size: 20px; font-weight: 700; }
+.nutri-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; color: var(--ink-soft); }
+
+/* Month calendar */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--s1);
+}
+.cal-head {
+  font-size: 10px; font-weight: 700; color: var(--ink-soft);
+  text-align: center; text-transform: uppercase; letter-spacing: 0.06em; padding: var(--s1) 0;
+}
+.cal-day {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r1);
+  min-height: 52px;
+  padding: 5px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex; flex-direction: column; justify-content: space-between;
+  transition: background 150ms ease;
+}
+.cal-day:hover { background: var(--surface-2); }
+.cal-day.empty { background: transparent; border: none; box-shadow: none; cursor: default; }
+.cal-day.today { outline: 2px solid var(--food); outline-offset: -1px; }
+.cal-num  { font-weight: 700; }
+.cal-kcal { font-size: 10px; color: var(--food-deep); font-weight: 700; }
+
+/* Daily kcal progress */
+.kcal-bar  { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-pill); height: 10px; overflow: hidden; }
+.kcal-fill { height: 100%; background: var(--food); border-radius: var(--r-pill); transition: width 0.4s ease; }
+.kcal-fill.over { background: var(--accent); }
+/* .kcal-fill shared its border-radius with the generic .tl-fill in the
+   v.32 refinement pass — duplicated here, .tl-fill stays in kit.css. */
+.kcal-fill { border-radius: var(--r-pill); }

@@ -20,7 +20,7 @@ test('areas page and sidebar share one module ordering source', async () => {
 
 test('desktop hides the redundant areas tab while mobile keeps its nav marker', async () => {
   const [css, nav, shell] = await Promise.all([
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
     read('assets/js/nav.js'),
     read('assets/js/shell.js'),
   ]);
@@ -35,7 +35,7 @@ test('current area uses the same active band as Start and settings stay above th
     read('assets/js/nav.js'),
     read('assets/js/shell.js'),
     read('assets/js/settings-layer.js'),
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
     read('index.html'),
     read('pages/bereiche.html'),
   ]);
@@ -66,7 +66,7 @@ test('app destinations are prefetched and use a progressive page transition', as
     read('assets/js/nav.js'),
     read('assets/js/router.js'),
     read('assets/js/theme.js'),
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
     read('sw.js'),
   ]);
 
@@ -103,10 +103,10 @@ test('app destinations are prefetched and use a progressive page transition', as
 });
 
 test('embedded settings can share Firestore and shared rows keep icon plus person', async () => {
-  const [firebase, dashboard, css] = await Promise.all([
+  const [firebase, dashboard, access] = await Promise.all([
     read('assets/js/firebase-config.js'),
     read('index.html'),
-    read('assets/css/style.css'),
+    read('assets/css/feature/access.css'),
   ]);
 
   assert.match(firebase, /persistentMultipleTabManager/);
@@ -114,8 +114,8 @@ test('embedded settings can share Firestore and shared rows keep icon plus perso
   assert.match(dashboard, /class="shared-identity"/);
   assert.match(dashboard, /class="row__icon"/);
   assert.match(dashboard, /shared-identity__person/);
-  assert.match(css, /\.avatar\.avatar--ink/);
-  assert.match(css, /\.shared-identity__person/);
+  assert.match(access, /\.avatar\.avatar--ink/);
+  assert.match(access, /\.shared-identity__person/);
 });
 
 test('mobile reminders stay thumb-reachable across routes without exposing the base page', async () => {
@@ -124,7 +124,7 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
     read('assets/js/nav.js'),
     read('assets/js/router.js'),
     read('assets/js/reminders-overlay.js'),
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
     read('sw.js'),
   ]);
 
@@ -164,7 +164,7 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
 test('arranging is docked beside Schnellzugriff instead of floating over cards', async () => {
   const [dashboard, css] = await Promise.all([
     read('index.html'),
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
   ]);
 
   // Die Ueberschrift traegt seit v.32 einen i18n-Schluessel; geprueft wird
@@ -177,7 +177,7 @@ test('arranging is docked beside Schnellzugriff instead of floating over cards',
 test('the header weather glyph stays readable at mobile size', async () => {
   const [shell, css] = await Promise.all([
     read('assets/js/shell.js'),
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
   ]);
 
   assert.match(shell, /part:\s*'<path d="M12 2v2"\/>[\s\S]*M13 22H7/);
@@ -190,7 +190,7 @@ test('direct and routed pages use one shared header action structure', async () 
     read('assets/js/notifications.js'),
     read('assets/js/router.js'),
     read('assets/js/settings-layer.js'),
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
     read('index.html'),
     read('pages/foodtracker.html'),
     read('pages/watchlist.html'),
@@ -220,12 +220,13 @@ test('direct and routed pages use one shared header action structure', async () 
 });
 
 test('admin tools are an admin-only Bereich and module toggles show their real state', async () => {
-  const [firebase, dashboard, adminPage, router, css, sw] = await Promise.all([
+  const [firebase, dashboard, adminPage, router, css, access, sw] = await Promise.all([
     read('assets/js/firebase-config.js'),
     read('index.html'),
     read('pages/admin.html'),
     read('assets/js/router.js'),
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
+    read('assets/css/feature/access.css'),
     read('sw.js'),
   ]);
 
@@ -252,12 +253,16 @@ test('admin tools are an admin-only Bereich and module toggles show their real s
   assert.match(dashboard, /event\.target\.checked \? 'Sichtbar' : 'Ausgeblendet'/);
   assert.match(css, /\.row--check input\[type="checkbox"\]::after/);
   assert.match(css, /\.row--check input\[type="checkbox"\]:checked/);
-  assert.match(css, /\.admin-health__state\[data-state="error"\]/);
+  assert.match(access, /\.admin-health__state\[data-state="error"\]/);
   assert.doesNotMatch(css, /\.tvza-route-(?:loader|skeleton)/);
   assert.match(css, /--nav-active:\s*var\(--brand-navy-deep\)/);
   assert.match(css, /\.nav__item\.is-active \{ color: var\(--nav-active\); font-weight: 700; \}/);
   assert.match(css, /\.nav__bereich\.is-active \{[\s\S]*background: var\(--nav-active-bg\);[\s\S]*color: var\(--nav-active\)/);
+  // Phase A split .row--check (kit.css) and .admin-mod (feature/access.css)
+  // into separate files, so the old fused comma-selector can no longer
+  // appear in either — a direct confirmation the split kept them apart.
   assert.doesNotMatch(css, /\.row--check input\[type="checkbox"\],\s*\n\.admin-mod input\[type="checkbox"\]:checked/);
+  assert.doesNotMatch(access, /\.row--check input\[type="checkbox"\],\s*\n\.admin-mod input\[type="checkbox"\]:checked/);
 });
 
 test('loaded content only fades in once instead of blinking after updates', async () => {
@@ -271,7 +276,7 @@ test('splash skip hints are immediate and arranging stays on Start', async () =>
     read('pages/watchlist.html'),
     read('pages/weather.html'),
     read('assets/js/welcome.js'),
-    read('assets/css/style.css'),
+    read('assets/css/kit.css'),
   ]);
 
   assert.doesNotMatch(watchlist, /class="hint">Tippen zum Überspringen/);

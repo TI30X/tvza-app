@@ -1,0 +1,31 @@
+/* ================================
+   TVZA — feature/ski.css
+   Skitracker fragments already sitting in style.css (Phase A).
+   ================================ */
+
+/* ─── Status badge ─── (only used on the ski page today) */
+.badge {
+  display: inline-block;
+  padding: 2px var(--s2);
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-doing      { background: var(--tint-ski);  color: var(--ski-deep); }
+
+/* Star rating */
+.stars { display: inline-flex; gap: 2px; }
+.star { font-size: 22px; cursor: pointer; color: var(--border); transition: color 150ms ease; user-select: none; }
+.star.on { color: oklch(0.72 0.13 75); }
+
+/* Wax colour dots */
+.wax-dot { display:inline-block; width: 12px; height: 12px; border-radius: var(--r-pill); margin-right: 5px; vertical-align: -1px; }
+.wax-Blau  { background: #2563EB; }
+.wax-Gelb  { background: #EAB308; }
+.wax-Rot   { background: #DC2626; }
+.wax-Grün  { background: #16A34A; }
+
+.seg-opt[data-val="Blau"].on { background:#2563EB; border-color:#2563EB; }
+.seg-opt[data-val="Gelb"].on { background:#CA8A04; border-color:#CA8A04; }
+.seg-opt[data-val="Rot"].on  { background:#DC2626; border-color:#DC2626; }
+.seg-opt[data-val="Grün"].on { background:#16A34A; border-color:#16A34A; }

@@ -34,7 +34,7 @@ test('calendar colors belong to calendars and group management has real controls
 test('desktop planner sheets are centered and Outlook has a week-selecting mini calendar', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
-    read('assets/css/calendar.css'),
+    read('assets/css/feature/calendar.css'),
   ]);
   assert.match(planner, /id="miniCalendars"/);
   assert.match(planner, /data-mini-week/);
@@ -43,14 +43,13 @@ test('desktop planner sheets are centered and Outlook has a week-selecting mini 
 });
 
 test('calendar actions use aligned icons and compact calendars remain readable', async () => {
-  const [planner, css, sharedCss] = await Promise.all([
+  const [planner, css] = await Promise.all([
     read('pages/planner.html'),
-    read('assets/css/calendar.css'),
-    read('assets/css/style.css'),
+    read('assets/css/feature/calendar.css'),
   ]);
   assert.doesNotMatch(planner, />\+\s*(?:Neuer Termin|Erinnerung|Termin|Gruppe)/);
   assert.match(planner, /class="ui-plus calendar-action-icon/);
-  assert.match(sharedCss, /\.calendar-action-icon::before,[\s\S]*top:\s*50%;[\s\S]*left:\s*50%/);
+  assert.match(css, /\.calendar-action-icon::before,[\s\S]*top:\s*50%;[\s\S]*left:\s*50%/);
   assert.match(css, /\.mini-calendar-day,[\s\S]*font-size:12px/);
   assert.match(css, /\.calendar-month \.evchip \{[\s\S]*font-size:12px/);
 });
@@ -58,7 +57,7 @@ test('calendar actions use aligned icons and compact calendars remain readable',
 test('group people use consistent initial avatars in lists and requests', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
-    read('assets/css/calendar.css'),
+    read('assets/css/feature/calendar.css'),
   ]);
 
   assert.match(planner, /function personInitials\(name\)/);
@@ -84,7 +83,7 @@ test('imported programs stay in TVZA and share completion state live', async () 
 test('mobile calendar starts with the readable list view', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
-    read('assets/css/calendar.css'),
+    read('assets/css/feature/calendar.css'),
   ]);
 
   assert.match(planner, /const isMobileCalendar = \(\) => matchMedia\('\(max-width:899px\)'\)\.matches/);
@@ -103,7 +102,7 @@ test('mobile calendar starts with the readable list view', async () => {
 test('mobile creation and reminders stay above long calendar content', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
-    read('assets/css/calendar.css'),
+    read('assets/css/feature/calendar.css'),
   ]);
 
   assert.match(planner, /id="createEventOption"/);
@@ -174,7 +173,7 @@ test('mobile creation and reminders stay above long calendar content', async () 
 test('mobile month uses only required weeks and wraps event labels', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
-    read('assets/css/calendar.css'),
+    read('assets/css/feature/calendar.css'),
   ]);
 
   assert.match(planner, /const totalCells = Math\.ceil\(\(offset \+ dim\) \/ 7\) \* 7/);

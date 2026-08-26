@@ -1,6 +1,8 @@
 /* ================================
-   TVZA Family App — Global Styles
-   Redesign: calm, flat, Hanken Grotesk
+   TVZA — kit.css
+   Tokens, shell, nav, row/tile/panel, buttons, icons, hint card.
+   Split out of style.css (Phase A). See legacy.css for old class
+   names and assets/css/feature/*.css for page-specific rules.
    ================================ */
 
 :root {
@@ -84,12 +86,12 @@
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
 
   /* Radius scale (§3) — exactly four steps, nothing in between.
-     --r1/--r2/--r3 stay as aliases so untouched pages keep rendering. */
+     --r1/--r2/--r3 stay as aliases so untouched pages keep rendering;
+     the aliases themselves live in legacy.css. */
   --r-icon:  11px;   /* icon plate, nav entry, chart column */
   --r-row:   14px;   /* row, tile, button */
   --r-panel: 16px;   /* panel holding several blocks */
   --r-pill:  999px;  /* pill, badge, avatar */
-  --r1: var(--r-icon); --r2: var(--r-row); --r3: var(--r-panel);
 
   /* No shadows (§3). Depth comes from --border alone. The three
      --shadow-* variables were already transparent, so every rule that
@@ -102,20 +104,11 @@
   --text-xs: 12px; --text-sm: 13px; --text-base: 15px;
   --text-lg: 18px; --text-xl: 22px; --text-2xl: 28px;
 
-  /* ── Legacy aliases (keep older selectors & inline styles working) ── */
-  --primary:      var(--brand-navy);
-  --primary-mid:  var(--brand-navy-mid);
-  --primary-deep: var(--brand-navy-deep);
-  --text:         var(--ink);
-  --text-muted:   var(--ink-soft);
-  --text-faint:   oklch(0.60 0.01 250);
-  --radius:       var(--r2);
-  --radius-sm:    var(--r1);
-  --radius-xs:    var(--r-icon);
+  /* Still read by several kit rules (.main, .offline-banner,
+     .tvz-footer-panel) even though it was grouped with the legacy
+     aliases in the original file — kept here so those rules don't
+     depend on legacy.css being present. */
   --max-width:    680px;
-  --ski-l:    var(--tint-ski);
-  --food-l:   var(--tint-food);
-  --trip-l:   var(--tint-trip);
 }
 
 :root[data-theme="dark"] {
@@ -161,7 +154,6 @@
   --training-deep: oklch(0.78 0.11 20);
   --kurs-up:   oklch(0.72 0.13 150);
   --kurs-down: oklch(0.70 0.15 25);
-  --text-faint: oklch(0.58 0.01 250);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -266,28 +258,8 @@ body.dm-thread .app {
   to   { opacity: 1; transform: none; }
 }
 
-/* ─── Header ─── */
-.header {
-  background: var(--brand-gradient);
-  color: white;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  border-bottom: 0;
-  /* Flush to the very top — also paint into the status-bar / notch safe
-     area on mobile + installed PWA (needs viewport-fit=cover; 0 elsewhere). */
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-.header-inner {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  min-height: 60px;
-  padding: 0 var(--s4);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+/* ─── Wordmark ─── (used by the old .header AND the still-active
+   .tvz-footer-panel — shared, not legacy-only) */
 .tvz-wordmark {
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 26px;
@@ -305,30 +277,7 @@ body.dm-thread .app {
 }
 .logo { color: var(--ink); }
 
-.header .tvz-wordmark,
-.header .logo,
-.header .page-title,
-.header .back-btn:hover {
-  color: white;
-}
-.header .tvz-mark,
-.header .back-btn,
-.header .icon-btn {
-  color: rgba(255,255,255,0.74);
-}
-
-/* Der alte Farbbalken lag doppelt: .appbar__accent sitzt schon im Kopf
-   und trägt den 3px-Streifen in der Bereichsfläche. Dieser hier kam als
-   zweiter, kräftiger Verlaufsbalken darunter — daher die zwei Streifen.
-   Er entfällt; die Seiten behalten ihr Markup, es zeigt nur nichts mehr. */
-.accent-bar { display: none; }
-.accent-bar-legacy { height: 3px; }
-.accent-bar--ski    { background: var(--tint-ski); }
-.accent-bar--food   { background: var(--tint-food); }
-.accent-bar--trip   { background: var(--tint-trip); }
-.accent-bar--watch  { background: var(--tint-watch); }
-
-/* ─── Back button & page title ─── */
+/* ─── Back button ─── (shared by the old .header and the current .appbar) */
 .back-btn {
   display: flex;
   align-items: center;
@@ -341,16 +290,6 @@ body.dm-thread .app {
 }
 .back-btn:hover { color: var(--ink); }
 .back-btn svg { width: 18px; height: 18px; }
-
-.page-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: var(--text-base);
-  font-weight: 700;
-  color: var(--ink);
-  pointer-events: none;
-}
 
 /* ─── Offline banner ─── */
 .offline-banner {
@@ -521,9 +460,6 @@ body.dm-thread .app {
 :root[data-theme="dark"] .card--weather .card-icon { background: oklch(0.30 0.05 235); color: oklch(0.82 0.09 230); }
 .card--dm .card-icon { background: oklch(0.93 0.04 300); color: oklch(0.45 0.13 300); }
 :root[data-theme="dark"] .card--dm .card-icon { background: oklch(0.30 0.05 300); color: oklch(0.82 0.10 300); }
-.dm-tile-badge { position: absolute; top: 10px; right: 10px; z-index: 2; min-width: 22px; height: 22px;
-  padding: 0 6px; border-radius: var(--r-pill); background: oklch(0.55 0.20 25); color: #fff; font-size: 12px; font-weight: 700;
-  display: inline-flex; align-items: center; justify-content: center; }
 
 .card-content h3 { font-size: var(--text-base); font-weight: 700; }
 .card-content p  { font-size: var(--text-sm); color: var(--ink-soft); margin-top: 2px; }
@@ -545,7 +481,10 @@ body.dm-thread .app {
 .card--matura .tl-fill { background: linear-gradient(90deg, var(--matura), var(--matura-deep)); }
 .card--food   .tl-fill { background: linear-gradient(90deg, var(--food), var(--food-deep)); }
 
-/* rotating Watchlist ticker — two compact lines so it never overflows */
+/* rotating Watchlist ticker on the Start-page tile — two compact lines
+   so it never overflows. Only rendered on index.html (#tileWatch), not
+   on watchlist.html itself, so it stays in kit.css rather than a
+   feature file. */
 .tile-ticker { min-height: 30px; }
 .tile-ticker .tk-quote { display: flex; flex-direction: column; gap: 1px; transition: opacity .35s ease; min-width: 0; }
 .tile-ticker.swap .tk-quote { opacity: 0; }
@@ -556,45 +495,38 @@ body.dm-thread .app {
 .tile-ticker .tk-dp.down { color: oklch(0.58 0.17 25); }
 .tile-ticker .tk-px { font-variant-numeric: tabular-nums; color: var(--ink-soft); font-weight: 700; white-space: nowrap; }
 
-/* weather live row (condition + chance of precipitation — no temperature) */
+/* weather live row on the Start-page tile (condition + chance of
+   precipitation — no temperature). Only rendered on index.html
+   (#tileWeather), not on weather.html itself. */
 #tileWeather { display: flex; align-items: center; gap: 5px; min-width: 0; }
 #tileWeather .wxl-ic  { font-size: 15px; line-height: 1; flex: none; }
 #tileWeather .wxl-lab { font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #tileWeather .wxl-pop { color: var(--ink-soft); font-weight: 600; white-space: nowrap; flex: none; }
 
-/* DM tile — last conversation preview */
+/* DM tile — last conversation preview, only on index.html (#tileDm). */
+.dm-tile-badge { position: absolute; top: 10px; right: 10px; z-index: 2; min-width: 22px; height: 22px;
+  padding: 0 6px; border-radius: var(--r-pill); background: oklch(0.55 0.20 25); color: #fff; font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; }
 #tileDm { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 #tileDm .dm-name { font-weight: 800; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #tileDm .dm-prev { color: var(--ink-soft); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Ski + generic one-line status footer */
+/* Ski + generic one-line status footer. #tileSki only renders on
+   index.html's dashboard, not on skitracker.html, so it stays here
+   rather than in feature/ski.css alongside skitracker.html's own
+   content (wax colours, stars, badge). */
 #tileSki, .tile-status { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 #tileSki .st-main, .tile-status .st-main { font-weight: 800; color: var(--ink); white-space: nowrap; }
 #tileSki .st-sub, .tile-status .st-sub { color: var(--ink-soft); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* next-event row (Kalender) */
+/* next-event row (Kalender) on the Start-page tile, only on index.html
+   (#tileTrip), not on planner.html itself. */
 #tileTrip { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 #tileTrip .tp-when { font-weight: 800; color: var(--trip-deep); white-space: nowrap; }
 #tileTrip .tp-what { color: var(--ink-soft); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ─── Link rows (external projects) ─── */
 .link-list { display: flex; flex-direction: column; gap: var(--s2); }
-
-.link-row {
-  background: var(--surface);
-  border-radius: var(--r3);
-  border: 1px solid var(--border);
-  padding: var(--s4) 18px;
-  display: flex;
-  align-items: center;
-  gap: var(--s3);
-  transition: border-color 150ms ease;
-}
-.link-row:hover { border-color: var(--ink-soft); }
-
-.link-icon  { font-size: 22px; width: 34px; text-align: center; }
-.link-title { flex: 1; font-size: var(--text-base); font-weight: 700; min-width: 140px; }
-.link-title small { display: block; margin-top: 3px; color: var(--ink-soft); font-size: var(--text-xs); font-weight: 500; }
 
 .project-row {
   align-items: center;
@@ -759,58 +691,6 @@ body.dm-thread .app {
   box-shadow: inset 0 0 0 1px var(--border);
 }
 
-/* ─── Item list ─── */
-.item-list { display: flex; flex-direction: column; gap: var(--s2); }
-
-.item-card {
-  background: var(--surface);
-  border-radius: var(--r2);
-  border: 1px solid var(--border);
-  padding: var(--s3) var(--s4);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s3);
-}
-
-.item-check {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--r-pill);
-  border: 2px solid var(--border);
-  flex-shrink: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
-  margin-top: 1px;
-  font-size: var(--text-xs);
-}
-
-.item-check.done { background: var(--food); border-color: var(--food); color: white; animation: checkFill 0.18s ease; }
-@keyframes checkFill {
-  0%   { transform: scale(0.8); }
-  60%  { transform: scale(1.12); }
-  100% { transform: scale(1); }
-}
-
-.item-content { flex: 1; min-width: 0; }
-.item-title   { font-size: 14px; font-weight: 700; }
-.item-title.done { text-decoration: line-through; color: var(--ink-soft); }
-.item-sub     { font-size: var(--text-xs); color: var(--ink-soft); margin-top: 2px; }
-.item-actions { display: flex; align-items: center; gap: var(--s1); flex-shrink: 0; }
-.item-actions svg, .btn-danger svg { display: block; }
-
-/* ─── Status badge ─── */
-.badge {
-  display: inline-block;
-  padding: 2px var(--s2);
-  border-radius: var(--r-pill);
-  font-size: 11px;
-  font-weight: 700;
-}
-.badge-doing      { background: var(--tint-ski);  color: var(--ski-deep); }
-
 /* ─── Progress ─── */
 /* ─── Empty state ─── */
 .empty-state { text-align: center; padding: 40px var(--s4); color: var(--ink-soft); }
@@ -823,48 +703,12 @@ body.dm-thread .app {
 .empty-icon svg { width: 26px; height: 26px; }
 .empty-text  { font-size: 14px; max-width: 320px; margin: 0 auto; line-height: 1.5; }
 
-/* ─── Spinner ─── */
-/* .spinner is retired: ui-fx.js swaps these hosts for skeletons, and the
-   text flashed as a second waiting state before it did. Kept as a hidden
-   hook so pages that still ship the markup don't show stray "Lade…". */
-.spinner { display: none; }
-
 /* ─── Section divider ─── */
 .divider { height: 1px; background: var(--border); margin: var(--s4) 0; }
 
-/* ─── Date pill ─── */
-.date-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 44px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-pill);
-  padding: 6px 14px;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  margin-bottom: var(--s4);
-  transition: border-color 150ms ease, background 150ms ease;
-}
-.date-pill:hover { background: var(--surface-2); }
-
-/* ─── Trip card ─── */
-.trip-card {
-  background: var(--surface);
-  border-radius: var(--r3);
-  border: 1px solid var(--border);
-  padding: var(--s4);
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: border-color 150ms ease;
-  border-left: 3px solid var(--trip);
-}
-.trip-card:hover { border-color: var(--ink-soft); }
-.trip-name { font-size: var(--text-base); font-weight: 700; }
-.trip-meta { font-size: var(--text-xs); color: var(--ink-soft); margin-top: var(--s1); }
+/* ─── Detail/list toggle (currently unused by any page's markup — kept
+   as found, per "cut and paste only, don't delete a rule you think is
+   dead") ─── */
 .detail-view.visible { display: block; }
 .list-view.hidden { display: none; }
 
@@ -982,23 +826,22 @@ body.dm-thread .app {
 body.settings-layer-open { overflow: hidden; }
 
 /* Embedded settings are still the real dashboard dialog, only without a
-   second dashboard and navigation behind it. */
+   second dashboard and navigation behind it. The admin-only half of this
+   mechanism (html.admin-embed) lives in feature/access.css — several of
+   these rules originally shared one comma-selector with it; declarations
+   below are duplicated verbatim under the settings-embed-only selector,
+   noted here so the split is traceable. */
 html.settings-embed,
-html.settings-embed body,
-html.admin-embed,
-html.admin-embed body {
+html.settings-embed body {
   min-height: 100%;
   background: transparent !important;
 }
-html.settings-embed body,
-html.admin-embed body {
+html.settings-embed body {
   padding: 0 !important;
   overflow: hidden;
 }
-html.settings-embed body > :not(#settingsModal):not(script),
-html.admin-embed body > :not(#settingsModal):not(script) { display: none !important; }
-html.settings-embed #settingsModal,
-html.admin-embed #settingsModal {
+html.settings-embed body > :not(#settingsModal):not(script) { display: none !important; }
+html.settings-embed #settingsModal {
   display: flex !important;
   position: fixed;
   inset: 0;
@@ -1007,212 +850,16 @@ html.admin-embed #settingsModal {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-html.settings-embed #settingsModal .modal,
-html.admin-embed #settingsModal .modal { max-height: 100dvh; }
-html.admin-embed #settingsModal .modal {
-  max-width: none;
-  min-height: 0;
-  max-height: none;
-  overflow: visible;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 0;
-  animation: none;
-}
-html.admin-embed,
-html.admin-embed body { overflow: visible !important; }
-html.admin-embed #settingsModal {
-  position: static;
-  min-height: 0;
-  overflow: visible;
-}
-html.admin-embed #settingsModal .modal > :not(.modal-head):not(#adminSection) {
-  display: none !important;
-}
-html.admin-embed #settingsModal .modal-head { display: none !important; }
-html.admin-embed #settingsClose { display: none !important; }
-html.admin-embed #adminSection {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, .8fr);
-  grid-template-areas:
-    "health health"
-    "users invites"
-    "users food";
-  gap: 16px;
-  align-items: start;
-}
-html.admin-embed #adminSection > .settings-divider { display: none !important; }
-html.admin-embed #adminHealthSection { grid-area: health; }
-html.admin-embed #memberInviteSection { grid-area: invites; }
-html.admin-embed #superAdminUserSection { grid-area: users; }
-html.admin-embed #superAdminFoodSection { grid-area: food; }
-html.admin-embed #adminSection > .settings-section {
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-panel);
-  background: var(--surface);
-  box-shadow: 0 8px 28px rgba(15, 23, 42, .05);
-}
-.admin-health {
-  display: grid;
-  gap: 12px;
-}
-.admin-health__head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.admin-health__icon {
-  width: 38px;
-  height: 38px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: var(--accent-bg);
-  color: var(--accent);
-}
-.admin-health__icon svg { width: 20px; height: 20px; }
-.admin-health__title {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 2px;
-}
-.admin-health__title strong {
-  font-size: 14px;
-  line-height: 1.3;
-}
-.admin-health__title small {
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-.admin-health__state {
-  flex: none;
-  padding: 5px 10px;
-  border-radius: var(--r-pill);
-  background: var(--accent-bg);
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 800;
-}
-.admin-health__state[data-state="safe"] {
-  background: color-mix(in srgb, var(--kurs-up) 11%, var(--surface));
-  color: var(--kurs-up);
-}
-.admin-health__state[data-state="warning"] {
-  background: var(--tint-trip);
-  color: var(--trip-deep);
-}
-.admin-health__state[data-state="error"] {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
-.admin-health__checks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-.admin-health-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 9px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  font-size: 11px;
-  font-weight: 700;
-}
-.admin-health-check > span {
-  width: 15px;
-  height: 15px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--border);
-  color: var(--ink);
-  font-size: 9px;
-}
-.admin-health-check.is-ok > span {
-  background: var(--kurs-up);
-  color: white;
-}
-.admin-health-check.is-error > span {
-  background: var(--danger);
-  color: white;
-}
-.admin-health-check.is-checking > span {
-  background: var(--accent);
-  color: white;
-  animation: adminHealthPulse 850ms ease-in-out infinite alternate;
-}
-@keyframes adminHealthPulse { to { opacity: .38; } }
-.admin-health__alerts {
-  display: grid;
-  gap: 7px;
-}
-.admin-health-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 9px 11px;
-  border-radius: var(--r-row);
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 1.4;
-}
-.admin-health-alert__mark {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--accent-bg);
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: 900;
-}
-.admin-health-alert.is-safe {
-  background: color-mix(in srgb, var(--kurs-up) 7%, var(--surface));
-  color: color-mix(in srgb, var(--kurs-up) 78%, var(--ink));
-}
-.admin-health-alert.is-safe .admin-health-alert__mark {
-  background: var(--kurs-up);
-  color: white;
-}
-.admin-health-alert.is-warning {
-  background: color-mix(in srgb, var(--trip) 9%, var(--surface));
-  color: var(--trip-deep);
-}
-.admin-health-alert.is-warning .admin-health-alert__mark {
-  background: var(--trip);
-  color: white;
-}
-.admin-health-alert.is-error {
-  background: var(--danger-bg);
-  color: var(--danger);
-}
-.admin-health-alert.is-error .admin-health-alert__mark {
-  background: var(--danger);
-  color: white;
-}
+html.settings-embed #settingsModal .modal { max-height: 100dvh; }
+
 .modal-title { font-size: var(--text-base); font-weight: 700; margin-bottom: var(--s4); }
 .modal-actions { display: flex; gap: var(--s2); margin-top: var(--s4); }
 .modal-actions .btn { flex: 1; }
 .btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--border); }
 .btn-secondary:hover { background: var(--surface-2); }
 
-/* Star rating */
-.stars { display: inline-flex; gap: 2px; }
-.star { font-size: 22px; cursor: pointer; color: var(--border); transition: color 150ms ease; user-select: none; }
-.star.on { color: oklch(0.72 0.13 75); }
-
-/* Segmented options */
+/* Segmented options — reused by ski/food/planner pages alike, so the
+   mechanism (and the page--ski/food/trip tint hooks) stays here. */
 .seg {
   display: flex; gap: 6px; flex-wrap: wrap;
 }
@@ -1234,19 +881,8 @@ html.admin-embed #adminSection > .settings-section {
 .page--food   .seg-opt.on { background: var(--food); border-color: var(--food); }
 .page--trip   .seg-opt.on { background: var(--trip); border-color: var(--trip); }
 
-/* Wax colour dots */
-.wax-dot { display:inline-block; width: 12px; height: 12px; border-radius: var(--r-pill); margin-right: 5px; vertical-align: -1px; }
-.wax-Blau  { background: #2563EB; }
-.wax-Gelb  { background: #EAB308; }
-.wax-Rot   { background: #DC2626; }
-.wax-Grün  { background: #16A34A; }
-
-.seg-opt[data-val="Blau"].on { background:#2563EB; border-color:#2563EB; }
-.seg-opt[data-val="Gelb"].on { background:#CA8A04; border-color:#CA8A04; }
-.seg-opt[data-val="Rot"].on  { background:#DC2626; border-color:#DC2626; }
-.seg-opt[data-val="Grün"].on { background:#16A34A; border-color:#16A34A; }
-
-/* Autocomplete */
+/* Autocomplete — reused by food (ingredients), watchlist and weather
+   (location search), so it stays a shared kit component. */
 .ac-wrap { position: relative; }
 .ac-list {
   position: absolute; top: 100%; left: 0; right: 0;
@@ -1260,69 +896,6 @@ html.admin-embed #adminSection > .settings-section {
 .ac-item { padding: 9px var(--s3); font-size: 14px; cursor: pointer; transition: background 150ms ease; }
 .ac-item:hover, .ac-item.sel { background: var(--surface-2); }
 .ac-item small { color: var(--ink-soft); }
-
-/* Ingredient rows */
-.ing-row {
-  display: flex; gap: var(--s2); align-items: center; margin-bottom: var(--s2);
-}
-.ing-row .form-input { margin: 0; }
-.ing-name { flex: 1; }
-.ing-grams { width: 90px; }
-
-/* Nutrition summary */
-.nutri-box {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r1);
-  padding: var(--s3) 14px;
-  font-size: var(--text-sm);
-  margin-bottom: var(--s3);
-}
-.nutri-kcal { font-size: 20px; font-weight: 700; }
-.nutri-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; color: var(--ink-soft); }
-
-/* Month calendar */
-.cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: var(--s1);
-}
-.cal-head {
-  font-size: 10px; font-weight: 700; color: var(--ink-soft);
-  text-align: center; text-transform: uppercase; letter-spacing: 0.06em; padding: var(--s1) 0;
-}
-.cal-day {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r1);
-  min-height: 52px;
-  padding: 5px;
-  font-size: 11px;
-  cursor: pointer;
-  display: flex; flex-direction: column; justify-content: space-between;
-  transition: background 150ms ease;
-}
-.cal-day:hover { background: var(--surface-2); }
-.cal-day.empty { background: transparent; border: none; box-shadow: none; cursor: default; }
-.cal-day.today { outline: 2px solid var(--food); outline-offset: -1px; }
-.cal-num  { font-weight: 700; }
-.cal-kcal { font-size: 10px; color: var(--food-deep); font-weight: 700; }
-
-/* Pending request card */
-.pending-card {
-  background: var(--tint-trip);
-  border: 1px solid var(--border);
-  border-radius: var(--r1);
-  padding: var(--s3) 14px;
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: var(--s2); font-size: var(--text-sm);
-}
-.pending-card .btn { padding: 6px var(--s3); font-size: var(--text-xs); min-height: 38px; }
-
-/* Daily kcal progress */
-.kcal-bar  { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-pill); height: 10px; overflow: hidden; }
-.kcal-fill { height: 100%; background: var(--food); border-radius: var(--r-pill); transition: width 0.4s ease; }
-.kcal-fill.over { background: var(--accent); }
 
 /* ════ v3: TvZ footer ══════════════════════════ */
 /* Das grosse Wortzeichen am Seitenende gehört auf die Startseite, wo es
@@ -1390,12 +963,6 @@ html.admin-embed #adminSection > .settings-section {
 .tvz-footer-panel .tvz-footer-copy span { color: rgba(255,255,255,0.78); }
 
 @media (max-width: 899px) {
-  /* Tracker bars (Zurück + Titel + Icons): stay a clean, flush single row. */
-  .header-inner { align-items: center; flex-direction: row; justify-content: space-between; gap: 6px; min-height: 54px; padding: 0 12px; }
-  /* Reset the desktop absolute-centering — otherwise .page-title stays
-     positioned (out of flex flow) and visually overlaps the back button
-     or icon buttons instead of sharing the row with them. */
-  .header-inner .page-title { position: static; transform: none; flex: 1; text-align: center; pointer-events: auto; }
   /* Dashboard bar (Marke + Benutzer-Chip) keeps its stacked layout. */
   .project-row { align-items: flex-start; flex-direction: column; }
   .project-actions { width: 100%; justify-content: stretch; }
@@ -1509,10 +1076,6 @@ body.reorder-editing .reorder-fab {
   font-size: 22px;
   line-height: 1.15;
 }
-/* Keep share / admin rows tidy inside the narrow modal */
-#settingsModal .link-row { padding: 10px 12px; }
-#settingsModal .link-title { min-width: 0; }
-#settingsModal .link-title small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-section {
   min-width: 0;
   margin: 0;
@@ -1875,72 +1438,12 @@ body.reorder-editing .module-tile::after {
 /* Zeile als Schalter (Modul-Liste in den Einstellungen). Gleiche Zeile
    wie überall, rechts ein Kästchen statt Chevron — statt eigener
    Klassen mit Emoji und System-Checkbox. */
-/* ─── Benutzerverwaltung (Admin) ───
-   Die Einträge standen als dichte Liste ohne Luft untereinander und
-   trugen ein Personensymbol statt der Initialen, die überall sonst für
-   eine Person stehen. */
-.admin-user { border-radius: var(--r-row); }
-.admin-user + .admin-user { margin-top: 8px; }
-.admin-user__head { list-style: none; }
-.admin-user__head::-webkit-details-marker { display: none; }
 .avatar.avatar--ink {
   background: var(--tint, var(--surface-2));
   color: var(--deep, var(--ink-soft));
   width: 36px; height: 36px; font-size: 13px;
   cursor: default;
 }
-.shared-identity {
-  position: relative;
-  width: 48px;
-  height: 40px;
-  display: inline-flex;
-  align-items: flex-start;
-  flex: none;
-}
-.shared-identity .row__icon {
-  width: 34px;
-  height: 34px;
-  flex: none;
-}
-.shared-identity__person {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--surface);
-  box-shadow: 0 1px 3px rgba(15,23,42,0.18);
-  font-size: 9px;
-}
-.admin-user__body { padding: 4px 14px 14px; }
-@media (min-width: 900px) {
-  html.admin-embed #adminUsers {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-  html.admin-embed #adminUsers .admin-user + .admin-user { margin-top: 0; }
-  html.admin-embed #adminUsers .admin-user[open] { grid-column: 1 / -1; }
-}
-.admin-mods {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 6px; margin: 10px 0 14px;
-}
-.admin-mod {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 10px; min-height: 40px;
-  border: 1px solid var(--border); border-radius: var(--r-icon);
-  background: var(--surface);
-  font-size: 13px; font-weight: 600; cursor: pointer;
-}
-.admin-mod__icon {
-  width: 26px; height: 26px; flex: none;
-  display: inline-flex; align-items: center; justify-content: center;
-  border-radius: var(--r-icon);
-  background: var(--tint, var(--surface-2)); color: var(--deep, var(--ink-soft));
-}
-.admin-mod__icon svg { width: 15px; height: 15px; stroke-width: 1.8; }
-.admin-mod--admin { font-weight: 700; }
 
 .row--check {
   width: 100%;
@@ -1961,8 +1464,10 @@ body.reorder-editing .module-tile::after {
   text-align: right;
 }
 .row--check.is-checked .module-toggle-state { color: var(--accent); }
-.row--check input[type="checkbox"],
-.admin-mod input[type="checkbox"] {
+/* The base checkbox look is shared with .admin-mod's checkbox in
+   feature/access.css (same declarations, duplicated there) — the two
+   were fused in one comma-selector in the original file. */
+.row--check input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
   width: 22px; height: 22px; flex: none; margin: 0;
   border: 1.5px solid var(--border);
@@ -1982,8 +1487,7 @@ body.reorder-editing .module-tile::after {
   border-radius: var(--r-pill);
   background: var(--surface-2);
 }
-.row--check input[type="checkbox"]::after,
-.admin-mod input[type="checkbox"]::after {
+.row--check input[type="checkbox"]::after {
   content: ""; width: 11px; height: 11px;
   clip-path: polygon(14% 45%, 0 60%, 40% 100%, 100% 22%, 85% 8%, 38% 71%);
   background: #fff; transform: scale(0);
@@ -1998,17 +1502,14 @@ body.reorder-editing .module-tile::after {
   box-shadow: 0 1px 4px rgba(15, 23, 42, .2);
   transform: translateX(0);
 }
-.row--check input[type="checkbox"]:checked,
-.admin-mod input[type="checkbox"]:checked {
+.row--check input[type="checkbox"]:checked {
   background: var(--accent); border-color: var(--accent);
 }
-.row--check input[type="checkbox"]:checked::after,
-.admin-mod input[type="checkbox"]:checked::after { transform: scale(1); }
+.row--check input[type="checkbox"]:checked::after { transform: scale(1); }
 .row--check input[type="checkbox"]:checked::after {
   transform: translateX(18px);
 }
-.row--check input[type="checkbox"]:focus-visible,
-.admin-mod input[type="checkbox"]:focus-visible {
+.row--check input[type="checkbox"]:focus-visible {
   outline: 2px solid var(--accent); outline-offset: 2px;
 }
 @media (max-width: 700px) {
@@ -2023,24 +1524,9 @@ body.reorder-editing .module-tile::after {
   #settingsModal #moduleToggles { grid-template-columns: 1fr; }
   .settings-section-head { display: block; }
   .settings-save-state { margin-top: 10px; }
-  html.admin-embed #settingsModal .modal {
-    min-height: 0;
-    padding: 0;
-  }
-  html.admin-embed #adminSection {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "health"
-      "invites"
-      "users"
-      "food";
-  }
 }
 @media (max-width: 480px) {
   .module-toggle-state { display: none; }
-  .admin-health__head { align-items: flex-start; }
-  .admin-health__state { margin-left: auto; }
-  .admin-health__title small { display: none; }
 }
 .row__chev  { width: 16px; height: 16px; color: var(--ink-soft); stroke-width: 1.8; }
 .row__num   { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -2173,9 +1659,10 @@ body.reorder-editing .module-tile::after {
 
 /* Ein einziges Plus für alle Aktionen. Die Balken werden als Prozent
    der festen 16-px-Fläche gezeichnet; 12.5 % sind exakt 2 px und
-   vermeiden die weicheren 1.8-px-Halbpixel mancher früherer Varianten. */
-.ui-plus,
-.calendar-action-icon {
+   vermeiden die weicheren 1.8-px-Halbpixel mancher früherer Varianten.
+   .calendar-action-icon shared this rule with .ui-plus in the original
+   file — its declarations are duplicated in feature/calendar.css. */
+.ui-plus {
   position: relative;
   display: block;
   width: 16px;
@@ -2184,9 +1671,7 @@ body.reorder-editing .module-tile::after {
   margin: 0;
 }
 .ui-plus::before,
-.ui-plus::after,
-.calendar-action-icon::before,
-.calendar-action-icon::after {
+.ui-plus::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -2197,8 +1682,7 @@ body.reorder-editing .module-tile::after {
   background: currentColor;
   transform: translate(-50%, -50%);
 }
-.ui-plus::after,
-.calendar-action-icon::after {
+.ui-plus::after {
   transform: translate(-50%, -50%) rotate(90deg);
 }
 
@@ -2260,6 +1744,8 @@ body.reorder-editing .module-tile::after {
 /* 3px Bereich stripe under the header of a Bereich page. */
 .appbar__accent { height: 3px; background: var(--tint, transparent); }
 
+/* Weather pill in the header — injected on every page via shell.js, not
+   specific to weather.html, so it stays in kit.css. */
 .wx-pill {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none;
   height: var(--ctl, 32px); padding: 0 calc(var(--ctl, 32px) * 0.34);
@@ -2268,6 +1754,7 @@ body.reorder-editing .module-tile::after {
   font-size: clamp(12px, 3.4vw, 13px); font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .wx-pill svg { width: 16px; height: 16px; flex: none; stroke-width: 1.7; }
+
 .appbar .tvzn-bell {
   width: var(--ctl, 32px);
   height: var(--ctl, 32px);
@@ -2944,156 +2431,6 @@ html.tvza-content-frame body > main {
   .card-grid--quick .tile-live { display: block; width: 100%; }
 }
 
-/* Day groups in the Planer programme list. */
-.itin-day + .itin-day { margin-top: 20px; }
-@media (min-width: 900px) { .itin-day + .itin-day { margin-top: 26px; } }
-
-/* ── Legacy aliases ────────────────────────────────────────────────
-   Five components did the job of one. Until each page is migrated,
-   the old names borrow the new row's look so nothing regresses. */
-.link-row, .item-card, .file-row, .grp-card, .pending-card {
-  border-radius: var(--r-row);
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-.link-row:hover, .item-card:hover, .file-row:hover,
-.grp-card:hover, .pending-card:hover { border-color: var(--ink-soft); }
-.pill, .mini { border-radius: var(--r-pill); }
-
-/* ══════════════════════════════════════════════════════════════════
-   Angleichung der Seitenbauteile
-
-   Ten pages grew ten sets of row and card classes — .dm-conv, .wl-stat,
-   .wx-card, .grp-card, .item-card, .itin-item, .meeting-card, .line and
-   the rest. They do the same job as .row and .panel but each picked its
-   own radius, border and hover.
-
-   Rewriting every page's markup onto .row is the clean end state, but it
-   is ten separate rewrites of pages the family is using. This layer does
-   the visible half now: it takes over the *design* properties — radius,
-   border, surface, hover — and leaves each page's layout alone, so the
-   app is consistent without any page changing shape.
-
-   Each page's <style> comes after this file in the document, so these
-   rules carry a `body` prefix to win on specificity. Once a page is
-   migrated onto .row properly, its entry here can go.
-   ══════════════════════════════════════════════════════════════════ */
-
-/* ── Rows and cards → the .row / .panel treatment ──────────────────*/
-body .dm-conv,          /* Nachrichten */
-body .dm-empty,
-body .wl-stat,          /* Watchlist */
-body .wl-market-note,
-body .wl-hint,
-/* .wx-hero und .deadline-box stehen bewusst NICHT hier: beide tragen
-   eine eigene farbige Fläche und weisse Schrift. Die Flächenfarbe
-   drüberzulegen hat genau das erzeugt — weiss auf weiss. */
-body .wx-card,
-body .wx-fact,
-body .wx-msg,
-body .grp-card,         /* Planer */
-body .item-card,
-body .sub-card,
-body .cell,
-body .file-row,
-body .pending-card,
-body .itin-item,        /* Reisen */
-body .reminder-card,
-body .invite-strip,
-body .trip-card,
-body .meeting-card,     /* Maturaarbeit */
-body .pm-details {
-  border-radius: var(--r-row);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  box-shadow: none;
-}
-
-/* Panels group several blocks, so they take the larger radius. */
-body .wx-hero,
-body .sub-card,
-body .pm-details {
-  border-radius: var(--r-panel);
-}
-
-/* Hover changes colour, never position (§9). There is no hover on a
-   phone, and with no shadow there is nothing to lift into. */
-body .dm-conv:hover,
-body .item-card:hover,
-body .grp-card:hover,
-body .trip-card:hover,
-body .itin-item:hover,
-body .meeting-card:hover,
-body .file-row:hover,
-body .wl-stat:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: var(--ink-soft);
-}
-
-/* ── Pills, chips and badges → --r-pill ────────────────────────────*/
-body .pill,
-body .mini,
-body .chip,
-body .pill-btn,
-body .wl-chip,
-body .wl-src-tag,
-body .wx-chip,
-body .dm-badge,
-body .role-badge,
-body .status-badge,
-body .date-pill,
-body .icon-pill {
-  border-radius: var(--r-pill);
-}
-
-/* ── Icon plates and avatars ───────────────────────────────────────*/
-body .dm-ava,
-body .card-icon,
-body .link-icon,
-body .mc-date {
-  border-radius: var(--r-icon);
-}
-/* An avatar is a circle, not a rounded square. */
-body .dm-ava { border-radius: var(--r-pill); }
-
-/* ── Segmented controls ────────────────────────────────────────────*/
-body .seg,
-body .wl-seg,
-body .wx-seg,
-body .wx-alt-seg,
-body .tabs {
-  border-radius: var(--r-row);
-}
-body .seg button,
-body .wl-seg button,
-body .wx-seg button,
-body .wx-alt-seg button {
-  border-radius: var(--r-icon);
-}
-
-/* ── Buttons that predate the three in §4.4 ────────────────────────*/
-body .reset-btn,
-body .pm-info-btn,
-body .lang-sel,
-body .action-btn {
-  border-radius: var(--r-row);
-  box-shadow: none;
-}
-body .reset-btn:hover,
-body .pm-info-btn:hover,
-body .action-btn:hover {
-  transform: none;
-}
-
-/* ── Inputs share one radius with everything else ──────────────────*/
-body .form-input,
-body .form-select,
-body .form-textarea,
-body .dm-compose textarea {
-  border-radius: var(--r-row);
-}
-
 /* Section changes retain the shell visually and fade only the page
    content. Browsers without cross-document transitions ignore this. */
 @view-transition { navigation: auto; }
@@ -3135,10 +2472,12 @@ body .dm-compose textarea {
    Karten, eine fuer alles, was ueber der Seite liegt. Im Dunkelmodus tragen
    --sh-* nur noch eine Lichtkante, dort macht der Rahmen die Arbeit. */
 
+/* .link-list > .link-row shared this rule with .card/.tile/.link-list > a
+   in the original file (legacy class fused with kit classes in one
+   comma-selector) — its declarations are duplicated in legacy.css. */
 .card,
 .tile,
-.link-list > a,
-.link-list > .link-row {
+.link-list > a {
   border-radius: 20px;
   border-color: var(--rule-soft, var(--border));
   box-shadow: var(--sh-card);
@@ -3202,16 +2541,11 @@ body .dm-compose textarea {
   border-bottom: 1px solid var(--rule-soft, var(--border));
 }
 
-/* Status ist keine Modulfarbe. Ein Haken war bisher gruen, weil Food gruen
-   ist — im roten Trainingsbereich waere derselbe Haken rot geworden und
-   haette wie ein Fehler ausgesehen. */
-.item-check.done {
-  background: var(--ok);
-  border-color: var(--ok);
-}
-
-/* Fortschrittsbalken bekommen die gleiche Rundung wie alles andere. */
-.kcal-fill, .tl-fill { border-radius: var(--r-pill); }
+/* Fortschrittsbalken bekommen die gleiche Rundung wie alles andere.
+   .kcal-fill (food) shared this rule with .tl-fill (generic tile-prog
+   fill) in the original file — its declaration is duplicated in
+   feature/food.css. */
+.tl-fill { border-radius: var(--r-pill); }
 
 
 /* ── Einstellungen als gruppierte Liste ──────────────────────────────

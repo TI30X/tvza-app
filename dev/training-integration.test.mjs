@@ -32,7 +32,7 @@ test('alle vier Kopien der Bereich-Zuordnung kennen training', async () => {
 
 test('Icon und Farbton existieren', async () => {
   assert.match(await read('assets/js/shell.js'), /^\s*training: '<path/m);
-  const css = await read('assets/css/style.css');
+  const css = await read('assets/css/kit.css');
   assert.match(css, /\[data-bereich="training"\]/);
   assert.match(css, /--tint-training:/);
   assert.match(css, /--training-deep:/);

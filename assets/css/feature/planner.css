@@ -1,0 +1,10 @@
+/* ================================
+   TVZA — feature/planner.css
+   Planner/Reisen fragments already sitting in style.css (Phase A).
+   Distinct from feature/calendar.css, which is the git-mv'd
+   calendar.css file.
+   ================================ */
+
+/* Day groups in the Planer programme list. */
+.itin-day + .itin-day { margin-top: 20px; }
+@media (min-width: 900px) { .itin-day + .itin-day { margin-top: 26px; } }

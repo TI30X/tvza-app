@@ -17,11 +17,11 @@ test('both Maturaarbeit pages use the shared, contrast-safe surface', async () =
   const [overview, tracker, css] = await Promise.all([
     read(pages[0]),
     read(pages[1]),
-    read('assets/css/matura.css'),
+    read('assets/css/feature/matura.css'),
   ]);
 
   for (const html of [overview, tracker]) {
-    assert.match(html, /assets\/css\/matura\.css/);
+    assert.match(html, /assets\/css\/feature\/matura\.css/);
     assert.match(html, /class="matura-page [^"]+"/);
     assert.match(html, /class="matura-hero/);
     assert.match(html, /class="matura-section-card"/);
@@ -90,8 +90,8 @@ test('Maturaarbeit progress migrates safely and syncs per user', async () => {
 
 test('all production add actions use the same two-pixel plus', async () => {
   const [style, calendar, index, food, ski, watch, planner] = await Promise.all([
-    read('assets/css/style.css'),
-    read('assets/css/calendar.css'),
+    read('assets/css/kit.css'),
+    read('assets/css/feature/calendar.css'),
     read('index.html'),
     read('pages/foodtracker.html'),
     read('pages/skitracker.html'),
@@ -99,8 +99,12 @@ test('all production add actions use the same two-pixel plus', async () => {
     read('pages/planner.html'),
   ]);
 
-  assert.match(style, /\.ui-plus,[\s\S]*width:\s*16px;[\s\S]*height:\s*16px;/);
+  // .ui-plus (kit.css) and .calendar-action-icon (feature/calendar.css)
+  // used to share one fused CSS rule; Phase A split them into two files
+  // with duplicated declarations, so each is checked in its own file now.
+  assert.match(style, /\.ui-plus \{[\s\S]*width:\s*16px;[\s\S]*height:\s*16px;/);
   assert.match(style, /width:\s*75%;[\s\S]*height:\s*12\.5%;/);
+  assert.match(calendar, /\.calendar-action-icon \{[\s\S]*width:\s*16px;[\s\S]*height:\s*16px;/);
   assert.doesNotMatch(calendar, /height:\s*1\.8px/);
 
   for (const html of [index, food, ski, watch]) {
