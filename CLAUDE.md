@@ -20,8 +20,9 @@ Current version: **v.31.2.6**. Remote: `TI30x/tvza-app`, branch `main`.
 - **Hosted on GitHub Pages** (`.nojekyll` at the root). Deploy = push to `main`.
 - **Firebase on the free Spark tier.** This is a hard budget constraint, not an
   oversight. **No Cloud Functions, no Firebase Extensions, no Blaze-only
-  features.** Anything server-side has to run on the Hostinger VPS instead —
-  that is exactly why `mailer/` exists.
+  features.** `mailer/` exists to hold any server-side logic Spark can't run —
+  but there is currently no VPS or other host running it, so nothing drains
+  the `mail` collection today (see Commands below).
 - **Shared code lives in `assets/js/`**, feature pages in `pages/`, tests and
   the style guide in `dev/` (nothing in `dev/` ships).
 
@@ -55,7 +56,10 @@ Deploy the rules:
 firebase deploy --only firestore:rules --project <project-id>
 ```
 
-Mail worker (runs on the VPS under PM2, see `mailer/README.md`):
+Mail worker — **not currently running anywhere.** `mailer/README.md` documents
+a PM2-on-a-Hostinger-VPS setup, but no such VPS exists; invitation emails are
+confirmed not being delivered. The commands below are what to run *if* a host
+is provisioned, not a description of current state:
 
 ```bash
 pm2 restart tvza-mailer && pm2 logs tvza-mailer
@@ -92,6 +96,26 @@ requires a `users/{uid}` profile, absence of a `guestProfiles/{uid}` doc, and �
 only when `config/tvza.requireEmailVerification` is true — a verified email.
 Note this is deliberately **fail-open**: if `config/tvza` doesn't exist,
 verification is not required. That's the intended beta default.
+
+**5. Was ein Bereich ist.** A Bereich qualifies when all five are true. This
+is the gate for every future feature, and it is what stops the app from
+becoming eleven modules again.
+
+1. **Self-contained.** It works with no other module switched on. No
+   cross-module dependency.
+2. **Off by default** for new accounts. The Kern is the only thing that is on.
+3. **One place only.** If it has a tab it does not also appear in the Heute
+   list (the old handoff's "eine Sache, ein Ort" rule — it stands, and it is
+   right).
+4. **Day-one test.** A brand-new empty account opens it and sees an obvious
+   first action, in one tap, with no setup. If the answer is "an empty
+   screen", it is not ready to be public — it is ready to be `Persönlich`.
+5. **One icon plate colour** from the palette, one entry in the Bereiche
+   list, one row in the desktop sidebar. Nothing gets a second surface.
+
+**6. Seiten-Invariante.** A page file contains markup, `<link>`s, and one
+`<script type="module" src="…">`. No `<style>` block, no inline module, no
+`style="…"`, no hex colour, no emoji as a function symbol.
 
 ## Known open items
 
