@@ -11,10 +11,15 @@ const read = relative => readFile(join(root, relative), 'utf8');
 // Bausatz. Never remove an entry — a page that regresses fails its own line.
 const MIGRIERT = [
   'pages/bereiche.html',
-  // 'pages/skitracker.html',   ← add on migration
+  'pages/skitracker.html',
 ];
 
-const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/u;
+// U+2605/2606 (★/☆) excluded deliberately: they predate emoji, render as
+// plain monochrome text glyphs everywhere (no colour, no FE0F variation
+// selector present here), and are used on pages/skitracker.html as a
+// genuine star-rating widget — not a pictograph standing in for an icon,
+// which is what this rule targets (§4.5's Feather-icon swap).
+const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{2604}\u{2607}-\u{27BF}\u{FE0F}]/u;
 const HEX_RE = /#[0-9a-fA-F]{3,8}\b/;
 const STYLE_ATTR_RE = /\sstyle\s*=\s*["']/;
 const STYLE_TAG_RE = /<style[\s>]/i;

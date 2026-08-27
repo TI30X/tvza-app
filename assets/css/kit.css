@@ -317,8 +317,6 @@ body.dm-thread .app {
   opacity: 1;
   transform: translateY(0);
 }
-/* Read-only notice (JS sets background: var(--ski) inline) */
-.offline-banner[style*="--ski"] { color: white; border-color: transparent; }
 
 /* ─── Main ─── */
 .main {

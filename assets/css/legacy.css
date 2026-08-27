@@ -71,7 +71,6 @@
    Er entfällt; die Seiten behalten ihr Markup, es zeigt nur nichts mehr. */
 .accent-bar { display: none; }
 .accent-bar-legacy { height: 3px; }
-.accent-bar--ski    { background: var(--tint-ski); }
 .accent-bar--food   { background: var(--tint-food); }
 .accent-bar--trip   { background: var(--tint-trip); }
 .accent-bar--watch  { background: var(--tint-watch); }

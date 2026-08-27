@@ -19,7 +19,12 @@ const ALT = ['link-row', 'item-card', 'file-row', 'grp-card', 'pending-card', 'p
 // pages/foodtracker.html 6, pages/guest.html 2, pages/messages.html 3,
 // pages/planner.html 24, pages/skitracker.html 5, pages/watchlist.html 5,
 // pages/weather.html 1. Total 59.
-const MAX_REFERENZEN = 59;
+//
+// 2026-08-27, pages/skitracker.html migrated onto the Bausatz: its
+// item-card (2) and page-title (1) references are gone — the remaining
+// 2 are the .spinner skeleton-loading hooks, which are the current
+// convention (see pages/bereiche.html), not legacy debt. New total 56.
+const MAX_REFERENZEN = 56;
 
 async function countAll() {
   const pagesDir = join(root, 'pages');
