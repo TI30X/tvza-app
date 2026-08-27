@@ -12,7 +12,7 @@ const dashboard = await readFile(
   'utf8'
 );
 const areas = await readFile(
-  new URL('../pages/bereiche.html', import.meta.url),
+  new URL('../assets/js/feature/bereiche/bereiche.js', import.meta.url),
   'utf8'
 );
 const shell = await readFile(

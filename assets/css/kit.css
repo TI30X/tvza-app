@@ -1571,6 +1571,9 @@ body.reorder-editing .module-tile::after {
 /* A list of rows. */
 .rows { display: flex; flex-direction: column; gap: 8px; }
 
+/* Text-only placeholder inside an empty .rows section. */
+.empty-hint { padding: 12px; }
+
 /* ── 4.2 Kachel — quick access ─────────────────────────────────────*/
 .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .tile {

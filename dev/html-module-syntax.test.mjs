@@ -9,7 +9,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const files = [
   'index.html',
   'pages/planner.html',
-  'pages/bereiche.html',
   'pages/foodtracker.html',
   'pages/messages.html',
   'pages/weather.html',

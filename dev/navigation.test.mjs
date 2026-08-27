@@ -10,7 +10,7 @@ const read = relative => readFile(join(root, relative), 'utf8');
 test('areas page and sidebar share one module ordering source', async () => {
   const [shell, areas] = await Promise.all([
     read('assets/js/shell.js'),
-    read('pages/bereiche.html'),
+    read('assets/js/feature/bereiche/bereiche.js'),
   ]);
 
   assert.match(shell, /export function areaModuleKeys\(profile\)/);
@@ -37,7 +37,7 @@ test('current area uses the same active band as Start and settings stay above th
     read('assets/js/settings-layer.js'),
     read('assets/css/kit.css'),
     read('index.html'),
-    read('pages/bereiche.html'),
+    read('assets/js/feature/bereiche/bereiche.js'),
   ]);
 
   assert.match(nav, /aria-current="page"/);
