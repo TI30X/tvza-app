@@ -5,6 +5,8 @@ Nothing in here ships as part of the app — no page links to it.
 | Datei | Zweck |
 | --- | --- |
 | `bausatz.html` | Style guide. Every component from §4/§5 of the handoff on one page, in both modes. Open it in a browser to compare against `TVZA Redesign.dc.html`. |
+| `kit-conformance.test.mjs` | Opt-in gate for pages migrated onto the Bausatz (Phase C): 0 `<style>`, 0 inline modules, 0 `style="…"`, 0 hex colours, 0 emoji-as-symbol per `MIGRIERT` entry; radius scale / no stray `box-shadow` / no `:hover` transform for `assets/css/feature/*.css`. |
+| `legacy-shrink.test.mjs` | Counts old class names (`item-card`, `link-row`, `spinner`, …) across every page. Every Phase-C commit lowers `MAX_REFERENZEN`; it may never rise. |
 | `calendar-interop.test.mjs` | Prüft ICS-Import und -Export für Termine und Erinnerungen. |
 | `calendar-groups.test.mjs` | Prüft Mehrfachgruppen im Kalender und auf dem Dashboard. |
 | `calendar-view.test.mjs` | Prüft Tag-, 3-Tage-, Arbeitswochen- und Monatsnavigation. |
