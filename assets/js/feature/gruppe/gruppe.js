@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell } from '../../shell.js?v=7';
+import { mountShell, setShellTitle } from '../../shell.js?v=7';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -42,7 +42,7 @@ import {
 import { WORKER_BASIS } from '../../worker-config.js';
 
 const $ = id => document.getElementById(id);
-const t = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
+const t = (key, fallback) => window.TVZAI18n?.tOr(key, fallback) ?? fallback;
 
 let user = null;
 let gruppen = [];
@@ -110,7 +110,7 @@ async function zeichneMitglieder() {
     liste.innerHTML = mitglieder.map(m => mitgliedZeile(m, aktiv.art)).join('');
 
     const zahl = mitglieder.length;
-    const meta = $('grpMeta');
+    const meta = $('mitgliederZahl');
     meta.textContent = `${zahl} ${zahl === 1 ? 'Person' : 'Personen'}`;
     meta.hidden = false;
   } catch (e) {
@@ -318,13 +318,13 @@ function zeichne() {
   if (abo) abo.hidden = !darfFuehren || !WORKER_BASIS;
 
   if (!hat) {
-    $('grpName').textContent = t('nav.gruppe', 'Gruppe');
-    $('grpMeta').hidden = true;
+    setShellTitle(t('nav.gruppe', 'Gruppe'));
+    $('mitgliederZahl').hidden = true;
     formSchliessen();
     return;
   }
 
-  $('grpName').textContent = aktiv.name;
+  setShellTitle(aktiv.name);
   zeichneMitglieder();
   zeichneTermine();
   zeichnePlaene();

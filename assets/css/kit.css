@@ -1741,6 +1741,15 @@ body.reorder-editing .module-tile::after {
   margin-bottom: var(--s2);
 }
 
+/* Marke mit einer Zahl am rechten Rand — "MITGLIEDER … 4 Personen".
+   Die Zahl gehoert zur Ueberschrift und nicht in die Kopfleiste: dort
+   loescht mountShell sie beim Mounten wieder weg. */
+.marke--reihe {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s3);
+}
+.marke--reihe > span:last-child { font-weight: 700; letter-spacing: 0.06em; }
+
 /* ── 4.4 Knöpfe — three, final ─────────────────────────────────────*/
 .b {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;

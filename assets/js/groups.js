@@ -86,7 +86,7 @@ const WORTE = {
 export function wort(art, was) {
   const eintrag = (WORTE[art] || WORTE.familie)[was];
   if (!eintrag) return '';
-  return window.TVZAI18n?.t(eintrag.key) ?? eintrag.de;
+  return window.TVZAI18n?.tOr(eintrag.key, eintrag.de) ?? eintrag.de;
 }
 
 /* ── Bereiche ──────────────────────────────────────────────────────

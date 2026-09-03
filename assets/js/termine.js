@@ -90,7 +90,7 @@ export function artWort(art, gruppenart = 'kader') {
   const tabelle = WORTE_JE_GRUPPE[gruppenart] || WORTE_JE_GRUPPE.kader;
   const eintrag = tabelle[art];
   if (!eintrag) return '';
-  return globalThis.window?.TVZAI18n?.t(`termin.art.${gruppenart}.${art}`) ?? eintrag;
+  return globalThis.window?.TVZAI18n?.tOr(`termin.art.${gruppenart}.${art}`, eintrag) ?? eintrag;
 }
 
 /* ── Datum ─────────────────────────────────────────────────────────*/

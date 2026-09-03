@@ -152,8 +152,14 @@ test('Familie und Kader unterscheiden sich in Wörtern und Vorgaben, nicht in Co
   assert.match(src, /kader:\s*\{ termine: true, training: true/);
   assert.match(src, /familie:\s*\{ termine: true, projekte: true/);
 
-  // Rückfall auf Deutsch, wenn der Katalog den Schlüssel nicht kennt.
-  assert.match(fnBody(src, 'wort'), /window\.TVZAI18n\?\.t\(eintrag\.key\) \?\? eintrag\.de/);
+  /* Rueckfall auf Deutsch, wenn der Katalog den Schluessel nicht kennt.
+     Ueber tOr und NICHT ueber `t(k) ?? deutsch`: t() gibt bei einem
+     unbekannten Schluessel den Schluessel zurueck, nie undefined —
+     das ?? greift also nie, und auf dem Bildschirm steht grp.kader.head
+     statt "Haupttrainer". */
+  assert.match(fnBody(src, 'wort'), /TVZAI18n\?\.tOr\(eintrag\.key, eintrag\.de\)/);
+  assert.doesNotMatch(fnBody(src, 'wort'), /\.t\(eintrag\.key\)\s*\?\?/,
+    'wort() nutzt wieder t() mit ?? — das ist die Rueckfallebene, die nie greift');
 });
 
 test('die Kaderliste zeigt Namen, nicht UIDs', async () => {

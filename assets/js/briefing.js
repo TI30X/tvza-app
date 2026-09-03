@@ -137,7 +137,7 @@ export function renderBriefing(briefing, { onDismiss, onLater, titel } = {}) {
   /* Der Katalog gewinnt, das deutsche Wort ist die Rueckfallebene —
      genau die additive Regel aus CLAUDE.md. */
   const ueberschrift = titel
-    ?? (globalThis.window?.TVZAI18n?.t('brief.deinTag') || 'Dein Tag');
+    ?? (globalThis.window?.TVZAI18n?.tOr('brief.deinTag', 'Dein Tag') || 'Dein Tag');
   const el = document.createElement('div');
   el.className = 'hint hint--tag';
 

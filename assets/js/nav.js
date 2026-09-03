@@ -39,7 +39,7 @@ const BEREICH_OF = {
    dieselben data-i18n-Attribute wie eine statische Seite und wird nach
    dem Einhaengen einmal durch applyTo geschickt. Faellt i18n.js aus,
    bleiben die deutschen Beschriftungen im Template stehen. */
-const label = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
+const label = (key, fallback) => window.TVZAI18n?.tOr(key, fallback) ?? fallback;
 const relabel = root => window.TVZAI18n?.applyTo(root);
 
 /* TABS, TAB_I18N und activeTab kommen aus shell.js. Sie standen hier

@@ -24,14 +24,8 @@
 
   <div class="offline-banner" id="offlineBanner" hidden data-i18n="br.offline">Offline — Änderungen werden später gespeichert.</div>
 
-  <header class="appbar">
-    <div class="appbar__inner">
-      <div class="appbar__spacer">
-        <div class="appbar__greet" id="grpName">Gruppe</div>
-        <div class="appbar__date" id="grpMeta" hidden></div>
-      </div>
-    </div>
-  </header>
+  <!-- Keine eigene .appbar hier: mountShell() loescht jede vorhandene
+       und setzt seine eigene. Der Gruppenname geht ueber setShellTitle. -->
 
   <main class="main" id="main">
 
@@ -283,7 +277,10 @@
     </section>
 
     <section class="section" id="secMitglieder" hidden>
-      <div class="marke" id="mitgliederTitel">Mitglieder</div>
+      <div class="marke marke--reihe">
+        <span id="mitgliederTitel">Mitglieder</span>
+        <span id="mitgliederZahl" hidden></span>
+      </div>
       <div class="rows" id="listMitglieder">
         <div class="spinner" data-fx-rows="3" data-i18n="common.laden">Lade…</div>
       </div>

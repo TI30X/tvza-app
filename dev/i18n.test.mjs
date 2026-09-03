@@ -87,3 +87,36 @@ test('i18n.js laeuft auf jeder angemeldeten Seite', async () => {
     assert.match(text, /assets\/js\/i18n\.js/, `${file} laedt i18n.js nicht`);
   }
 });
+
+/* ── Die Rueckfallebene ────────────────────────────────────────────
+   t() gibt bei einem unbekannten Schluessel den SCHLUESSEL zurueck,
+   nie undefined. `t(k) ?? deutsch` und `t(k) || deutsch` greifen
+   deshalb NIE — der Nutzer sieht "nav.gruppe" statt "Gruppe".
+
+   Sichtbar wird das nur in einem schmalen Fenster: der Katalog wird
+   asynchron geholt, und wer vorher zeichnet, zeichnet den Schluessel.
+   In sechs Modulen stand genau dieses Muster. */
+
+const blindeStelle = ' nutzt t() mit ?? oder || — das greift nie, weil t() den '
+  + 'Schluessel zurueckgibt. Stattdessen tOr(key, fallback) verwenden.';
+
+test('i18n bietet eine Rueckfallebene an, die auch greift', async () => {
+  const quelle = await readFile(new URL('../assets/js/i18n.js', import.meta.url), 'utf8');
+  assert.match(quelle, /function tOr\(key, fallback\)/, 'tOr fehlt');
+  assert.match(quelle, /wert === key \? fallback : wert/,
+    'tOr prueft nicht auf den durchgereichten Schluessel');
+  assert.match(quelle, /t, tOr, applyTo/, 'tOr fehlt in der oeffentlichen API');
+});
+
+test('kein Modul verlaesst sich auf ?? oder || nach t()', async () => {
+  const dateien = ['assets/js/feature/gruppe/gruppe.js', 'assets/js/nav.js',
+                   'assets/js/shell.js', 'assets/js/groups.js',
+                   'assets/js/termine.js', 'assets/js/briefing.js'];
+
+  for (const name of dateien) {
+    const quelle = await readFile(new URL('../' + name, import.meta.url), 'utf8');
+    const kaputt = quelle.match(/TVZAI18n\??\.t\([^)]*\)\s*(\?\?|\|\|)/);
+    assert.equal(kaputt, null,
+      name + blindeStelle);
+  }
+});

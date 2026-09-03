@@ -107,6 +107,24 @@
     return value;
   }
 
+  /**
+   * Wie t(), aber mit einer ehrlichen Rueckfallebene.
+   *
+   * t() gibt bei einem unbekannten Schluessel den SCHLUESSEL zurueck,
+   * nie undefined. Darum greift `t(k) ?? deutsch` nie — der Aufrufer
+   * bekommt "nav.gruppe" auf den Bildschirm statt "Gruppe". Genau das
+   * ist in sechs Modulen passiert, sichtbar aber nur solange der
+   * Katalog noch laedt: er wird asynchron geholt, und wer vorher
+   * zeichnet, zeichnet den Schluessel.
+   *
+   * tOr macht daraus die additive Regel aus CLAUDE.md: was fehlt,
+   * bleibt deutsch.
+   */
+  function tOr(key, fallback) {
+    const wert = t(key);
+    return wert === key ? fallback : wert;
+  }
+
   /* ── Auf das Markup anwenden ───────────────────────────────────── */
   function applyTo(root) {
     const scope = root || document;
@@ -245,6 +263,6 @@
     get locale() { return localeOf(lang); },
     systemLanguage,
     hasStoredChoice: () => storedLanguage() !== null,
-    t, applyTo, setLanguage, format, ready,
+    t, tOr, applyTo, setLanguage, format, ready,
   };
 })();

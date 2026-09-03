@@ -107,7 +107,7 @@ const BEREICH_OF = {
    bleiben die deutschen Beschriftungen im Template stehen. */
 const TAB_I18N = { start:'nav.start', kalender:'nav.kalender',
                    gruppe:'nav.gruppe', chat:'nav.chat' };
-const label = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
+const label = (key, fallback) => window.TVZAI18n?.tOr(key, fallback) ?? fallback;
 const relabel = root => window.TVZAI18n?.applyTo(root);
 
 /* ── Die vier Orte ─────────────────────────────────────────────────
@@ -339,6 +339,21 @@ export function mountShell(o = {}) {
 }
 
 /** Unread messages: a dot on the phone, a number in the laptop rail. */
+/**
+ * Die Ueberschrift der Leiste NACH dem Mounten aendern.
+ *
+ * mountShell loescht jede vorhandene .appbar und baut sie neu — eine
+ * Seite kann ihren Titel also nicht in ihr eigenes Markup schreiben
+ * und darauf hoffen. Genau daran ist der Gruppenname gescheitert: er
+ * stand in pages/gruppe.html und war beim ersten Snapshot laengst
+ * geloescht.
+ */
+export function setShellTitle(text) {
+  const wert = String(text ?? '');
+  const el = document.querySelector('.appbar__title, .appbar__greet');
+  if (el) el.textContent = wert;
+}
+
 export function setUnread(n) {
   shellState.unread = n = Number(n) || 0;
   const dot = document.querySelector('.nav__dot');
