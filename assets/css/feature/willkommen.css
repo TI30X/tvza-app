@@ -2,21 +2,41 @@
    Die Willkommen-Seite.
 
    Sie ist das Erste, was jemand von Firn sieht, der noch kein Konto
-   hat. Sie hat genau zwei Aufgaben: sagen, was das ist, und den Weg
-   zum Konto zeigen. Alles andere ist Ballast.
+   hat. Zwei Aufgaben: sagen, was das ist, und den Weg zum Konto
+   zeigen.
 
-   Blau und weiss, hell — kein dunkler Bildschirm, auf dem eine
-   Trainingsapp seriös aussehen will.
+   ── Warum hier mehr Farbe steht als in der App ────────────────────
+   Die App ist blau und weiss, und das ist richtig: wer jeden Tag
+   damit arbeitet, will kein Feuerwerk. Eine Seite, die man EINMAL
+   sieht, hat die umgekehrte Aufgabe.
 
-   Jeder Abstand kommt aus der Skala in kit.css. Keine freien Zahlen:
-   die Seite wird auf einem Handy im Lift gelesen und auf einem
-   Bildschirm im Klubhaus, und sie soll auf beidem stimmen.
+   Die Farbe kommt trotzdem nicht von irgendwoher. Firn ist Schnee,
+   und was auf Schnee Farbe bringt, ist das Alpengluehen — warm gegen
+   kalt, morgens und abends, sonst nichts. Genau so wird es benutzt:
+   das Blau traegt die Seite, das Glut-Orange sitzt an drei Stellen
+   und nirgends sonst.
+
+   Die Token stehen bewusst HIER und nicht in kit.css. Eine zweite
+   Markenfarbe in der App waere eine Entscheidung fuer die ganze
+   Oberflaeche; hier ist sie auf .wk begrenzt und laesst sich mit
+   einer Datei zuruecknehmen.
    ══════════════════════════════════════════════════════════════════ */
 
 .wk {
-  max-width: 62rem;
+  /* Kalt */
+  --firn-eis:      #E8F1FB;
+  --firn-eis-tief: #CFE2F5;
+  --firn-tief:     #0C2138;
+  --firn-tief-2:   #16375A;
+
+  /* Warm — Alpengluehen. Drei Stellen: Sonne, Unterstrich, Beta. */
+  --firn-glut:      #E8734A;
+  --firn-glut-hell: #F6A183;
+  --firn-glut-bg:   #FDEDE6;
+
+  max-width: 66rem;
   margin: 0 auto;
-  padding: var(--s6) var(--s5) var(--s7);
+  padding: var(--s5) var(--s5) var(--s7);
   display: flex;
   flex-direction: column;
   gap: var(--s7);
@@ -33,20 +53,46 @@
 .wk-kopf .firn { font-size: 1.5rem; }
 
 /* ── Aufmacher ─────────────────────────────────────────────────────
-   Eine Aussage, ein Satz darunter, zwei Knoepfe. Wer nach drei
-   Zeilen nicht weiss, worum es geht, klickt weg. */
+   Text links, Bild rechts, auf dem Handy gestapelt. Der Kasten traegt
+   den Eis-Verlauf: er hebt den Aufmacher vom Rest ab, ohne dass die
+   Seite dunkel wird. */
 
-.wk-hero { display: flex; flex-direction: column; gap: var(--s4); }
+.wk-hero {
+  background:
+    radial-gradient(120% 130% at 82% 8%, var(--surface) 0%, transparent 55%),
+    linear-gradient(160deg, var(--firn-eis) 0%, var(--firn-eis-tief) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  padding: var(--s7) var(--s6);
+  display: grid;
+  gap: var(--s6);
+  grid-template-columns: 1fr;
+  align-items: center;
+}
+@media (min-width: 56rem) {
+  .wk-hero { grid-template-columns: 1.15fr 1fr; }
+}
+
+.wk-hero__text { display: flex; flex-direction: column; gap: var(--s4); }
 
 .wk-hero h1 {
   margin: 0;
-  font-size: clamp(2rem, 6vw, 3.25rem);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.1rem, 5.4vw, 3.4rem);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
   font-weight: 800;
   color: var(--ink);
   text-wrap: balance;
 }
+
+/* Der eine warme Strich. Er sitzt unter dem Wort, auf das es ankommt,
+   und nicht unter der ganzen Zeile. */
+.wk-hero h1 em {
+  font-style: normal;
+  background: linear-gradient(transparent 62%, var(--firn-glut-hell) 62%);
+  padding: 0 0.06em;
+}
+
 .wk-hero p {
   margin: 0;
   max-width: 34em;
@@ -54,17 +100,50 @@
   line-height: 1.55;
   color: var(--ink-soft);
 }
+
 .wk-knoepfe { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s2); }
 
-/* ── Was es kann ───────────────────────────────────────────────────
-   Vier Karten, keine zwoelf. Was hier steht, muss die App heute
-   koennen — eine Liste mit Versprechen ist der schnellste Weg zu
-   einem enttaeuschten ersten Tag. */
+/* ── Das Bild ──────────────────────────────────────────────────────
+   Ein Hang, eine Spur, vier Tore. Kein Foto: ein Foto waere entweder
+   gekauft oder gestohlen, und beides sieht man einer Seite an. */
+
+.wk-berg { width: 100%; height: auto; display: block; }
+
+.wk-berg__glut-a { stop-color: var(--firn-glut); }
+.wk-berg__glut-b { stop-color: var(--firn-glut-hell); }
+.wk-berg__sonne  { fill: url(#wkGlut); }
+.wk-berg__fern   { fill: var(--brand-navy-mid); opacity: 0.3; }
+.wk-berg__nah    { fill: var(--brand-navy); }
+.wk-berg__firn   { fill: var(--surface); opacity: 0.92; }
+.wk-berg__spur   {
+  fill: none; stroke: var(--firn-glut); stroke-width: 3.5;
+  stroke-linecap: round; stroke-dasharray: 1 9;
+}
+.wk-berg__tor    { fill: var(--surface); }
+
+/* ── Wofuer es taugt ───────────────────────────────────────────────*/
+
+.wk-pillen { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.wk-pille {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: var(--s2) var(--s4);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* ── Karten ────────────────────────────────────────────────────────
+   Vier, keine zwoelf. Jede traegt ein Plaettchen in der Farbe, die
+   die App fuer diese Sache ohnehin schon benutzt — dadurch ist die
+   Farbe hier nicht Dekoration, sondern schon das Versprechen, wie es
+   drinnen aussieht. */
 
 .wk-karten {
   display: grid;
   gap: var(--s4);
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
 }
 .wk-karte {
   background: var(--surface);
@@ -73,53 +152,108 @@
   padding: var(--s5);
   display: flex;
   flex-direction: column;
-  gap: var(--s2);
+  gap: var(--s3);
 }
-.wk-karte h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--ink);
+.wk-karte h3 { margin: 0; font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
+.wk-karte p  { margin: 0; font-size: 0.9375rem; line-height: 1.55; color: var(--ink-soft); }
+
+.wk-plaettchen {
+  width: 2.5rem; height: 2.5rem;
+  border-radius: var(--r-icon);
+  display: grid; place-items: center;
+  color: var(--surface);
 }
-.wk-karte p {
-  margin: 0;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: var(--ink-soft);
+.wk-plaettchen svg {
+  width: 1.25rem; height: 1.25rem;
+  fill: none; stroke: currentColor; stroke-width: 1.9;
+  stroke-linecap: round; stroke-linejoin: round;
 }
+
+.wk-plaettchen--plan   { background: var(--brand-navy-deep); }
+.wk-plaettchen--termin { background: var(--t-lager, #2E7D5B); }
+.wk-plaettchen--video  { background: var(--firn-glut); }
+.wk-plaettchen--punkte { background: var(--t-rennen, #B4453C); }
 
 /* ── Abschnitte ────────────────────────────────────────────────────*/
 
 .wk-block { display: flex; flex-direction: column; gap: var(--s4); }
 .wk-block h2 {
   margin: 0;
-  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--ink);
+  text-wrap: balance;
 }
-.wk-block p {
+.wk-block p { margin: 0; max-width: 42em; line-height: 1.6; color: var(--ink-soft); }
+
+/* ── Der dunkle Streifen ───────────────────────────────────────────
+   Der Gegenpol. Ohne ihn liest sich die Seite als eine einzige helle
+   Flaeche, und genau das war die Rueckmeldung. Er steht an der
+   Stelle, an der es um den Athleten geht — der Satz, der
+   haengenbleiben soll. */
+
+.wk-dunkel {
+  background: linear-gradient(150deg, var(--firn-tief) 0%, var(--firn-tief-2) 100%);
+  border-radius: var(--r-panel);
+  padding: var(--s7) var(--s6);
+  color: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+.wk-dunkel h2 {
   margin: 0;
-  max-width: 40em;
-  line-height: 1.6;
-  color: var(--ink-soft);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--surface);
+  text-wrap: balance;
 }
+.wk-dunkel p {
+  margin: 0; max-width: 42em; line-height: 1.6;
+  color: color-mix(in oklab, var(--surface) 78%, var(--firn-tief));
+}
+
+/* Auf dunklem Grund traegt das Marken-Blau nicht mehr — es faellt
+   gegen Navy zusammen. Das n bleibt das Zeichen, also wird es hell. */
+.wk-dunkel .firn { color: var(--surface); }
+.wk-dunkel .firn > b { color: var(--firn-glut-hell); }
 
 /* ── Beta ──────────────────────────────────────────────────────────
    Der ehrliche Kasten. Hier stuende sonst ein Preis, den es noch
-   nicht gibt. */
+   nicht gibt — also traegt er die warme Farbe statt einer Zahl. */
 
 .wk-beta {
-  background: var(--accent-bg);
-  border: 1px solid color-mix(in oklab, var(--accent) 18%, var(--border));
+  background: var(--firn-glut-bg);
+  border: 1px solid color-mix(in oklab, var(--firn-glut) 30%, var(--border));
   border-radius: var(--r-panel);
-  padding: var(--s6) var(--s5);
+  padding: var(--s7) var(--s6);
   display: flex;
   flex-direction: column;
-  gap: var(--s3);
+  gap: var(--s4);
 }
-.wk-beta ul { margin: 0; padding-left: var(--s5); display: grid; gap: var(--s2); }
-.wk-beta li { line-height: 1.5; color: var(--ink-soft); }
+.wk-beta h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.wk-beta > p { margin: 0; max-width: 42em; line-height: 1.6; color: var(--ink-soft); }
+.wk-beta ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s3); }
+.wk-beta li {
+  line-height: 1.55; color: var(--ink-soft);
+  padding-left: var(--s5); position: relative;
+}
+.wk-beta li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.55em;
+  width: var(--s2); height: var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--firn-glut);
+}
 .wk-beta li strong { color: var(--ink); font-weight: 700; }
 
 /* ── Fuss ──────────────────────────────────────────────────────────*/
@@ -134,4 +268,23 @@
   gap: var(--s3);
   font-size: 0.875rem;
   color: var(--ink-soft);
+}
+
+/* ── Dunkelmodus ───────────────────────────────────────────────────
+   Der Eis-Verlauf wuerde im Dunkeln leuchten wie ein Fenster. Er
+   dreht sich um; das Glut-Orange bleibt, es ist auf beidem lesbar. */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .wk-hero {
+    background: linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+  }
+  :root:not([data-theme="light"]) .wk-beta {
+    background: color-mix(in oklab, var(--firn-glut) 12%, var(--surface));
+  }
+}
+:root[data-theme="dark"] .wk-hero {
+  background: linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+}
+:root[data-theme="dark"] .wk-beta {
+  background: color-mix(in oklab, var(--firn-glut) 12%, var(--surface));
 }

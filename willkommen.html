@@ -11,17 +11,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="assets/js/theme.js"></script>
+  <script src="assets/js/i18n.js?v=1"></script>
   <link rel="stylesheet" href="assets/css/kit.css?v=1" />
-  <link rel="stylesheet" href="assets/css/feature/willkommen.css?v=1" />
-  <title>Firn — Training für Kader und Vereine</title>
+  <link rel="stylesheet" href="assets/css/feature/willkommen.css?v=2" />
+  <title data-i18n="wk.titel">Firn — Training für Kader und Vereine</title>
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
        Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md.
-
-       Auch kein data-i18n: die Texte hier sind noch nicht abgenommen,
-       und Werbetexte in sieben Sprachen zu erfinden, bevor der deutsche
-       steht, wäre sechsmal dieselbe Arbeit umsonst. Ohne die Attribute
-       läuft die Seite deutsch — genau die additive Regel aus
-       CLAUDE.md. Der Katalog kommt, wenn der Text steht. -->
+       Die Farben des Bildes stehen als Klassen in willkommen.css. -->
 </head>
 <body class="app">
 
@@ -29,50 +25,110 @@
 
     <header class="wk-kopf">
       <span class="firn">Fir<b>n</b></span>
-      <a class="b b--secondary" href="login.html">Anmelden</a>
+      <a class="b b--secondary" href="login.html" data-i18n="wk.anmelden">Anmelden</a>
     </header>
 
     <section class="wk-hero">
-      <h1>Führe dein Kader an einem Ort.</h1>
-      <p>
-        Pläne, Termine, Videoanalyse und Rennergebnisse — statt in vier
-        Gruppenchats, zwei Tabellen und einem Ordner mit PDFs.
+      <div class="wk-hero__text">
+        <h1 data-i18n-html="wk.hero.titel">Führe dein Kader an <em>einem</em> Ort.</h1>
+        <p data-i18n="wk.hero.text">
+          Pläne, Termine, Videoanalyse und Rennergebnisse — statt in vier
+          Gruppenchats, zwei Tabellen und einem Ordner mit PDFs.
+        </p>
+        <div class="wk-knoepfe">
+          <a class="b b--primary" href="login.html?neu=1" data-i18n="wk.kontoErstellen">Konto erstellen</a>
+          <a class="b b--secondary" href="#beta" data-i18n="wk.wasKostet">Was das kostet</a>
+        </div>
+      </div>
+
+      <svg class="wk-berg" viewBox="0 0 400 280" role="img" aria-labelledby="wkBildTitel">
+        <title id="wkBildTitel" data-i18n="wk.bild">Ein Hang mit einer Slalomspur</title>
+        <defs>
+          <linearGradient id="wkGlut" x1="0" y1="0" x2="0" y2="1">
+            <stop class="wk-berg__glut-b" offset="0" />
+            <stop class="wk-berg__glut-a" offset="1" />
+          </linearGradient>
+        </defs>
+
+        <circle class="wk-berg__sonne" cx="312" cy="62" r="30" />
+
+        <path class="wk-berg__fern"
+              d="M0 168 L64 104 L112 140 L186 62 L258 132 L322 96 L400 152 L400 280 L0 280 Z" />
+        <path class="wk-berg__nah"
+              d="M0 206 L86 148 L158 190 L238 138 L330 194 L400 166 L400 280 L0 280 Z" />
+        <path class="wk-berg__firn"
+              d="M238 138 L268 156 L256 160 L276 172 L330 194 L286 178 L262 182 L246 170 L258 164 Z" />
+
+        <path class="wk-berg__spur"
+              d="M198 96 C168 132 226 152 198 190 C172 226 224 240 204 276" />
+        <circle class="wk-berg__tor" cx="198" cy="120" r="4.5" />
+        <circle class="wk-berg__tor" cx="210" cy="166" r="4.5" />
+        <circle class="wk-berg__tor" cx="188" cy="212" r="4.5" />
+        <circle class="wk-berg__tor" cx="212" cy="256" r="4.5" />
+      </svg>
+    </section>
+
+    <section class="wk-block">
+      <h2 data-i18n="wk.fuer.titel">Nicht nur für Rennkader</h2>
+      <p data-i18n="wk.fuer.text">
+        Dieselbe Gruppe funktioniert als Kader, als Verein, als Gym oder als
+        Familie. Was sich ändert, sind die Wörter: wo der Kader einen
+        Haupttrainer und Athleten hat, hat das Gym eine Leitung und
+        Mitglieder, und aus dem Trainingslager wird ein Workshop. Der Aufbau
+        bleibt derselbe.
       </p>
-      <div class="wk-knoepfe">
-        <a class="b b--primary" href="login.html?neu=1">Konto erstellen</a>
-        <a class="b b--secondary" href="#beta">Was das kostet</a>
+      <div class="wk-pillen">
+        <span class="wk-pille" data-i18n="wk.pille.kader">Rennkader</span>
+        <span class="wk-pille" data-i18n="wk.pille.verein">Skiclub</span>
+        <span class="wk-pille" data-i18n="wk.pille.gym">Gym</span>
+        <span class="wk-pille" data-i18n="wk.pille.familie">Familie</span>
       </div>
     </section>
 
     <section class="wk-karten">
       <article class="wk-karte">
-        <h3>Pläne, die ankommen</h3>
-        <p>
+        <span class="wk-plaettchen wk-plaettchen--plan" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13" /></svg>
+        </span>
+        <h3 data-i18n="wk.k1.titel">Pläne, die ankommen</h3>
+        <p data-i18n="wk.k1.text">
           Ein Programm für die ganze Gruppe oder eines für einen einzelnen
           Athleten. Mehrere Trainer arbeiten nebeneinander, ohne sich
           gegenseitig zu überschreiben.
         </p>
       </article>
+
       <article class="wk-karte">
-        <h3>Termine mit Ausschreibung</h3>
-        <p>
+        <span class="wk-plaettchen wk-plaettchen--termin" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+        </span>
+        <h3 data-i18n="wk.k2.titel">Termine mit Ausschreibung</h3>
+        <p data-i18n="wk.k2.text">
           Trainings, Trainingslager und Rennen. Die Ausschreibung hängt als
           PDF am Termin und lässt sich nachträglich ersetzen. Fällt etwas
           aus, wird es abgesagt und nicht gelöscht — sonst steht am Samstag
           jemand am Lift.
         </p>
       </article>
+
       <article class="wk-karte">
-        <h3>Videoanalyse im Browser</h3>
-        <p>
+        <span class="wk-plaettchen wk-plaettchen--video" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2.2" /><path d="M12 7v6m0 0l-4 6m4-6l4 6M7 9.5l10 0" /></svg>
+        </span>
+        <h3 data-i18n="wk.k3.titel">Videoanalyse im Browser</h3>
+        <p data-i18n="wk.k3.text">
           Skelett über die Fahrt, Gelenkwinkel, Schwungwechsel. Die
           Auswertung läuft im Browser — das Video wird zur Analyse an
           keinen Server geschickt.
         </p>
       </article>
+
       <article class="wk-karte">
-        <h3>FIS-Punkte, ausgerechnet</h3>
-        <p>
+        <span class="wk-plaettchen wk-plaettchen--punkte" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7" /></svg>
+        </span>
+        <h3 data-i18n="wk.k4.titel">FIS-Punkte, ausgerechnet</h3>
+        <p data-i18n="wk.k4.text">
           Rennzeiten im Profil des Athleten, daraus der Punktestand nach der
           FIS-Formel. Ohne Penalty wird nichts geraten, sondern nichts
           angezeigt.
@@ -80,20 +136,9 @@
       </article>
     </section>
 
-    <section class="wk-block">
-      <h2>Nicht nur für Rennkader</h2>
-      <p>
-        Dieselbe Gruppe funktioniert als Kader, als Verein, als Gym oder als
-        Familie. Was sich ändert, sind die Wörter: wo der Kader einen
-        Haupttrainer und Athleten hat, hat das Gym eine Leitung und
-        Mitglieder, und aus dem Trainingslager wird ein Workshop. Der Aufbau
-        bleibt derselbe.
-      </p>
-    </section>
-
-    <section class="wk-block">
-      <h2>Was dein Kader nicht tun muss</h2>
-      <p>
+    <section class="wk-dunkel">
+      <h2 data-i18n="wk.nichts.titel">Was dein Kader nicht tun muss</h2>
+      <p data-i18n="wk.nichts.text">
         Athleten brauchen keine Einrichtung. Sie bekommen einen Code, treten
         bei und sehen ihren Plan. Kein Abo, kein Konto beim Anbieter, keine
         App aus einem Store.
@@ -101,24 +146,33 @@
     </section>
 
     <section class="wk-beta" id="beta">
-      <h2>Firn ist in geschlossener Beta</h2>
-      <p>
+      <h2 data-i18n="wk.beta.titel">Firn ist in geschlossener Beta</h2>
+      <p data-i18n="wk.beta.text">
         Es gibt noch keinen Preis, weil es noch nichts zu kaufen gibt. Wer
         jetzt dabei sein will, erstellt ein Konto und bekommt den Zugang von
         Hand freigeschaltet.
       </p>
       <ul>
-        <li><strong>Der Kader zahlt, nicht der Athlet.</strong> Ein Abo je Gruppe, die Mitglieder kommen kostenlos dazu.</li>
-        <li><strong>Was in der Beta entsteht, bleibt.</strong> Deine Gruppe, deine Pläne und deine Termine wandern nicht in einen anderen Tarif.</li>
-        <li><strong>Kein Preis auf dieser Seite, bis er stimmt.</strong> Eine Zahl, die später eine andere ist, hilft niemandem.</li>
+        <li>
+          <strong data-i18n="wk.beta.p1t">Der Kader zahlt, nicht der Athlet.</strong>
+          <span data-i18n="wk.beta.p1">Ein Abo je Gruppe, die Mitglieder kommen kostenlos dazu.</span>
+        </li>
+        <li>
+          <strong data-i18n="wk.beta.p2t">Was in der Beta entsteht, bleibt.</strong>
+          <span data-i18n="wk.beta.p2">Deine Gruppe, deine Pläne und deine Termine wandern nicht in einen anderen Tarif.</span>
+        </li>
+        <li>
+          <strong data-i18n="wk.beta.p3t">Kein Preis auf dieser Seite, bis er stimmt.</strong>
+          <span data-i18n="wk.beta.p3">Eine Zahl, die später eine andere ist, hilft niemandem.</span>
+        </li>
       </ul>
       <div class="wk-knoepfe">
-        <a class="b b--primary" href="login.html?neu=1">Konto erstellen</a>
+        <a class="b b--primary" href="login.html?neu=1" data-i18n="wk.kontoErstellen">Konto erstellen</a>
       </div>
     </section>
 
     <footer class="wk-fuss">
-      <span><span class="firn">Fir<b>n</b></span> — ein Projekt von TVZA</span>
+      <span><span class="firn">Fir<b>n</b></span> <span data-i18n="wk.fuss">— ein Projekt von TVZA</span></span>
       <span>Timothy van Zanten</span>
     </footer>
 

@@ -89,3 +89,51 @@ test('sie steht im Vorrat des Service Workers', async () => {
   assert.match(sw, /willkommen\.css/,
     'das Stylesheet fehlt im Vorrat — die Seite kaeme ohne Layout');
 });
+
+/* ── Katalog ───────────────────────────────────────────────────────
+   Dass die Schluessel existieren, prueft dev/i18n.test.mjs (und zwar
+   seit heute wirklich: die Seitenliste dort war fest verdrahtet und
+   kannte willkommen.html nicht). Hier steht die andere Haelfte —
+   dass ueberhaupt jeder Text einen Schluessel traegt. */
+
+test('jeder sichtbare Text der Seite haengt an einem Schluessel', async () => {
+  const html = await lies('willkommen.html');
+
+  /* Textknoten ausserhalb von Kommentaren, die nicht in einem Element
+     mit data-i18n stecken. Grob, aber es faengt genau den Fall:
+     jemand ergaenzt einen Satz und vergisst den Schluessel. */
+  const ohneKommentare = html.replace(/<!--[sS]*?-->/g, '');
+  const koerper = ohneKommentare.slice(ohneKommentare.indexOf('<body'));
+
+  const offen = [];
+  const muster = /<(h1|h2|h3|p|span|a|li|strong|title)([^>]*)>([^<]+)</g;
+  for (const m of koerper.matchAll(muster)) {
+    const attribute = m[2];
+    const text = m[3].trim();
+    if (!text) continue;
+    if (/data-i18n/.test(attribute)) continue;
+    /* Das Wortzeichen und der Name des Urhebers werden nicht
+       uebersetzt — Namen gehoeren den Leuten. */
+    if (text === 'Fir' || text === 'Timothy van Zanten') continue;
+    offen.push(text.slice(0, 40));
+  }
+
+  assert.deepEqual(offen, [], 'Text ohne data-i18n auf der Willkommen-Seite');
+});
+
+test('die betonte Stelle im Aufmacher wird mituebersetzt', async () => {
+  const html = await lies('willkommen.html');
+
+  /* Das <em> sitzt um das Wort, auf das es ankommt — und das ist in
+     jeder Sprache ein anderes. Mit data-i18n statt data-i18n-html
+     wuerde das Markup beim Umschalten verschwinden. */
+  assert.match(html, /data-i18n-html="wk.hero.titel"/,
+    'der Aufmacher haengt an data-i18n und verloere sein Markup');
+
+  const de = JSON.parse(await lies('assets/i18n/de.json'));
+  const pl = JSON.parse(await lies('assets/i18n/pl.json'));
+  for (const [sprache, katalog] of [['de', de], ['pl', pl]]) {
+    assert.match(katalog['wk.hero.titel'], /<em>[^<]+<\/em>/,
+      `wk.hero.titel in ${sprache} hat die Betonung verloren`);
+  }
+});

@@ -45,13 +45,23 @@ test('keine leeren Uebersetzungen', async () => {
   }
 });
 
+/* Jede Seite der App, gefunden statt aufgezaehlt.
+ *
+ * Die beiden Listen hier waren fest verdrahtet, und willkommen.html
+ * stand in keiner. Die Tests liefen gruen und prueften die neue Seite
+ * schlicht nicht. Wer eine Seite anlegt, soll sie nicht auch noch in
+ * zwei Testlisten eintragen muessen — das ist genau der Schritt, den
+ * man vergisst. */
+async function seiten() {
+  const wurzel = (await readdir(root)).filter(f => f.endsWith('.html')).sort();
+  const unter = (await readdir(join(root, 'pages')))
+    .filter(f => f.endsWith('.html')).map(f => `pages/${f}`).sort();
+  return [...wurzel, ...unter];
+}
+
 test('jedes data-i18n im Markup hat einen Schluessel', async () => {
   const de = await load('de');
-  const files = [
-    'index.html', 'login.html', 'public.html',
-    ...(await readdir(join(root, 'pages'))).filter(f => f.endsWith('.html')).map(f => `pages/${f}`),
-    'assets/js/shell.js', 'assets/js/nav.js',
-  ];
+  const files = [...await seiten(), 'assets/js/shell.js', 'assets/js/nav.js'];
 
   const unknown = new Set();
   for (const file of files) {
@@ -78,10 +88,7 @@ test('die Sprachdateien liegen im Service-Worker-Vorrat', async () => {
 });
 
 test('i18n.js laeuft auf jeder angemeldeten Seite', async () => {
-  const files = [
-    'index.html', 'login.html', 'public.html',
-    ...(await readdir(join(root, 'pages'))).filter(f => f.endsWith('.html')).map(f => `pages/${f}`),
-  ];
+  const files = await seiten();
   for (const file of files) {
     const text = await readFile(join(root, file), 'utf8');
     assert.match(text, /assets\/js\/i18n\.js/, `${file} laedt i18n.js nicht`);
