@@ -133,7 +133,11 @@ export function buildBriefing({ termine, hint, now = new Date() } = {}) {
    Das Plättchen trägt das "n" aus dem Wortzeichen — dasselbe Zeichen,
    das später App-Symbol und Gruppenplättchen wird. */
 
-export function renderBriefing(briefing, { onDismiss, onLater, titel = 'Dein Tag' } = {}) {
+export function renderBriefing(briefing, { onDismiss, onLater, titel } = {}) {
+  /* Der Katalog gewinnt, das deutsche Wort ist die Rueckfallebene —
+     genau die additive Regel aus CLAUDE.md. */
+  const ueberschrift = titel
+    ?? (globalThis.window?.TVZAI18n?.t('brief.deinTag') || 'Dein Tag');
   const el = document.createElement('div');
   el.className = 'hint hint--tag';
 
@@ -147,7 +151,7 @@ export function renderBriefing(briefing, { onDismiss, onLater, titel = 'Dein Tag
 
   const label = document.createElement('span');
   label.className = 'hint__tag';
-  label.textContent = titel;
+  label.textContent = ueberschrift;
 
   const zu = document.createElement('button');
   zu.className = 'hint__x';

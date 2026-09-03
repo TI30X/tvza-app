@@ -150,7 +150,7 @@ Die Oberfläche gibt es in sieben Sprachen: de, en, fr, it, pl, nl, es.
 - **Quelle sind die Tabellen in `dev/i18n-src/`:** `catalog.py` für Hülle,
   Navigation und Einstellungen, `catalog_pages*.py` für die Bereichsseiten.
   Alle haben dieselbe Form — Schlüssel auf ein Tupel `(de, en, fr, it, pl, nl,
-  es)`. `python3 dev/i18n-src/build.py` führt sie zusammen und erzeugt
+  es)`. `node dev/i18n-src/build.mjs` führt sie zusammen und erzeugt
   `assets/i18n/<lang>.json`. Die JSON-Dateien werden mitversioniert — die App
   hat weiterhin keinen Build-Schritt, das Skript läuft nur, wenn jemand am
   Katalog arbeitet. Doppelte Schlüssel über zwei Tabellen brechen den Build.
@@ -185,7 +185,13 @@ Die Oberfläche gibt es in sieben Sprachen: de, en, fr, it, pl, nl, es.
   Kataloge im Service-Worker-Vorrat stehen. Nach jeder Katalog-Änderung
   laufen lassen.
 
-**Bekannter Zustand:** `dev/training-ui.test.mjs` hängt auf diesem Rechner
-schon vor dieser Änderung — auch auf einem sauberen Klon von `HEAD`. Der Test
-kommt über `TAP version 13` nicht hinaus. Das ist unabhängig von der
-Mehrsprachigkeit und sollte separat angeschaut werden.
+**Der Katalogbau läuft in Node, nicht in Python.** Auf dieser Maschine ist
+kein Python installiert, und dadurch war der Katalog monatelang nicht baubar
+— jede neue Beschriftung blieb ohne Schlüssel. `dev/i18n-src/build.mjs`
+liest dieselben `catalog*.py`-Tabellen und erzeugt dieselben Dateien;
+`build.py` bleibt liegen und funktioniert weiter. Dass beide dasselbe
+ergeben, hält `dev/i18n-build.test.mjs` fest — inklusive der Prüfung, dass
+die eingecheckten JSON-Dateien wirklich aus dem Katalog gebaut sind.
+
+**Nicht mehr aktuell:** `dev/training-ui.test.mjs` galt als hängend. Er
+läuft (13 Tests, grün) — der Vermerk stammte aus einer älteren Umgebung.
