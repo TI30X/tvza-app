@@ -214,16 +214,6 @@
         </div>
       </section>
 
-      <!-- Global public feed -->
-      <section class="section" id="publicFeedSection" data-overview-section="public" style="display:none">
-        <div class="section-head">
-          <button class="overview-toggle" type="button" data-section-toggle="public" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title" data-i18n="home.oeffentlich">Öffentliche Projekte · von allen</h2>
-          <button class="overview-drag" type="button" draggable="true" data-section-drag="public" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
-        </div>
-        <div class="link-list" id="publicFeedList"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
-      </section>
-
     </main>
 
     <!-- Slim status bar shown only while arranging -->
@@ -456,7 +446,6 @@
       ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
       trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura', admin: 'admin',
       training: 'training',
-      publicProjects: 'kalender',
     };
     const PERSON_AVATAR_COLORS = [
       ['#dcecff','#174a88'], ['#e4f4e8','#27613b'], ['#f4e5ff','#63358a'],
@@ -520,7 +509,7 @@
     try { window.dispatchEvent(new CustomEvent('tvza-name', { detail: profile.displayName || '' })); } catch (e) {}
     let appUsers = [];
     let appUsersLoaded = false;
-    const overviewSectionDefaults = ['tracker', 'shared', 'projects', 'public'];
+    const overviewSectionDefaults = ['tracker', 'shared', 'projects'];
     const trackerTileDefaults = ['ski', 'food', 'watch', 'weather', 'dm', 'trip', 'matura', 'maturatracker', 'training'];
     const quickAccessExcluded = new Set(['dm', 'watch', 'trip']);
     let reorderEditing = false;
@@ -633,7 +622,6 @@
       setTrackerTile('maturatracker', mods.maturatracker);
       setTrackerTile('training', mods.training);
       document.getElementById('projectsSection').style.display = mods.projects ? '' : 'none';
-      document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
       const anyTracker = mods.ski || mods.food || mods.weather || mods.matura || mods.maturatracker || mods.training;
       // The chip may not have registered yet — it is a module too, and
       // module order is document order. Record the wanted state either
@@ -1942,38 +1930,6 @@
       }
       modal.classList.remove('visible');
     });
-
-    /* ════ Globaler öffentlicher Feed ════════════ */
-    let unsubPublicFeed = null;
-    function watchPublicFeed() {
-      if (unsubPublicFeed || !enabledModules(profile).publicProjects) return;
-      unsubPublicFeed = onSnapshot(collection(db, 'publicProjects'), snap => {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
-        const wrap = document.getElementById('publicFeedList');
-        if (!items.length) { wrap.innerHTML = '<div class="empty-state" style="padding:24px"><p class="empty-text">Noch keine öffentlichen Projekte.</p></div>'; return; }
-        wrap.innerHTML = items.map(p => `
-          <button class="link-row" type="button" data-open="${escHtml(p.id)}" style="width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit">
-            <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
-            <span class="link-title"><span>${escHtml(p.name)}</span><small>${p.ownerName ? escHtml(p.ownerName) + ' · ' : ''}Öffentlich</small></span>
-            <span class="link-icon">↗</span>
-          </button>`).join('');
-        wrap.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
-          const p = items.find(x => x.id === b.dataset.open);
-          if (!p) return;
-          window.open(p.url, '_blank', 'noopener');
-        }));
-      });
-    }
-    function syncPublicFeed() {
-      if (enabledModules(profile).publicProjects) {
-        watchPublicFeed();
-      } else if (unsubPublicFeed) {
-        unsubPublicFeed();
-        unsubPublicFeed = null;
-      }
-    }
-    syncPublicFeed();
 
     // Seed Timo's default projects once.
     if (profile.isTimo === true && !profile.projectsSeeded) {

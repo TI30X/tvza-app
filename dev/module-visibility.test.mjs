@@ -140,6 +140,13 @@ test('saved visibility refreshes the dashboard, Bereiche page, and shell navigat
    Projekte ist darum ein Bereich wie publicProjects: aus, bis jemand
    ihn einschaltet. */
 
+function realVisible() {
+  const vorgabe = firebase.match(/export const DEFAULT_MODULES = (\{[^}]*\});/)?.[1];
+  const quelle = firebase.match(/export const DEFAULT_VISIBLE_MODULES = (\{[\s\S]*?\n\});/)?.[1];
+  assert.ok(vorgabe && quelle, 'DEFAULT_VISIBLE_MODULES nicht gefunden');
+  return vm.runInNewContext(`const DEFAULT_MODULES = (${vorgabe}); (${quelle})`);
+}
+
 function realDefaults() {
   const quelle = firebase.match(/export const DEFAULT_MODULES = (\{[^}]*\});/)?.[1];
   assert.ok(quelle, 'DEFAULT_MODULES nicht gefunden');
@@ -167,4 +174,59 @@ test('die Startseite zeigt Projekte nur mit dem Modul', () => {
   assert.match(abschnitt, /display:\s*none/,
     'der Abschnitt muss verborgen starten, sonst blitzt er auf, bevor der '
     + 'Schalter greift');
+});
+
+test('Projekte bleibt fuer TvZ sichtbar, obwohl es fuer neue Konten aus ist', () => {
+  /* Off by default heisst nicht "auch fuer den, dem es gehoert". Es ist
+     sein privater Bereich — er soll ihn sehen, ohne ihn erst
+     einzuschalten. Genau die Trennung, die es fuer matura schon gibt:
+     DEFAULT_MODULES steuert die Freigabe, DEFAULT_VISIBLE_MODULES die
+     persoenliche Ansicht. */
+  assert.equal(realDefaults().projects, false, 'die Freigabe muss aus bleiben');
+  assert.equal(realVisible().projects, true,
+    'TvZ (isTimo -> alles erlaubt) saehe seine eigenen Projekte sonst nicht mehr');
+});
+
+/* ── Kein globaler Feed mehr ───────────────────────────────────────
+   "Öffentliche Projekte · von allen" zeigte in der App die
+   freigegebenen Projekte ALLER Konten. Das ist weg.
+
+   Was bleibt, ist die oeffentliche Seite: public.html liest dieselbe
+   Sammlung, index.html schreibt weiter hinein. Darueber teilt TvZ
+   seine Projekte per Link mit Freunden — die Sammlung ist der
+   Speicher dafuer und darf nicht mitverschwinden. */
+
+test('die App hat keinen globalen Projekt-Feed mehr', async () => {
+  const bereicheJs = await readFile(
+    new URL('../assets/js/feature/bereiche/bereiche.js', import.meta.url), 'utf8');
+  const bereicheHtml = await readFile(
+    new URL('../pages/bereiche.html', import.meta.url), 'utf8');
+
+  /* In diesen Dateien darf der Name gar nicht mehr vorkommen. */
+  for (const [name, quelle] of [['bereiche.js', bereicheJs], ['bereiche.html', bereicheHtml],
+                                ['firebase-config.js', firebase], ['shell.js', shell],
+                                ['nav.js', nav]]) {
+    assert.ok(!quelle.includes('publicProjects'),
+      `${name} kennt publicProjects noch — der Feed sollte weg sein`);
+  }
+
+  /* index.html ist der Sonderfall: der SAMMLUNGSNAME bleibt, weil die
+     Seite weiter hineinschreibt. Weg muss nur das Modul und der
+     Abschnitt, der den Feed anzeigte. */
+  assert.ok(!dashboard.includes('mods.publicProjects'),
+    'index.html schaltet noch etwas an mods.publicProjects');
+  assert.ok(!dashboard.includes('publicFeed'),
+    'publicFeedSection steht noch in index.html');
+  assert.ok(!dashboard.includes("publicProjects: '"),
+    'index.html fuehrt publicProjects noch in einer Zuordnung');
+});
+
+test('die oeffentliche Seite bleibt und behaelt ihren Speicher', async () => {
+  const oeffentlich = await readFile(new URL('../public.html', import.meta.url), 'utf8');
+  assert.match(oeffentlich, /collection\(db, 'publicProjects'\)/,
+    'public.html liest die Sammlung nicht mehr — ohne sie ist die geteilte Seite leer');
+  assert.match(dashboard, /doc\(db, 'publicProjects'/,
+    'index.html schreibt nicht mehr hinein — dann fuellt sich die Seite nie');
+  assert.match(dashboard, /id="publicPageLink"/,
+    'der Knopf zum Teilen des Links fehlt');
 });

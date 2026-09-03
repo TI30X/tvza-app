@@ -32,7 +32,6 @@ const BEREICH_OF = {
   ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
   trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura', admin: 'admin',
   training: 'training',
-  publicProjects: 'kalender',
 };
 
 /* ── Sprache ────────────────────────────────────────────────────────

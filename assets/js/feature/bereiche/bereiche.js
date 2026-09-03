@@ -2,7 +2,7 @@ import {
   auth, db, requireAuth, wireOfflineBanner, escHtml,
   MODULES, enabledModules, getProfile, sharesForEmail
 } from '../../firebase-config.js';
-import { collection, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { mountShell, icon, ICONS, areaModuleKeys } from '../../shell.js?v=7';
 import { openSettingsLayer } from '../../settings-layer.js';
 
@@ -14,7 +14,6 @@ const BEREICH_OF = {
   ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
   trip: 'kalender', dm: 'msg', matura: 'matura', maturatracker: 'matura', admin: 'admin',
   training: 'training',
-  publicProjects: 'kalender',
 };
 
 /* One row, built from the kit. Used by all three sections so they
@@ -91,30 +90,6 @@ requireAuth('../login.html').then(async user => {
       });
     }).join('');
     if (html.trim()) { $('listShared').innerHTML = html; $('secShared').hidden = false; }
-  }
-
-  /* ── Öffentliche Projekte ───────────────────────────────────*/
-  if (mods.publicProjects) {
-    onSnapshot(collection(db, 'publicProjects'), snap => {
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
-      if (!items.length) { $('secPublic').hidden = true; return; }
-      $('secPublic').hidden = false;
-      $('listPublic').innerHTML = items.map(p => row({
-        bereich: 'kalender',
-        iconKey: 'publicProjects',
-        title: p.name || 'Projekt',
-        sub: (p.ownerName ? p.ownerName + ' · ' : '') + 'Öffentlich',
-      })).join('');
-      // The project emoji is content the user typed, so it stays.
-      [...$('listPublic').children].forEach((el, i) => {
-        if (items[i]?.emoji) el.querySelector('.row__icon').textContent = items[i].emoji;
-        el.onclick = () => {
-          const url = items[i]?.url;
-          if (url) window.open(url, '_blank', 'noopener');
-        };
-      });
-    }, () => console.warn('[public-projects] listen-failed'));
   }
 
   $('manageBtn').onclick = openSettingsLayer;
