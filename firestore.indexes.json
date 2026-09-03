@@ -1,0 +1,24 @@
+{
+  "//": [
+    "Firestore legt Ein-Feld-Indizes automatisch an, aber nur mit",
+    "Sammlungs-Reichweite. Die Abfrage 'in welchen Gruppen bin ich?' geht",
+    "ueber collectionGroup('members') und braucht darum denselben Index",
+    "ausdruecklich noch einmal mit COLLECTION_GROUP.",
+    "",
+    "Ohne diesen Eintrag scheitert die Abfrage zur Laufzeit mit einem",
+    "failed-precondition. Firestore haengt an die Fehlermeldung einen Link,",
+    "der den Index mit einem Klick anlegt — das ist der schnellste Weg,",
+    "wenn die CLI nicht zur Hand ist."
+  ],
+  "indexes": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "members",
+      "fieldPath": "uid",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION" },
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
+      ]
+    }
+  ]
+}
