@@ -28,11 +28,13 @@ import {
   ladeErgebnisse, ergebnisSpeichern,
   ladePlaene, planVeroeffentlichen, eigeneProgramme, PLAN_FUER_ALLE,
   abonnementErneuern, abonnementAdresse,
+  terminAbsagen, absageZuruecknehmen,
+  ladeAnhaenge, anhangSpeichern, anhangUmbenennen, anhangLoeschen, alsBlob,
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
   kommende, zeitraum, artWort, BEREICH_DER_ART, pruefe, isoTag,
-  artenFuer, kenntDisziplinen,
+  artenFuer, kenntDisziplinen, istAbgesagt,
 } from '../../termine.js';
 import {
   rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
@@ -126,14 +128,17 @@ function terminZeile(t) {
   const bereich = BEREICH_DER_ART[t.art] || '';
   const wann = zeitraum(t);
   const ort = t.ort ? ` · ${t.ort}` : '';
+  /* Abgesagtes bleibt in der Liste — sonst faehrt jemand hin. Aber es
+     muss auf den ersten Blick anders aussehen als der Rest. */
+  const ab = istAbgesagt(t);
   return `
     <button class="row" type="button" data-termin="${escHtml(t.id)}" data-bereich="${escHtml(bereich)}">
       <span class="row__icon">${escHtml(artWort(t.art, aktiv?.art).slice(0, 1))}</span>
       <span class="row__body">
-        <span class="row__title">${escHtml(t.titel)}</span>
+        <span class="row__title">${escHtml(ab ? `${t.titel} — abgesagt` : t.titel)}</span>
         <span class="row__sub">${escHtml(wann + ort)}</span>
       </span>
-      <span class="row__end">${escHtml(artWort(t.art, aktiv?.art))}</span>
+      <span class="row__end">${escHtml(ab ? 'Abgesagt' : artWort(t.art, aktiv?.art))}</span>
     </button>`;
 }
 
@@ -414,22 +419,41 @@ function detailOeffnen(eid) {
   if (!offen) return;
 
   const darfFuehren = leitet(aktiv?.meineRolle);
-  const teile = [artWort(offen.art, aktiv?.art), zeitraum(offen)];
+  const abgesagt = istAbgesagt(offen);
+
+  /* Die Absage steht ganz vorn — wer die Ansicht öffnet, soll sie
+     nicht erst im dritten Absatz finden. */
+  const teile = [
+    abgesagt ? 'ABGESAGT' : '',
+    artWort(offen.art, aktiv?.art),
+    zeitraum(offen),
+  ];
   if (offen.ort) teile.push(offen.ort);
   if (offen.disziplin) teile.push(offen.disziplin);
+  if (abgesagt && offen.absageGrund) teile.push(offen.absageGrund);
 
   $('dTitel').textContent = offen.titel;
   $('dMeta').textContent = teile.filter(Boolean).join(' · ');
   $('dMeta').hidden = false;
 
+  /* Bei einem abgesagten Termin ist die Frage "kommst du?" gegenstandslos. */
+  zeige('grpZusage', !abgesagt);
+
   const loeschen = $('btnLoeschen');
   if (loeschen) loeschen.hidden = !darfFuehren;
+
+  const absagen = $('btnAbsagen');
+  if (absagen) {
+    absagen.hidden = !darfFuehren;
+    absagen.textContent = abgesagt ? 'Absage zurücknehmen' : 'Termin absagen';
+  }
 
   zeige('secDetail', true);
   zeige('secTermine', false);
   zeige('secMitglieder', false);
   zeige('secPlaene', false);
   zeichneZusagen();
+  zeichneAnhaenge();
 }
 
 function detailSchliessen() {
@@ -455,6 +479,130 @@ async function antworten(antwort) {
 /* ergebnisSpeichern() ist entfallen. Ein Rennergebnis gehoert nicht an
    die Anmeldung — und es gehoert pro Athlet gespeichert, nicht einmal
    pro Termin. Beides zieht ins Athletenprofil um. */
+
+/* ── Unterlagen am Termin ──────────────────────────────────────────
+   Bei einem Lager oder Rennen kommt die Ausschreibung als PDF. Sie
+   gehört an den Termin — nicht in eine Mail, die drei Wochen später
+   niemand mehr findet.
+
+   Nach dem Hochladen bleibt sie bearbeitbar: umbenennen, ersetzen,
+   entfernen. Ein Anhang, den man nur löschen und neu anlegen kann,
+   verliert dabei jedes Mal seinen Platz in der Liste. */
+
+let anhaenge = [];
+
+function anhangZeile(a) {
+  const kb = Math.round((a.size || 0) / 1024);
+  return `
+    <div class="row" data-anhang="${escHtml(a.id)}" data-bereich="kalender">
+      <span class="row__icon">PDF</span>
+      <span class="row__body">
+        <span class="row__title">${escHtml(a.name)}</span>
+        <span class="row__sub">${escHtml(`${kb} KB`)}</span>
+      </span>
+      <span class="row__end">
+        <button class="b b--secondary" type="button" data-anhang-oeffnen="${escHtml(a.id)}">Öffnen</button>
+      </span>
+    </div>`;
+}
+
+async function zeichneAnhaenge() {
+  if (!offen || !aktiv) return;
+  const liste = $('listAnhaenge');
+  const darfFuehren = leitet(aktiv.meineRolle);
+
+  zeige('grpAnhaenge', true);
+  $('anhangKnopf').hidden = !darfFuehren;
+
+  try { anhaenge = await ladeAnhaenge(aktiv.id, offen.id); }
+  catch (e) { reportClientError('gruppe/anhaenge', e); anhaenge = []; }
+
+  liste.innerHTML = anhaenge.length
+    ? anhaenge.map(anhangZeile).join('')
+      + (darfFuehren
+        ? '<p class="empty-hint">Zum Umbenennen oder Entfernen auf den Namen tippen.</p>'
+        : '')
+    : '<p class="empty-hint">Noch keine Unterlagen.</p>';
+}
+
+function anhangOeffnen(id) {
+  const a = anhaenge.find(x => x.id === id);
+  if (!a) return;
+  const blob = alsBlob(a.dataUrl);
+  if (!blob) return;
+  /* Ein Objekt-URL statt der Data-URL direkt: Safari weigert sich, eine
+     mehrere hundert Kilobyte lange data:-Adresse zu öffnen. */
+  const adresse = URL.createObjectURL(blob);
+  window.open(adresse, '_blank', 'noopener');
+  setTimeout(() => URL.revokeObjectURL(adresse), 60_000);
+}
+
+async function anhangVerwalten(id) {
+  if (!offen || !aktiv || !leitet(aktiv.meineRolle)) return;
+  const a = anhaenge.find(x => x.id === id);
+  if (!a) return;
+
+  const name = prompt(
+    'Neuer Name für die Unterlage.\n\nLeer lassen und OK drücken, um sie zu entfernen.',
+    a.name);
+  if (name === null) return;
+
+  try {
+    if (!name.trim()) {
+      if (!confirm(`"${a.name}" wirklich entfernen?`)) return;
+      await anhangLoeschen(aktiv.id, offen.id, id);
+    } else {
+      await anhangUmbenennen(aktiv.id, offen.id, id, name, user.uid);
+    }
+    await zeichneAnhaenge();
+  } catch (e) {
+    reportClientError('gruppe/anhang-verwalten', e);
+    alert('Das hat nicht geklappt.');
+  }
+}
+
+async function anhangHochladen(datei) {
+  if (!offen || !aktiv || !datei) return;
+  const feld = $('anhangFehler');
+  feld.hidden = true;
+
+  try {
+    await anhangSpeichern(aktiv.id, offen.id, user.uid, datei);
+    await zeichneAnhaenge();
+  } catch (e) {
+    reportClientError('gruppe/anhang', e);
+    /* Bei "zu gross" steht der Grund schon im Fehler und ist
+       brauchbar — den soll der Nutzer sehen, nicht einen Ersatzsatz. */
+    feld.textContent = e?.message || 'Die Datei konnte nicht angehängt werden.';
+    feld.hidden = false;
+  }
+}
+
+/* ── Absagen ───────────────────────────────────────────────────────*/
+
+async function absageUmschalten() {
+  if (!offen || !aktiv) return;
+
+  try {
+    if (istAbgesagt(offen)) {
+      if (!confirm(`"${offen.titel}" findet doch statt?`)) return;
+      await absageZuruecknehmen(aktiv.id, offen.id);
+    } else {
+      /* Der Grund ist freiwillig, aber er ist das, was die Leute
+         wirklich wissen wollen — "zu wenig Schnee" beantwortet die
+         Rückfragen, bevor sie kommen. */
+      const grund = prompt(
+        `"${offen.titel}" absagen.\n\nGrund (optional, wird allen angezeigt):`, '');
+      if (grund === null) return;
+      await terminAbsagen(aktiv.id, offen.id, grund);
+    }
+    /* beobachteTermine meldet die Änderung; die Detailansicht muss
+       ihren eigenen Stand nachziehen. */
+  } catch (e) {
+    reportClientError('gruppe/absagen', e);
+    alert('Das hat nicht geklappt.');
+  }
+}
 
 async function terminEntfernen() {
   if (!offen || !aktiv) return;
@@ -1003,6 +1151,23 @@ async function einladen() {
     if (antwort) antworten(antwort);
   });
   $('btnZurueck')?.addEventListener('click', detailSchliessen);
+  $('btnAbsagen')?.addEventListener('click', absageUmschalten);
+  $('anhangWahl')?.addEventListener('change', event => {
+    const datei = event.target.files?.[0];
+    /* Zurücksetzen, sonst löst dieselbe Datei beim zweiten Mal kein
+       change-Ereignis aus und der Nutzer denkt, es sei kaputt. */
+    event.target.value = '';
+    if (datei) anhangHochladen(datei);
+  });
+  $('listAnhaenge')?.addEventListener('click', event => {
+    const oeffnen = event.target.closest('[data-anhang-oeffnen]');
+    if (oeffnen) { anhangOeffnen(oeffnen.dataset.anhangOeffnen); return; }
+    /* Ein Klick auf die Zeile selbst — nicht auf "Öffnen" — verwaltet
+       den Anhang. Die ID steht am Element, nicht im Text: eine Suche
+       über den Namen kippt, sobald zwei Unterlagen ähnlich heissen. */
+    const zeile = event.target.closest('[data-anhang]');
+    if (zeile) anhangVerwalten(zeile.dataset.anhang);
+  });
   $('btnLoeschen')?.addEventListener('click', terminEntfernen);
 
   $('btnBeitreten')?.addEventListener('click', codeEinloesen);
@@ -1063,6 +1228,9 @@ function hoereAufTermine() {
     if (aktiv?.id !== fuer) return;
     termine = liste;
     if (offen && !termine.some(t => t.id === offen.id)) detailSchliessen();
+    /* Wurde der offene Termin geaendert — etwa abgesagt —, muss die
+       Detailansicht ihren Stand nachziehen. */
+    else if (offen) { const neu = termine.find(t => t.id === offen.id); if (neu) detailOeffnen(neu.id); }
     zeichneTermine();
   });
 }

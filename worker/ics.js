@@ -184,8 +184,19 @@ export function alsVEvent(termin, { gid = '', artWort = '', jetzt = new Date() }
 
   if (termin.ort) zeilen.push(`LOCATION:${maskiere(termin.ort)}`);
 
-  const beschreibung = [termin.notiz, termin.disziplin && `Disziplin: ${termin.disziplin}`]
-    .filter(Boolean).join('\n');
+  /* Ein abgesagter Termin wird nicht weggelassen, sondern als abgesagt
+     gemeldet. Liesse man ihn weg, verschwände er aus dem Kalender des
+     Abonnenten, ohne dass jemand es bemerkt — und am Samstag steht
+     eine Familie am Lift. STATUS:CANCELLED zeigen Kalender an. */
+  if (termin.abgesagt === true) zeilen.push('STATUS:CANCELLED');
+
+  const beschreibung = [
+    termin.abgesagt === true
+      ? `ABGESAGT${termin.absageGrund ? `: ${termin.absageGrund}` : ''}`
+      : '',
+    termin.notiz,
+    termin.disziplin && `Disziplin: ${termin.disziplin}`,
+  ].filter(Boolean).join('\n');
   if (beschreibung) zeilen.push(`DESCRIPTION:${maskiere(beschreibung)}`);
 
   zeilen.push('END:VEVENT');

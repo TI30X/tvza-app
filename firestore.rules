@@ -987,6 +987,7 @@ service cloud.firestore {
                     && request.resource.data.keys().hasOnly([
                       'art', 'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
                       'disziplin', 'startnummer', 'ergebnis',
+                      'abgesagt', 'absageGrund',
                       'createdBy', 'createdAt'
                     ]);
 
@@ -998,7 +999,8 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys()
                       .hasOnly([
                         'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
-                        'disziplin', 'startnummer', 'ergebnis'
+                        'disziplin', 'startnummer', 'ergebnis',
+                        'abgesagt', 'absageGrund'
                       ])
                     && request.resource.data.titel is string
                     && request.resource.data.titel.size() > 0
@@ -1114,6 +1116,40 @@ service cloud.firestore {
                     && request.resource.data.keys().hasOnly([
                       'uid', 'eventId', 'rang', 'zeit', 'siegerZeit',
                       'zuschlag', 'notiz', 'erfasstVon', 'erfasstAm'
+                    ]);
+
+      allow delete: if leadsGroup(gid);
+    }
+
+    /* Ausschreibungen und andere Anhaenge an einem Termin.
+       Bei einem Lager oder einem Rennen kommt die Ausschreibung als
+       PDF, und sie gehoert an den Termin — nicht in eine Mail, die
+       drei Wochen spaeter niemand mehr findet.
+
+       Die Datei liegt als Data-URL IM Dokument, genau wie bei
+       /attachments fuer die Reisen. Das ist der Weg ohne Cloud
+       Storage, den der Spark-Tarif zulaesst. Firestore erlaubt 1 MiB
+       pro Dokument; die Grenze von 950 000 gilt fuer die codierte
+       Zeichenkette und laesst damit rund 700 KB echtes PDF zu. Was
+       groesser ist, gehoert spaeter nach R2 — dafuer ist der Worker da.
+
+       Anders als bei /attachments ist update hier ERLAUBT: eine
+       Ausschreibung wird nachgereicht, korrigiert und ersetzt. Ein
+       Anhang, den man nur loeschen und neu anlegen kann, verliert
+       dabei jedes Mal seinen Platz in der Liste. */
+    match /groups/{gid}/events/{eid}/anhaenge/{id} {
+      allow get, list: if inGroup(gid);
+
+      allow create, update: if leadsGroup(gid)
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 200
+                    && request.resource.data.size is number
+                    && request.resource.data.size <= 950000
+                    && request.resource.data.dataUrl is string
+                    && request.resource.data.by == request.auth.uid
+                    && request.resource.data.keys().hasOnly([
+                      'name', 'type', 'size', 'dataUrl', 'by', 'at'
                     ]);
 
       allow delete: if leadsGroup(gid);

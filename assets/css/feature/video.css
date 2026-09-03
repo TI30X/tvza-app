@@ -39,18 +39,8 @@
   pointer-events: none;
 }
 
-/* Der Dateiwähler wird von seinem <label> bedient, das wie ein Knopf
-   aussieht. Das Systemfeld selbst lässt sich nicht gestalten, also
-   bleibt es unsichtbar — aber erreichbar für die Tastatur und für
-   Screenreader, darum nicht display:none. */
-.vid-datei {
-  position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
+/* Der versteckte Dateiwaehler steht als .datei-feld in kit.css — zwei
+   Seiten brauchen ihn, also gehoert er nicht hierher. */
 
 .vid-schieber {
   width: 100%;

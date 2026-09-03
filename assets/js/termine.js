@@ -146,7 +146,22 @@ export function sortiere(termine) {
     });
 }
 
-/** Was ab heute noch kommt, inklusive laufender Lager. */
+/* ── Abgesagt ──────────────────────────────────────────────────────
+   Absagen ist nicht Löschen, und der Unterschied ist der ganze Punkt.
+
+   Wer ein Rennen löscht, das zwölf Leute im Kalender haben, hinterlässt
+   zwölf Menschen, die am Samstag an den Lift fahren. Ein abgesagter
+   Termin bleibt sichtbar — durchgestrichen, mit Grund — bis er von
+   selbst in der Vergangenheit verschwindet.
+
+   Im Abo wird daraus STATUS:CANCELLED. Kalender zeigen das an, statt
+   den Eintrag stillschweigend zu entfernen; genau darum geht es. */
+
+export function istAbgesagt(termin) {
+  return termin?.abgesagt === true;
+}
+
+/** Was ab heute noch kommt, inklusive laufender Lager und Abgesagtem. */
 export function kommende(termine, heute = isoTag(), grenze = 0) {
   const offen = sortiere(termine).filter(t => {
     const ende = istIsoTag(t.bis) && t.bis > t.von ? t.bis : t.von;
@@ -191,6 +206,10 @@ export function zeitraum(termin, locale = sprache()) {
    Zusammenfassung "Heute um 00:00". */
 export function alsBriefingTermine(termine, tag = isoTag()) {
   return (Array.isArray(termine) ? termine : [])
+    /* Abgesagtes gehört nicht in "was steht heute an" — es steht ja
+       gerade nicht an. In der Terminliste bleibt es sichtbar, damit
+       niemand umsonst hinfährt; das ist der andere Ort. */
+    .filter(t => !istAbgesagt(t))
     .filter(t => laeuftAm(t, tag))
     .map(t => {
       const ganztags = istMehrtaegig(t) || !t.zeit;

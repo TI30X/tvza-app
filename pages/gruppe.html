@@ -171,7 +171,7 @@
         <div class="form-title" id="dTitel">—</div>
         <p class="empty-hint" id="dMeta"></p>
 
-        <div class="form-group">
+        <div class="form-group" id="grpZusage">
           <div class="form-label">Deine Antwort</div>
           <div class="seg" id="zusageKnoepfe" role="group" aria-label="Deine Antwort">
             <button class="seg__item" type="button" data-antwort="ja" aria-pressed="false">Ja</button>
@@ -187,6 +187,20 @@
              Ergebnis PRO ATHLET, nicht eines fuer die ganze Gruppe.
              Beides gehoert ins Profil des Athleten. -->
 
+        <!-- Ausschreibungen. Bei einem Lager oder Rennen kommt sie als
+             PDF, und sie gehoert an den Termin — nicht in eine Mail,
+             die drei Wochen spaeter niemand mehr findet. -->
+        <div id="grpAnhaenge" hidden>
+          <div class="marke">Unterlagen</div>
+          <div class="rows" id="listAnhaenge"></div>
+          <label class="b b--secondary b--block" for="anhangWahl" id="anhangKnopf" hidden>Ausschreibung anhängen</label>
+          <input class="datei-feld" id="anhangWahl" type="file" accept="application/pdf,image/*" />
+          <p class="empty-hint" id="anhangFehler" hidden></p>
+        </div>
+
+        <!-- Absagen ist nicht Loeschen: der Termin bleibt sichtbar,
+             damit niemand umsonst hinfaehrt. -->
+        <button class="b b--secondary b--block" id="btnAbsagen" type="button" hidden>Termin absagen</button>
         <button class="b b--danger b--block" id="btnLoeschen" type="button" hidden>Termin löschen</button>
       </div>
     </section>

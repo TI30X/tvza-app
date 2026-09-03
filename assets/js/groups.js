@@ -599,6 +599,119 @@ export function ergebnisLoeschen(gid, eventId, uid) {
   return deleteDoc(ergebnisRef(gid, eventId, uid));
 }
 
+/* ── Absagen ───────────────────────────────────────────────────────
+   Nicht löschen. Wer ein Rennen löscht, das zwölf Leute im Kalender
+   haben, hinterlässt zwölf Menschen, die am Samstag an den Lift
+   fahren. Der Termin bleibt stehen, sichtbar abgesagt, mit Grund. */
+
+export function terminAbsagen(gid, eid, grund = '') {
+  return updateDoc(terminRef(gid, eid), {
+    abgesagt: true,
+    absageGrund: String(grund ?? '').trim().slice(0, 200),
+  });
+}
+
+export function absageZuruecknehmen(gid, eid) {
+  /* Der Grund wird mitgelöscht: ein alter Absagegrund an einem wieder
+     stattfindenden Rennen wäre schlimmer als keiner. */
+  return updateDoc(terminRef(gid, eid), { abgesagt: false, absageGrund: '' });
+}
+
+/* ── Anhänge am Termin ─────────────────────────────────────────────
+   Bei einem Lager oder Rennen kommt die Ausschreibung als PDF, und sie
+   gehört an den Termin — nicht in eine Mail, die drei Wochen später
+   niemand mehr findet.
+
+   Die Datei liegt als Data-URL im Dokument, wie bei den Reisen. Das
+   ist der Weg ohne Cloud Storage, den Spark zulässt. */
+
+/* Firestore erlaubt 1 MiB pro Dokument. Die Grenze gilt für die
+   CODIERTE Zeichenkette — Base64 bläht um etwa ein Drittel auf, also
+   passen rund 700 KB echtes PDF hinein. */
+export const ANHANG_MAX = 950000;
+
+export function anhangRef(gid, eid, id) {
+  return doc(db, 'groups', gid, 'events', eid, 'anhaenge', id);
+}
+
+export async function ladeAnhaenge(gid, eid) {
+  const snap = await getDocs(collection(db, 'groups', gid, 'events', eid, 'anhaenge'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/** Eine Datei als Data-URL lesen. Wirft, wenn sie zu gross ist. */
+export function alsDataUrl(datei) {
+  return new Promise((fertig, scheitert) => {
+    const leser = new FileReader();
+    leser.onerror = () => scheitert(new Error('Die Datei liess sich nicht lesen.'));
+    leser.onload = () => {
+      const url = String(leser.result || '');
+      if (url.length > ANHANG_MAX) {
+        /* Die Grenze steht in der Regel und hier. Sie erst beim
+           Schreiben zu erfahren hiesse, den Nutzer eine Minute warten
+           zu lassen und dann abzulehnen. */
+        scheitert(new Error('Die Datei ist zu gross — rund 700 KB sind das Maximum.'));
+        return;
+      }
+      fertig({ url, laenge: url.length });
+    };
+    leser.readAsDataURL(datei);
+  });
+}
+
+export async function anhangSpeichern(gid, eid, uid, datei, id = null) {
+  const { url, laenge } = await alsDataUrl(datei);
+  const ref = id
+    ? anhangRef(gid, eid, id)
+    : doc(collection(db, 'groups', gid, 'events', eid, 'anhaenge'));
+
+  await writeBatch(db)
+    .set(ref, {
+      name: String(datei.name || 'Ausschreibung').slice(0, 200),
+      type: datei.type || 'application/pdf',
+      size: laenge,
+      dataUrl: url,
+      by: uid,
+      at: Date.now(),
+    })
+    .commit();
+  return ref.id;
+}
+
+/** Nur umbenennen — die Datei bleibt, wie sie ist. */
+export async function anhangUmbenennen(gid, eid, id, name, uid) {
+  const snap = await getDoc(anhangRef(gid, eid, id));
+  if (!snap.exists()) throw new Error('Diesen Anhang gibt es nicht mehr.');
+  const alt = snap.data();
+
+  /* Die Regel verlangt das ganze Dokument mit allen Pflichtfeldern und
+     by == eigene uid. Ein updateDoc mit nur dem Namen wuerde daran
+     scheitern — also wird das Dokument vollstaendig neu geschrieben. */
+  return writeBatch(db)
+    .set(anhangRef(gid, eid, id), {
+      ...alt,
+      name: String(name ?? '').trim().slice(0, 200) || alt.name,
+      by: uid,
+      at: Date.now(),
+    })
+    .commit();
+}
+
+export function anhangLoeschen(gid, eid, id) {
+  return deleteDoc(anhangRef(gid, eid, id));
+}
+
+/** Eine Data-URL wieder zu einem Blob, zum Öffnen oder Herunterladen. */
+export function alsBlob(dataUrl) {
+  const [kopf, teil] = String(dataUrl ?? '').split(',');
+  if (!teil) return null;
+  const typ = (kopf.match(/:(.*?);/) || [])[1] || 'application/octet-stream';
+  const binaer = atob(teil);
+  const bytes = new Uint8Array(binaer.length);
+  for (let i = 0; i < binaer.length; i += 1) bytes[i] = binaer.charCodeAt(i);
+  return new Blob([bytes], { type: typ });
+}
+
 /* ── Zusagen ───────────────────────────────────────────────────────
    Die Dokument-ID ist die uid. Dadurch kann niemand für jemand anderen
    zusagen, ohne dass die Regel es eigens verbieten müsste. */

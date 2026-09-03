@@ -2501,6 +2501,20 @@ html.tvza-content-frame body > main {
 }
 .hint__x:hover { background: var(--surface-2); }
 
+/* ── Versteckter Dateiwaehler ──────────────────────────────────────
+   Ein <input type="file"> laesst sich nicht gestalten; bedient wird es
+   von einem <label>, das wie ein Knopf aussieht. Das Feld selbst
+   bleibt unsichtbar — aber NICHT display:none, sonst ist es fuer
+   Tastatur und Screenreader verschwunden. */
+.datei-feld {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* ── Segmentwahl ───────────────────────────────────────────────────
    Fuer eine Frage mit wenigen, sich ausschliessenden Antworten: die
    Zusage zu einem Training, einem Lager oder einer Reise.

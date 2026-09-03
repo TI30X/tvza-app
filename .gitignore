@@ -30,3 +30,6 @@ __pycache__/
 # Cloudflare-Worker: lokaler Zustand und Abhaengigkeiten
 worker/.wrangler/
 worker/node_modules/
+
+# Abzug der Live-Regeln fuer einen Vergleich — nie committen
+firestore.rules.live

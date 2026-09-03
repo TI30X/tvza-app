@@ -358,3 +358,89 @@ test('der Plan bleibt in der Dokumentgrenze', async () => {
   assert.match(create, /request\.resource\.data\.json\.size\(\) <= 900000/);
   assert.match(create, /request\.resource\.data\.titel\.size\(\) <= 120/);
 });
+
+test('Absagen ist nicht Löschen', async () => {
+  const { istAbgesagt, kommende, alsBriefingTermine } = await import('../assets/js/termine.js');
+
+  const abgesagt = { art: 'rennen', titel: 'FIS RS', von: '2026-12-14', abgesagt: true };
+  const laeuft = { art: 'training', titel: 'Kraft', von: '2026-12-14' };
+
+  assert.equal(istAbgesagt(abgesagt), true);
+  assert.equal(istAbgesagt(laeuft), false);
+  assert.equal(istAbgesagt(null), false);
+  // Nur true zählt — ein 'ja' oder eine 1 ist kein Wahrheitswert.
+  assert.equal(istAbgesagt({ abgesagt: 'ja' }), false);
+
+  // Der abgesagte Termin BLEIBT in der Liste. Wer ihn entfernt,
+  // hinterlässt Leute, die am Samstag an den Lift fahren.
+  const liste = kommende([abgesagt, laeuft], '2026-12-01');
+  assert.equal(liste.length, 2);
+
+  // Aber er steht nicht in "was mache ich heute" — er steht ja gerade
+  // nicht an.
+  const heute = alsBriefingTermine([abgesagt, laeuft], '2026-12-14');
+  assert.deepEqual(heute.map(t => t.titel), ['Kraft']);
+});
+
+test('im Abo wird daraus STATUS:CANCELLED', async () => {
+  const { alsVEvent } = await import('../worker/ics.js');
+
+  const ev = alsVEvent({
+    id: 'e1', titel: 'FIS RS Lenzerheide', von: '2026-12-14',
+    abgesagt: true, absageGrund: 'zu wenig Schnee',
+  }, { jetzt: new Date('2026-09-03T12:00:00Z') }).join('\r\n');
+
+  // Weglassen wäre falsch: der Termin verschwände aus dem Kalender des
+  // Abonnenten, ohne dass jemand es bemerkt.
+  assert.match(ev, /STATUS:CANCELLED/);
+  assert.match(ev, /DESCRIPTION:ABGESAGT: zu wenig Schnee/);
+
+  // Ohne Absage steht kein STATUS da.
+  const normal = alsVEvent({ id: 'e2', titel: 'Kraft', von: '2026-12-14' }, {}).join('\r\n');
+  assert.doesNotMatch(normal, /STATUS:/);
+});
+
+test('die Absage darf gesetzt und zurückgenommen werden', async () => {
+  const rules = await readRules();
+  const block = matchBlock(rules, '/groups/{gid}/events/{eid}');
+
+  assert.match(allowClause(block, 'create'), /'abgesagt', 'absageGrund',/);
+  assert.match(allowClause(block, 'update'), /'abgesagt', 'absageGrund'/);
+
+  const groups = await readFile(join(root, 'assets/js/groups.js'), 'utf8');
+  assert.match(groups, /export function terminAbsagen\(gid, eid, grund = ''\)/);
+  // Der Grund wird beim Zurücknehmen mitgelöscht: ein alter
+  // Absagegrund an einem stattfindenden Rennen wäre schlimmer als
+  // keiner.
+  assert.match(groups, /\{ abgesagt: false, absageGrund: '' \}/);
+});
+
+test('Unterlagen gehören an den Termin und bleiben bearbeitbar', async () => {
+  const block = matchBlock(await readRules(), '/groups/{gid}/events/{eid}/anhaenge/{id}');
+
+  // Anders als bei /attachments ist update ERLAUBT: eine Ausschreibung
+  // wird nachgereicht, korrigiert und ersetzt.
+  const schreiben = allowClause(block, 'create, update');
+  assert.match(schreiben, /leadsGroup\(gid\)/);
+  assert.match(schreiben, /request\.resource\.data\.size <= 950000/);
+  assert.match(schreiben, /hasOnly\(\[\s*'name', 'type', 'size', 'dataUrl', 'by', 'at'\s*\]\)/);
+
+  // Lesen dürfen alle in der Gruppe — eine Ausschreibung, die nur der
+  // Trainer sieht, ist keine.
+  assert.match(allowClause(block, 'get, list'), /inGroup\(gid\)/);
+});
+
+test('die Grössengrenze steht im Client und in der Regel', async () => {
+  const groups = await readFile(join(root, 'assets/js/groups.js'), 'utf8');
+  const rules = await readRules();
+
+  // Sie erst beim Schreiben zu erfahren hiesse, den Nutzer eine Minute
+  // warten zu lassen und dann abzulehnen.
+  assert.match(groups, /export const ANHANG_MAX = 950000/);
+  assert.match(groups, /url\.length > ANHANG_MAX/);
+  assert.match(rules, /request\.resource\.data\.size <= 950000/);
+
+  // Und gemessen wird die CODIERTE Länge, nicht die Dateigrösse —
+  // Base64 bläht um ein Drittel auf, und ein Dokument darf 1 MiB.
+  assert.match(groups, /size: laenge/);
+});
