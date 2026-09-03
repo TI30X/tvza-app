@@ -225,7 +225,7 @@ export async function gruppeAnlegen(uid, { name, art = 'familie', bereiche } = {
 }
 
 export function gruppeAendern(gid, patch) {
-  const erlaubt = ['name', 'farbe', 'bereiche', 'inviteToken'];
+  const erlaubt = ['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'];
   const daten = Object.fromEntries(
     Object.entries(patch).filter(([k]) => erlaubt.includes(k)));
   if (!Object.keys(daten).length) return Promise.resolve();
@@ -414,6 +414,31 @@ export function terminAendern(gid, eid, patch) {
 
 export function terminLoeschen(gid, eid) {
   return deleteDoc(terminRef(gid, eid));
+}
+
+/* ── Kalender-Abo ──────────────────────────────────────────────────
+   Eine Adresse, die den Gruppenkalender als iCalendar ausliefert.
+   Eltern abonnieren sie in Apple Calendar, OHNE ein Konto bei Firn zu
+   haben — kein Mail, kein Passwort, keine Installation.
+
+   Das Token ist ein EIGENES, nicht der Beitrittscode: wer den Kalender
+   liest, soll nicht beitreten können. Zwei Dinge, zwei Codes. Der Kopf
+   kann eines neu setzen, ohne das andere zu berühren.
+
+   Neu setzen heisst gleichzeitig zurückziehen: die alte Adresse trägt
+   danach ins Leere. Das ist der Weg, wenn jemand den Verein verlässt
+   und den Kalender nicht mehr sehen soll. */
+
+export function abonnementAdresse(basis, gid, token) {
+  if (!basis || !token) return '';
+  return `${String(basis).replace(/\/+$/, '')}/ics/${encodeURIComponent(gid)}?t=${encodeURIComponent(token)}`;
+}
+
+/** Erzeugt ein neues Abo-Token und gibt es zurück. */
+export async function abonnementErneuern(gid) {
+  const token = code();
+  await updateDoc(gruppeRef(gid), { icsToken: token });
+  return token;
 }
 
 /* ── Trainingspläne ────────────────────────────────────────────────

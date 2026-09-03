@@ -27,6 +27,7 @@ import {
   einladungErzeugen, beitreten,
   ladeErgebnisse, ergebnisSpeichern,
   ladePlaene, planVeroeffentlichen, eigeneProgramme, PLAN_FUER_ALLE,
+  abonnementErneuern, abonnementAdresse,
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
@@ -36,6 +37,7 @@ import {
 import {
   rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
 } from '../../fispunkte.js';
+import { WORKER_BASIS } from '../../worker-config.js';
 
 const $ = id => document.getElementById(id);
 const t = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
@@ -304,6 +306,11 @@ function zeichne() {
      scheitert, ist schlechter als keiner. */
   const knopf = $('btnTermin');
   if (knopf) knopf.hidden = !darfFuehren;
+
+  /* Ohne Worker gibt es keine Adresse, die man abonnieren könnte —
+     eine statische Seite kann kein text/calendar ausliefern. */
+  const abo = $('btnAbo');
+  if (abo) abo.hidden = !darfFuehren || !WORKER_BASIS;
 
   if (!hat) {
     $('grpName').textContent = t('nav.gruppe', 'Gruppe');
@@ -892,6 +899,46 @@ async function codeEinloesen() {
   }
 }
 
+/* ── Kalender-Abo ──────────────────────────────────────────────────
+   Eine Adresse, die Eltern in Apple Calendar abonnieren — ohne Konto,
+   ohne Mail, ohne Installation. Der Knopf erscheint nur, wenn es einen
+   Worker gibt: eine statische Seite kann kein text/calendar ausliefern,
+   und ein Knopf, der zuverlässig scheitert, ist schlechter als keiner. */
+
+async function aboErzeugen() {
+  if (!aktiv) return;
+  const btn = $('btnAbo');
+  const feld = $('aboText');
+  btn.disabled = true;
+
+  try {
+    /* Neu setzen heisst gleichzeitig zurückziehen: die alte Adresse
+       trägt danach ins Leere. Das ist der Weg, wenn jemand den Verein
+       verlässt. Darum die Rückfrage, wenn es schon eine gibt. */
+    if (aktiv.icsToken && !confirm(
+      'Es gibt schon ein Abo für diese Gruppe.\n\n'
+      + 'Ein neues zu erzeugen macht die alte Adresse ungültig — wer sie '
+      + 'abonniert hat, sieht die Termine nicht mehr.')) {
+      return;
+    }
+
+    const token = await abonnementErneuern(aktiv.id);
+    aktiv = { ...aktiv, icsToken: token };
+    const adresse = abonnementAdresse(WORKER_BASIS, aktiv.id, token);
+
+    feld.textContent = adresse;
+    feld.hidden = false;
+    try { await navigator.clipboard.writeText(adresse); }
+    catch { /* dann steht sie wenigstens lesbar da */ }
+  } catch (e) {
+    reportClientError('gruppe/abo', e);
+    feld.textContent = 'Das Abo konnte nicht erzeugt werden.';
+    feld.hidden = false;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function einladen() {
   if (!aktiv) return;
   const btn = $('btnEinladen');
@@ -938,6 +985,7 @@ async function einladen() {
 
   $('btnNeu')?.addEventListener('click', neueGruppe);
   $('btnEinladen')?.addEventListener('click', einladen);
+  $('btnAbo')?.addEventListener('click', aboErzeugen);
   $('btnTermin')?.addEventListener('click', formOeffnen);
   $('btnAbbrechen')?.addEventListener('click', formSchliessen);
   $('btnSpeichern')?.addEventListener('click', terminSpeichern);

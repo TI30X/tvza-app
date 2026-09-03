@@ -26,3 +26,7 @@ __pycache__/
 
 # Maschinenlokale Harness-Einstellungen
 .claude/settings.local.json
+
+# Cloudflare-Worker: lokaler Zustand und Abhaengigkeiten
+worker/.wrangler/
+worker/node_modules/

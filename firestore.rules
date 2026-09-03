@@ -796,7 +796,7 @@ service cloud.firestore {
                     && request.resource.data.inviteToken.size() >= 8
                     && request.resource.data.keys().hasOnly([
                       'name', 'art', 'headUid', 'bereiche',
-                      'inviteToken', 'farbe', 'createdAt'
+                      'inviteToken', 'icsToken', 'farbe', 'createdAt'
                     ])
                     && existsAfter(
                       /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)
@@ -811,7 +811,7 @@ service cloud.firestore {
                     (
                       leadsGroup(gid)
                       && request.resource.data.diff(resource.data).affectedKeys()
-                        .hasOnly(['name', 'farbe', 'bereiche', 'inviteToken'])
+                        .hasOnly(['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'])
                       && request.resource.data.name is string
                       && request.resource.data.name.size() > 0
                       && request.resource.data.name.size() <= 80

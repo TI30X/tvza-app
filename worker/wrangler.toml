@@ -1,0 +1,25 @@
+# Firn-Worker — Cloudflare
+#
+# Ausrollen:
+#   cd worker
+#   npx wrangler secret put SERVICE_ACCOUNT     # Inhalt der Service-Account-JSON
+#   npx wrangler deploy
+#
+# SERVICE_ACCOUNT ist ein Geheimnis und steht darum NICHT hier. Der
+# private Schlüssel darf nie in Git, nie in die Website und nie in
+# Firestore — dieselbe Regel wie für mailer/.env.
+
+name = "firn-worker"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+# nodejs_compat wird nicht gebraucht: der Worker benutzt nur fetch,
+# WebCrypto und TextEncoder. Sollte hier je eine Node-Abhängigkeit
+# nötig werden, ist das ein Zeichen, dass die Aufgabe nicht auf einen
+# Worker gehört.
+
+[vars]
+FIREBASE_PROJECT_ID = "tvza-11d44"
+
+[observability]
+enabled = true

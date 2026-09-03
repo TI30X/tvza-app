@@ -177,7 +177,7 @@ test('beide Dokumente haben ein begrenztes Schema', async () => {
   const group = allowClause(matchBlock(rules, '/groups/{gid}'), 'create');
   assert.match(
     group,
-    /hasOnly\(\[\s*'name', 'art', 'headUid', 'bereiche',\s*'inviteToken', 'farbe', 'createdAt'\s*\]\)/,
+    /hasOnly\(\[\s*'name', 'art', 'headUid', 'bereiche',\s*'inviteToken', 'icsToken', 'farbe', 'createdAt'\s*\]\)/,
   );
   // Der eigentliche Bruch mit families: keine Mitglieder-, Manager- oder
   // Anfrageliste mehr auf dem Gruppendokument. Rollen brauchen ein

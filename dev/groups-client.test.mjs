@@ -104,11 +104,14 @@ test('gruppeAendern schreibt nur, was die Regeln erlauben', async () => {
 
   // Dieselbe Liste wie hasOnly in firestore.rules. Läuft sie
   // auseinander, scheitert das Speichern erst beim Nutzer.
-  assert.match(body, /\['name', 'farbe', 'bereiche', 'inviteToken'\]/);
+  // 'icsToken' kam mit dem Kalender-Abo dazu: ein EIGENES Token, nicht
+  // der Beitrittscode — wer den Kalender liest, soll nicht beitreten
+  // können.
+  assert.match(body, /\['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'\]/);
   assert.match(body, /\.filter\(\(\[k\]\) => erlaubt\.includes\(k\)\)/);
 
   const rules = await read('firestore.rules');
-  assert.match(rules, /hasOnly\(\['name', 'farbe', 'bereiche', 'inviteToken'\]\)/);
+  assert.match(rules, /hasOnly\(\['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'\]\)/);
 });
 
 test('die aktive Gruppe ist eine Gerätevorliebe und überlebt ihr Verschwinden', async () => {
