@@ -116,7 +116,8 @@
      Zahlen — dadurch passen zwei Abstaende, die nebeneinander stehen,
      immer zueinander. Genau das fehlte: 143 harte px-Werte standen
      gegen 35 Token-Verwendungen, also hatte jede Stelle ihre eigene
-     Zahl, und Knoepfe klebten mal aneinander und hatten mal Luft. */
+     Zahl, und Knoepfe klebten mal aneinander und hatten mal Luft.
+
      Der Hoechstwert ist 4px und nicht mehr: bei 4.4px wurde die App
      spuerbar luftig, weil jede Stufe mitwaechst und ein Fehler von
      10 % sich bei --s5 zu drei Pixeln summiert. Am oberen Ende trifft

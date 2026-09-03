@@ -21,13 +21,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: var(--s5);
     }
     .login-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--r2);
-      padding: var(--s6) 28px;
+      border-radius: var(--r-panel);
+      padding: var(--s6);
       width: 100%;
       max-width: 400px;
     }
@@ -37,7 +37,7 @@
       font-weight: 700;
       letter-spacing: 0.15em;
       color: var(--ink);
-      margin-bottom: 4px;
+      margin-bottom: var(--s1);
       text-wrap: balance;
     }
     .login-sub {
@@ -50,10 +50,10 @@
       background: var(--accent-bg);
       color: var(--accent);
       font-size: var(--text-sm);
-      padding: 10px 12px;
+      padding: var(--s2) var(--s3);
       border: 1px solid var(--border);
-      border-radius: var(--r1);
-      margin-bottom: 14px;
+      border-radius: var(--r-row);
+      margin-bottom: var(--s3);
       display: none;
     }
     .login-error.visible { display: block; }
@@ -61,7 +61,7 @@
       text-align: center;
       font-size: var(--text-sm);
       color: var(--ink-soft);
-      margin-top: 18px;
+      margin-top: var(--s4);
     }
     .switch-mode a { color: var(--accent); font-weight: 700; cursor: pointer; transition: color 150ms ease; }
     .switch-mode a:hover { color: var(--accent-hover); }
