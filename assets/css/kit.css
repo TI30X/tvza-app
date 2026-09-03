@@ -6,27 +6,48 @@
    ================================ */
 
 :root {
-  /* Core palette */
-  --bg:        oklch(0.985 0.004 95);
-  --surface:   oklch(0.995 0.002 95);
-  --surface-2: oklch(0.975 0.004 95);
-  --ink:       oklch(0.22 0.01 250);
-  --ink-soft:  oklch(0.45 0.01 250);
-  --brand-navy: #1a1a2e;
-  --brand-navy-mid: #16213e;
-  --brand-navy-deep: #0f3460;
+  /* ── Firn — Kernpalette ──────────────────────────────────────
+     Blau auf Weiss, hell. Der Grund ist bewusst nicht reinweiss:
+     Schnee im Schatten ist blau, und ein neutrales Weiss wirkt
+     daneben tot. Die Schrift ist kein Schwarz, sondern ein sehr
+     dunkles Blau, damit im Bild nichts fremd sitzt. */
+  --bg:        #EFF4FA;
+  --surface:   #FFFFFF;
+  --surface-2: #F6F9FD;
+  --ink:       #12293F;
+  --ink-soft:  #546C86;   /* AA gegen --bg: 4.91 — #5A748F lag mit 4.39 knapp darunter */
+
+  /* Das Markenblau gehoert ALLEIN dem Wortzeichen (das "n" in Firn),
+     dem App-Symbol und dem Gruppenplaettchen. Es ist kraeftiger als
+     der Bedienakzent, weil es einmal und klein erscheint — waehrend
+     der Akzent ueberall ist und darum leise bleiben muss. Nie fuer
+     Knoepfe oder Zustaende verwenden. */
+  --brand: #1256B0;
+
+  /* Der Blau-Ramp, auf dem die Huelle sitzt — dunkel nach hell. Die
+     drei --brand-navy-* Namen bleiben, weil legacy.css und zwei Regeln
+     in dieser Datei sie lesen und dev/navigation.test.mjs auf der
+     Indirektion besteht; ihre Werte sind jetzt Firn. Der Name wird in
+     Phase 8 mit allem anderen umbenannt, nicht vorher. */
+  --brand-navy: #0B1B2A;
+  --brand-navy-mid: #24548E;
+  --brand-navy-deep: #2C63A4;
   --brand-gradient: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-mid), var(--brand-navy-deep));
+
+  /* Der Akzent markiert, er fuellt nicht: eine Kante, ein Plaettchen,
+     ein Zustand. Ganze Flaechen im Akzent sind in einer App, die man
+     taeglich oeffnet, immer zu laut. */
   --accent:    var(--brand-navy-deep);
   --accent-hover: var(--brand-navy-mid);
-  --accent-bg: oklch(0.95 0.025 250);
-  /* The app shell always uses TVZA blue. Individual areas may override
+  --accent-bg: #E4EDF7;
+  /* The app shell always uses Firn blue. Individual areas may override
      --accent inside their content, but never the selected navigation. */
   --nav-active: var(--brand-navy-deep);
-  --nav-active-bg: oklch(0.95 0.025 250);
+  --nav-active-bg: #E4EDF7;
   /* Danger / Löschen — eigenes Rot, passt sich pro Modus an */
   --danger:    oklch(0.52 0.19 25);
   --danger-bg: oklch(0.95 0.03 25);
-  --border:    oklch(0.88 0.005 95);
+  --border:    #D8E4F1;
 
   /* Tracker tints — muted, same lightness/chroma, differ only in hue */
   --tint-ski:    oklch(0.945 0.035 265);
@@ -80,7 +101,7 @@
      was ueber der Seite liegt. Im Dunkelmodus uebernimmt der Rahmen. */
   --sh-card: 0 1px 2px oklch(0.22 0.01 250 / .05), 0 8px 24px -12px oklch(0.22 0.01 250 / .16);
   --sh-lift: 0 2px 4px oklch(0.22 0.01 250 / .07), 0 26px 60px -22px oklch(0.22 0.01 250 / .38);
-  --rule-soft: oklch(0.93 0.004 95);
+  --rule-soft: #E4EBF3;
 
   /* Space scale */
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
@@ -119,21 +140,24 @@
   --warn-bg: oklch(0.31 0.050 60);
   --sh-card: 0 1px 0 oklch(1 0 0 / .04), 0 10px 30px -18px oklch(0 0 0 / .9);
   --sh-lift: 0 1px 0 oklch(1 0 0 / .05), 0 30px 70px -26px oklch(0 0 0 / 1);
-  --rule-soft: oklch(0.27 0.006 250);
+  --rule-soft: #1B2C38;
 
-  --bg:        oklch(0.16 0.006 250);
-  --surface:   oklch(0.21 0.008 250);
-  --surface-2: oklch(0.26 0.008 250);
-  --ink:       oklch(0.94 0.006 95);
-  --ink-soft:  oklch(0.72 0.01 95);
-  --accent:    oklch(0.76 0.06 250);
-  --accent-hover: oklch(0.84 0.045 250);
-  --accent-bg: oklch(0.28 0.04 250);
-  --nav-active: oklch(0.76 0.06 250);
-  --nav-active-bg: oklch(0.28 0.04 250);
+  /* Firn im Dunkeln: derselbe Bau, gedrehte Rollen. Der Grund behaelt
+     den Blaustich, damit es nicht in ein neutrales Grau kippt. */
+  --bg:        #0E1A26;
+  --surface:   #15242F;
+  --surface-2: #1C2F3D;
+  --ink:       #E6EFF7;
+  --ink-soft:  #8AA4BC;
+  --brand:     #8DBBE8;
+  --accent:    #7FADDC;
+  --accent-hover: #9AC1E8;
+  --accent-bg: #182C3C;
+  --nav-active: #7FADDC;
+  --nav-active-bg: #182C3C;
   --danger:    oklch(0.64 0.15 25);
   --danger-bg: oklch(0.28 0.06 25);
-  --border:    oklch(0.34 0.006 250);
+  --border:    #21353F;
 
   /* Tracker-Tints im Dark Mode abdunkeln, damit sie nicht "poppen" (gleiche Hues) */
   --tint-ski:    oklch(0.30 0.045 265);
