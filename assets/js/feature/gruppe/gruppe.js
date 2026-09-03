@@ -21,7 +21,7 @@ import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError 
 import { mountShell } from '../../shell.js?v=7';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
-  beobachteTermine, terminAnlegen, terminAendern, terminLoeschen,
+  beobachteTermine, terminAnlegen, terminLoeschen,
   zusagen, ladeZusagen,
   rolleSetzen, mitgliedEntfernen, uebergeben,
   einladungErzeugen, beitreten,
@@ -215,9 +215,14 @@ async function neueGruppe() {
 }
 
 /* ── Ein Termin von nahem ──────────────────────────────────────────
-   Für Athleten die Zusage, für die Leitung das Ergebnis. Beides an
-   derselben Stelle, weil ein Rennen genau das ist: etwas mit einem
-   Vorher und einem Nachher. */
+   Hier steht die Frage "kommst du?" — und sonst nichts.
+
+   Das Rennergebnis stand kurz auch hier und ist wieder raus. Zwei
+   Gründe: Eine Anmeldung fragt nach vorne, ein Ergebnis blickt zurück;
+   beides im selben Feld zu haben, hiess dem Athleten beim Zusagen ein
+   leeres Rang-Feld hinzustellen. Und schwerer wiegt der Modellfehler:
+   ein Rennen hat ein Ergebnis PRO ATHLET, nicht eines für die ganze
+   Gruppe. Das gehört ins Profil des Athleten. */
 
 function zusagenText(liste) {
   const zahl = a => liste.filter(z => z.antwort === a).length;
@@ -272,13 +277,6 @@ function detailOeffnen(eid) {
   $('dMeta').textContent = teile.filter(Boolean).join(' · ');
   $('dMeta').hidden = false;
 
-  /* Ein Ergebnis gibt es nur beim Rennen, und eintragen darf es nur
-     die Leitung. Bei einem Krafttraining stünde das Feld sinnlos da. */
-  zeige('grpErgebnis', offen.art === 'rennen' && darfFuehren);
-  $('eRang').value = offen.ergebnis?.rang ?? '';
-  $('eZeit').value = offen.ergebnis?.zeit ?? '';
-  $('ePunkte').value = offen.ergebnis?.punkte ?? '';
-
   const loeschen = $('btnLoeschen');
   if (loeschen) loeschen.hidden = !darfFuehren;
 
@@ -307,34 +305,9 @@ async function antworten(antwort) {
   }
 }
 
-async function ergebnisSpeichern() {
-  if (!offen || !aktiv) return;
-  const rang = $('eRang').value.trim();
-  const zeit = $('eZeit').value.trim();
-  const punkte = $('ePunkte').value.trim();
-
-  /* Leere Felder werden nicht als '' geschrieben — ein Ergebnis mit
-     rang:'' läse sich später wie "es gibt einen Rang, er ist bloss
-     leer". Ist gar nichts ausgefüllt, wird das Ergebnis entfernt. */
-  const ergebnis = {};
-  if (rang) ergebnis.rang = Number(rang);
-  if (zeit) ergebnis.zeit = zeit;
-  if (punkte) ergebnis.punkte = punkte;
-
-  const btn = $('btnErgebnis');
-  btn.disabled = true;
-  try {
-    await terminAendern(aktiv.id, offen.id,
-      { ergebnis: Object.keys(ergebnis).length ? ergebnis : null });
-    btn.textContent = 'Gespeichert';
-    setTimeout(() => { btn.textContent = 'Ergebnis speichern'; }, 1600);
-  } catch (e) {
-    reportClientError('gruppe/ergebnis', e);
-    alert('Das Ergebnis konnte nicht gespeichert werden.');
-  } finally {
-    btn.disabled = false;
-  }
-}
+/* ergebnisSpeichern() ist entfallen. Ein Rennergebnis gehoert nicht an
+   die Anmeldung — und es gehoert pro Athlet gespeichert, nicht einmal
+   pro Termin. Beides zieht ins Athletenprofil um. */
 
 async function terminEntfernen() {
   if (!offen || !aktiv) return;
@@ -610,7 +583,6 @@ async function einladen() {
     if (antwort) antworten(antwort);
   });
   $('btnZurueck')?.addEventListener('click', detailSchliessen);
-  $('btnErgebnis')?.addEventListener('click', ergebnisSpeichern);
   $('btnLoeschen')?.addEventListener('click', terminEntfernen);
 
   $('btnBeitreten')?.addEventListener('click', codeEinloesen);

@@ -103,8 +103,33 @@
   --sh-lift: 0 2px 4px oklch(0.22 0.01 250 / .07), 0 26px 60px -22px oklch(0.22 0.01 250 / .38);
   --rule-soft: #E4EBF3;
 
-  /* Space scale */
-  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  /* ── Abstands-Skala ─────────────────────────────────────────────
+     Sieben Stufen aus EINEM Grundwert. Wer den Rhythmus der ganzen
+     App enger oder weiter haben will, aendert eine Zeile.
+
+     Der Grundwert ist fluid: auf einem schmalen Handy ruecken die
+     Dinge zusammen, ab Tablettbreite stehen sie am bequemen Maximum
+     und wachsen nicht weiter. Ohne die obere Grenze wuerden Abstaende
+     auf einem grossen Bildschirm ins Alberne laufen.
+
+     Die Stufen sind Vielfache (1, 2, 3, 4, 6, 8, 12) und keine freien
+     Zahlen — dadurch passen zwei Abstaende, die nebeneinander stehen,
+     immer zueinander. Genau das fehlte: 143 harte px-Werte standen
+     gegen 35 Token-Verwendungen, also hatte jede Stelle ihre eigene
+     Zahl, und Knoepfe klebten mal aneinander und hatten mal Luft. */
+     Der Hoechstwert ist 4px und nicht mehr: bei 4.4px wurde die App
+     spuerbar luftig, weil jede Stufe mitwaechst und ein Fehler von
+     10 % sich bei --s5 zu drei Pixeln summiert. Am oberen Ende trifft
+     die Skala jetzt genau die alten Werte (4/8/12/16/24/32/48), am
+     unteren rueckt sie zusammen. */
+  --space: clamp(3.4px, 0.25vw + 2.5px, 4px);
+  --s1: calc(var(--space) * 1);
+  --s2: calc(var(--space) * 2);
+  --s3: calc(var(--space) * 3);
+  --s4: calc(var(--space) * 4);
+  --s5: calc(var(--space) * 6);
+  --s6: calc(var(--space) * 8);
+  --s7: calc(var(--space) * 12);
 
   /* Radius scale (§3) — exactly four steps, nothing in between.
      --r1/--r2/--r3 stay as aliases so untouched pages keep rendering;
@@ -346,7 +371,7 @@ body.dm-thread .app {
 .main {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 20px var(--s4) var(--s7);
+  padding: var(--s5) var(--s4) var(--s7);
   width: 100%;
   flex: 1;
 }
@@ -595,18 +620,50 @@ body.dm-thread .app {
 .action-btn--danger:hover { background: var(--danger-bg); }
 
 /* ─── Form card ─── */
+/* ── Stapel ────────────────────────────────────────────────────────
+   Der eine Weg, Dinge untereinander zu setzen: ein Behaelter mit gap,
+   nicht margin an jedem Kind.
+
+   Der Unterschied ist nicht Geschmack. Mit margin traegt jedes Kind
+   seinen eigenen Abstand, und wer eines vergisst — etwa einen Knopf,
+   der direkt in einer Karte liegt — bekommt zwei Elemente, die
+   aneinanderkleben, waehrend das naechste Paar Luft hat. Genau das war
+   in der Kaderverwaltung zu sehen. Mit gap ist der Abstand eine
+   Eigenschaft des Stapels: er gilt zwischen ALLEN Kindern, und man
+   kann ihn nicht an einer Stelle vergessen. */
+.stack { display: flex; flex-direction: column; gap: var(--s3); }
+.stack--eng  { gap: var(--s2); }
+.stack--weit { gap: var(--s5); }
+
 .form-card {
   background: var(--surface);
-  border-radius: var(--r3);
+  border-radius: var(--r-panel);
   border: 1px solid var(--border);
-  padding: 20px;
+  padding: var(--s4);
   margin-bottom: var(--s4);
+
+  /* Die Karte IST ein Stapel. Dadurch bekommen Formularfelder,
+     Hinweise und Knoepfe darin denselben Abstand, ohne dass jeder
+     Bautyp dafuer seine eigene Regel braucht. */
+  display: flex; flex-direction: column; gap: var(--s3);
 }
+
+/* Innerhalb eines Stapels kommt der Abstand vom gap. Die alten
+   margin-bottom der Kinder wuerden ihn verdoppeln — sichtbar als
+   Formular, dessen Felder doppelt so weit auseinanderstehen wie seine
+   Knoepfe. */
+.form-card > .form-group,
+.form-card > .form-group:last-of-type,
+.form-card > .form-row,
+.form-card > .form-title,
+.stack > .form-group,
+.stack > .form-group:last-of-type,
+.stack > .form-row { margin-bottom: 0; }
 
 .form-title {
   font-size: 14px;
   font-weight: 700;
-  margin-bottom: 14px;
+  margin-bottom: var(--s3);
 }
 
 .form-row {
@@ -1603,13 +1660,13 @@ body.reorder-editing .module-tile::after {
 }
 
 /* A list of rows. */
-.rows { display: flex; flex-direction: column; gap: 8px; }
+.rows { display: flex; flex-direction: column; gap: var(--s2); }
 
 /* Text-only placeholder inside an empty .rows section. */
-.empty-hint { padding: 12px; }
+.empty-hint { padding: var(--s3); }
 
 /* ── 4.2 Kachel — quick access ─────────────────────────────────────*/
-.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); }
 .tile {
   display: flex; flex-direction: column; align-items: center; gap: 7px;
   padding: 11px 8px;
@@ -1663,9 +1720,9 @@ body.reorder-editing .module-tile::after {
 
 /* ── Bereichsmarke — the small uppercase section label ─────────────*/
 .marke {
-  font-size: 11px; font-weight: 800; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--ink-soft);
-  margin-bottom: 10px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-faint, var(--ink-soft));
+  margin-bottom: var(--s2);
 }
 
 /* ── 4.4 Knöpfe — three, final ─────────────────────────────────────*/
@@ -2441,26 +2498,49 @@ html.tvza-content-frame body > main {
 
    44px Mindesthoehe: darunter wird ein Segment auf einem Handy zum
    Zielproblem. */
+/* Eine Schiene, in der die gewaehlte Antwort liegt — keine Reihe von
+   Knoepfen mit Trennstrichen dazwischen. Die Striche waren der Fehler:
+   neben einer gefuellten Flaeche trennen sie nichts mehr und sahen aus
+   wie ein Balken, der dort verloren steht. Was die Segmente trennt,
+   ist die Fuellung selbst. */
 .seg {
   display: flex;
+  gap: 2px;
+  padding: 3px;
   border: 1px solid var(--border);
   border-radius: var(--r-row);
-  background: var(--surface);
-  overflow: hidden;
+  background: var(--surface-2);
 }
 .seg__item {
-  flex: 1 1 0; min-width: 0; min-height: 44px;
-  padding: 10px 8px;
-  border: 0; border-right: 1px solid var(--border);
+  flex: 1 1 0; min-width: 0; min-height: 40px;
+  padding: 0 var(--s2);
+  border: 0;
+  border-radius: calc(var(--r-row) - 3px);
   background: transparent; color: var(--ink-soft);
   font: inherit; font-size: var(--text-sm); font-weight: 600;
   cursor: pointer;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.seg__item:last-child { border-right: 0; }
-.seg__item:hover { background: var(--surface-2); color: var(--ink); }
+.seg__item:hover { color: var(--ink); }
 .seg__item[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .seg__item[aria-pressed="true"]:hover { background: var(--accent-hover); color: #fff; }
+.seg__item:disabled { opacity: .5; cursor: default; }
+
+/* ── Zurück ────────────────────────────────────────────────────────
+   Eine Ansicht zu verlassen ist Navigation, keine Handlung. Als
+   Knopf ueber die volle Breite sah es aus wie etwas, das man TUT —
+   und stand gleichberechtigt neben "Leitung uebergeben", was es
+   ganz sicher nicht ist. Oben links, klein, wie ueberall sonst. */
+.backlink {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: var(--s1);
+  min-height: 32px; padding: 0;
+  border: 0; background: none;
+  font: inherit; font-size: var(--text-sm); font-weight: 600;
+  color: var(--ink-soft); cursor: pointer;
+}
+.backlink:hover { color: var(--ink); }
+.backlink .ic { flex: none; }
 
 /* ── Die Tageszusammenfassung ──────────────────────────────────────
    Dieselbe Karte, aber gestapelt statt nebeneinander: sie traegt
@@ -2606,13 +2686,7 @@ html.tvza-content-frame body > main {
 /* Abschnittsmarken: klein, gesperrt, ruhig. Sie sollen die Karte darunter
    ankuendigen, nicht mit ihr konkurrieren. */
 .section-title,
-.marke {
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--ink-faint, var(--ink-soft));
-}
+/* .marke steht weiter oben — die Dublette hier ist entfallen. */
 
 /* Der aktive Tab bekommt eine Flaeche statt nur Farbe — am Handy ist das
    der einzige Ort, an dem man sieht, wo man ist. */

@@ -301,15 +301,23 @@ body .mc-date {
 /* An avatar is a circle, not a rounded square. */
 body .dm-ava { border-radius: var(--r-pill); }
 
-/* ── Segmented controls ────────────────────────────────────────────*/
-body .seg,
+/* ── Segmented controls ────────────────────────────────────────────
+   .seg ist seit v.33.7.0 ein richtiges Bauteil in kit.css und gehoert
+   nicht mehr hierher. Es stand mit in dieser Liste und rundete jedes
+   Segment EINZELN ab, obwohl der Behaelter bereits rundet und clippt —
+   sichtbar als Segmente, die schief im Rahmen sitzen. Legacy soll alte
+   Klassennamen bedienen, nicht in neue hineingreifen.
+
+   .wl-seg (Watchlist) und .wx-seg (Wetter) sind die zwei alten
+   Segmentwahlen mit eigenen Stilen in ihren Seiten. Sie sollten bei
+   der naechsten Migration auf .seg zusammenfallen — drei Bauteile fuer
+   dieselbe Sache sind zwei zu viel. */
 body .wl-seg,
 body .wx-seg,
 body .wx-alt-seg,
 body .tabs {
   border-radius: var(--r-row);
 }
-body .seg button,
 body .wl-seg button,
 body .wx-seg button,
 body .wx-alt-seg button {

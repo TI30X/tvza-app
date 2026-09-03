@@ -133,6 +133,7 @@
          genau das ist: etwas mit einem Vorher und einem Nachher. -->
     <section class="section" id="secDetail" hidden>
       <div class="form-card">
+        <button class="backlink" id="btnZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zurück</button>
         <div class="form-title" id="dTitel">—</div>
         <p class="empty-hint" id="dMeta"></p>
 
@@ -146,26 +147,12 @@
           <p class="empty-hint" id="dZusagen"></p>
         </div>
 
-        <div id="grpErgebnis" hidden>
-          <div class="form-title">Ergebnis</div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="eRang">Rang</label>
-              <input class="form-input" id="eRang" type="number" min="1" max="999" inputmode="numeric" />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="eZeit">Laufzeit</label>
-              <input class="form-input" id="eZeit" type="text" maxlength="12" placeholder="1:23.45" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="ePunkte">FIS-Punkte</label>
-            <input class="form-input" id="ePunkte" type="text" maxlength="10" placeholder="kann leer bleiben" />
-          </div>
-          <button class="b b--primary b--block" id="btnErgebnis" type="button">Ergebnis speichern</button>
-        </div>
+        <!-- Hier stand das Ergebnis eines Rennens. Es gehoert aus zwei
+             Gruenden nicht hierher: die Anmeldung fragt "kommst du?",
+             nicht "wie ist es gelaufen?" — und ein Rennen hat ein
+             Ergebnis PRO ATHLET, nicht eines fuer die ganze Gruppe.
+             Beides gehoert ins Profil des Athleten. -->
 
-        <button class="b b--secondary b--block" id="btnZurueck" type="button">Zurück</button>
         <button class="b b--danger b--block" id="btnLoeschen" type="button" hidden>Termin löschen</button>
       </div>
     </section>
@@ -175,6 +162,7 @@
          herabstufen. -->
     <section class="section" id="secPerson" hidden>
       <div class="form-card">
+        <button class="backlink" id="btnPersonZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zurück</button>
         <div class="form-title" id="pName">—</div>
         <p class="empty-hint" id="pMeta"></p>
 
@@ -187,7 +175,6 @@
         </div>
 
         <button class="b b--secondary b--block" id="btnUebergeben" type="button">Leitung übergeben</button>
-        <button class="b b--secondary b--block" id="btnPersonZurueck" type="button">Zurück</button>
         <button class="b b--danger b--block" id="btnEntfernen" type="button">Aus der Gruppe entfernen</button>
       </div>
     </section>
