@@ -25,11 +25,15 @@ import {
   zusagen, ladeZusagen,
   rolleSetzen, mitgliedEntfernen, uebergeben,
   einladungErzeugen, beitreten,
+  ladeErgebnisse, ergebnisSpeichern,
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
   kommende, zeitraum, artWort, BEREICH_DER_ART, pruefe, isoTag,
 } from '../../termine.js';
+import {
+  rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
+} from '../../fispunkte.js';
 
 const $ = id => document.getElementById(id);
 const t = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
@@ -76,21 +80,18 @@ function mitgliedZeile(m, art) {
   const rolle = wort(art, m.rolle);
   const suffix = m.uid === user.uid ? ' (du)' : '';
 
-  /* Nur der Kopf verwaltet Leute. Für alle anderen bleibt die Zeile
-     eine Zeile und wird nicht zu einem Knopf, der nichts tut. */
-  const klickbar = fuehrt(aktiv?.meineRolle);
-  const tag = klickbar ? 'button' : 'div';
-  const attrs = klickbar ? ` type="button" data-person="${escHtml(m.uid)}"` : '';
-
+  /* Jede Zeile führt ins Profil — ein Kader, in dem niemand weiss, wer
+     wie fährt, ist kein Kader. Was man dort DARF, entscheidet die
+     Rolle; was man dort SIEHT, nicht. */
   return `
-    <${tag} class="row"${attrs} data-bereich="msg">
+    <button class="row" type="button" data-person="${escHtml(m.uid)}" data-bereich="msg">
       <span class="row__icon">${escHtml(initialen(name))}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(name + suffix)}</span>
         <span class="row__sub">${escHtml(rolle)}</span>
       </span>
       <span class="row__end"></span>
-    </${tag}>`;
+    </button>`;
 }
 
 async function zeichneMitglieder() {
@@ -405,10 +406,115 @@ async function terminSpeichern() {
    ohnehin darauf; hier steht es, damit die Oberfläche gar nicht erst
    etwas anbietet, das scheitern würde. */
 
-let person = null;   // das gerade geöffnete Mitglied
+let person = null;        // das gerade geöffnete Mitglied
+let personErgebnisse = []; // dessen Rennen
+
+const DISZIPLIN_WORT = { SL: 'Slalom', RS: 'Riesenslalom', SG: 'Super-G', DH: 'Abfahrt' };
+
+/* Ein Ergebnis kennt nur Zeiten. Die Disziplin steht am Rennen — sonst
+   müsste sie bei jedem Ergebnis mitgeschrieben werden und könnte vom
+   Rennen abweichen. */
+function rennenZu(eventId) {
+  return termine.find(t => t.id === eventId) || null;
+}
+
+function punkteVon(ergebnis) {
+  const rennen = rennenZu(ergebnis.eventId);
+  if (!rennen?.disziplin) return null;
+  return rennpunkte(ergebnis.zeit, ergebnis.siegerZeit, rennen.disziplin);
+}
+
+function zeichnePunkte() {
+  const liste = $('listPunkte');
+  if (!liste) return;
+
+  /* Für den Stand zählen nur Ergebnisse, aus denen sich Punkte rechnen
+     lassen — mit Disziplin und zwei brauchbaren Zeiten. */
+  const mitPunkten = personErgebnisse
+    .map(e => ({ disziplin: rennenZu(e.eventId)?.disziplin, punkte: punkteVon(e) }))
+    .filter(e => e.disziplin && e.punkte != null);
+
+  const stand = standJeDisziplin(mitPunkten);
+  const eintraege = Object.entries(stand);
+
+  zeige('secPunkte', true);
+  if (!eintraege.length) {
+    liste.innerHTML = '<p class="empty-hint">Noch keine Rennen mit Zeiten erfasst.</p>';
+    return;
+  }
+
+  liste.innerHTML = eintraege.map(([d, s]) => `
+    <div class="row" data-bereich="t-rennen">
+      <span class="row__icon">${escHtml(d)}</span>
+      <span class="row__body">
+        <span class="row__title">${escHtml(s.punkte.toFixed(2))} Punkte</span>
+        <span class="row__sub">${escHtml(DISZIPLIN_WORT[d] || d)} · ${
+          s.vorlaeufig
+            ? 'vorläufig, erst ein Rennen'
+            : `Schnitt der zwei besten aus ${s.aus}`}</span>
+      </span>
+      <span class="row__end"></span>
+    </div>`).join('');
+}
+
+function ergebnisZeile(e) {
+  const rennen = rennenZu(e.eventId);
+  const punkte = punkteVon(e);
+  const gesamt = punkte != null ? gesamtpunkte(punkte, e.zuschlag) : null;
+
+  /* "Rennpunkte" und "FIS-Punkte" sind nicht dasselbe. Ohne Zuschlag
+     gibt es nur die ersten, und das steht auch so da. */
+  const rechts = gesamt != null
+    ? `${gesamt.toFixed(2)}`
+    : punkte != null ? `${punkte.toFixed(2)}*` : '—';
+
+  const teile = [];
+  if (e.rang) teile.push(`Rang ${e.rang}`);
+  if (e.zeit) teile.push(e.zeit);
+  if (rennen?.disziplin) teile.push(rennen.disziplin);
+
+  return `
+    <div class="row" data-bereich="t-rennen">
+      <span class="row__icon">R</span>
+      <span class="row__body">
+        <span class="row__title">${escHtml(rennen?.titel || 'Rennen')}</span>
+        <span class="row__sub">${escHtml(teile.join(' · ') || '—')}</span>
+      </span>
+      <span class="row__end">${escHtml(rechts)}</span>
+    </div>`;
+}
+
+async function zeichneErgebnisse() {
+  if (!person || !aktiv) return;
+  const liste = $('listErgebnisse');
+  zeige('secErgebnisse', true);
+
+  try {
+    personErgebnisse = await ladeErgebnisse(aktiv.id, person.uid);
+  } catch (e) {
+    reportClientError('gruppe/ergebnisse', e);
+    personErgebnisse = [];
+  }
+
+  const sortiert = [...personErgebnisse].sort((a, b) => {
+    const ra = rennenZu(a.eventId)?.von || '';
+    const rb = rennenZu(b.eventId)?.von || '';
+    return ra < rb ? 1 : ra > rb ? -1 : 0;   // neueste zuerst
+  });
+
+  liste.innerHTML = sortiert.length
+    ? sortiert.map(ergebnisZeile).join('')
+      + '<p class="empty-hint">* nur Rennpunkte — der Zuschlag ist nicht bekannt.</p>'
+    : '<p class="empty-hint">Noch keine Rennen erfasst.</p>';
+
+  zeichnePunkte();
+}
 
 function personOeffnen(uid) {
-  if (!aktiv || !fuehrt(aktiv.meineRolle)) return;
+  if (!aktiv) return;
+  /* Das Profil sehen alle in der Gruppe — ein Kader, in dem niemand
+     weiss, wer wie fährt, ist kein Kader. Verwaltet wird es nur vom
+     Kopf; das entscheidet sich weiter unten, Knopf für Knopf. */
   person = mitglieder.find(m => m.uid === uid) || null;
   if (!person) return;
 
@@ -428,6 +534,12 @@ function personOeffnen(uid) {
     : '';
   $('pMeta').hidden = !$('pMeta').textContent;
 
+  /* Verwaltet wird nur vom Kopf. Wer nicht führt, sieht das Profil,
+     aber keine Knöpfe, die für ihn ohnehin scheitern würden. */
+  const darfVerwalten = fuehrt(aktiv.meineRolle);
+  const darfErfassen = leitet(aktiv.meineRolle);
+
+  zeige('grpRolle', darfVerwalten);
   $('rolleWahl').querySelectorAll('[data-rolle]').forEach(btn => {
     btn.setAttribute('aria-pressed', String(btn.dataset.rolle === person.rolle));
     /* Am Kopf lässt sich die Rolle nicht drehen — er übergibt zuerst,
@@ -436,16 +548,21 @@ function personOeffnen(uid) {
   });
 
   /* An sich selbst übergibt niemand, und den Kopf entfernt niemand. */
-  $('btnUebergeben').hidden = istKopf || ichSelbst;
-  $('btnEntfernen').hidden = istKopf;
+  $('btnUebergeben').hidden = !darfVerwalten || istKopf || ichSelbst;
+  $('btnEntfernen').hidden = !darfVerwalten || istKopf;
+  $('btnErgebnisNeu').hidden = !darfErfassen;
 
   zeige('secPerson', true);
   zeige('secMitglieder', false);
   zeige('secTermine', false);
+
+  zeichneErgebnisse();
 }
 
 function personSchliessen() {
   person = null;
+  personErgebnisse = [];
+  zeige('secErgForm', false);
   zeige('secPerson', false);
   zeige('secMitglieder', !!aktiv);
   zeige('secTermine', !!aktiv);
@@ -496,6 +613,102 @@ async function leitungUebergeben() {
   } catch (e) {
     reportClientError('gruppe/uebergeben', e);
     alert('Die Übergabe hat nicht geklappt.');
+  }
+}
+
+/* ── Ein Ergebnis erfassen ─────────────────────────────────────────
+   Hier und nicht bei der Anmeldung. Zwei Zeiten und die Disziplin des
+   Rennens genügen für die Rennpunkte; der Zuschlag ist optional, weil
+   er aus den Punkten des ganzen Feldes entsteht und damit aus der
+   FIS-Datenbank kommt, nicht aus unserer. */
+
+function ergFormOeffnen() {
+  if (!person || !aktiv) return;
+
+  /* Nur Rennen — bei einem Krafttraining gibt es nichts zu werten.
+     Und nur vergangene: ein Ergebnis für morgen wäre eine Prognose. */
+  const heute = isoTag();
+  const rennen = termine
+    .filter(t => t.art === 'rennen' && t.von <= heute)
+    .sort((a, b) => (a.von < b.von ? 1 : -1));
+
+  const wahl = $('ergRennen');
+  wahl.innerHTML = rennen.length
+    ? rennen.map(r => `<option value="${escHtml(r.id)}">${escHtml(r.titel)}${
+        r.disziplin ? ` · ${escHtml(r.disziplin)}` : ''}</option>`).join('')
+    : '<option value="">Kein vergangenes Rennen vorhanden</option>';
+
+  $('ergTitel').textContent = `Ergebnis · ${person.name || person.uid}`;
+  $('ergRang').value = '';
+  $('ergZeit').value = '';
+  $('ergSieger').value = '';
+  $('ergZuschlag').value = '';
+  $('ergFehler').hidden = true;
+  ergVorschau();
+
+  zeige('secErgForm', true);
+  zeige('secPerson', false);
+}
+
+function ergFormSchliessen() {
+  zeige('secErgForm', false);
+  zeige('secPerson', !!person);
+}
+
+/* Die Punkte erscheinen beim Tippen. Das ist der eigentliche Nutzen:
+   man sieht sofort, was eine Zeit wert ist, statt es nachzuschlagen. */
+function ergVorschau() {
+  const feld = $('ergVorschau');
+  const rennen = rennenZu($('ergRennen').value);
+  const p = rennpunkte($('ergZeit').value, $('ergSieger').value, rennen?.disziplin);
+
+  if (p == null) {
+    feld.textContent = rennen?.disziplin
+      ? 'Zwei Zeiten eingeben, dann erscheinen die Rennpunkte.'
+      : 'Ohne Disziplin am Rennen lassen sich keine Punkte rechnen.';
+    return;
+  }
+
+  const gesamt = gesamtpunkte(p, $('ergZuschlag').value);
+  const bisher = personErgebnisse
+    .map(punkteVon)
+    .filter(x => x != null);
+  const wirkung = standMit(bisher, p);
+
+  const teile = [`${p.toFixed(2)} Rennpunkte`];
+  if (gesamt != null) teile.push(`${gesamt.toFixed(2)} FIS-Punkte mit Zuschlag`);
+  if (wirkung.verbesserung > 0) teile.push(`verbessert den Stand um ${wirkung.verbesserung.toFixed(2)}`);
+  else if (wirkung.vorher.punkte != null) teile.push('ändert den Stand nicht');
+
+  feld.textContent = teile.join(' · ');
+}
+
+async function ergSpeichern() {
+  if (!person || !aktiv) return;
+  const eventId = $('ergRennen').value;
+  if (!eventId) return;
+
+  const btn = $('btnErgSpeichern');
+  btn.disabled = true;
+  try {
+    await ergebnisSpeichern(aktiv.id, {
+      eventId,
+      uid: person.uid,
+      rang: $('ergRang').value ? Number($('ergRang').value) : null,
+      zeit: $('ergZeit').value.trim() || null,
+      siegerZeit: $('ergSieger').value.trim() || null,
+      zuschlag: $('ergZuschlag').value.trim() || null,
+    }, user.uid);
+
+    ergFormSchliessen();
+    await zeichneErgebnisse();
+  } catch (e) {
+    reportClientError('gruppe/ergebnis', e);
+    const feld = $('ergFehler');
+    feld.textContent = 'Das Ergebnis konnte nicht gespeichert werden.';
+    feld.hidden = false;
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -595,6 +808,13 @@ async function einladen() {
     if (rolle) rolleAendern(rolle);
   });
   $('btnPersonZurueck')?.addEventListener('click', personSchliessen);
+  $('btnErgebnisNeu')?.addEventListener('click', ergFormOeffnen);
+  $('btnErgAbbrechen')?.addEventListener('click', ergFormSchliessen);
+  $('btnErgSpeichern')?.addEventListener('click', ergSpeichern);
+  for (const id of ['ergRennen', 'ergZeit', 'ergSieger', 'ergZuschlag']) {
+    $(id)?.addEventListener('input', ergVorschau);
+    $(id)?.addEventListener('change', ergVorschau);
+  }
   $('btnEntfernen')?.addEventListener('click', personEntfernen);
   $('btnUebergeben')?.addEventListener('click', leitungUebergeben);
 

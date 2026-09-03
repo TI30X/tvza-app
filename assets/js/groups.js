@@ -401,6 +401,54 @@ export function terminLoeschen(gid, eid) {
   return deleteDoc(terminRef(gid, eid));
 }
 
+/* ── Rennergebnisse ────────────────────────────────────────────────
+   Eines pro Athlet und Rennen. Die zusammengesetzte Dokument-ID
+   verhindert Dubletten, ohne dass jemand danach suchen müsste — wie
+   bei shares/{owner__target__module}.
+
+   Gespeichert werden Zeiten, nicht Punkte. Die Punkte rechnet
+   fispunkte.js aus Zeit, Siegerzeit und Disziplin; stünden sie hier,
+   wären sie falsch, sobald die FIS einen Faktor ändert. */
+
+export function ergebnisId(eventId, uid) {
+  return `${eventId}__${uid}`;
+}
+
+export function ergebnisRef(gid, eventId, uid) {
+  return doc(db, 'groups', gid, 'ergebnisse', ergebnisId(eventId, uid));
+}
+
+/** Alle Ergebnisse einer Gruppe, oder die eines einzelnen Athleten. */
+export async function ladeErgebnisse(gid, uid = null) {
+  const sammlung = collection(db, 'groups', gid, 'ergebnisse');
+  const abfrage = uid ? query(sammlung, where('uid', '==', uid)) : sammlung;
+  const snap = await getDocs(abfrage);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export function ergebnisSpeichern(gid, ergebnis, erfasstVon) {
+  const { eventId, uid } = ergebnis;
+  if (!eventId || !uid) throw new Error('Ergebnis ohne Rennen oder Athlet.');
+
+  return writeBatch(db)
+    .set(ergebnisRef(gid, eventId, uid), ohneLeere({
+      uid,
+      eventId,
+      rang: ergebnis.rang,
+      zeit: ergebnis.zeit,
+      siegerZeit: ergebnis.siegerZeit,
+      zuschlag: ergebnis.zuschlag,
+      notiz: ergebnis.notiz,
+      erfasstVon,
+      erfasstAm: serverTimestamp(),
+    }))
+    .commit();
+}
+
+export function ergebnisLoeschen(gid, eventId, uid) {
+  return deleteDoc(ergebnisRef(gid, eventId, uid));
+}
+
 /* ── Zusagen ───────────────────────────────────────────────────────
    Die Dokument-ID ist die uid. Dadurch kann niemand für jemand anderen
    zusagen, ohne dass die Regel es eigens verbieten müsste. */

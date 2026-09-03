@@ -135,20 +135,54 @@ test('die Abstände kommen alle aus einer Skala', async () => {
   assert.match(css, /\.form-card \{[\s\S]*?display: flex; flex-direction: column; gap: var\(--s3\);/);
 });
 
-test('Rollen ändert nur der Kopf — auch in der Oberfläche', async () => {
+test('das Profil sehen alle, verwalten darf es nur der Kopf', async () => {
   const js = await skript();
 
-  // Die Regel besteht darauf; die Oberfläche soll gar nicht erst etwas
-  // anbieten, das scheitern würde.
-  assert.match(js, /function personOeffnen\(uid\) \{\s*\n\s*if \(!aktiv \|\| !fuehrt\(aktiv\.meineRolle\)\) return;/);
+  // Ein Kader, in dem niemand weiss, wer wie fährt, ist kein Kader.
+  // Das Profil steht deshalb allen offen …
+  assert.match(js, /function personOeffnen\(uid\) \{\s*\n\s*if \(!aktiv\) return;/);
+  assert.doesNotMatch(js, /if \(!aktiv \|\| !fuehrt\(aktiv\.meineRolle\)\) return;/);
 
-  // Am Kopf lässt sich die Rolle nicht drehen, und entfernen lässt er
-  // sich auch nicht — er übergibt zuerst, sonst stünde die Gruppe ohne
-  // Kopf da.
+  // … und was man DARF, entscheidet die Rolle, Knopf für Knopf.
+  assert.match(js, /const darfVerwalten = fuehrt\(aktiv\.meineRolle\)/);
+  assert.match(js, /zeige\('grpRolle', darfVerwalten\)/);
+  assert.match(js, /\$\('btnUebergeben'\)\.hidden = !darfVerwalten \|\| istKopf \|\| ichSelbst/);
+  assert.match(js, /\$\('btnEntfernen'\)\.hidden = !darfVerwalten \|\| istKopf/);
+
+  // Am Kopf lässt sich die Rolle nicht drehen — er übergibt zuerst,
+  // sonst stünde die Gruppe ohne Kopf da.
   assert.match(js, /btn\.disabled = istKopf/);
-  assert.match(js, /\$\('btnEntfernen'\)\.hidden = istKopf/);
-  // An sich selbst übergibt niemand.
-  assert.match(js, /\$\('btnUebergeben'\)\.hidden = istKopf \|\| ichSelbst/);
+});
+
+test('FIS-Punkte werden gerechnet, nicht gespeichert', async () => {
+  const [js, groups, rules] = await Promise.all([
+    skript(), read('assets/js/groups.js'), read('firestore.rules'),
+  ]);
+
+  // Gespeichert werden Zeiten. Stünden die Punkte im Dokument, wären
+  // sie falsch, sobald die FIS einen Faktor ändert — die Formel gehört
+  // an eine Stelle, nicht in jedes Dokument.
+  assert.match(js, /rennpunkte\(ergebnis\.zeit, ergebnis\.siegerZeit, rennen\.disziplin\)/);
+  const block = rules.slice(rules.indexOf('match /groups/{gid}/ergebnisse/{id}'));
+  const schema = block.slice(0, block.indexOf('allow delete'));
+  assert.doesNotMatch(schema, /'punkte'/, 'Punkte gehören nicht ins Dokument');
+  assert.match(schema, /'zeit', 'siegerZeit'/);
+
+  // Ein Ergebnis pro Athlet UND Rennen — die zusammengesetzte ID
+  // verhindert Dubletten, ohne dass jemand danach suchen müsste.
+  assert.match(schema, /id == request\.resource\.data\.eventId \+ '__' \+ request\.resource\.data\.uid/);
+  assert.match(groups, /return `\$\{eventId\}__\$\{uid\}`/);
+});
+
+test('ohne Zuschlag heisst es Rennpunkte und nicht FIS-Punkte', async () => {
+  const js = await skript();
+
+  // Der Zuschlag entsteht aus den Punkten des ganzen Feldes und käme
+  // aus der FIS-Datenbank. Eine Zahl, die amtlich aussieht und keine
+  // ist, wäre schlimmer als gar keine — also wird sie gekennzeichnet.
+  assert.match(js, /\$\{punkte\.toFixed\(2\)\}\*/);
+  assert.match(js, /nur Rennpunkte — der Zuschlag ist nicht bekannt/);
+  assert.match(js, /\$\{gesamt\.toFixed\(2\)\} FIS-Punkte mit Zuschlag/);
 });
 
 test('es gibt einen Weg in eine Gruppe hinein', async () => {

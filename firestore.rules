@@ -1007,6 +1007,37 @@ service cloud.firestore {
       allow delete: if leadsGroup(gid);
     }
 
+    /* Rennergebnisse. EIN Ergebnis pro Athlet und Rennen — nicht eines
+       pro Rennen. Genau das war der erste Entwurf, und er war falsch:
+       ein Rennen hat so viele Ergebnisse wie Starter.
+
+       Die Dokument-ID ist zusammengesetzt (eventId__uid), wie bei
+       shares. Damit kann derselbe Athlet im selben Rennen nicht zweimal
+       gewertet werden, ohne dass die Regel Dubletten suchen muesste.
+
+       Gespeichert werden ZEITEN, nicht Punkte. Die Punkte entstehen aus
+       Zeit, Siegerzeit und Disziplin; stuenden sie hier, waeren sie
+       falsch, sobald die FIS einen Faktor aendert. Die Formel gehoert an
+       eine Stelle, nicht in jedes Dokument.
+
+       Eintragen darf die Leitung. Ein Ergebnis ist eine Feststellung,
+       kein Selbstauskunft — sonst traegt jeder ein, was ihm passt. */
+    match /groups/{gid}/ergebnisse/{id} {
+      allow get, list: if inGroup(gid);
+
+      allow create, update: if leadsGroup(gid)
+                    && request.resource.data.uid is string
+                    && request.resource.data.eventId is string
+                    && id == request.resource.data.eventId + '__' + request.resource.data.uid
+                    && request.resource.data.erfasstVon == request.auth.uid
+                    && request.resource.data.keys().hasOnly([
+                      'uid', 'eventId', 'rang', 'zeit', 'siegerZeit',
+                      'zuschlag', 'notiz', 'erfasstVon', 'erfasstAm'
+                    ]);
+
+      allow delete: if leadsGroup(gid);
+    }
+
     /* Zusagen. Jeder antwortet fuer sich, und die Dokument-ID ist die
        uid — damit kann niemand fuer jemand anderen zusagen, ohne dass
        die Regel es extra verbieten muesste.

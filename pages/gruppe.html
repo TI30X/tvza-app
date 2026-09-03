@@ -166,7 +166,21 @@
         <div class="form-title" id="pName">—</div>
         <p class="empty-hint" id="pMeta"></p>
 
-        <div class="form-group">
+        <!-- FIS-Punkte je Disziplin. Ein Athlet hat keinen einzelnen
+             Stand: im Slalom stark und in der Abfahrt schwach zu sein
+             ist der Normalfall. -->
+        <div id="secPunkte" hidden>
+          <div class="marke">FIS-Punkte</div>
+          <div class="rows" id="listPunkte"></div>
+        </div>
+
+        <div id="secErgebnisse" hidden>
+          <div class="marke">Rennen</div>
+          <div class="rows" id="listErgebnisse"></div>
+          <button class="b b--secondary b--block" id="btnErgebnisNeu" type="button" hidden>Ergebnis erfassen</button>
+        </div>
+
+        <div class="form-group" id="grpRolle">
           <div class="form-label">Rolle</div>
           <div class="seg" id="rolleWahl" role="group" aria-label="Rolle">
             <button class="seg__item" type="button" data-rolle="staff" aria-pressed="false">Trainer</button>
@@ -176,6 +190,47 @@
 
         <button class="b b--secondary b--block" id="btnUebergeben" type="button">Leitung übergeben</button>
         <button class="b b--danger b--block" id="btnEntfernen" type="button">Aus der Gruppe entfernen</button>
+      </div>
+    </section>
+
+    <!-- Ergebnisse werden hier erfasst und nicht bei der Anmeldung:
+         eine Anmeldung fragt nach vorn, ein Ergebnis blickt zurueck. -->
+    <section class="section" id="secErgForm" hidden>
+      <div class="form-card">
+        <button class="backlink" id="btnErgAbbrechen" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zurück</button>
+        <div class="form-title" id="ergTitel">Ergebnis erfassen</div>
+
+        <div class="form-group">
+          <label class="form-label" for="ergRennen">Rennen</label>
+          <select class="form-select" id="ergRennen"></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="ergRang">Rang</label>
+            <input class="form-input" id="ergRang" type="number" min="1" max="999" inputmode="numeric" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ergZeit">Deine Zeit</label>
+            <input class="form-input" id="ergZeit" type="text" maxlength="12" placeholder="1:23.45" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="ergSieger">Siegerzeit</label>
+            <input class="form-input" id="ergSieger" type="text" maxlength="12" placeholder="1:21.90" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ergZuschlag">Zuschlag</label>
+            <input class="form-input" id="ergZuschlag" type="text" maxlength="8" placeholder="falls bekannt" />
+          </div>
+        </div>
+
+        <p class="empty-hint" id="ergVorschau"></p>
+        <p class="empty-hint" id="ergFehler" hidden></p>
+
+        <button class="b b--primary b--block" id="btnErgSpeichern" type="button">Speichern</button>
       </div>
     </section>
 
