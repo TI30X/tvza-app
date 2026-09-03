@@ -14,7 +14,7 @@
   <script src="assets/js/i18n.js?v=1"></script>
   <link rel="stylesheet" href="assets/css/kit.css?v=1" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
-  <title>Anmelden — TVZA</title>
+  <title data-i18n="login.titel">Anmelden — Firn</title>
   <style>
     .login-wrap {
       min-height: 100vh;
@@ -73,41 +73,42 @@
   <span id="themeToggle" title="Theme wechseln" style="position:fixed;top:14px;right:14px;cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;padding:8px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;z-index:10" data-i18n-attr="title:pg.theme">◐</span>
   <div class="login-wrap">
     <div class="login-card">
-      <div class="login-logo">TVZA</div>
-      <p class="login-sub" id="subTitle">Willkommen zurück! Melde dich an.</p>
+      <div class="login-logo"><span class="firn">Fir<b>n</b></span></div>
+      <p class="login-sub" id="subTitle" data-i18n="login.subAn">Willkommen zurück! Melde dich an.</p>
 
       <div class="login-error" id="errBox"></div>
 
       <form id="loginForm" novalidate>
         <!-- Name (only for registration) -->
         <div class="form-group" id="nameGroup" style="display:none">
-          <label class="form-label" for="fName">Dein Name</label>
-          <input class="form-input" id="fName" name="name" type="text" placeholder="z.B. Timo" autocomplete="name" />
+          <label class="form-label" for="fName" data-i18n="login.name">Dein Name</label>
+          <input class="form-input" id="fName" name="name" type="text" placeholder="z.B. Timo" data-i18n-attr="placeholder:login.namePh" autocomplete="name" />
         </div>
 
         <div class="form-group" id="inviteGroup" style="display:none">
-          <label class="form-label" for="fInvite">Einladungscode (optional)</label>
+          <label class="form-label" for="fInvite" data-i18n="login.code">Einladungscode (optional)</label>
           <input class="form-input" id="fInvite" name="invite" type="text"
-                 placeholder="Nur für eine direkte Gruppeneinladung"
+                 placeholder="Nur für eine direkte Gruppeneinladung" data-i18n-attr="placeholder:login.codePh"
                  autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" />
-          <p class="form-hint">Ohne Code erhältst du ein persönliches TVZA-Konto. Ein Code kann dich direkt einer Kalendergruppe hinzufügen.</p>
+          <p class="form-hint" data-i18n="login.codeHinweis">Ohne Code erhältst du ein persönliches Konto. Ein Code nimmt dich direkt in eine Gruppe auf.</p>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="fEmail">E-Mail</label>
-          <input class="form-input" id="fEmail" name="email" type="email" placeholder="deine@email.com" autocomplete="username" inputmode="email" autocapitalize="none" />
+          <label class="form-label" for="fEmail" data-i18n="login.mail">E-Mail</label>
+          <input class="form-input" id="fEmail" name="email" type="email" placeholder="deine@email.com" data-i18n-attr="placeholder:login.mailPh" autocomplete="username" inputmode="email" autocapitalize="none" />
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="fPass">Passwort</label>
-          <input class="form-input" id="fPass" name="password" type="password" placeholder="mind. 6 Zeichen" autocomplete="current-password" autocapitalize="none" />
+          <label class="form-label" for="fPass" data-i18n="login.pass">Passwort</label>
+          <input class="form-input" id="fPass" name="password" type="password" placeholder="mind. 6 Zeichen" data-i18n-attr="placeholder:login.passPh" autocomplete="current-password" autocapitalize="none" />
         </div>
 
-        <button class="btn btn-primary btn-block" id="submitBtn" type="submit" style="padding:12px">Anmelden</button>
+        <button class="btn btn-primary btn-block" id="submitBtn" type="submit" style="padding:12px" data-i18n="login.anmelden">Anmelden</button>
       </form>
 
       <p class="switch-mode" id="switchText">
-        Noch kein Konto? <a id="switchLink">Registrieren</a>
+        <span id="switchLabel" data-i18n="login.keinKonto">Noch kein Konto?</span>
+        <a id="switchLink" data-i18n="login.registrieren">Registrieren</a>
       </p>
     </div>
   </div>
@@ -140,19 +141,24 @@
         return;
       }
       await signOut(auth).catch(() => {});
-      showErr('Bitte bestätige zuerst deine E-Mail-Adresse. Der Bestätigungslink wurde bei der Registrierung verschickt.');
+      showErr(t('login.fehler.mailUnbestaetigt', 'Bitte bestätige zuerst deine E-Mail-Adresse. Der Bestätigungslink wurde bei der Registrierung verschickt.'));
     });
+
+    /* tOr und nicht t(): t() gibt bei unbekanntem Schluessel den
+       SCHLUESSEL zurueck, nie undefined — ein ?? dahinter greift nie.
+       Solange der Katalog laedt, bleibt es deutsch. */
+    const t = (key, fallback) => window.TVZAI18n?.tOr(key, fallback) ?? fallback;
 
     let mode = 'login'; // or 'register'
 
     const $ = id => document.getElementById(id);
     const params = new URLSearchParams(location.search);
     if (params.get('reason') === 'verify') {
-      showErr('Bitte bestätige zuerst deine E-Mail-Adresse.');
+      showErr(t('login.fehler.mailZuerst', 'Bitte bestätige zuerst deine E-Mail-Adresse.'));
     } else if (params.get('reason') === 'membership') {
-      showErr('Für dieses Konto wurde noch kein TVZA-Profil gefunden.');
+      showErr(t('login.fehler.keinProfil', 'Für dieses Konto gibt es noch kein Profil.'));
     } else if (params.get('verified') === '1') {
-      showErr('E-Mail bestätigt. Du kannst dich jetzt anmelden.');
+      showErr(t('login.mailBestaetigt', 'E-Mail bestätigt. Du kannst dich jetzt anmelden.'));
     }
 
     /* Von der Willkommen-Seite kommt man mit der Absicht, ein Konto
@@ -165,16 +171,30 @@
       $('nameGroup').style.display = mode === 'register' ? '' : 'none';
       $('inviteGroup').style.display = mode === 'register' ? '' : 'none';
       $('subTitle').textContent = mode === 'register'
-        ? 'Erstelle dein TVZA-Konto. Eine Gruppeneinladung ist optional.'
-        : 'Willkommen zurück! Melde dich an.';
-      $('submitBtn').textContent = mode === 'register' ? 'Registrieren' : 'Anmelden';
-      $('switchText').firstChild.textContent = mode === 'register' ? 'Schon ein Konto? ' : 'Noch kein Konto? ';
-      $('switchLink').textContent = mode === 'register' ? 'Anmelden' : 'Registrieren';
+        ? t('login.subNeu', 'Erstelle dein Konto. Ein Einladungscode ist optional.')
+        : t('login.subAn', 'Willkommen zurück! Melde dich an.');
+      $('submitBtn').textContent = mode === 'register'
+        ? t('login.registrieren', 'Registrieren') : t('login.anmelden', 'Anmelden');
+      $('switchLabel').textContent = mode === 'register'
+        ? t('login.schonKonto', 'Schon ein Konto?') : t('login.keinKonto', 'Noch kein Konto?');
+      $('switchLink').textContent = mode === 'register'
+        ? t('login.anmelden', 'Anmelden') : t('login.registrieren', 'Registrieren');
       $('fPass').setAttribute('autocomplete', mode === 'register' ? 'new-password' : 'current-password');
       hideErr();
     }
 
     if (params.get('neu') === '1') setMode('register');
+
+    /* Der Katalog kommt asynchron. applyTo() setzt danach ALLE
+       Elemente mit data-i18n neu — und ueberschreibt damit, was
+       setMode() vorher gesetzt hat. Ohne die naechsten zwei Zeilen
+       steht das Formular im Registrier-Modus da und traegt trotzdem
+       "Anmelden" auf dem Knopf.
+
+       Zwei Anlaesse, derselbe Grund: das erste Anwenden nach dem Laden
+       (ready) und jeder spaetere Sprachwechsel. */
+    window.TVZAI18n?.ready?.then(() => setMode(mode));
+    window.addEventListener('tvza-lang-change', () => setMode(mode));
 
     $('switchLink').addEventListener('click', () => {
       setMode(mode === 'login' ? 'register' : 'login');
@@ -191,26 +211,26 @@
 
     function translateError(code, action) {
       if (code === 'auth/network-request-failed' || code === 'unavailable') {
-        return 'Keine Internetverbindung. Bitte versuche es erneut.';
+        return t('login.fehler.netz', 'Keine Internetverbindung. Bitte versuche es erneut.');
       }
       if (code === 'auth/weak-password') {
-        return 'Bitte verwende ein Passwort mit mindestens 6 Zeichen.';
+        return t('login.fehler.schwach', 'Bitte verwende ein Passwort mit mindestens 6 Zeichen.');
       }
       if (action === 'register' && code === 'permission-denied') {
-        return 'Dieser Einladungscode passt nicht zu dieser E-Mail.';
+        return t('login.fehler.code', 'Dieser Einladungscode passt nicht zu dieser E-Mail.');
       }
       if (code === 'email-not-verified') {
-        return 'Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir erneut einen Bestätigungslink geschickt.';
+        return t('login.fehler.mailErneut', 'Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir erneut einen Bestätigungslink geschickt.');
       }
       if (code === 'auth/too-many-requests' || code === 'login-locked') {
-        return 'Zu viele fehlgeschlagene Versuche. Bitte warte 15 Minuten und versuche es dann erneut.';
+        return t('login.fehler.gesperrt', 'Zu viele fehlgeschlagene Versuche. Bitte warte 15 Minuten und versuche es dann erneut.');
       }
       if (action === 'register') {
-        return 'Konto konnte nicht erstellt werden. Prüfe Einladung, E-Mail und Passwort.';
+        return t('login.fehler.registrieren', 'Konto konnte nicht erstellt werden. Prüfe Einladung, E-Mail und Passwort.');
       }
       // One message for every credential failure prevents account enumeration
       // and never exposes Firebase error codes.
-      return 'Anmeldung nicht möglich. Prüfe E-Mail und Passwort.';
+      return t('login.fehler.anmelden', 'Anmeldung nicht möglich. Prüfe E-Mail und Passwort.');
     }
 
     $('loginForm').addEventListener('submit', async (e) => {
@@ -221,15 +241,15 @@
       const name  = $('fName').value.trim();
       const inviteCode = $('fInvite').value.trim();
 
-      if (!email || !pass) { showErr('Bitte E-Mail und Passwort eingeben.'); return; }
-      if (mode === 'register' && !name) { showErr('Bitte deinen Namen eingeben.'); return; }
+      if (!email || !pass) { showErr(t('login.fehler.leer', 'Bitte E-Mail und Passwort eingeben.')); return; }
+      if (mode === 'register' && !name) { showErr(t('login.fehler.name', 'Bitte deinen Namen eingeben.')); return; }
       if (mode === 'login' && loginLockRemaining(localStorage) > 0) {
         showErr(translateError('login-locked', mode));
         return;
       }
 
       $('submitBtn').disabled = true;
-      $('submitBtn').textContent = 'Bitte warten…';
+      $('submitBtn').textContent = t('login.warten', 'Bitte warten…');
       authActionInProgress = true;
       let createdUser = null;
       let registrationCommitted = false;
@@ -279,7 +299,7 @@
             $('loginForm').reset();
             setMode('login');
             showErr(verificationSent
-              ? 'Konto erstellt. Bitte öffne jetzt den Bestätigungslink in deiner E-Mail. Erst danach kannst du dich anmelden.'
+              ? t('login.kontoErstellt', 'Konto erstellt. Bitte öffne jetzt den Bestätigungslink in deiner E-Mail. Erst danach kannst du dich anmelden.')
               : 'Konto erstellt, aber der Bestätigungslink konnte nicht gesendet werden. Melde dich einmal an, um den Versand erneut auszulösen.');
             $('submitBtn').disabled = false;
             return;
