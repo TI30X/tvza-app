@@ -187,7 +187,11 @@ test('die Rolle steht einmal da, nicht zweimal', async () => {
   // Die Zeile unter dem Namen zeigte dasselbe Wort wie die Segmentwahl
   // zwei Zeilen tiefer. Jetzt zeigt sie, was sonst nirgends steht.
   assert.doesNotMatch(js, /\$\('pMeta'\)\.textContent = wort\(/);
-  assert.match(js, /Dabei seit \$\{seit\.toLocaleDateString/);
+  /* Ueber den Katalog, und das Datum ueber Intl: ein fest
+     verdrahtetes 'de-CH' gab einem polnischen Nutzer ein
+     Schweizer Datum. Der deutsche Text bleibt als Rueckfall. */
+  assert.match(js, /t\('grp\.dabeiSeit', 'Dabei seit \{datum}'/);
+  assert.match(js, /TVZAI18n\?\.format\?\.date\(seit\)/);
 });
 
 test('die Sammelgruppen-Regel steht und ist auf list beschränkt', async () => {

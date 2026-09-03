@@ -109,8 +109,8 @@ const blindeStelle = ' nutzt t() mit ?? oder || — das greift nie, weil t() den
 
 test('i18n bietet eine Rueckfallebene an, die auch greift', async () => {
   const quelle = await readFile(new URL('../assets/js/i18n.js', import.meta.url), 'utf8');
-  assert.match(quelle, /function tOr\(key, fallback\)/, 'tOr fehlt');
-  assert.match(quelle, /wert === key \? fallback : wert/,
+  assert.match(quelle, /function tOr\(key, fallback, vars\)/, 'tOr fehlt');
+  assert.match(quelle, /if \(wert !== key\) return wert;/,
     'tOr prueft nicht auf den durchgereichten Schluessel');
   assert.match(quelle, /t, tOr, applyTo/, 'tOr fehlt in der oeffentlichen API');
 });

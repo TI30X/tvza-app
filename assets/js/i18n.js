@@ -120,9 +120,14 @@
    * tOr macht daraus die additive Regel aus CLAUDE.md: was fehlt,
    * bleibt deutsch.
    */
-  function tOr(key, fallback) {
-    const wert = t(key);
-    return wert === key ? fallback : wert;
+  function tOr(key, fallback, vars) {
+    const wert = t(key, vars);
+    if (wert !== key) return wert;
+    /* Auch die Rueckfallebene bekommt ihre Werte eingesetzt —
+       sonst steht bei fehlendem Katalog "{n} Personen" da. */
+    if (!vars) return fallback;
+    return String(fallback).replace(/\{(\w+)\}/g, (ganz, name) =>
+      (vars[name] === undefined ? ganz : vars[name]));
   }
 
   /* ── Auf das Markup anwenden ───────────────────────────────────── */

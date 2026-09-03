@@ -42,7 +42,16 @@ import {
 import { WORKER_BASIS } from '../../worker-config.js';
 
 const $ = id => document.getElementById(id);
-const t = (key, fallback) => window.TVZAI18n?.tOr(key, fallback) ?? fallback;
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
+
+/* Plural ueber Intl, nicht ueber ein Fragezeichen: Polnisch hat drei
+   Formen, und "1 Person / 2 Personen" trifft nur zwei davon. Ohne
+   Katalog gibt format.plural den Schluessel zurueck — dann greift die
+   deutsche Ruecklage. */
+const tPlural = (key, n, eins, mehr) => {
+  const wert = window.TVZAI18n?.format?.plural(key, n);
+  return (!wert || String(wert).startsWith(key)) ? `${n} ${n === 1 ? eins : mehr}` : wert;
+};
 
 let user = null;
 let gruppen = [];
@@ -111,14 +120,14 @@ async function zeichneMitglieder() {
 
     const zahl = mitglieder.length;
     const meta = $('mitgliederZahl');
-    meta.textContent = `${zahl} ${zahl === 1 ? 'Person' : 'Personen'}`;
+    meta.textContent = tPlural('grp.personen', zahl, 'Person', 'Personen');
     meta.hidden = false;
   } catch (e) {
     reportClientError('gruppe/mitglieder', e);
     /* Der häufigste Grund ist ein fehlender Index oder eine Regel, die
        noch nicht ausgerollt ist — beides sagt dem Nutzer nichts. Also
        eine Zeile, die stimmt, statt einer, die Technik erklärt. */
-    liste.innerHTML = '<p class="empty-hint">Die Mitglieder liessen sich nicht laden.</p>';
+    liste.innerHTML = `<p class="empty-hint">${escHtml(t('grp.f.mitglieder', 'Die Mitglieder liessen sich nicht laden.'))}</p>`;
   }
 }
 
@@ -138,7 +147,7 @@ function terminZeile(t) {
         <span class="row__title">${escHtml(ab ? `${t.titel} — abgesagt` : t.titel)}</span>
         <span class="row__sub">${escHtml(wann + ort)}</span>
       </span>
-      <span class="row__end">${escHtml(ab ? 'Abgesagt' : artWort(t.art, aktiv?.art))}</span>
+      <span class="row__end">${escHtml(ab ? t('grp.abgesagt', 'Abgesagt') : artWort(t.art, aktiv?.art))}</span>
     </button>`;
 }
 
@@ -153,7 +162,7 @@ function zeichneTermine() {
 
   liste.innerHTML = naechste.length
     ? naechste.map(terminZeile).join('')
-    : '<p class="empty-hint">Noch keine Termine.</p>';
+    : `<p class="empty-hint">${escHtml(t('grp.keineTermine', 'Noch keine Termine.'))}</p>`;
 }
 
 /* ── Pläne ─────────────────────────────────────────────────────────
@@ -168,7 +177,7 @@ function planZeile(p) {
   const fuerAlle = p.fuer === PLAN_FUER_ALLE;
   const empfaenger = fuerAlle
     ? wort(aktiv?.art, 'mitglieder')
-    : (mitglieder.find(m => m.uid === p.fuer)?.name || 'ein Athlet');
+    : (mitglieder.find(m => m.uid === p.fuer)?.name || t('grp.einAthlet', 'ein Athlet'));
 
   /* Ein Plan ist zum Machen da, nicht zum Ansehen: die Zeile führt
      direkt in den Einheiten-Player. */
@@ -179,7 +188,7 @@ function planZeile(p) {
       <span class="row__icon">P</span>
       <span class="row__body">
         <span class="row__title">${escHtml(p.titel)}</span>
-        <span class="row__sub">${escHtml(fuerAlle ? `Für ${empfaenger}` : `Nur für ${empfaenger}`)}</span>
+        <span class="row__sub">${escHtml(fuerAlle ? t('grp.fuerAlle', 'Für {wen}', { wen: empfaenger }) : t('grp.nurFuer', 'Nur für {wen}', { wen: empfaenger }))}</span>
       </span>
       <span class="row__end">
         <svg class="ic row__chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
@@ -205,8 +214,8 @@ async function zeichnePlaene() {
   liste.innerHTML = plaene.length
     ? plaene.map(planZeile).join('')
     : `<p class="empty-hint">${darfFuehren
-        ? 'Noch kein Plan veröffentlicht.'
-        : 'Für dich liegt noch kein Plan bereit.'}</p>`;
+        ? t('grp.keinPlan', 'Noch kein Plan veröffentlicht.')
+        : t('grp.keinPlanFuerDich', 'Für dich liegt noch kein Plan bereit.')}</p>`;
 }
 
 async function planFormOeffnen() {
@@ -217,23 +226,23 @@ async function planFormOeffnen() {
     const programme = await eigeneProgramme(user.uid);
     quelle.innerHTML = programme.length
       ? programme.map(p => `<option value="${escHtml(p.id)}">${escHtml(p.id)}</option>`).join('')
-      : '<option value="">Du hast noch kein Programm eingelesen</option>';
+      : `<option value="">${escHtml(t('grp.keinProgramm', 'Du hast noch kein Programm eingelesen'))}</option>`;
     /* Der Rohtext wird am Element gemerkt, damit das Speichern nicht
        noch einmal lesen muss. */
     quelle.dataset.json = JSON.stringify(
       Object.fromEntries(programme.map(p => [p.id, p.json])));
   } catch (e) {
     reportClientError('gruppe/programme', e);
-    quelle.innerHTML = '<option value="">Programme nicht lesbar</option>';
+    quelle.innerHTML = `<option value="">${escHtml(t('grp.programmeUnlesbar', 'Programme nicht lesbar'))}</option>`;
   }
 
   /* "Alle" zuerst — der Normalfall ist ein Plan für den ganzen Kader.
      Ein Plan nur für einen Athleten ist die Ausnahme, und genau die
      soll möglich sein. */
   $('planFuer').innerHTML = [
-    `<option value="${PLAN_FUER_ALLE}">Alle in der Gruppe</option>`,
+    `<option value="${PLAN_FUER_ALLE}">${escHtml(t('grp.alleInGruppe', 'Alle in der Gruppe'))}</option>`,
     ...mitglieder.map(m =>
-      `<option value="${escHtml(m.uid)}">Nur ${escHtml(m.name || m.uid)}</option>`),
+      `<option value="${escHtml(m.uid)}">${escHtml(t('grp.nurWen', 'Nur {wen}', { wen: m.name || m.uid }))}</option>`),
   ].join('');
 
   $('planTitel').value = '';
@@ -262,7 +271,7 @@ async function planSpeichern() {
   catch { json = ''; }
 
   if (!json) {
-    fehler.textContent = 'Es ist kein Programm ausgewählt, das sich veröffentlichen liesse.';
+    fehler.textContent = t('grp.f.keinProgramm', 'Es ist kein Programm ausgewählt, das sich veröffentlichen liesse.');
     fehler.hidden = false;
     return;
   }
@@ -279,7 +288,7 @@ async function planSpeichern() {
     await zeichnePlaene();
   } catch (e) {
     reportClientError('gruppe/plan', e);
-    fehler.textContent = e?.message || 'Der Plan konnte nicht veröffentlicht werden.';
+    fehler.textContent = e?.message || t('grp.f.plan', 'Der Plan konnte nicht veröffentlicht werden.');
     fehler.hidden = false;
   } finally {
     btn.disabled = false;
@@ -333,7 +342,7 @@ function zeichne() {
 /* ── Handlungen ────────────────────────────────────────────────────*/
 
 async function neueGruppe() {
-  const name = prompt('Wie soll die Gruppe heissen?');
+  const name = prompt(t('grp.frageName', 'Wie soll die Gruppe heissen?'));
   if (name === null) return;
   const sauber = name.trim();
   if (!sauber) return;
@@ -342,10 +351,11 @@ async function neueGruppe() {
      über den Ablauf. Drei Möglichkeiten sind für ein confirm zu viele,
      also eine Ziffer — bis das Anlegen ein eigenes Formular bekommt. */
   const wahl = prompt(
-    'Was für eine Gruppe ist das?\n\n'
-    + '1 — Rennkader: Haupttrainer, Trainer, Athleten\n'
-    + '2 — Verein oder Gym: Leitung, Trainer, Mitglieder\n'
-    + '3 — Familie oder Freundeskreis', '1');
+    t('grp.frageArt',
+      'Was für eine Gruppe ist das?\n\n'
+      + '1 — Rennkader: Haupttrainer, Trainer, Athleten\n'
+      + '2 — Verein oder Gym: Leitung, Trainer, Mitglieder\n'
+      + '3 — Familie oder Freundeskreis'), '1');
   if (wahl === null) return;
   const art = { 1: 'kader', 2: 'organisation', 3: 'familie' }[wahl.trim()] || 'kader';
 
@@ -358,7 +368,7 @@ async function neueGruppe() {
        selbst, und der Umschalter steht dann schon richtig. */
   } catch (e) {
     reportClientError('gruppe/anlegen', e);
-    alert('Die Gruppe konnte nicht erstellt werden.');
+    alert(t('grp.f.gruppe', 'Die Gruppe konnte nicht erstellt werden.'));
   } finally {
     btn.disabled = false;
   }
@@ -388,7 +398,7 @@ function zusagenText(liste) {
   if (vielleicht) teile.push(`${vielleicht} vielleicht`);
   if (nein) teile.push(`${nein} abgesagt`);
   if (stumm) teile.push(`${stumm} offen`);
-  return teile.length ? teile.join(' · ') : 'Noch keine Antworten.';
+  return teile.length ? teile.join(' · ') : t('grp.keineAntworten', 'Noch keine Antworten.');
 }
 
 async function zeichneZusagen() {
@@ -445,7 +455,7 @@ function detailOeffnen(eid) {
   const absagen = $('btnAbsagen');
   if (absagen) {
     absagen.hidden = !darfFuehren;
-    absagen.textContent = abgesagt ? 'Absage zurücknehmen' : 'Termin absagen';
+    absagen.textContent = abgesagt ? t('grp.absageZurueck', 'Absage zurücknehmen') : t('grp.terminAbsagen', 'Termin absagen');
   }
 
   zeige('secDetail', true);
@@ -471,7 +481,7 @@ async function antworten(antwort) {
     await zeichneZusagen();
   } catch (e) {
     reportClientError('gruppe/zusage', e);
-    $('dZusagen').textContent = 'Die Antwort konnte nicht gespeichert werden.';
+    $('dZusagen').textContent = t('grp.f.antwort', 'Die Antwort konnte nicht gespeichert werden.');
     $('dZusagen').hidden = false;
   }
 }
@@ -520,9 +530,9 @@ async function zeichneAnhaenge() {
   liste.innerHTML = anhaenge.length
     ? anhaenge.map(anhangZeile).join('')
       + (darfFuehren
-        ? '<p class="empty-hint">Zum Umbenennen oder Entfernen auf den Namen tippen.</p>'
+        ? `<p class="empty-hint">${escHtml(t('grp.anhangTipp', 'Zum Umbenennen oder Entfernen auf den Namen tippen.'))}</p>`
         : '')
-    : '<p class="empty-hint">Noch keine Unterlagen.</p>';
+    : `<p class="empty-hint">${escHtml(t('grp.keineUnterlagen', 'Noch keine Unterlagen.'))}</p>`;
 }
 
 function anhangOeffnen(id) {
@@ -543,13 +553,14 @@ async function anhangVerwalten(id) {
   if (!a) return;
 
   const name = prompt(
-    'Neuer Name für die Unterlage.\n\nLeer lassen und OK drücken, um sie zu entfernen.',
+    t('grp.frageAnhangName',
+      'Neuer Name für die Unterlage.\n\nLeer lassen und OK drücken, um sie zu entfernen.'),
     a.name);
   if (name === null) return;
 
   try {
     if (!name.trim()) {
-      if (!confirm(`"${a.name}" wirklich entfernen?`)) return;
+      if (!confirm(t('grp.frageAnhangWeg', '"{was}" wirklich entfernen?', { was: a.name }))) return;
       await anhangLoeschen(aktiv.id, offen.id, id);
     } else {
       await anhangUmbenennen(aktiv.id, offen.id, id, name, user.uid);
@@ -557,7 +568,7 @@ async function anhangVerwalten(id) {
     await zeichneAnhaenge();
   } catch (e) {
     reportClientError('gruppe/anhang-verwalten', e);
-    alert('Das hat nicht geklappt.');
+    alert(t('grp.f.allgemein', 'Das hat nicht geklappt.'));
   }
 }
 
@@ -573,7 +584,7 @@ async function anhangHochladen(datei) {
     reportClientError('gruppe/anhang', e);
     /* Bei "zu gross" steht der Grund schon im Fehler und ist
        brauchbar — den soll der Nutzer sehen, nicht einen Ersatzsatz. */
-    feld.textContent = e?.message || 'Die Datei konnte nicht angehängt werden.';
+    feld.textContent = e?.message || t('grp.f.datei', 'Die Datei konnte nicht angehängt werden.');
     feld.hidden = false;
   }
 }
@@ -585,14 +596,15 @@ async function absageUmschalten() {
 
   try {
     if (istAbgesagt(offen)) {
-      if (!confirm(`"${offen.titel}" findet doch statt?`)) return;
+      if (!confirm(t('grp.frageFindetStatt', '"{was}" findet doch statt?', { was: offen.titel }))) return;
       await absageZuruecknehmen(aktiv.id, offen.id);
     } else {
       /* Der Grund ist freiwillig, aber er ist das, was die Leute
          wirklich wissen wollen — "zu wenig Schnee" beantwortet die
          Rückfragen, bevor sie kommen. */
       const grund = prompt(
-        `"${offen.titel}" absagen.\n\nGrund (optional, wird allen angezeigt):`, '');
+        t('grp.frageAbsagen', '"{was}" absagen.\n\nGrund (optional, wird allen angezeigt):',
+          { was: offen.titel }), '');
       if (grund === null) return;
       await terminAbsagen(aktiv.id, offen.id, grund);
     }
@@ -600,19 +612,19 @@ async function absageUmschalten() {
        ihren eigenen Stand nachziehen. */
   } catch (e) {
     reportClientError('gruppe/absagen', e);
-    alert('Das hat nicht geklappt.');
+    alert(t('grp.f.allgemein', 'Das hat nicht geklappt.'));
   }
 }
 
 async function terminEntfernen() {
   if (!offen || !aktiv) return;
-  if (!confirm(`"${offen.titel}" wirklich löschen?`)) return;
+  if (!confirm(t('grp.frageTerminWeg', '"{was}" wirklich löschen?', { was: offen.titel }))) return;
   try {
     await terminLoeschen(aktiv.id, offen.id);
     detailSchliessen();
   } catch (e) {
     reportClientError('gruppe/termin-loeschen', e);
-    alert('Der Termin konnte nicht gelöscht werden.');
+    alert(t('grp.f.terminLoeschen', 'Der Termin konnte nicht gelöscht werden.'));
   }
 }
 
@@ -696,7 +708,7 @@ async function terminSpeichern() {
   } catch (e) {
     reportClientError('gruppe/termin', e);
     const feld = $('formFehler');
-    feld.textContent = 'Der Termin konnte nicht gespeichert werden.';
+    feld.textContent = t('grp.f.terminSpeichern', 'Der Termin konnte nicht gespeichert werden.');
     feld.hidden = false;
   } finally {
     btn.disabled = false;
@@ -712,7 +724,12 @@ async function terminSpeichern() {
 let person = null;        // das gerade geöffnete Mitglied
 let personErgebnisse = []; // dessen Rennen
 
-const DISZIPLIN_WORT = { SL: 'Slalom', RS: 'Riesenslalom', SG: 'Super-G', DH: 'Abfahrt' };
+/* Die Woerter stehen im Katalog — Abfahrt heisst Downhill, und die
+   Auswahl im Formular zieht dieselben Schluessel. Eine zweite Liste
+   hier waere die Stelle, an der beide auseinanderlaufen. */
+const DISZIPLIN_DE = { SL: 'Slalom', RS: 'Riesenslalom', SG: 'Super-G', DH: 'Abfahrt' };
+const disziplinWort = kuerzel =>
+  DISZIPLIN_DE[kuerzel] ? t(`disziplin.${kuerzel}`, DISZIPLIN_DE[kuerzel]) : kuerzel;
 
 /* Ein Ergebnis kennt nur Zeiten. Die Disziplin steht am Rennen — sonst
    müsste sie bei jedem Ergebnis mitgeschrieben werden und könnte vom
@@ -751,7 +768,7 @@ function zeichnePunkte() {
 
   zeige('secPunkte', true);
   if (!eintraege.length) {
-    liste.innerHTML = '<p class="empty-hint">Noch keine Rennen mit Zeiten erfasst.</p>';
+    liste.innerHTML = `<p class="empty-hint">${escHtml(t('grp.keineZeiten', 'Noch keine Rennen mit Zeiten erfasst.'))}</p>`;
     return;
   }
 
@@ -760,10 +777,10 @@ function zeichnePunkte() {
       <span class="row__icon">${escHtml(d)}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(s.punkte.toFixed(2))} Punkte</span>
-        <span class="row__sub">${escHtml(DISZIPLIN_WORT[d] || d)} · ${
+        <span class="row__sub">${escHtml(disziplinWort(d))} · ${
           s.vorlaeufig
-            ? 'vorläufig, erst ein Rennen'
-            : `Schnitt der zwei besten aus ${s.aus}`}</span>
+            ? t('grp.vorlaeufig', 'vorläufig, erst ein Rennen')
+            : t('grp.schnittZwei', 'Schnitt der zwei besten aus {n}', { n: s.aus })}</span>
       </span>
       <span class="row__end"></span>
     </div>`).join('');
@@ -781,7 +798,7 @@ function ergebnisZeile(e) {
     : punkte != null ? `${punkte.toFixed(2)}*` : '—';
 
   const teile = [];
-  if (e.rang) teile.push(`Rang ${e.rang}`);
+  if (e.rang) teile.push(t('grp.rangN', 'Rang {n}', { n: e.rang }));
   if (e.zeit) teile.push(e.zeit);
   if (rennen?.disziplin) teile.push(rennen.disziplin);
 
@@ -789,7 +806,7 @@ function ergebnisZeile(e) {
     <div class="row" data-bereich="t-rennen">
       <span class="row__icon">R</span>
       <span class="row__body">
-        <span class="row__title">${escHtml(rennen?.titel || 'Rennen')}</span>
+        <span class="row__title">${escHtml(rennen?.titel || t('grp.rennenFeld', 'Rennen'))}</span>
         <span class="row__sub">${escHtml(teile.join(' · ') || '—')}</span>
       </span>
       <span class="row__end">${escHtml(rechts)}</span>
@@ -816,8 +833,8 @@ async function zeichneErgebnisse() {
 
   liste.innerHTML = sortiert.length
     ? sortiert.map(ergebnisZeile).join('')
-      + '<p class="empty-hint">* nur Rennpunkte — der Zuschlag ist nicht bekannt.</p>'
-    : '<p class="empty-hint">Noch keine Rennen erfasst.</p>';
+      + `<p class="empty-hint">${escHtml(t('grp.nurRennpunkte', '* nur Rennpunkte — der Zuschlag ist nicht bekannt.'))}</p>`
+    : `<p class="empty-hint">${escHtml(t('grp.keineRennen', 'Noch keine Rennen erfasst.'))}</p>`;
 
   zeichnePunkte();
 }
@@ -842,7 +859,9 @@ function personOeffnen(uid) {
      seit wann jemand dabei ist. */
   const seit = person.seit?.toDate?.();
   $('pMeta').textContent = seit
-    ? `Dabei seit ${seit.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric' })}`
+    ? t('grp.dabeiSeit', 'Dabei seit {datum}', {
+        datum: window.TVZAI18n?.format?.date(seit)
+          ?? seit.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric' }) })
     : '';
   $('pMeta').hidden = !$('pMeta').textContent;
 
@@ -896,21 +915,21 @@ async function rolleAendern(rolle) {
     personOeffnen(person.uid);
   } catch (e) {
     reportClientError('gruppe/rolle', e);
-    alert('Die Rolle konnte nicht geändert werden.');
+    alert(t('grp.f.rolle', 'Die Rolle konnte nicht geändert werden.'));
   }
 }
 
 async function personEntfernen() {
   if (!person || !aktiv) return;
   const name = person.name || person.uid;
-  if (!confirm(`${name} wirklich aus der Gruppe entfernen?`)) return;
+  if (!confirm(t('grp.frageMitgliedWeg', '{wer} wirklich aus der Gruppe entfernen?', { wer: name }))) return;
   try {
     await mitgliedEntfernen(aktiv.id, person.uid);
     personSchliessen();
     await zeichneMitglieder();
   } catch (e) {
     reportClientError('gruppe/entfernen', e);
-    alert('Das Mitglied konnte nicht entfernt werden.');
+    alert(t('grp.f.entfernen', 'Das Mitglied konnte nicht entfernt werden.'));
   }
 }
 
@@ -921,9 +940,10 @@ async function leitungUebergeben() {
      mehr der Kopf und kannst sie nicht zurückholen. Das gehört gesagt,
      bevor jemand tippt. */
   if (!confirm(
-    `Die Leitung an ${name} übergeben?\n\n`
-    + 'Danach bist du nur noch Trainer und kannst die Leitung nicht '
-    + 'selbst zurückholen.')) return;
+    t('grp.frageUebergabe',
+      'Die Leitung an {wer} übergeben?\n\n'
+      + 'Danach bist du nur noch Trainer und kannst die Leitung nicht '
+      + 'selbst zurückholen.', { wer: name }))) return;
 
   try {
     await uebergeben(aktiv.id, person.uid);
@@ -932,7 +952,7 @@ async function leitungUebergeben() {
        zeichnet sich daraufhin mit den passenden Rechten neu. */
   } catch (e) {
     reportClientError('gruppe/uebergeben', e);
-    alert('Die Übergabe hat nicht geklappt.');
+    alert(t('grp.f.uebergabe', 'Die Übergabe hat nicht geklappt.'));
   }
 }
 
@@ -956,9 +976,9 @@ function ergFormOeffnen() {
   wahl.innerHTML = rennen.length
     ? rennen.map(r => `<option value="${escHtml(r.id)}">${escHtml(r.titel)}${
         r.disziplin ? ` · ${escHtml(r.disziplin)}` : ''}</option>`).join('')
-    : '<option value="">Kein vergangenes Rennen vorhanden</option>';
+    : `<option value="">${escHtml(t('grp.keinVergangenes', 'Kein vergangenes Rennen vorhanden'))}</option>`;
 
-  $('ergTitel').textContent = `Ergebnis · ${person.name || person.uid}`;
+  $('ergTitel').textContent = t('grp.ergebnisVon', 'Ergebnis · {wer}', { wer: person.name || person.uid });
   $('ergRang').value = '';
   $('ergZeit').value = '';
   $('ergSieger').value = '';
@@ -984,8 +1004,8 @@ function ergVorschau() {
 
   if (p == null) {
     feld.textContent = rennen?.disziplin
-      ? 'Zwei Zeiten eingeben, dann erscheinen die Rennpunkte.'
-      : 'Ohne Disziplin am Rennen lassen sich keine Punkte rechnen.';
+      ? t('grp.zweiZeiten', 'Zwei Zeiten eingeben, dann erscheinen die Rennpunkte.')
+      : t('grp.ohneDisziplin', 'Ohne Disziplin am Rennen lassen sich keine Punkte rechnen.');
     return;
   }
 
@@ -995,10 +1015,10 @@ function ergVorschau() {
     .filter(x => x != null);
   const wirkung = standMit(bisher, p);
 
-  const teile = [`${p.toFixed(2)} Rennpunkte`];
-  if (gesamt != null) teile.push(`${gesamt.toFixed(2)} FIS-Punkte mit Zuschlag`);
-  if (wirkung.verbesserung > 0) teile.push(`verbessert den Stand um ${wirkung.verbesserung.toFixed(2)}`);
-  else if (wirkung.vorher.punkte != null) teile.push('ändert den Stand nicht');
+  const teile = [t('grp.rennpunkteN', '{n} Rennpunkte', { n: p.toFixed(2) })];
+  if (gesamt != null) teile.push(t('grp.fisMitZuschlag', '{n} FIS-Punkte mit Zuschlag', { n: gesamt.toFixed(2) }));
+  if (wirkung.verbesserung > 0) teile.push(t('grp.verbessertUm', 'verbessert den Stand um {n}', { n: wirkung.verbesserung.toFixed(2) }));
+  else if (wirkung.vorher.punkte != null) teile.push(t('grp.aendertNichts', 'ändert den Stand nicht'));
 
   feld.textContent = teile.join(' · ');
 }
@@ -1025,7 +1045,7 @@ async function ergSpeichern() {
   } catch (e) {
     reportClientError('gruppe/ergebnis', e);
     const feld = $('ergFehler');
-    feld.textContent = 'Das Ergebnis konnte nicht gespeichert werden.';
+    feld.textContent = t('grp.f.ergebnis', 'Das Ergebnis konnte nicht gespeichert werden.');
     feld.hidden = false;
   } finally {
     btn.disabled = false;
@@ -1035,7 +1055,7 @@ async function ergSpeichern() {
 /* ── Beitreten ─────────────────────────────────────────────────────*/
 
 async function codeEinloesen() {
-  const eingabe = prompt('Einladungscode eingeben:');
+  const eingabe = prompt(t('grp.frageCode', 'Einladungscode eingeben:'));
   if (eingabe === null) return;
   const sauber = eingabe.trim();
   if (!sauber) return;
@@ -1047,7 +1067,7 @@ async function codeEinloesen() {
     aktiveGruppeSetzen(gid);
   } catch (e) {
     reportClientError('gruppe/beitreten', e);
-    alert(e?.message || 'Der Beitritt hat nicht geklappt.');
+    alert(e?.message || t('grp.f.beitritt', 'Der Beitritt hat nicht geklappt.'));
   } finally {
     btn.disabled = false;
   }
@@ -1070,9 +1090,10 @@ async function aboErzeugen() {
        trägt danach ins Leere. Das ist der Weg, wenn jemand den Verein
        verlässt. Darum die Rückfrage, wenn es schon eine gibt. */
     if (aktiv.icsToken && !confirm(
-      'Es gibt schon ein Abo für diese Gruppe.\n\n'
-      + 'Ein neues zu erzeugen macht die alte Adresse ungültig — wer sie '
-      + 'abonniert hat, sieht die Termine nicht mehr.')) {
+      t('grp.frageAboNeu',
+        'Es gibt schon ein Abo für diese Gruppe.\n\n'
+        + 'Ein neues zu erzeugen macht die alte Adresse ungültig — wer sie '
+        + 'abonniert hat, sieht die Termine nicht mehr.'))) {
       return;
     }
 
@@ -1086,7 +1107,7 @@ async function aboErzeugen() {
     catch { /* dann steht sie wenigstens lesbar da */ }
   } catch (e) {
     reportClientError('gruppe/abo', e);
-    feld.textContent = 'Das Abo konnte nicht erzeugt werden.';
+    feld.textContent = t('grp.f.abo', 'Das Abo konnte nicht erzeugt werden.');
     feld.hidden = false;
   } finally {
     btn.disabled = false;
@@ -1104,15 +1125,15 @@ async function einladen() {
     feld.hidden = false;
     try {
       await navigator.clipboard.writeText(kennung);
-      btn.textContent = 'Kopiert';
-      setTimeout(() => { btn.textContent = 'Einladungscode erzeugen'; }, 1600);
+      btn.textContent = t('grp.kopiert', 'Kopiert');
+      setTimeout(() => { btn.textContent = t('grp.einladen', 'Einladungscode erzeugen'); }, 1600);
     } catch {
       /* Ohne Zwischenablage — älteres iOS, kein sicherer Kontext —
          steht der Code wenigstens lesbar darunter. */
     }
   } catch (e) {
     reportClientError('gruppe/einladen', e);
-    alert('Der Code konnte nicht erzeugt werden.');
+    alert(t('grp.f.code', 'Der Code konnte nicht erzeugt werden.'));
   } finally {
     btn.disabled = false;
   }

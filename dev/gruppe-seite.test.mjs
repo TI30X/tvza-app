@@ -197,7 +197,8 @@ test('ein Plan wird veröffentlicht, nicht geteilt', async () => {
 
   // "Alle" steht zuerst — der Normalfall ist ein Plan für den ganzen
   // Kader, ein Plan für einen Einzelnen ist die Ausnahme.
-  assert.match(js, /<option value="\$\{PLAN_FUER_ALLE\}">Alle in der Gruppe<\/option>/);
+  assert.match(js, /<option value="\$\{PLAN_FUER_ALLE\}">/);
+  assert.match(js, /t\('grp\.alleInGruppe', 'Alle in der Gruppe'\)/);
 
   // Und veröffentlichen darf nur, wer führt.
   assert.match(js, /\$\('btnPlanNeu'\)\.hidden = !darfFuehren/);
@@ -211,7 +212,7 @@ test('ohne Zuschlag heisst es Rennpunkte und nicht FIS-Punkte', async () => {
   // ist, wäre schlimmer als gar keine — also wird sie gekennzeichnet.
   assert.match(js, /\$\{punkte\.toFixed\(2\)\}\*/);
   assert.match(js, /nur Rennpunkte — der Zuschlag ist nicht bekannt/);
-  assert.match(js, /\$\{gesamt\.toFixed\(2\)\} FIS-Punkte mit Zuschlag/);
+  assert.match(js, /t\('grp\.fisMitZuschlag', '\{n} FIS-Punkte mit Zuschlag'/);
 });
 
 test('es gibt einen Weg in eine Gruppe hinein', async () => {
