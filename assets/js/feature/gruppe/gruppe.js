@@ -854,6 +854,12 @@ function personOeffnen(uid) {
   zeige('grpRolle', darfVerwalten);
   $('rolleWahl').querySelectorAll('[data-rolle]').forEach(btn => {
     btn.setAttribute('aria-pressed', String(btn.dataset.rolle === person.rolle));
+    /* Die Rollen heissen nicht überall gleich: im Gym steht dort
+       Mitglied und nicht Athlet, in der Familie Verwaltung und nicht
+       Trainer. Bisher stand im Markup fest "Trainer"/"Athlet" — die
+       Wörter der Gruppenart gab es also überall ausser genau hier,
+       wo man die Rolle vergibt. */
+    btn.textContent = wort(aktiv.art, btn.dataset.rolle);
     /* Am Kopf lässt sich die Rolle nicht drehen — er übergibt zuerst,
        sonst stünde die Gruppe ohne Kopf da. */
     btn.disabled = istKopf;

@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
-  <title>Gruppe — TVZA</title>
+  <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
        Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md. -->
 </head>
@@ -34,31 +34,31 @@
          Ein leerer Tab wäre ein Grund, nicht wiederzukommen. -->
     <section class="section" id="secLeer" hidden>
       <div class="hint">
-        <div class="hint__text" id="leerText">
+        <div class="hint__text" id="leerText" data-i18n="grp.leerText">
           Eine Gruppe ist der Ort, an dem ihr Termine, Pläne und Nachrichten
           teilt — als Familie oder als Kader.
         </div>
       </div>
       <div class="rows">
-        <button class="b b--primary b--block" id="btnNeu" type="button">Gruppe erstellen</button>
-        <button class="b b--secondary b--block" id="btnBeitreten" type="button">Mit einem Code beitreten</button>
+        <button class="b b--primary b--block" id="btnNeu" type="button" data-i18n="grp.neu">Gruppe erstellen</button>
+        <button class="b b--secondary b--block" id="btnBeitreten" type="button" data-i18n="grp.beitreten">Mit einem Code beitreten</button>
       </div>
     </section>
 
     <!-- Der Umschalter steht nur da, wenn es wirklich etwas zu wechseln
          gibt. Ein Auswahlfeld mit einem einzigen Eintrag ist eine Lüge. -->
     <section class="section" id="secWechsel" hidden>
-      <div class="marke">Aktive Gruppe</div>
-      <select class="form-select" id="grpWahl" aria-label="Gruppe wechseln"></select>
+      <div class="marke" data-i18n="grp.aktive">Aktive Gruppe</div>
+      <select class="form-select" id="grpWahl" aria-label="Gruppe wechseln" data-i18n-attr="aria-label:grp.wechseln"></select>
     </section>
 
     <!-- Termine. Training, Lager, Rennen — drei Arten, weil sie sich
          wirklich verschieden verhalten. Die Farbe ist hier keine
          Dekoration, sondern die Information. -->
     <section class="section" id="secTermine" hidden>
-      <div class="marke">Termine</div>
+      <div class="marke" data-i18n="grp.termine">Termine</div>
       <div class="rows" id="listTermine"></div>
-      <button class="b b--secondary b--block" id="btnTermin" type="button" hidden>Termin hinzufügen</button>
+      <button class="b b--secondary b--block" id="btnTermin" type="button" hidden data-i18n="grp.terminNeu">Termin hinzufügen</button>
     </section>
 
     <!-- Das Formular steht auf derselben Seite statt in einem Dialog:
@@ -66,10 +66,10 @@
          die halbe Höhe frisst, macht daraus eine Rutschpartie. -->
     <section class="section" id="secForm" hidden>
       <div class="form-card">
-        <div class="form-title">Neuer Termin</div>
+        <div class="form-title" data-i18n="grp.terminTitel">Neuer Termin</div>
 
         <div class="form-group">
-          <label class="form-label" for="fArt">Art</label>
+          <label class="form-label" for="fArt" data-i18n="grp.art">Art</label>
           <select class="form-select" id="fArt">
             <option value="training">Training</option>
             <option value="lager">Trainingslager</option>
@@ -78,47 +78,47 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="fTitel">Titel</label>
-          <input class="form-input" id="fTitel" type="text" maxlength="120" placeholder="z.B. Kraft Beine" />
+          <label class="form-label" for="fTitel" data-i18n="grp.titel">Titel</label>
+          <input class="form-input" id="fTitel" type="text" maxlength="120" placeholder="z.B. Kraft Beine" data-i18n-attr="placeholder:grp.titelPh" />
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="fVon">Von</label>
+            <label class="form-label" for="fVon" data-i18n="grp.von">Von</label>
             <input class="form-input" id="fVon" type="date" />
           </div>
           <div class="form-group" id="grpBis">
-            <label class="form-label" for="fBis">Bis</label>
+            <label class="form-label" for="fBis" data-i18n="grp.bis">Bis</label>
             <input class="form-input" id="fBis" type="date" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group" id="grpZeit">
-            <label class="form-label" for="fZeit">Uhrzeit</label>
+            <label class="form-label" for="fZeit" data-i18n="grp.zeit">Uhrzeit</label>
             <input class="form-input" id="fZeit" type="time" />
           </div>
           <div class="form-group" id="grpDisziplin" hidden>
-            <label class="form-label" for="fDisziplin">Disziplin</label>
+            <label class="form-label" for="fDisziplin" data-i18n="grp.disziplin">Disziplin</label>
             <select class="form-select" id="fDisziplin">
               <option value="">—</option>
-              <option value="SL">Slalom</option>
-              <option value="RS">Riesenslalom</option>
-              <option value="SG">Super-G</option>
-              <option value="DH">Abfahrt</option>
+              <option value="SL" data-i18n="disziplin.SL">Slalom</option>
+              <option value="RS" data-i18n="disziplin.RS">Riesenslalom</option>
+              <option value="SG" data-i18n="disziplin.SG">Super-G</option>
+              <option value="DH" data-i18n="disziplin.DH">Abfahrt</option>
             </select>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="fOrt">Ort</label>
-          <input class="form-input" id="fOrt" type="text" maxlength="80" placeholder="kann leer bleiben" />
+          <label class="form-label" for="fOrt" data-i18n="grp.ort">Ort</label>
+          <input class="form-input" id="fOrt" type="text" maxlength="80" placeholder="kann leer bleiben" data-i18n-attr="placeholder:grp.ortPh" />
         </div>
 
         <p class="empty-hint" id="formFehler" hidden></p>
 
-        <button class="b b--primary b--block" id="btnSpeichern" type="button">Speichern</button>
-        <button class="b b--secondary b--block" id="btnAbbrechen" type="button">Abbrechen</button>
+        <button class="b b--primary b--block" id="btnSpeichern" type="button" data-i18n="common.speichern">Speichern</button>
+        <button class="b b--secondary b--block" id="btnAbbrechen" type="button" data-i18n="common.abbrechen">Abbrechen</button>
       </div>
     </section>
 
@@ -126,33 +126,33 @@
          genau einen Athleten — das ist der Unterschied, den das alte
          Modell nicht abbilden konnte. -->
     <section class="section" id="secPlaene" hidden>
-      <div class="marke">Plan</div>
+      <div class="marke" data-i18n="grp.plan">Plan</div>
       <div class="rows" id="listPlaene"></div>
-      <button class="b b--secondary b--block" id="btnPlanNeu" type="button" hidden>Plan veröffentlichen</button>
+      <button class="b b--secondary b--block" id="btnPlanNeu" type="button" hidden data-i18n="grp.planNeu">Plan veröffentlichen</button>
     </section>
 
     <section class="section" id="secPlanForm" hidden>
       <div class="form-card">
-        <button class="backlink" id="btnPlanAbbrechen" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zurück</button>
-        <div class="form-title">Plan veröffentlichen</div>
+        <button class="backlink" id="btnPlanAbbrechen" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" data-i18n="grp.planNeu">Plan veröffentlichen</div>
 
         <div class="form-group">
-          <label class="form-label" for="planQuelle">Aus deinen Programmen</label>
+          <label class="form-label" for="planQuelle" data-i18n="grp.planQuelle">Aus deinen Programmen</label>
           <select class="form-select" id="planQuelle"></select>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="planTitel">Titel</label>
-          <input class="form-input" id="planTitel" type="text" maxlength="120" placeholder="z.B. Woche 31 — Kraft" />
+          <label class="form-label" for="planTitel" data-i18n="grp.titel">Titel</label>
+          <input class="form-input" id="planTitel" type="text" maxlength="120" placeholder="z.B. Woche 31 — Kraft" data-i18n-attr="placeholder:grp.planTitelPh" />
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="planFuer">Für wen</label>
+          <label class="form-label" for="planFuer" data-i18n="grp.planFuer">Für wen</label>
           <select class="form-select" id="planFuer"></select>
         </div>
 
         <p class="empty-hint" id="planFehler" hidden></p>
-        <button class="b b--primary b--block" id="btnPlanSpeichern" type="button">Veröffentlichen</button>
+        <button class="b b--primary b--block" id="btnPlanSpeichern" type="button" data-i18n="grp.veroeffentlichen">Veröffentlichen</button>
       </div>
     </section>
 
@@ -161,16 +161,16 @@
          genau das ist: etwas mit einem Vorher und einem Nachher. -->
     <section class="section" id="secDetail" hidden>
       <div class="form-card">
-        <button class="backlink" id="btnZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zurück</button>
+        <button class="backlink" id="btnZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
         <div class="form-title" id="dTitel">—</div>
         <p class="empty-hint" id="dMeta"></p>
 
         <div class="form-group" id="grpZusage">
-          <div class="form-label">Deine Antwort</div>
-          <div class="seg" id="zusageKnoepfe" role="group" aria-label="Deine Antwort">
-            <button class="seg__item" type="button" data-antwort="ja" aria-pressed="false">Ja</button>
-            <button class="seg__item" type="button" data-antwort="vielleicht" aria-pressed="false">Vielleicht</button>
-            <button class="seg__item" type="button" data-antwort="nein" aria-pressed="false">Nein</button>
+          <div class="form-label" data-i18n="grp.deineAntwort">Deine Antwort</div>
+          <div class="seg" id="zusageKnoepfe" role="group" aria-label="Deine Antwort" data-i18n-attr="aria-label:grp.deineAntwort">
+            <button class="seg__item" type="button" data-antwort="ja" aria-pressed="false" data-i18n="grp.ja">Ja</button>
+            <button class="seg__item" type="button" data-antwort="vielleicht" aria-pressed="false" data-i18n="grp.vielleicht">Vielleicht</button>
+            <button class="seg__item" type="button" data-antwort="nein" aria-pressed="false" data-i18n="grp.nein">Nein</button>
           </div>
           <p class="empty-hint" id="dZusagen"></p>
         </div>
@@ -185,9 +185,9 @@
              PDF, und sie gehoert an den Termin — nicht in eine Mail,
              die drei Wochen spaeter niemand mehr findet. -->
         <div id="grpAnhaenge" hidden>
-          <div class="marke">Unterlagen</div>
+          <div class="marke" data-i18n="grp.unterlagen">Unterlagen</div>
           <div class="rows" id="listAnhaenge"></div>
-          <label class="b b--secondary b--block" for="anhangWahl" id="anhangKnopf" hidden>Ausschreibung anhängen</label>
+          <label class="b b--secondary b--block" for="anhangWahl" id="anhangKnopf" hidden data-i18n="grp.anhangNeu">Ausschreibung anhängen</label>
           <input class="datei-feld" id="anhangWahl" type="file" accept="application/pdf,image/*" />
           <p class="empty-hint" id="anhangFehler" hidden></p>
         </div>
@@ -195,7 +195,7 @@
         <!-- Absagen ist nicht Loeschen: der Termin bleibt sichtbar,
              damit niemand umsonst hinfaehrt. -->
         <button class="b b--secondary b--block" id="btnAbsagen" type="button" hidden>Termin absagen</button>
-        <button class="b b--danger b--block" id="btnLoeschen" type="button" hidden>Termin löschen</button>
+        <button class="b b--danger b--block" id="btnLoeschen" type="button" hidden data-i18n="grp.terminLoeschen">Termin löschen</button>
       </div>
     </section>
 
@@ -204,7 +204,7 @@
          herabstufen. -->
     <section class="section" id="secPerson" hidden>
       <div class="form-card">
-        <button class="backlink" id="btnPersonZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zurück</button>
+        <button class="backlink" id="btnPersonZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
         <div class="form-title" id="pName">—</div>
         <p class="empty-hint" id="pMeta"></p>
 
@@ -212,26 +212,26 @@
              Stand: im Slalom stark und in der Abfahrt schwach zu sein
              ist der Normalfall. -->
         <div id="secPunkte" hidden>
-          <div class="marke">FIS-Punkte</div>
+          <div class="marke" data-i18n="grp.fisPunkte">FIS-Punkte</div>
           <div class="rows" id="listPunkte"></div>
         </div>
 
         <div id="secErgebnisse" hidden>
-          <div class="marke">Rennen</div>
+          <div class="marke" data-i18n="grp.rennenMarke">Rennen</div>
           <div class="rows" id="listErgebnisse"></div>
-          <button class="b b--secondary b--block" id="btnErgebnisNeu" type="button" hidden>Ergebnis erfassen</button>
+          <button class="b b--secondary b--block" id="btnErgebnisNeu" type="button" hidden data-i18n="grp.ergebnisNeu">Ergebnis erfassen</button>
         </div>
 
         <div class="form-group" id="grpRolle">
-          <div class="form-label">Rolle</div>
-          <div class="seg" id="rolleWahl" role="group" aria-label="Rolle">
+          <div class="form-label" data-i18n="grp.rolle">Rolle</div>
+          <div class="seg" id="rolleWahl" role="group" aria-label="Rolle" data-i18n-attr="aria-label:grp.rolle">
             <button class="seg__item" type="button" data-rolle="staff" aria-pressed="false">Trainer</button>
             <button class="seg__item" type="button" data-rolle="mitglied" aria-pressed="false">Athlet</button>
           </div>
         </div>
 
-        <button class="b b--secondary b--block" id="btnUebergeben" type="button">Leitung übergeben</button>
-        <button class="b b--danger b--block" id="btnEntfernen" type="button">Aus der Gruppe entfernen</button>
+        <button class="b b--secondary b--block" id="btnUebergeben" type="button" data-i18n="grp.uebergeben">Leitung übergeben</button>
+        <button class="b b--danger b--block" id="btnEntfernen" type="button" data-i18n="grp.entfernen">Aus der Gruppe entfernen</button>
       </div>
     </section>
 
@@ -239,40 +239,40 @@
          eine Anmeldung fragt nach vorn, ein Ergebnis blickt zurueck. -->
     <section class="section" id="secErgForm" hidden>
       <div class="form-card">
-        <button class="backlink" id="btnErgAbbrechen" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zurück</button>
+        <button class="backlink" id="btnErgAbbrechen" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
         <div class="form-title" id="ergTitel">Ergebnis erfassen</div>
 
         <div class="form-group">
-          <label class="form-label" for="ergRennen">Rennen</label>
+          <label class="form-label" for="ergRennen" data-i18n="grp.rennenFeld">Rennen</label>
           <select class="form-select" id="ergRennen"></select>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="ergRang">Rang</label>
+            <label class="form-label" for="ergRang" data-i18n="grp.rang">Rang</label>
             <input class="form-input" id="ergRang" type="number" min="1" max="999" inputmode="numeric" />
           </div>
           <div class="form-group">
-            <label class="form-label" for="ergZeit">Deine Zeit</label>
+            <label class="form-label" for="ergZeit" data-i18n="grp.deineZeit">Deine Zeit</label>
             <input class="form-input" id="ergZeit" type="text" maxlength="12" placeholder="1:23.45" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label" for="ergSieger">Siegerzeit</label>
+            <label class="form-label" for="ergSieger" data-i18n="grp.siegerzeit">Siegerzeit</label>
             <input class="form-input" id="ergSieger" type="text" maxlength="12" placeholder="1:21.90" />
           </div>
           <div class="form-group">
-            <label class="form-label" for="ergZuschlag">Zuschlag</label>
-            <input class="form-input" id="ergZuschlag" type="text" maxlength="8" placeholder="falls bekannt" />
+            <label class="form-label" for="ergZuschlag" data-i18n="grp.zuschlag">Zuschlag</label>
+            <input class="form-input" id="ergZuschlag" type="text" maxlength="8" placeholder="falls bekannt" data-i18n-attr="placeholder:grp.fallsBekannt" />
           </div>
         </div>
 
         <p class="empty-hint" id="ergVorschau"></p>
         <p class="empty-hint" id="ergFehler" hidden></p>
 
-        <button class="b b--primary b--block" id="btnErgSpeichern" type="button">Speichern</button>
+        <button class="b b--primary b--block" id="btnErgSpeichern" type="button" data-i18n="common.speichern">Speichern</button>
       </div>
     </section>
 
@@ -290,9 +290,9 @@
          zehn Athleten mit demselben Zettel ein. Zuruecknehmen heisst
          loeschen; wer schon drin ist, bleibt drin. -->
     <section class="section" id="secAktionen" hidden>
-      <button class="b b--secondary b--block" id="btnEinladen" type="button">Einladungscode erzeugen</button>
+      <button class="b b--secondary b--block" id="btnEinladen" type="button" data-i18n="grp.einladen">Einladungscode erzeugen</button>
       <p class="empty-hint" id="einladungText" hidden></p>
-      <button class="b b--secondary b--block" id="btnAbo" type="button" hidden>Kalender-Abo erzeugen</button>
+      <button class="b b--secondary b--block" id="btnAbo" type="button" hidden data-i18n="grp.abo">Kalender-Abo erzeugen</button>
       <p class="empty-hint" id="aboText" hidden></p>
     </section>
 

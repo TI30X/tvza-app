@@ -229,3 +229,39 @@ test('es gibt einen Weg in eine Gruppe hinein', async () => {
   // Wer beitritt, ernennt sich nicht selbst zum Trainer.
   assert.match(groups, /\{ uid, rolle: 'mitglied', seit: serverTimestamp\(\), code: sauber \}/);
 });
+
+/* ── Beschriftungen ────────────────────────────────────────────────
+   Die Seite hatte zwei Schluessel bei 300 Zeilen Markup. Sie hat
+   jetzt 62 — und dabei ist aufgefallen, dass die Rollenknoepfe fest
+   "Trainer"/"Athlet" trugen. In einem Gym heisst das Mitglied, in
+   einer Familie Verwaltung; wort() gibt es genau dafuer, und es war
+   ueberall im Einsatz ausser an der Stelle, an der man die Rolle
+   vergibt. */
+
+test('die Rollenknoepfe tragen die Woerter der Gruppenart', async () => {
+  const src = await readFile(new URL('../assets/js/feature/gruppe/gruppe.js', import.meta.url), 'utf8');
+  assert.match(src, /btn\.textContent = wort\(aktiv\.art, btn\.dataset\.rolle\)/,
+    'die Rollenknoepfe werden nicht beschriftet — im Gym stuende dort Athlet');
+});
+
+test('kein Schluessel auf einem Element, das der Code selbst beschriftet', async () => {
+  const html = await readFile(new URL('../pages/gruppe.html', import.meta.url), 'utf8');
+
+  /* Der Katalog kommt asynchron und gewinnt zuletzt. Wer einem
+     Element, das der Code setzt, zusaetzlich einen Schluessel gibt,
+     bekommt genau den Fehler zurueck, der auf login.html steckte:
+     die Ansicht steht in einem Zustand und traegt die Beschriftung
+     des anderen. */
+  for (const id of ['fArt', 'btnAbsagen', 'dTitel', 'pName', 'ergTitel', 'mitgliederTitel']) {
+    const treffer = html.match(new RegExp(`<[^>]*id="${id}"[^>]*>`));
+    assert.ok(treffer, `${id} nicht gefunden`);
+    assert.ok(!/data-i18n(?!-)/.test(treffer[0]),
+      `${id} hat einen Schluessel, obwohl der Code es selbst beschriftet`);
+  }
+
+  /* Und die Rollenknoepfe ebenso wenig. */
+  for (const m of html.matchAll(/<button[^>]*data-rolle[^>]*>/g)) {
+    assert.ok(!/data-i18n(?!-)/.test(m[0]),
+      'ein Rollenknopf hat einen Schluessel — wort() setzt ihn bereits');
+  }
+});
