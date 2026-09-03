@@ -127,6 +127,49 @@ service cloud.firestore {
         );
     }
 
+    /* ── Gruppen ───────────────────────────────────────────────────
+       Ein Objekt fuer Familie und Kader. Der Unterschied zwischen
+       beiden sind Woerter und eingeschaltete Bereiche, nicht Code.
+
+       Mitglieder liegen als Unterdokumente unter der Gruppe, nicht als
+       Array auf dem Gruppendokument. Das ist der ganze Grund fuer diese
+       Phase: ein Array kann keine Rolle pro Person tragen, und genau die
+       braucht ein Kader — Haupttrainer, Trainer, Athlet. Ausserdem
+       waechst ein Array bis an die Dokumentgrenze, waehrend eine
+       Untersammlung nicht endet.
+
+       Drei Rollen, in beiden Gruppenarten dieselben:
+         head    — Haupttrainer / Kopf der Familie. Genau einer.
+         staff   — weitere Trainer / Eltern. Kuratieren, aber uebergeben nicht.
+         mitglied — Athlet / Kind.
+
+       Kosten: jede Pruefung hier ist genau ein Lesezugriff. Firestore
+       erlaubt zehn pro Anfrage, wir bleiben also weit darunter. */
+
+    function inGroup(gid) {
+      return isMember()
+        && exists(/databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid));
+    }
+
+    function groupRole(gid) {
+      return get(
+        /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)
+      ).data.get('rolle', '');
+    }
+
+    // Kopf und Trainer kuratieren dasselbe. Nur der Kopf uebergibt,
+    // loescht und vergibt Rollen.
+    function leadsGroup(gid) {
+      return inGroup(gid) && groupRole(gid) in ['head', 'staff'];
+    }
+
+    function headsGroup(gid) {
+      return isMember()
+        && exists(/databases/$(database)/documents/groups/$(gid))
+        && get(/databases/$(database)/documents/groups/$(gid))
+          .data.get('headUid', '') == request.auth.uid;
+    }
+
     function canUseTrip(tripId) {
       return tripId is string
         && exists(/databases/$(database)/documents/trips/$(tripId))
@@ -732,6 +775,111 @@ service cloud.firestore {
 
       allow delete: if isMember()
                     && resource.data.get('headUid', '') == request.auth.uid;
+    }
+
+    match /groups/{gid} {
+      allow get, list: if inGroup(gid);
+
+      // Eine Gruppe entsteht nie ohne ihren Kopf. existsAfter prueft den
+      // Zustand NACH dem Schreiben, das Mitgliedsdokument muss also im
+      // selben Stapel liegen — beide entstehen zusammen oder gar nicht.
+      // Ohne diese Klammer gaebe es kopflose Gruppen, die niemand mehr
+      // verwalten oder loeschen kann.
+      allow create: if isMember()
+                    && request.resource.data.headUid == request.auth.uid
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 80
+                    && request.resource.data.art in ['familie', 'kader']
+                    && request.resource.data.bereiche is map
+                    && request.resource.data.inviteToken is string
+                    && request.resource.data.inviteToken.size() >= 8
+                    && request.resource.data.keys().hasOnly([
+                      'name', 'art', 'headUid', 'bereiche',
+                      'inviteToken', 'farbe', 'createdAt'
+                    ])
+                    && existsAfter(
+                      /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)
+                    );
+
+      allow update: if
+                    // Kuratieren: Name, Farbe, eingeschaltete Bereiche und
+                    // ein frischer Einladungscode. 'art' steht bewusst NICHT
+                    // in dieser Liste — sie entscheidet ueber Wortwahl und
+                    // Vorgaben, und ein Wechsel im Betrieb wuerde bestehende
+                    // Termine und Rollen sinnlos machen.
+                    (
+                      leadsGroup(gid)
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['name', 'farbe', 'bereiche', 'inviteToken'])
+                      && request.resource.data.name is string
+                      && request.resource.data.name.size() > 0
+                      && request.resource.data.name.size() <= 80
+                      && request.resource.data.bereiche is map
+                    )
+                    // Uebergabe: nur der Kopf, und nur an jemanden, der
+                    // bereits Mitglied ist.
+                    || (
+                      headsGroup(gid)
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['headUid'])
+                      && request.resource.data.headUid is string
+                      && exists(
+                        /databases/$(database)/documents/groups/$(gid)/members/$(request.resource.data.headUid)
+                      )
+                    );
+
+      allow delete: if headsGroup(gid);
+    }
+
+    match /groups/{gid}/members/{uid} {
+      // Mitglieder sehen einander — ohne das gaebe es keine Kaderliste.
+      allow get, list: if inGroup(gid);
+
+      allow create: if isMember()
+                    && request.resource.data.uid == uid
+                    && request.resource.data.rolle is string
+                    && request.resource.data.keys().hasOnly(['uid', 'rolle', 'seit'])
+                    && (
+                      // Der Gruender legt sich selbst als Kopf an. Erlaubt nur,
+                      // wenn die Gruppe im selben Stapel ihn auch als Kopf
+                      // fuehrt — sonst koennte sich jemand zum Kopf einer
+                      // fremden Gruppe erklaeren, indem er einfach ein
+                      // Mitgliedsdokument schreibt.
+                      (
+                        request.auth.uid == uid
+                        && request.resource.data.rolle == 'head'
+                        && getAfter(/databases/$(database)/documents/groups/$(gid))
+                          .data.headUid == request.auth.uid
+                      )
+                      // Die Leitung nimmt jemanden auf, nie als zweiten Kopf.
+                      || (
+                        leadsGroup(gid)
+                        && request.resource.data.rolle in ['staff', 'mitglied']
+                      )
+                    );
+
+      // Rollen vergibt nur der Kopf — wie bei families, wo auch nur der
+      // Kopf die Managerliste aendert. Duerfte die Leitung das, koennten
+      // sich zwei Trainer gegenseitig herabstufen.
+      allow update: if headsGroup(gid)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['rolle'])
+                    && request.resource.data.rolle in ['staff', 'mitglied']
+                    && resource.data.get('rolle', '') != 'head';
+
+      allow delete: if
+                    // Selbst gehen. Der Kopf uebergibt vorher — sonst bliebe
+                    // eine Gruppe ohne Kopf zurueck.
+                    (
+                      request.auth.uid == uid
+                      && resource.data.get('rolle', '') != 'head'
+                    )
+                    // Die Leitung entfernt jemanden, aber nie den Kopf.
+                    || (
+                      leadsGroup(gid)
+                      && resource.data.get('rolle', '') != 'head'
+                    );
     }
 
     match /trips/{tripId} {

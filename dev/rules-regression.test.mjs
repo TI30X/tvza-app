@@ -67,3 +67,43 @@ test('activities and attachments remain scoped through calendar membership', asy
   assert.doesNotMatch(activities, /allow read, write: if isMember\(\)/);
   assert.doesNotMatch(attachments, /allow read, write: if isMember\(\)/);
 });
+
+/* Ein Tippfehler in einem Funktionsnamen ist in Firestore-Regeln teuer:
+ * die Datei wird abgelehnt, und wer sie über die Konsole einfügt, merkt
+ * das erst dort. Diese Prüfung kostet nichts und fängt genau das — plus
+ * Helfer, die beim Umbauen verwaist zurückbleiben.
+ *
+ * Sie ersetzt keinen Emulator. Sie prüft Namen, nicht Semantik. */
+test('jeder Regelhelfer ist definiert und wird auch benutzt', async () => {
+  const raw = await readRules();
+  const rules = raw
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map(line => line.replace(/\/\/.*$/, ''))
+    .join('\n');
+
+  const defined = new Set(
+    [...rules.matchAll(/function\s+([A-Za-z0-9_]+)\s*\(/g)].map(m => m[1]),
+  );
+  assert.ok(defined.size > 20, 'die Helfer wurden offenbar nicht gefunden');
+
+  const builtin = new Set([
+    'get', 'exists', 'getAfter', 'existsAfter', 'hasOnly', 'hasAny', 'hasAll',
+    'keys', 'values', 'size', 'diff', 'affectedKeys', 'concat', 'removeAll',
+    'matches', 'lower', 'upper', 'split', 'toUtf8', 'debug', 'duration',
+    'timestamp', 'int', 'float', 'string', 'path', 'abs', 'function', 'if',
+  ]);
+
+  const called = [
+    ...new Set([...rules.matchAll(/([A-Za-z][A-Za-z0-9_]*)\s*\(/g)].map(m => m[1])),
+  ];
+
+  const unknown = called.filter(name => !defined.has(name) && !builtin.has(name));
+  assert.deepEqual(unknown, [], `unbekannte Funktion(en) in firestore.rules: ${unknown}`);
+
+  const orphaned = [...defined].filter(name => {
+    const uses = rules.match(new RegExp(`\\b${name}\\s*\\(`, 'g')) || [];
+    return uses.length < 2; // die Definition selbst zählt mit
+  });
+  assert.deepEqual(orphaned, [], `nie aufgerufene Helfer: ${orphaned}`);
+});
