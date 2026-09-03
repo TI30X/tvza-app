@@ -26,6 +26,7 @@ import {
   rolleSetzen, mitgliedEntfernen, uebergeben,
   einladungErzeugen, beitreten,
   ladeErgebnisse, ergebnisSpeichern,
+  ladePlaene, planVeroeffentlichen, eigeneProgramme, PLAN_FUER_ALLE,
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
@@ -147,6 +148,130 @@ function zeichneTermine() {
     : '<p class="empty-hint">Noch keine Termine.</p>';
 }
 
+/* ── Pläne ─────────────────────────────────────────────────────────
+   Ein Plan gilt für den ganzen Kader oder für genau einen Athleten.
+   Das ist der Unterschied, den das alte Modell nicht abbilden konnte:
+   dort lag ein Programm unter users/{uid} und gehörte damit dem
+   Athleten, nicht dem Trainer. */
+
+let plaene = [];
+
+function planZeile(p) {
+  const fuerAlle = p.fuer === PLAN_FUER_ALLE;
+  const empfaenger = fuerAlle
+    ? wort(aktiv?.art, 'mitglieder')
+    : (mitglieder.find(m => m.uid === p.fuer)?.name || 'ein Athlet');
+
+  return `
+    <div class="row" data-bereich="t-training">
+      <span class="row__icon">P</span>
+      <span class="row__body">
+        <span class="row__title">${escHtml(p.titel)}</span>
+        <span class="row__sub">${escHtml(fuerAlle ? `Für ${empfaenger}` : `Nur für ${empfaenger}`)}</span>
+      </span>
+      <span class="row__end"></span>
+    </div>`;
+}
+
+async function zeichnePlaene() {
+  const liste = $('listPlaene');
+  if (!liste || !aktiv) return;
+
+  const darfFuehren = leitet(aktiv.meineRolle);
+  zeige('secPlaene', true);
+  $('btnPlanNeu').hidden = !darfFuehren;
+
+  try {
+    plaene = await ladePlaene(aktiv.id, user.uid, darfFuehren);
+  } catch (e) {
+    reportClientError('gruppe/plaene', e);
+    plaene = [];
+  }
+
+  liste.innerHTML = plaene.length
+    ? plaene.map(planZeile).join('')
+    : `<p class="empty-hint">${darfFuehren
+        ? 'Noch kein Plan veröffentlicht.'
+        : 'Für dich liegt noch kein Plan bereit.'}</p>`;
+}
+
+async function planFormOeffnen() {
+  if (!aktiv) return;
+
+  const quelle = $('planQuelle');
+  try {
+    const programme = await eigeneProgramme(user.uid);
+    quelle.innerHTML = programme.length
+      ? programme.map(p => `<option value="${escHtml(p.id)}">${escHtml(p.id)}</option>`).join('')
+      : '<option value="">Du hast noch kein Programm eingelesen</option>';
+    /* Der Rohtext wird am Element gemerkt, damit das Speichern nicht
+       noch einmal lesen muss. */
+    quelle.dataset.json = JSON.stringify(
+      Object.fromEntries(programme.map(p => [p.id, p.json])));
+  } catch (e) {
+    reportClientError('gruppe/programme', e);
+    quelle.innerHTML = '<option value="">Programme nicht lesbar</option>';
+  }
+
+  /* "Alle" zuerst — der Normalfall ist ein Plan für den ganzen Kader.
+     Ein Plan nur für einen Athleten ist die Ausnahme, und genau die
+     soll möglich sein. */
+  $('planFuer').innerHTML = [
+    `<option value="${PLAN_FUER_ALLE}">Alle in der Gruppe</option>`,
+    ...mitglieder.map(m =>
+      `<option value="${escHtml(m.uid)}">Nur ${escHtml(m.name || m.uid)}</option>`),
+  ].join('');
+
+  $('planTitel').value = '';
+  $('planFehler').hidden = true;
+  zeige('secPlanForm', true);
+  zeige('secPlaene', false);
+  zeige('secTermine', false);
+  zeige('secMitglieder', false);
+}
+
+function planFormSchliessen() {
+  zeige('secPlanForm', false);
+  zeige('secPlaene', !!aktiv);
+  zeige('secTermine', !!aktiv);
+  zeige('secMitglieder', !!aktiv);
+}
+
+async function planSpeichern() {
+  if (!aktiv) return;
+  const quelle = $('planQuelle');
+  const programmId = quelle.value;
+  const fehler = $('planFehler');
+
+  let json = '';
+  try { json = JSON.parse(quelle.dataset.json || '{}')[programmId] || ''; }
+  catch { json = ''; }
+
+  if (!json) {
+    fehler.textContent = 'Es ist kein Programm ausgewählt, das sich veröffentlichen liesse.';
+    fehler.hidden = false;
+    return;
+  }
+
+  const btn = $('btnPlanSpeichern');
+  btn.disabled = true;
+  try {
+    await planVeroeffentlichen(aktiv.id, user.uid, {
+      titel: $('planTitel').value.trim() || programmId,
+      json,
+      fuer: $('planFuer').value,
+    });
+    planFormSchliessen();
+    await zeichnePlaene();
+  } catch (e) {
+    reportClientError('gruppe/plan', e);
+    fehler.textContent = e?.message || 'Der Plan konnte nicht veröffentlicht werden.';
+    fehler.hidden = false;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function zeichneWechsel() {
   const mehrere = gruppen.length > 1;
   zeige('secWechsel', mehrere);
@@ -183,6 +308,7 @@ function zeichne() {
   $('grpName').textContent = aktiv.name;
   zeichneMitglieder();
   zeichneTermine();
+  zeichnePlaene();
 }
 
 /* ── Handlungen ────────────────────────────────────────────────────*/
@@ -284,6 +410,7 @@ function detailOeffnen(eid) {
   zeige('secDetail', true);
   zeige('secTermine', false);
   zeige('secMitglieder', false);
+  zeige('secPlaene', false);
   zeichneZusagen();
 }
 
@@ -292,6 +419,7 @@ function detailSchliessen() {
   zeige('secDetail', false);
   zeige('secTermine', !!aktiv);
   zeige('secMitglieder', !!aktiv);
+  zeige('secPlaene', !!aktiv);
 }
 
 async function antworten(antwort) {
@@ -555,6 +683,7 @@ function personOeffnen(uid) {
   zeige('secPerson', true);
   zeige('secMitglieder', false);
   zeige('secTermine', false);
+  zeige('secPlaene', false);
 
   zeichneErgebnisse();
 }
@@ -566,6 +695,7 @@ function personSchliessen() {
   zeige('secPerson', false);
   zeige('secMitglieder', !!aktiv);
   zeige('secTermine', !!aktiv);
+  zeige('secPlaene', !!aktiv);
 }
 
 async function rolleAendern(rolle) {
@@ -811,6 +941,9 @@ async function einladen() {
   $('btnErgebnisNeu')?.addEventListener('click', ergFormOeffnen);
   $('btnErgAbbrechen')?.addEventListener('click', ergFormSchliessen);
   $('btnErgSpeichern')?.addEventListener('click', ergSpeichern);
+  $('btnPlanNeu')?.addEventListener('click', planFormOeffnen);
+  $('btnPlanAbbrechen')?.addEventListener('click', planFormSchliessen);
+  $('btnPlanSpeichern')?.addEventListener('click', planSpeichern);
   for (const id of ['ergRennen', 'ergZeit', 'ergSieger', 'ergZuschlag']) {
     $(id)?.addEventListener('input', ergVorschau);
     $(id)?.addEventListener('change', ergVorschau);

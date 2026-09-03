@@ -174,6 +174,35 @@ test('FIS-Punkte werden gerechnet, nicht gespeichert', async () => {
   assert.match(groups, /return `\$\{eventId\}__\$\{uid\}`/);
 });
 
+test('der Client filtert die Planabfrage, sonst fällt sie ganz', async () => {
+  const groups = await read('assets/js/groups.js');
+
+  // Firestore prüft jedes Ergebnisdokument einzeln. Eine Abfrage, die
+  // einen fremden Plan zurückgäbe, wird vollständig abgelehnt — der
+  // Filter ist also erzwungen und nicht bloss Höflichkeit.
+  assert.match(groups, /where\('fuer', 'in', \[PLAN_FUER_ALLE, uid\]\)/);
+  // Die Leitung darf alles sehen und fragt deshalb ungefiltert.
+  assert.match(groups, /alsLeitung\s*\n?\s*\? sammlung/);
+});
+
+test('ein Plan wird veröffentlicht, nicht geteilt', async () => {
+  const [js, groups] = await Promise.all([skript(), read('assets/js/groups.js')]);
+
+  // Die eigenen Programme bleiben privat; veröffentlicht wird eine
+  // Kopie. Ein Trainer probiert an seinem Programm herum, und der Kader
+  // soll davon erst etwas sehen, wenn er es bewusst herausgibt.
+  assert.match(groups, /export async function eigeneProgramme\(uid\)/);
+  assert.match(groups, /collection\(db, 'users', uid, 'trainingPrograms'\)/);
+  assert.match(js, /planVeroeffentlichen\(aktiv\.id, user\.uid, \{/);
+
+  // "Alle" steht zuerst — der Normalfall ist ein Plan für den ganzen
+  // Kader, ein Plan für einen Einzelnen ist die Ausnahme.
+  assert.match(js, /<option value="\$\{PLAN_FUER_ALLE\}">Alle in der Gruppe<\/option>/);
+
+  // Und veröffentlichen darf nur, wer führt.
+  assert.match(js, /\$\('btnPlanNeu'\)\.hidden = !darfFuehren/);
+});
+
 test('ohne Zuschlag heisst es Rennpunkte und nicht FIS-Punkte', async () => {
   const js = await skript();
 

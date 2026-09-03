@@ -315,3 +315,40 @@ test('Zusagen sind innerhalb der Gruppe sichtbar', async () => {
   const block = matchBlock(await readRules(), '/groups/{gid}/events/{eid}/zusagen/{uid}');
   assert.match(allowClause(block, 'get, list'), /inGroup\(gid\)/);
 });
+
+/* ── Trainingsplaene ───────────────────────────────────────────────*/
+
+test('ein Plan gilt fuer den Kader oder fuer genau einen Athleten', async () => {
+  const block = matchBlock(await readRules(), '/groups/{gid}/plaene/{planId}');
+  const create = allowClause(block, 'create, update');
+
+  // Das Feld 'fuer' ist die eigentliche Anforderung: ein Trainer gibt
+  // sechs Athleten sechs verschiedene Plaene, ohne sechs Gruppen zu
+  // brauchen. Genau das ging im alten Modell nicht.
+  assert.match(create, /request\.resource\.data\.fuer is string/);
+  assert.match(create, /leadsGroup\(gid\)/);
+  assert.match(create, /request\.resource\.data\.erstelltVon == request\.auth\.uid/);
+  assert.match(create, /hasOnly\(\[[\s\S]*'fuer', 'notiz',[\s\S]*\]\)/);
+});
+
+test('ein Athlet liest nur, was fuer ihn bestimmt ist', async () => {
+  const block = matchBlock(await readRules(), '/groups/{gid}/plaene/{planId}');
+  const lesen = allowClause(block, 'get, list');
+
+  // Drei Wege und kein vierter: fuer alle, fuer mich, oder ich fuehre.
+  assert.match(lesen, /resource\.data\.get\('fuer', ''\) == 'alle'/);
+  assert.match(lesen, /resource\.data\.get\('fuer', ''\) == request\.auth\.uid/);
+  assert.match(lesen, /leadsGroup\(gid\)/);
+  assert.match(lesen, /inGroup\(gid\)/);
+});
+
+test('der Plan bleibt in der Dokumentgrenze', async () => {
+  const create = allowClause(matchBlock(await readRules(), '/groups/{gid}/plaene/{planId}'), 'create, update');
+
+  // Dasselbe Format und dieselbe Grenze wie users/{uid}/trainingPrograms:
+  // eine Zeichenkette, weil Firestore keine Arrays in Arrays kennt und
+  // die eingelesenen Wochentabellen genau das sind.
+  assert.match(create, /request\.resource\.data\.json is string/);
+  assert.match(create, /request\.resource\.data\.json\.size\(\) <= 900000/);
+  assert.match(create, /request\.resource\.data\.titel\.size\(\) <= 120/);
+});

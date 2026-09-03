@@ -128,6 +128,40 @@
       </div>
     </section>
 
+    <!-- Trainingsplaene. Ein Plan gilt fuer den ganzen Kader oder fuer
+         genau einen Athleten — das ist der Unterschied, den das alte
+         Modell nicht abbilden konnte. -->
+    <section class="section" id="secPlaene" hidden>
+      <div class="marke">Plan</div>
+      <div class="rows" id="listPlaene"></div>
+      <button class="b b--secondary b--block" id="btnPlanNeu" type="button" hidden>Plan veröffentlichen</button>
+    </section>
+
+    <section class="section" id="secPlanForm" hidden>
+      <div class="form-card">
+        <button class="backlink" id="btnPlanAbbrechen" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zurück</button>
+        <div class="form-title">Plan veröffentlichen</div>
+
+        <div class="form-group">
+          <label class="form-label" for="planQuelle">Aus deinen Programmen</label>
+          <select class="form-select" id="planQuelle"></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="planTitel">Titel</label>
+          <input class="form-input" id="planTitel" type="text" maxlength="120" placeholder="z.B. Woche 31 — Kraft" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="planFuer">Für wen</label>
+          <select class="form-select" id="planFuer"></select>
+        </div>
+
+        <p class="empty-hint" id="planFehler" hidden></p>
+        <button class="b b--primary b--block" id="btnPlanSpeichern" type="button">Veröffentlichen</button>
+      </div>
+    </section>
+
     <!-- Ein Termin von nahem. Für Athleten die Zusage, für die Leitung
          das Ergebnis — und beides an derselben Stelle, weil ein Rennen
          genau das ist: etwas mit einem Vorher und einem Nachher. -->

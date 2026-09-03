@@ -401,6 +401,76 @@ export function terminLoeschen(gid, eid) {
   return deleteDoc(terminRef(gid, eid));
 }
 
+/* ── Trainingspläne ────────────────────────────────────────────────
+   'fuer' ist das Feld, um das es geht: 'alle' für den ganzen Kader
+   oder die uid eines Athleten. Damit gibt ein Trainer sechs Athleten
+   sechs verschiedene Pläne, ohne sechs Gruppen anzulegen — genau das
+   ging im alten Modell nicht.
+
+   'json' ist dasselbe Format wie users/{uid}/trainingPrograms, also
+   liest der vorhandene Parser einen Gruppenplan unverändert. */
+
+export const PLAN_FUER_ALLE = 'alle';
+
+export function planRef(gid, planId) {
+  return doc(db, 'groups', gid, 'plaene', planId);
+}
+
+/**
+ * Die Pläne, die mich etwas angehen.
+ *
+ * Der Filter ist nicht bloss Höflichkeit: die Regel prüft jedes
+ * Ergebnisdokument einzeln, und eine Abfrage, die einen fremden Plan
+ * zurückgäbe, fällt vollständig. Die Leitung darf alles sehen und
+ * fragt deshalb ungefiltert.
+ */
+export async function ladePlaene(gid, uid, alsLeitung = false) {
+  const sammlung = collection(db, 'groups', gid, 'plaene');
+  const abfrage = alsLeitung
+    ? sammlung
+    : query(sammlung, where('fuer', 'in', [PLAN_FUER_ALLE, uid]));
+  const snap = await getDocs(abfrage);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function planVeroeffentlichen(gid, uid, { titel, json, fuer, notiz } = {}) {
+  const sauber = String(titel ?? '').trim();
+  if (!sauber) throw new Error('Der Plan braucht einen Titel.');
+  if (typeof json !== 'string' || !json) throw new Error('Der Plan ist leer.');
+  /* Dieselbe Grenze wie in den Regeln und in training-sync.js — ein
+     Dokument darf 1 MiB, wir bleiben darunter. */
+  if (json.length > 900000) throw new Error('Der Plan ist zu gross.');
+
+  const ref = doc(collection(db, 'groups', gid, 'plaene'));
+  await writeBatch(db)
+    .set(ref, ohneLeere({
+      titel: sauber,
+      json,
+      fuer: fuer || PLAN_FUER_ALLE,
+      notiz,
+      erstelltVon: uid,
+      erstelltAm: serverTimestamp(),
+    }))
+    .commit();
+  return ref.id;
+}
+
+export function planLoeschen(gid, planId) {
+  return deleteDoc(planRef(gid, planId));
+}
+
+/* Die eigenen eingelesenen Wochenprogramme — die Quelle, aus der ein
+   Trainer einen Gruppenplan veröffentlicht. Sie liegen weiterhin unter
+   users/{uid} und bleiben privat; veröffentlicht wird eine Kopie.
+
+   Das ist Absicht: ein Trainer probiert an seinem eigenen Programm
+   herum, und der Kader soll davon erst etwas sehen, wenn er es
+   bewusst herausgibt. */
+export async function eigeneProgramme(uid) {
+  const snap = await getDocs(collection(db, 'users', uid, 'trainingPrograms'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 /* ── Rennergebnisse ────────────────────────────────────────────────
    Eines pro Athlet und Rennen. Die zusammengesetzte Dokument-ID
    verhindert Dubletten, ohne dass jemand danach suchen müsste — wie

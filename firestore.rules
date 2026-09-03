@@ -1007,6 +1007,47 @@ service cloud.firestore {
       allow delete: if leadsGroup(gid);
     }
 
+    /* Trainingsplaene einer Gruppe.
+
+       Das Feld 'fuer' traegt die eigentliche Anforderung: ein Plan gilt
+       entweder fuer den ganzen Kader ('alle') oder fuer genau einen
+       Athleten (dessen uid). Damit kann ein Trainer sechs Athleten
+       sechs verschiedene Plaene geben, ohne sechs Gruppen zu brauchen —
+       das ging im alten Modell ueberhaupt nicht.
+
+       'json' ist dasselbe Format wie users/{uid}/trainingPrograms: eine
+       Zeichenkette, weil Firestore keine Arrays in Arrays kennt und die
+       eingelesenen Wochentabellen genau das sind. Dadurch liest der
+       vorhandene Parser einen Gruppenplan unveraendert.
+
+       Lesen darf ein Athlet nur, was fuer ihn bestimmt ist. Bei einer
+       Abfrage prueft Firestore JEDES Ergebnisdokument einzeln — der
+       Client muss also where('fuer','in',['alle', eigene uid]) filtern,
+       sonst faellt die ganze Abfrage. Die Leitung sieht alles. */
+    match /groups/{gid}/plaene/{planId} {
+      allow get, list: if inGroup(gid)
+                    && (
+                      resource.data.get('fuer', '') == 'alle'
+                      || resource.data.get('fuer', '') == request.auth.uid
+                      || leadsGroup(gid)
+                    );
+
+      allow create, update: if leadsGroup(gid)
+                    && request.resource.data.titel is string
+                    && request.resource.data.titel.size() > 0
+                    && request.resource.data.titel.size() <= 120
+                    && request.resource.data.json is string
+                    && request.resource.data.json.size() <= 900000
+                    && request.resource.data.fuer is string
+                    && request.resource.data.erstelltVon == request.auth.uid
+                    && request.resource.data.keys().hasOnly([
+                      'titel', 'json', 'fuer', 'notiz',
+                      'erstelltVon', 'erstelltAm'
+                    ]);
+
+      allow delete: if leadsGroup(gid);
+    }
+
     /* Rennergebnisse. EIN Ergebnis pro Athlet und Rennen — nicht eines
        pro Rennen. Genau das war der erste Entwurf, und er war falsch:
        ein Rennen hat so viele Ergebnisse wie Starter.
