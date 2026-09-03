@@ -18,16 +18,64 @@ test('areas page and sidebar share one module ordering source', async () => {
   assert.doesNotMatch(areas, /quick_access_order/);
 });
 
-test('desktop hides the redundant areas tab while mobile keeps its nav marker', async () => {
-  const [css, nav, shell] = await Promise.all([
+test('die vier Orte stehen an genau einer Stelle', async () => {
+  const [nav, shell, css] = await Promise.all([
+    read('assets/js/nav.js'),
+    read('assets/js/shell.js'),
     read('assets/css/kit.css'),
+  ]);
+
+  // TABS stand bis v.33.2.0 wörtlich in beiden Dateien — in denselben
+  // Zeilen, in denen der Kommentar davor warnte, dass sie auseinander
+  // laufen. shell.js besitzt die Liste, nav.js importiert sie.
+  assert.match(shell, /export const TABS = \[/);
+  assert.match(nav, /import \{[^}]*TABS[^}]*\} from '\.\/shell\.js/);
+  assert.doesNotMatch(nav, /^const TABS = \[/m, 'nav.js darf TABS nicht erneut definieren');
+
+  // Start, Kalender, die Gruppe, Chat.
+  for (const id of ['start', 'kalender', 'gruppe', 'chat']) {
+    assert.match(shell, new RegExp(`id: '${id}'`), `Tab ${id} fehlt`);
+  }
+  // Der Bereiche-Tab ist weg: Module wohnen im privaten Start, und
+  // "eine Sache, ein Ort" gilt auch für sie.
+  assert.doesNotMatch(shell, /id: 'bereiche'/);
+  assert.doesNotMatch(css, /\.nav__item\[data-nav-tab="bereiche"\]/,
+    'die Regel blendete einen Tab aus, den es nicht mehr gibt');
+
+  assert.match(nav, /data-nav-tab="\$\{t\.id\}"/);
+  assert.match(shell, /data-nav-tab="\$\{t\.id\}"/);
+});
+
+test('der dritte Tab heisst wie die Gruppe und übersteht einen fehlenden Index', async () => {
+  const nav = await read('assets/js/nav.js');
+
+  const start = nav.indexOf('async function beschrifteGruppenTab');
+  assert.notEqual(start, -1, 'die dynamische Beschriftung fehlt');
+  const fn = nav.slice(start, nav.indexOf('\n}', start) + 2);
+
+  // Der Name der Gruppe ersetzt die Rückfallbeschriftung …
+  assert.match(fn, /feld\.textContent = aktiv\.name/);
+  // … und data-i18n muss dabei weg, sonst überschreibt der nächste
+  // Sprachwechsel den Eigennamen wieder mit "Gruppe".
+  assert.match(fn, /delete feld\.dataset\.i18n/);
+
+  // Die Gruppenabfrage ist das Einzige in der Leiste, das einen
+  // Firestore-Index braucht. Fehlt er, scheitert sie mit
+  // failed-precondition — und die Navigation muss trotzdem stehen.
+  assert.match(fn, /await import\('\.\/groups\.js'\)/, 'dynamisch, damit die Leiste nicht darauf wartet');
+  assert.match(fn, /\} catch \{[^}]*\}/, 'ohne catch reisst ein fehlender Index die Leiste mit');
+});
+
+test('der Zähler sitzt am Chat-Tab, nicht mehr an "nachrichten"', async () => {
+  const [nav, shell] = await Promise.all([
     read('assets/js/nav.js'),
     read('assets/js/shell.js'),
   ]);
 
-  assert.match(css, /@media \(min-width: 900px\)[\s\S]*\.nav__item\[data-nav-tab="bereiche"\]\s*\{\s*display:\s*none/);
-  assert.match(nav, /data-nav-tab="\$\{t\.id\}"/);
-  assert.match(shell, /data-nav-tab="\$\{t\.id\}"/);
+  for (const [datei, quelle] of [['nav.js', nav], ['shell.js', shell]]) {
+    assert.match(quelle, /t\.id === 'chat'/, `${datei}: der Zähler hängt am falschen Tab`);
+    assert.doesNotMatch(quelle, /t\.id === 'nachrichten'/, `${datei}: alter Tab-Name übrig`);
+  }
 });
 
 test('current area uses the same active band as Start and settings stay above the page', async () => {

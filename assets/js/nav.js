@@ -23,7 +23,7 @@
 import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon, areaModuleKeys } from './shell.js?v=7';
+import { ICONS, icon, areaModuleKeys, TABS, TAB_I18N, activeTab } from './shell.js?v=7';
 import { mountSettingsLayer } from './settings-layer.js';
 import { mountAppRouter } from './router.js?v=7';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
@@ -40,17 +40,13 @@ const BEREICH_OF = {
    dieselben data-i18n-Attribute wie eine statische Seite und wird nach
    dem Einhaengen einmal durch applyTo geschickt. Faellt i18n.js aus,
    bleiben die deutschen Beschriftungen im Template stehen. */
-const TAB_I18N = { start:'nav.start', kalender:'nav.kalender',
-                   nachrichten:'nav.nachrichten', bereiche:'nav.bereiche' };
 const label = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
 const relabel = root => window.TVZAI18n?.applyTo(root);
 
-const TABS = [
-  { id: 'start',       label: 'Start',       icon: 'start',       href: 'index.html' },
-  { id: 'kalender',    label: 'Kalender',    icon: 'kalender',    href: 'pages/planner.html' },
-  { id: 'nachrichten', label: 'Nachrichten', icon: 'nachrichten', href: 'pages/messages.html' },
-  { id: 'bereiche',    label: 'Bereiche',    icon: 'bereiche',    href: 'pages/bereiche.html' },
-];
+/* TABS, TAB_I18N und activeTab kommen aus shell.js. Sie standen hier
+   frueher noch einmal woertlich — in denselben Zeilen, in denen der
+   Kommentar unten davor warnt, dass beide Dateien auseinanderlaufen.
+   Eine Liste, ein Ort. */
 
 /* Die Regel "eine Sache, ein Ort" (§6.4) liegt in shell.js, weil beide
    Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
@@ -60,14 +56,6 @@ export { ownsTab } from './shell.js?v=7';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');
-
-function activeTab() {
-  const f = location.pathname.split('/').pop() || 'index.html';
-  if (f === '' || f === 'index.html') return 'start';
-  if (f === 'planner.html') return 'kalender';
-  if (f === 'messages.html') return 'nachrichten';
-  return 'bereiche';
-}
 
 /* Pages the navigation has no business on: the login screen, the public
    share page and the guest view, none of which are "inside" the app. */
@@ -148,7 +136,7 @@ function mount(profile) {
        ${t.id === active ? 'aria-current="page"' : ''}>
       ${icon(t.icon, 21)}
       <span data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
-      ${t.id === 'nachrichten'
+      ${t.id === 'chat'
         ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>'
         : ''}
     </a>`).join('');
@@ -175,6 +163,56 @@ function mount(profile) {
   });
   primeNavigation(profile, nav);
   mountAppRouter(nav);
+}
+
+/* ══ Der dritte Tab heisst wie die Gruppe ═══════════════════════════
+   Er ist nicht "Training" und nicht "Gruppen" — er IST die Gruppe, und
+   trägt darum ihren Namen: "Ski Team Malbun", "Familie van Zanten".
+   Wer in mehreren ist, schaltet auf der Seite selbst um; die Leiste
+   zeigt immer die aktive.
+
+   Zwei Dinge sind hier bewusst so gebaut:
+
+   Der Import ist dynamisch. Die Leiste steht damit sofort, und die
+   Gruppenabfrage läuft erst danach — sie ist das Einzige in der
+   Navigation, das einen Firestore-Index braucht.
+
+   Und alles liegt in einem try/catch, das im Fehlerfall NICHTS tut.
+   Fehlt der COLLECTION_GROUP-Index noch, scheitert die Abfrage mit
+   failed-precondition; dann bleibt der Tab bei "Gruppe" stehen und
+   funktioniert weiter. Eine Navigation, die an einer fehlenden
+   Datenbankeinstellung zerbricht, wäre der schlechteste Tausch. */
+async function beschrifteGruppenTab(uid) {
+  const tab = document.querySelector('[data-nav-tab="gruppe"]');
+  if (!tab) return;
+
+  try {
+    const { beobachteMeineGruppen, waehleAktive, aktiveGruppeSetzen } =
+      await import('./groups.js');
+
+    beobachteMeineGruppen(uid, gruppen => {
+      const aktiv = waehleAktive(gruppen);
+      const feld = tab.querySelector('span');
+      if (!feld) return;
+
+      if (!aktiv) {
+        /* Ohne Gruppe bleibt die Rückfallbeschriftung stehen — und der
+           Tab führt trotzdem auf die Seite, denn dort steht, wie man
+           eine Gruppe anlegt oder einer beitritt. */
+        feld.textContent = label('nav.gruppe', 'Gruppe');
+        feld.dataset.i18n = 'nav.gruppe';
+        return;
+      }
+
+      aktiveGruppeSetzen(aktiv.id);
+      /* Ein eigener Name wird nicht übersetzt — darum fliegt data-i18n
+         hier raus, sonst überschreibt der nächste Sprachwechsel ihn
+         wieder mit "Gruppe". */
+      delete feld.dataset.i18n;
+      feld.textContent = aktiv.name;
+      feld.title = aktiv.name;
+    });
+  } catch { /* siehe oben: der Tab bleibt, wie er ist */ }
 }
 
 /* Initialen wie auf der Startseite: erster Buchstabe des Vornamens und
@@ -349,6 +387,7 @@ if (!SKIP.includes(file)) {
     }
     mount(profile);
     mountAccountMenu(user, profile);
+    beschrifteGruppenTab(user.uid);
     watchUnread(user);
     watchKeyboard();
     window.addEventListener('tvza-modules-change', event => {

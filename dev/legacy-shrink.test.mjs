@@ -11,8 +11,14 @@ const read = relative => readFile(join(root, relative), 'utf8');
 // been migrated onto kit.css yet. Every Phase-C commit lowers this count;
 // it may never rise. When it reaches 0, delete legacy.css (Phase D) and
 // delete this test.
+// 'spinner' stand bis v.33.2.0 in dieser Liste, obwohl der Kommentar
+// unten es selbst als "current convention, not legacy debt" führte. Es
+// war damit die einzige Zeile, die eine NEUE Seite den Zähler heben
+// liess, wenn sie alles richtig machte — pages/gruppe.html ist genau
+// darüber gestolpert. Ein Mass, das korrektes Verhalten bestraft, misst
+// das Falsche; also raus aus der Liste statt die Grenze anheben.
 const ALT = ['link-row', 'item-card', 'file-row', 'grp-card', 'pending-card', 'page-title',
-             'header-top', 'header-title-block', 'header-stats', 'user-chip', 'wx-chip-mini', 'spinner'];
+             'header-top', 'header-title-block', 'header-stats', 'user-chip', 'wx-chip-mini'];
 
 // Set to the real count on first run (2026-08-27, before any Phase-C page
 // migration): index.html 10, public.html 2, pages/bereiche.html 1,
@@ -24,7 +30,13 @@ const ALT = ['link-row', 'item-card', 'file-row', 'grp-card', 'pending-card', 'p
 // item-card (2) and page-title (1) references are gone — the remaining
 // 2 are the .spinner skeleton-loading hooks, which are the current
 // convention (see pages/bereiche.html), not legacy debt. New total 56.
-const MAX_REFERENZEN = 56;
+//
+// 2026-09-03, v.33.2.0: 'spinner' aus ALT entfernt (Begründung oben).
+// Die verbleibende echte Altlast verteilt sich auf fünf Dateien:
+// index.html 6, pages/foodtracker.html 4, pages/guest.html 1,
+// pages/planner.html 19, pages/watchlist.html 3. Neuer Stand 33 — und
+// jetzt ist die Zahl auch das, was sie zu sein behauptet.
+const MAX_REFERENZEN = 33;
 
 async function countAll() {
   const pagesDir = join(root, 'pages');

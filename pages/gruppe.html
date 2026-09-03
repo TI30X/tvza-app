@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="theme-color" content="#0B1B2A" />
+  <link rel="icon" href="../assets/icons/icon-192.png" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script src="../assets/js/theme.js"></script>
+  <script src="../assets/js/i18n.js?v=1"></script>
+  <link rel="stylesheet" href="../assets/css/kit.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=26" defer></script>
+  <title>Gruppe — TVZA</title>
+  <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
+       Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md. -->
+</head>
+<body class="app">
+
+  <div class="offline-banner" id="offlineBanner" hidden data-i18n="br.offline">Offline — Änderungen werden später gespeichert.</div>
+
+  <header class="appbar">
+    <div class="appbar__inner">
+      <div class="appbar__spacer">
+        <div class="appbar__greet" id="grpName">Gruppe</div>
+        <div class="appbar__date" id="grpMeta" hidden></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+
+    <!-- Der Bildschirm, den jemand ohne Gruppe zuerst sieht. Er sagt
+         nicht "nichts vorhanden", sondern zeigt die zwei Wege hinein.
+         Ein leerer Tab wäre ein Grund, nicht wiederzukommen. -->
+    <section class="section" id="secLeer" hidden>
+      <div class="hint">
+        <div class="hint__text" id="leerText">
+          Eine Gruppe ist der Ort, an dem ihr Termine, Pläne und Nachrichten
+          teilt — als Familie oder als Kader.
+        </div>
+      </div>
+      <div class="rows">
+        <button class="b b--primary b--block" id="btnNeu" type="button">Gruppe erstellen</button>
+      </div>
+    </section>
+
+    <!-- Der Umschalter steht nur da, wenn es wirklich etwas zu wechseln
+         gibt. Ein Auswahlfeld mit einem einzigen Eintrag ist eine Lüge. -->
+    <section class="section" id="secWechsel" hidden>
+      <div class="marke">Aktive Gruppe</div>
+      <select class="form-select" id="grpWahl" aria-label="Gruppe wechseln"></select>
+    </section>
+
+    <section class="section" id="secMitglieder" hidden>
+      <div class="marke" id="mitgliederTitel">Mitglieder</div>
+      <div class="rows" id="listMitglieder">
+        <div class="spinner" data-fx-rows="3" data-i18n="common.laden">Lade…</div>
+      </div>
+    </section>
+
+    <section class="section" id="secAktionen" hidden>
+      <button class="b b--secondary b--block" id="btnEinladen" type="button">Einladungscode kopieren</button>
+    </section>
+
+  </main>
+
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=1"></script>
+</body>
+</html>

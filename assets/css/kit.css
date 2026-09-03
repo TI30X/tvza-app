@@ -2334,7 +2334,10 @@ html.tvza-content-frame body > main {
     font-size: 14px; font-weight: 700;
   }
   .nav__item.is-active { background: var(--nav-active-bg); color: var(--nav-active); }
-  .nav__item[data-nav-tab="bereiche"] { display: none; }
+  /* Hier stand eine Regel, die den Bereiche-Tab am Desktop ausblendete,
+     weil die Bereiche darunter ohnehin offen in der Leiste stehen. Den
+     Tab gibt es nicht mehr — an seiner Stelle steht die Gruppe, und die
+     ist auf jedem Bildschirm ein eigener Ort. Nichts auszublenden. */
   .nav__dot   { display: none; }
   .nav__count {
     display: inline-flex; align-items: center; justify-content: center;

@@ -33,6 +33,7 @@ export const ICONS = {
   start:    '<path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   kalender: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
   nachrichten: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  gruppe:   '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   bereiche: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
 
   ski:     '<path d="M8 3l4 8 5-5 5 15H2L8 3z"/>',
@@ -107,16 +108,34 @@ const BEREICH_OF = {
    dem Einhaengen einmal durch applyTo geschickt. Faellt i18n.js aus,
    bleiben die deutschen Beschriftungen im Template stehen. */
 const TAB_I18N = { start:'nav.start', kalender:'nav.kalender',
-                   nachrichten:'nav.nachrichten', bereiche:'nav.bereiche' };
+                   gruppe:'nav.gruppe', chat:'nav.chat' };
 const label = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
 const relabel = root => window.TVZAI18n?.applyTo(root);
 
-const TABS = [
-  { id: 'start',       label: 'Start',       icon: 'start',       href: 'index.html' },
-  { id: 'kalender',    label: 'Kalender',    icon: 'kalender',    href: 'pages/planner.html' },
-  { id: 'nachrichten', label: 'Nachrichten', icon: 'nachrichten', href: 'pages/messages.html' },
-  { id: 'bereiche',    label: 'Bereiche',    icon: 'bereiche',    href: 'pages/bereiche.html' },
+/* ── Die vier Orte ─────────────────────────────────────────────────
+   Mir, Zeit, Uns, Reden. Jeder Tab ist ein Ort, kein Sammelbecken.
+
+   Diese Liste ist die EINZIGE. Sie stand bis hierher zweimal — einmal
+   hier und einmal in nav.js —, obwohl der Kommentar unter ihr davor
+   warnt, dass die beiden auseinanderlaufen. nav.js importiert sie
+   jetzt, statt sie zu wiederholen.
+
+   'gruppe' traegt hier nur eine Rueckfallbeschriftung. Im Betrieb
+   heisst der Tab wie die Gruppe selbst — "Ski Team Malbun", "Familie
+   van Zanten" —, denn er IST die Gruppe und nicht eine Funktion.
+   setzeGruppenTab() traegt den Namen nach, sobald er geladen ist.
+
+   'bereiche' hat keinen Tab mehr. Die Module wohnen im privaten Start,
+   und "eine Sache, ein Ort" gilt auch fuer sie. pages/bereiche.html
+   bleibt erreichbar, nur nicht mehr ueber die Leiste. */
+export const TABS = [
+  { id: 'start',    label: 'Start',    icon: 'start',    href: 'index.html' },
+  { id: 'kalender', label: 'Kalender', icon: 'kalender', href: 'pages/planner.html' },
+  { id: 'gruppe',   label: 'Gruppe',   icon: 'gruppe',   href: 'pages/gruppe.html' },
+  { id: 'chat',     label: 'Chat',     icon: 'nachrichten', href: 'pages/messages.html' },
 ];
+
+export { TAB_I18N };
 
 /* "Eine Sache, ein Ort" (§6.4): ein Bereich, der schon einen der vier
    Tabs besitzt, darf nicht zusätzlich in der Bereichsliste stehen.
@@ -189,12 +208,17 @@ export function refreshShellAreaNavigation(profile) {
 }
 
 /** Which tab should be lit for the page we are on. */
-function activeTab() {
+export function activeTab() {
   const f = location.pathname.split('/').pop() || 'index.html';
   if (f === '' || f === 'index.html') return 'start';
   if (f === 'planner.html') return 'kalender';
-  if (f === 'messages.html') return 'nachrichten';
-  return 'bereiche';   // every Bereich page belongs under Bereiche
+  if (f === 'gruppe.html') return 'gruppe';
+  if (f === 'messages.html') return 'chat';
+  /* Jede Bereichsseite gehoert zum privaten Start. Vorher zeigte sie auf
+     den Bereiche-Tab; den gibt es nicht mehr, und "irgendwo unterwegs
+     leuchtet gar nichts" waere schlechter als die Wahrheit — ein Bereich
+     IST ein Teil von Start. */
+  return 'start';
 }
 
 let shellState = { unread: 0, profile: null };
@@ -264,7 +288,7 @@ export function mountShell(o = {}) {
        ${t.id === active ? 'aria-current="page"' : ''}>
       ${icon(t.icon, 21)}
       <span data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
-      ${t.id === 'nachrichten' ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>' : ''}
+      ${t.id === 'chat' ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>' : ''}
     </a>`).join('');
 
   /* On a laptop the Bereiche are listed open under the tabs, so
