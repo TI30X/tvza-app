@@ -2416,6 +2416,31 @@ html.tvza-content-frame body > main {
   background: transparent; color: var(--ink-soft); cursor: pointer;
 }
 .hint__x:hover { background: var(--surface-2); }
+
+/* ── Die Tageszusammenfassung ──────────────────────────────────────
+   Dieselbe Karte, aber gestapelt statt nebeneinander: sie traegt
+   mehrere Saetze, waehrend der Hinweis immer genau einer ist.
+
+   Das Plaettchen zeigt das "n" aus dem Wortzeichen und ist die einzige
+   Stelle in der Oberflaeche, die --brand tragen darf — dieselbe
+   Ausnahme wie beim App-Symbol. Alles Bedienbare bleibt beim leiseren
+   --accent. */
+.hint--tag { flex-direction: column; align-items: stretch; gap: 10px; }
+.hint__kopf { display: flex; align-items: center; gap: 9px; }
+.hint__marke {
+  width: 21px; height: 21px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 7px; background: var(--brand); color: #fff;
+  font-size: 13px; font-weight: 800; line-height: 1;
+}
+.hint__tag {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+/* Der Schliessknopf sitzt rechts aussen, ohne dafuer eine eigene
+   Positionierung zu brauchen. */
+.hint--tag .hint__x { margin-left: auto; }
+.hint__satz { font-size: 15px; line-height: 1.55; font-weight: 500; }
 @keyframes hintIn {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: none; }

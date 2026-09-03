@@ -2047,7 +2047,8 @@
   <script type="module">
   import { db, requireAuth, getFinnhubKey, getProfile, reportClientError } from './assets/js/firebase-config.js';
   import { weatherIcon } from './assets/js/shell.js?v=7';
-  import { chooseHint, renderHint, markShown, dismissHint } from './assets/js/hints.js';
+  import { chooseHint, markShown, dismissHint } from './assets/js/hints.js';
+  import { buildBriefing, renderBriefing } from './assets/js/briefing.js';
   import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   (async () => {
@@ -2308,6 +2309,13 @@
         } catch (e) { reportClientError('calendar-tile-trips', e); }
         if (!candidates.length) return;
         candidates.sort((a, b) => a.date < b.date ? -1 : 1);
+        /* Was heute ansteht, fuer die Tageszusammenfassung. Alle Quellen
+           hier — Erinnerungen und Reisen — tragen ein Datum ohne
+           Uhrzeit, darum ganztags: true. Ohne das behauptete die Karte
+           "Heute um 00:00". */
+        window.tvzaHeuteTermine = candidates
+          .filter(c => c.date === todayStr)
+          .map(c => ({ titel: c.title, start: new Date(c.date + 'T00:00:00'), ganztags: true }));
         const ev = candidates[0];
         const t = new Date(); t.setHours(0,0,0,0);
         const days = Math.ceil((new Date(ev.date + 'T00:00:00') - t) / 86400000);
@@ -2376,10 +2384,17 @@
       } catch (e) {}
     })();
 
-    /* ── Der Hinweis (§8) ────────────────────────────────────────────
-       Runs after the sections above have had a chance to report, and
-       only ever combines two of them. If nothing lines up it renders
-       nothing at all — an empty card would be worse than silence. */
+    /* ── Die Tageszusammenfassung (§8) ───────────────────────────────
+       Läuft, nachdem die Abschnitte oben Gelegenheit hatten zu melden.
+
+       Zwei Dinge stecken in einer Karte: was heute ansteht (ein Satz —
+       die Liste steht schon darunter) und der Hinweis aus hints.js, der
+       weiterhin zwei Quellen verlangt. Ist beides leer, erscheint gar
+       nichts. Eine Karte, die "Heute ist nichts los" sagt, ist der
+       Grund, warum man ab Tag drei wegschaut.
+
+       markShown() zählt nur, wenn wirklich ein Hinweis drin war: Regel 1
+       begrenzt die Hinweise, nicht den Tagesüberblick. */
     setTimeout(() => {
       try {
         const slot = $('hintSlot'); if (!slot) return;
@@ -2396,13 +2411,18 @@
           maturaDue: window.tvzaMaturaDue || null,
         };
         const hint = chooseHint(sources, uid);
-        if (!hint) return;
-        slot.appendChild(renderHint(hint, {
-          onDismiss: t => dismissHint(uid, t, 'today'),
-          onLater:   t => dismissHint(uid, t, 'later'),
+        const briefing = buildBriefing({
+          termine: window.tvzaHeuteTermine || [],
+          hint,
+        });
+        if (!briefing) return;
+
+        slot.appendChild(renderBriefing(briefing, {
+          onDismiss: typ => { if (typ) dismissHint(uid, typ, 'today'); },
+          onLater:   typ => { if (typ) dismissHint(uid, typ, 'later'); },
         }));
-        markShown(uid);
-      } catch (e) { reportClientError('hint', e); }
+        if (briefing.hinweisTyp) markShown(uid);
+      } catch (e) { reportClientError('briefing', e); }
     }, 1200);
   })();
   </script>
