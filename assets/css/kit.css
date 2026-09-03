@@ -1409,6 +1409,18 @@ body.reorder-editing .module-tile::after {
 [data-bereich="training"] { --tint: var(--tint-training); --deep: var(--training-deep); }
 [data-bereich="admin"]    { --tint: var(--accent-bg);     --deep: var(--accent); }
 
+/* Terminarten einer Gruppe. Die Farbe ist hier keine Dekoration,
+   sondern die Information: blau heisst Training, gruen Lager, rot
+   Rennen — im Kalender, in der Liste und in der Vorschau immer
+   dieselbe Zuordnung.
+
+   Eigene Namen statt geliehener: die vorhandenen Bereichsfarben haben
+   zwar passende Farbtoene, aber data-bereich="weather" an einem
+   Krafttraining waere beim naechsten Lesen ein Raetsel. */
+[data-bereich="t-training"] { --tint: var(--tint-weather); --deep: var(--weather-deep); }
+[data-bereich="t-lager"]    { --tint: var(--tint-food);    --deep: var(--food-deep); }
+[data-bereich="t-rennen"]   { --tint: var(--tint-training); --deep: var(--training-deep); }
+
 /* ── 4.1 Zeile — the one row component ─────────────────────────────
    Replaces .link-row, .item-card, .file-row, .grp-card, .pending-card. */
 .row {

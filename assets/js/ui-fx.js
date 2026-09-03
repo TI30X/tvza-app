@@ -17,7 +17,7 @@
   // Single source of truth for the footer version shown on every page.
   // Bei Änderung auch CACHE in sw.js gleichziehen — sonst bleibt das
   // alte Stylesheet im Cache liegen.
-  const APP_VERSION = "v.33.3.0";
+  const APP_VERSION = "v.33.4.0";
 
   function contentEl() {
     return document.querySelector("main, .main") || document.body;

@@ -208,3 +208,69 @@ test('families bleibt unberührt, solange nichts migriert ist', async () => {
   assert.match(families, /allow get, list: if inFamilyDoc\(\) \|\| managesFamilyDoc\(\)/);
   assert.match(families, /request\.resource\.data\.members == \[request\.auth\.uid\]/);
 });
+
+/* ── Termine einer Gruppe (Phase 3) ────────────────────────────────*/
+
+test('Termine schreibt die Leitung, lesen alle Mitglieder', async () => {
+  const block = matchBlock(await readRules(), '/groups/{gid}/events/{eid}');
+
+  assert.match(allowClause(block, 'get, list'), /inGroup\(gid\)/);
+  for (const verb of ['create', 'update', 'delete']) {
+    assert.match(allowClause(block, verb), /leadsGroup\(gid\)/,
+      `${verb} muss der Leitung vorbehalten bleiben`);
+  }
+  // Ein Athlet trägt kein Rennen ein.
+  assert.doesNotMatch(allowClause(block, 'create'), /request\.auth\.uid == uid/);
+});
+
+test('nur die drei Arten, und die Art bleibt nach dem Anlegen stehen', async () => {
+  const block = matchBlock(await readRules(), '/groups/{gid}/events/{eid}');
+
+  assert.match(allowClause(block, 'create'),
+    /request\.resource\.data\.art in \['training', 'lager', 'rennen'\]/);
+
+  // Aus einem Rennen ein Training zu machen liesse Startnummer und
+  // Ergebnis sinnlos daneben stehen — dieselbe Überlegung wie bei der
+  // Gruppenart.
+  const update = allowClause(block, 'update');
+  const listen = update.match(/hasOnly\(\[[\s\S]*?\]\)/g) || [];
+  assert.ok(listen.length > 0, 'update ohne begrenzte Schlüsselliste');
+  for (const liste of listen) {
+    assert.doesNotMatch(liste, /'art'/, `'art' darf nicht änderbar sein: ${liste}`);
+  }
+});
+
+test('das Datum muss ein Datum sein, und das Schema ist begrenzt', async () => {
+  const create = allowClause(matchBlock(await readRules(), '/groups/{gid}/events/{eid}'), 'create');
+
+  // 'JJJJ-MM-TT' statt Timestamp: ein Lager vom 3. bis 10. Oktober ist
+  // ein Datum, kein Zeitpunkt.
+  assert.match(create, /request\.resource\.data\.von\.matches\('\\\\d\{4\}-\\\\d\{2\}-\\\\d\{2\}'\)/);
+  assert.match(create, /request\.resource\.data\.titel\.size\(\) <= 120/);
+  assert.match(create, /request\.resource\.data\.createdBy == request\.auth\.uid/);
+  assert.match(create, /keys\(\)\.hasOnly\(\[[\s\S]*'ergebnis',[\s\S]*\]\)/);
+});
+
+test('eine Zusage kann niemand für jemand anderen abgeben', async () => {
+  const block = matchBlock(await readRules(), '/groups/{gid}/events/{eid}/zusagen/{uid}');
+  const schreiben = allowClause(block, 'create, update');
+
+  // Die Dokument-ID ist die uid — beide Prüfungen zusammen schliessen
+  // aus, dass jemand unter fremdem Namen zusagt.
+  assert.match(schreiben, /request\.auth\.uid == uid/);
+  assert.match(schreiben, /request\.resource\.data\.uid == uid/);
+  assert.match(schreiben, /antwort in \['ja', 'nein', 'vielleicht'\]/);
+  assert.match(schreiben, /hasOnly\(\['uid', 'antwort', 'am'\]\)/);
+
+  // Auch die Leitung nicht: eine Zusage, die der Trainer selbst
+  // eingetragen hat, wäre keine Zusage mehr.
+  assert.doesNotMatch(schreiben, /leadsGroup\(gid\)/);
+
+  // Löschen darf sie trotzdem — nach einem ausgeladenen Athleten.
+  assert.match(allowClause(block, 'delete'), /leadsGroup\(gid\)/);
+});
+
+test('Zusagen sind innerhalb der Gruppe sichtbar', async () => {
+  const block = matchBlock(await readRules(), '/groups/{gid}/events/{eid}/zusagen/{uid}');
+  assert.match(allowClause(block, 'get, list'), /inGroup\(gid\)/);
+});

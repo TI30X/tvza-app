@@ -57,6 +57,76 @@
       <select class="form-select" id="grpWahl" aria-label="Gruppe wechseln"></select>
     </section>
 
+    <!-- Termine. Training, Lager, Rennen — drei Arten, weil sie sich
+         wirklich verschieden verhalten. Die Farbe ist hier keine
+         Dekoration, sondern die Information. -->
+    <section class="section" id="secTermine" hidden>
+      <div class="marke">Termine</div>
+      <div class="rows" id="listTermine"></div>
+      <button class="b b--secondary b--block" id="btnTermin" type="button" hidden>Termin hinzufügen</button>
+    </section>
+
+    <!-- Das Formular steht auf derselben Seite statt in einem Dialog:
+         ein Rennen hat sechs Felder, und ein Dialog, der auf dem Handy
+         die halbe Höhe frisst, macht daraus eine Rutschpartie. -->
+    <section class="section" id="secForm" hidden>
+      <div class="form-card">
+        <div class="form-title">Neuer Termin</div>
+
+        <div class="form-group">
+          <label class="form-label" for="fArt">Art</label>
+          <select class="form-select" id="fArt">
+            <option value="training">Training</option>
+            <option value="lager">Trainingslager</option>
+            <option value="rennen">Rennen</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fTitel">Titel</label>
+          <input class="form-input" id="fTitel" type="text" maxlength="120" placeholder="z.B. Kraft Beine" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="fVon">Von</label>
+            <input class="form-input" id="fVon" type="date" />
+          </div>
+          <div class="form-group" id="grpBis">
+            <label class="form-label" for="fBis">Bis</label>
+            <input class="form-input" id="fBis" type="date" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" id="grpZeit">
+            <label class="form-label" for="fZeit">Uhrzeit</label>
+            <input class="form-input" id="fZeit" type="time" />
+          </div>
+          <div class="form-group" id="grpDisziplin" hidden>
+            <label class="form-label" for="fDisziplin">Disziplin</label>
+            <select class="form-select" id="fDisziplin">
+              <option value="">—</option>
+              <option value="SL">Slalom</option>
+              <option value="RS">Riesenslalom</option>
+              <option value="SG">Super-G</option>
+              <option value="DH">Abfahrt</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fOrt">Ort</label>
+          <input class="form-input" id="fOrt" type="text" maxlength="80" placeholder="kann leer bleiben" />
+        </div>
+
+        <p class="empty-hint" id="formFehler" hidden></p>
+
+        <button class="b b--primary b--block" id="btnSpeichern" type="button">Speichern</button>
+        <button class="b b--secondary b--block" id="btnAbbrechen" type="button">Abbrechen</button>
+      </div>
+    </section>
+
     <section class="section" id="secMitglieder" hidden>
       <div class="marke" id="mitgliederTitel">Mitglieder</div>
       <div class="rows" id="listMitglieder">

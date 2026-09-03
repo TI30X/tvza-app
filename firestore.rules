@@ -911,6 +911,72 @@ service cloud.firestore {
                     );
     }
 
+    /* Termine einer Gruppe. Drei Arten, die sich wirklich verschieden
+       verhalten: ein Training dauert zwei Stunden, ein Lager eine
+       Woche, ein Rennen hat eine Startzeit und danach ein Ergebnis.
+
+       von/bis sind 'JJJJ-MM-TT' und keine Timestamps — ein Lager vom
+       3. bis 10. Oktober ist ein Datum, kein Zeitpunkt. Ein Timestamp
+       zwaenge dazu, eine Uhrzeit und eine Zeitzone zu erfinden, die
+       niemand gemeint hat.
+
+       Wer den Kalender fuehrt, fuehrt auch die Termine: die Leitung
+       schreibt, alle Mitglieder lesen. Ein Athlet traegt kein Rennen
+       ein — aber er sagt zu, und das steht eine Ebene tiefer. */
+    match /groups/{gid}/events/{eid} {
+      allow get, list: if inGroup(gid);
+
+      allow create: if leadsGroup(gid)
+                    && request.resource.data.art in ['training', 'lager', 'rennen']
+                    && request.resource.data.titel is string
+                    && request.resource.data.titel.size() > 0
+                    && request.resource.data.titel.size() <= 120
+                    && request.resource.data.von is string
+                    && request.resource.data.von.matches('\\d{4}-\\d{2}-\\d{2}')
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.keys().hasOnly([
+                      'art', 'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
+                      'disziplin', 'startnummer', 'ergebnis',
+                      'createdBy', 'createdAt'
+                    ]);
+
+      /* 'art' fehlt hier mit Absicht. Aus einem Rennen ein Training zu
+         machen wuerde Startnummer und Ergebnis sinnlos daneben stehen
+         lassen; wer sich vertan hat, loescht und legt neu an. Dieselbe
+         Ueberlegung wie bei der Gruppenart. */
+      allow update: if leadsGroup(gid)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly([
+                        'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
+                        'disziplin', 'startnummer', 'ergebnis'
+                      ])
+                    && request.resource.data.titel is string
+                    && request.resource.data.titel.size() > 0
+                    && request.resource.data.titel.size() <= 120;
+
+      allow delete: if leadsGroup(gid);
+    }
+
+    /* Zusagen. Jeder antwortet fuer sich, und die Dokument-ID ist die
+       uid — damit kann niemand fuer jemand anderen zusagen, ohne dass
+       die Regel es extra verbieten muesste.
+
+       Die Leitung darf loeschen, aber nicht schreiben: eine Zusage,
+       die der Trainer selbst eingetragen hat, waere keine Zusage mehr.
+       Aufraeumen nach einem ausgeladenen Athleten muss sie koennen. */
+    match /groups/{gid}/events/{eid}/zusagen/{uid} {
+      allow get, list: if inGroup(gid);
+
+      allow create, update: if inGroup(gid)
+                            && request.auth.uid == uid
+                            && request.resource.data.uid == uid
+                            && request.resource.data.antwort in ['ja', 'nein', 'vielleicht']
+                            && request.resource.data.keys().hasOnly(['uid', 'antwort', 'am']);
+
+      allow delete: if (inGroup(gid) && request.auth.uid == uid)
+                    || leadsGroup(gid);
+    }
+
     match /trips/{tripId} {
       allow get: if inFamily(resource.data.get('familyId', ''))
                  || hasGuestAccess(tripId);

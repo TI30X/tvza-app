@@ -248,3 +248,98 @@ export function waehleAktive(gruppen) {
   const gemerkt = aktiveGruppeId();
   return gruppen.find(g => g.id === gemerkt) || gruppen[0];
 }
+
+/* ── Termine ───────────────────────────────────────────────────────
+   Training, Lager, Rennen. Was ein Termin IST, steht in termine.js —
+   dort ohne Firebase, damit es sich testen lässt. Hier nur das Lesen
+   und Schreiben.
+
+   Wer den Kalender führt, führt auch die Termine: die Leitung
+   schreibt, alle Mitglieder lesen. Die Regeln erzwingen das; hier
+   steht es, damit die Oberfläche gar nicht erst etwas anbietet, das
+   scheitern würde. */
+
+export function terminRef(gid, eid) {
+  return doc(db, 'groups', gid, 'events', eid);
+}
+
+export function beobachteTermine(gid, cb) {
+  return onSnapshot(
+    collection(db, 'groups', gid, 'events'),
+    snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+    /* Fehlende Regel, fehlender Index, gerade entfernt worden — für die
+       Ansicht ist das alles dasselbe: keine Termine. Eine leere Liste
+       ist ehrlicher als eine Seite, die nie fertig lädt. */
+    () => cb([]),
+  );
+}
+
+export async function ladeTermine(gid) {
+  const snap = await getDocs(collection(db, 'groups', gid, 'events'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/* Leere Felder werden weggelassen statt als '' geschrieben. Die Regel
+   erlaubt zwar beides, aber ein Termin mit zeit:'' liest sich später
+   wie "es gibt eine Uhrzeit, sie ist bloss leer" — und genau daran
+   scheitert dann istMehrtaegig oder die Zusammenfassung. */
+function ohneLeere(objekt) {
+  return Object.fromEntries(
+    Object.entries(objekt).filter(([, v]) => v !== '' && v !== null && v !== undefined));
+}
+
+export async function terminAnlegen(gid, uid, termin) {
+  const ref = doc(collection(db, 'groups', gid, 'events'));
+  await writeBatch(db)
+    .set(ref, ohneLeere({
+      art: termin.art,
+      titel: String(termin.titel ?? '').trim(),
+      von: termin.von,
+      bis: termin.bis,
+      zeit: termin.zeit,
+      ort: termin.ort,
+      notiz: termin.notiz,
+      disziplin: termin.disziplin,
+      startnummer: termin.startnummer,
+      createdBy: uid,
+      createdAt: serverTimestamp(),
+    }))
+    .commit();
+  return ref.id;
+}
+
+/* 'art' fehlt bewusst: aus einem Rennen ein Training zu machen liesse
+   Startnummer und Ergebnis sinnlos daneben stehen. Wer sich vertan
+   hat, löscht und legt neu an — dieselbe Überlegung wie bei der
+   Gruppenart. Die Regeln lehnen es ohnehin ab. */
+export function terminAendern(gid, eid, patch) {
+  const erlaubt = ['titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
+                   'disziplin', 'startnummer', 'ergebnis'];
+  const daten = Object.fromEntries(
+    Object.entries(patch).filter(([k]) => erlaubt.includes(k)));
+  if (!Object.keys(daten).length) return Promise.resolve();
+  return updateDoc(terminRef(gid, eid), daten);
+}
+
+export function terminLoeschen(gid, eid) {
+  return deleteDoc(terminRef(gid, eid));
+}
+
+/* ── Zusagen ───────────────────────────────────────────────────────
+   Die Dokument-ID ist die uid. Dadurch kann niemand für jemand anderen
+   zusagen, ohne dass die Regel es eigens verbieten müsste. */
+
+export const ANTWORTEN = Object.freeze(['ja', 'nein', 'vielleicht']);
+
+export function zusagen(gid, eid, uid, antwort) {
+  if (!ANTWORTEN.includes(antwort)) throw new Error('Unbekannte Antwort.');
+  return writeBatch(db)
+    .set(doc(db, 'groups', gid, 'events', eid, 'zusagen', uid),
+         { uid, antwort, am: serverTimestamp() })
+    .commit();
+}
+
+export async function ladeZusagen(gid, eid) {
+  const snap = await getDocs(collection(db, 'groups', gid, 'events', eid, 'zusagen'));
+  return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+}

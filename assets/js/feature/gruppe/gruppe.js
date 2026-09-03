@@ -21,8 +21,12 @@ import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError 
 import { mountShell } from '../../shell.js?v=7';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
+  beobachteTermine, terminAnlegen,
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
+import {
+  kommende, zeitraum, artWort, BEREICH_DER_ART, pruefe, isoTag,
+} from '../../termine.js';
 
 const $ = id => document.getElementById(id);
 const t = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
@@ -30,6 +34,8 @@ const t = (key, fallback) => window.TVZAI18n?.t(key) ?? fallback;
 let user = null;
 let gruppen = [];
 let aktiv = null;
+let termine = [];
+let terminAbo = null;   // onSnapshot-Abmeldung der aktuellen Gruppe
 
 /* ── Darstellung ───────────────────────────────────────────────────*/
 
@@ -98,6 +104,37 @@ async function zeichneMitglieder() {
   }
 }
 
+/* ── Termine ───────────────────────────────────────────────────────*/
+
+function terminZeile(t) {
+  const bereich = BEREICH_DER_ART[t.art] || '';
+  const wann = zeitraum(t);
+  const ort = t.ort ? ` · ${t.ort}` : '';
+  return `
+    <div class="row" data-bereich="${escHtml(bereich)}">
+      <span class="row__icon">${escHtml(artWort(t.art).slice(0, 1))}</span>
+      <span class="row__body">
+        <span class="row__title">${escHtml(t.titel)}</span>
+        <span class="row__sub">${escHtml(wann + ort)}</span>
+      </span>
+      <span class="row__end">${escHtml(artWort(t.art))}</span>
+    </div>`;
+}
+
+function zeichneTermine() {
+  const liste = $('listTermine');
+  if (!liste) return;
+
+  /* Nur was noch kommt — ein laufendes Lager zählt dazu, bis es vorbei
+     ist. Vergangenes gehört in eine Saisonübersicht, nicht auf die
+     erste Seite der Gruppe. */
+  const offen = kommende(termine, isoTag(), 6);
+
+  liste.innerHTML = offen.length
+    ? offen.map(terminZeile).join('')
+    : '<p class="empty-hint">Noch keine Termine.</p>';
+}
+
 function zeichneWechsel() {
   const mehrere = gruppen.length > 1;
   zeige('secWechsel', mehrere);
@@ -110,20 +147,30 @@ function zeichneWechsel() {
 
 function zeichne() {
   const hat = !!aktiv;
+  const darfFuehren = hat && leitet(aktiv.meineRolle);
 
   zeige('secLeer', !hat);
+  zeige('secTermine', hat);
   zeige('secMitglieder', hat);
-  zeige('secAktionen', hat && leitet(aktiv?.meineRolle));
+  zeige('secAktionen', darfFuehren);
   zeichneWechsel();
+
+  /* Wer nicht führt, sieht den Knopf gar nicht erst. Die Regeln lehnen
+     das Schreiben ohnehin ab — aber ein Knopf, der zuverlässig
+     scheitert, ist schlechter als keiner. */
+  const knopf = $('btnTermin');
+  if (knopf) knopf.hidden = !darfFuehren;
 
   if (!hat) {
     $('grpName').textContent = t('nav.gruppe', 'Gruppe');
     $('grpMeta').hidden = true;
+    formSchliessen();
     return;
   }
 
   $('grpName').textContent = aktiv.name;
   zeichneMitglieder();
+  zeichneTermine();
 }
 
 /* ── Handlungen ────────────────────────────────────────────────────*/
@@ -151,6 +198,84 @@ async function neueGruppe() {
   } catch (e) {
     reportClientError('gruppe/anlegen', e);
     alert('Die Gruppe konnte nicht erstellt werden.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ── Das Terminformular ────────────────────────────────────────────*/
+
+/* Die Felder richten sich nach der Art. Ein Bis-Datum an einem
+   zweistündigen Training ist Ballast, eine Disziplin an einem
+   Krafttraining ist irreführend — pruefe() in termine.js lehnt sie
+   ohnehin ab. */
+function formAnpassen() {
+  const art = $('fArt').value;
+  zeige('grpBis', art === 'lager');
+  zeige('grpZeit', art !== 'lager');
+  zeige('grpDisziplin', art === 'rennen');
+}
+
+function formOeffnen() {
+  $('fArt').value = 'training';
+  $('fTitel').value = '';
+  $('fVon').value = isoTag();
+  $('fBis').value = '';
+  $('fZeit').value = '';
+  $('fDisziplin').value = '';
+  $('fOrt').value = '';
+  $('formFehler').hidden = true;
+  formAnpassen();
+  zeige('secForm', true);
+  zeige('secTermine', false);
+  $('fTitel').focus();
+}
+
+function formSchliessen() {
+  zeige('secForm', false);
+  zeige('secTermine', !!aktiv);
+}
+
+function formLesen() {
+  const art = $('fArt').value;
+  return {
+    art,
+    titel: $('fTitel').value.trim(),
+    von: $('fVon').value,
+    /* Bis und Zeit nur dort, wo das Feld auch sichtbar war — sonst
+       schleppt ein Training ein Enddatum mit, das niemand eingegeben
+       hat, weil der Browser einen alten Wert behalten hat. */
+    bis: art === 'lager' ? ($('fBis').value || null) : null,
+    zeit: art === 'lager' ? null : ($('fZeit').value || null),
+    disziplin: art === 'rennen' ? ($('fDisziplin').value || null) : null,
+    ort: $('fOrt').value.trim() || null,
+  };
+}
+
+async function terminSpeichern() {
+  if (!aktiv) return;
+  const entwurf = formLesen();
+
+  const fehler = pruefe(entwurf);
+  if (fehler.length) {
+    const feld = $('formFehler');
+    feld.textContent = fehler[0];
+    feld.hidden = false;
+    return;
+  }
+
+  const btn = $('btnSpeichern');
+  btn.disabled = true;
+  try {
+    await terminAnlegen(aktiv.id, user.uid, entwurf);
+    formSchliessen();
+    /* Kein Neuzeichnen von Hand: beobachteTermine meldet den neuen
+       Termin von selbst. */
+  } catch (e) {
+    reportClientError('gruppe/termin', e);
+    const feld = $('formFehler');
+    feld.textContent = 'Der Termin konnte nicht gespeichert werden.';
+    feld.hidden = false;
   } finally {
     btn.disabled = false;
   }
@@ -192,18 +317,47 @@ async function einladen() {
 
   $('btnNeu')?.addEventListener('click', neueGruppe);
   $('btnEinladen')?.addEventListener('click', einladen);
+  $('btnTermin')?.addEventListener('click', formOeffnen);
+  $('btnAbbrechen')?.addEventListener('click', formSchliessen);
+  $('btnSpeichern')?.addEventListener('click', terminSpeichern);
+  $('fArt')?.addEventListener('change', formAnpassen);
+
   $('grpWahl')?.addEventListener('change', event => {
     aktiveGruppeSetzen(event.target.value);
     aktiv = gruppen.find(g => g.id === event.target.value) || aktiv;
+    hoereAufTermine();
     zeichne();
   });
 
   beobachteMeineGruppen(user.uid, liste => {
     gruppen = liste;
+    const vorher = aktiv?.id;
     aktiv = waehleAktive(liste);
+    if (aktiv?.id !== vorher) hoereAufTermine();
     zeichne();
   });
 }());
+
+/* Beim Gruppenwechsel muss das alte Abo weg. Ohne das liefen nach
+   dreimal Umschalten drei Zuhörer nebeneinander, und der zuletzt
+   antwortende überschriebe die Liste — die Termine der falschen
+   Gruppe stünden dann auf der richtigen Seite. */
+function hoereAufTermine() {
+  terminAbo?.();
+  terminAbo = null;
+  termine = [];
+  zeichneTermine();
+
+  if (!aktiv) return;
+  const fuer = aktiv.id;
+  terminAbo = beobachteTermine(fuer, liste => {
+    /* Eine späte Antwort der vorigen Gruppe darf die aktuelle nicht
+       überschreiben. */
+    if (aktiv?.id !== fuer) return;
+    termine = liste;
+    zeichneTermine();
+  });
+}
 
 /* fuehrt() wird hier noch nicht gebraucht — Übergeben und Rollen setzen
    kommen mit der Kaderverwaltung in Phase 3. Der Import steht schon, weil
