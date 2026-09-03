@@ -10,6 +10,7 @@ const read = relative => readFile(join(root, relative), 'utf8');
 // Opt-in: a page joins this list in the commit that migrates it onto the
 // Bausatz. Never remove an entry — a page that regresses fails its own line.
 const MIGRIERT = [
+  'pages/video.html',
   'pages/einheit.html',
   'pages/gruppe.html',
   'pages/bereiche.html',

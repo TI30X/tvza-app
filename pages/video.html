@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="theme-color" content="#0B1B2A" />
+  <link rel="icon" href="../assets/icons/icon-192.png" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script src="../assets/js/theme.js"></script>
+  <script src="../assets/js/i18n.js?v=1"></script>
+  <link rel="stylesheet" href="../assets/css/kit.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/feature/video.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=26" defer></script>
+  <title>Videoanalyse — TVZA</title>
+  <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
+       Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md. -->
+</head>
+<body class="app">
+
+  <div class="offline-banner" id="offlineBanner" hidden data-i18n="br.offline">Offline — Änderungen werden später gespeichert.</div>
+
+  <header class="appbar">
+    <div class="appbar__inner">
+      <div class="appbar__spacer">
+        <div class="appbar__greet">Videoanalyse</div>
+        <div class="appbar__date" id="kopfMeta" hidden></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+
+    <!-- Eine Datei vom Gerät. Ablegen kommt mit Phase 4 dazu; die
+         ANALYSE bleibt auch dann hier, weil das Modell im Browser
+         läuft und nicht auf einem Server. -->
+    <section class="section" id="secWahl">
+      <div class="hint">
+        <div class="hint__text">
+          Wähle einen Clip von diesem Gerät. Die <strong>Auswertung läuft im
+          Browser</strong> — das Video wird zur Analyse an keinen Server geschickt.
+          Ablegen und einem Athleten zuordnen kommt dazu, sobald der Worker steht.
+        </div>
+      </div>
+      <div class="rows">
+        <label class="b b--primary b--block" for="dateiWahl">Video wählen</label>
+        <input class="vid-datei" id="dateiWahl" type="file" accept="video/*" />
+      </div>
+    </section>
+
+    <section class="section" id="secPlayer" hidden>
+      <div class="vid-buehne">
+        <video class="vid-bild" id="video" playsinline preload="metadata"></video>
+        <canvas class="vid-lage" id="skelett"></canvas>
+      </div>
+
+      <div class="seg" id="steuerung" role="group" aria-label="Wiedergabe">
+        <button class="seg__item" type="button" id="btnZurueckBild">−1 Bild</button>
+        <button class="seg__item" type="button" id="btnAbspielen">Abspielen</button>
+        <button class="seg__item" type="button" id="btnVorBild">+1 Bild</button>
+      </div>
+
+      <input class="vid-schieber" id="schieber" type="range" min="0" max="1000" value="0"
+             aria-label="Position im Video" />
+
+      <div class="rows" id="listWinkel"></div>
+
+      <button class="b b--secondary b--block" id="btnAnalyse" type="button">Ganzen Clip auswerten</button>
+      <p class="empty-hint" id="analyseStand" hidden></p>
+    </section>
+
+    <section class="section" id="secBefund" hidden>
+      <div class="marke">Befund</div>
+      <div class="rows" id="listBefund"></div>
+      <p class="empty-hint" id="befundHinweis"></p>
+    </section>
+
+    <p class="empty-hint" id="fehler" hidden></p>
+
+  </main>
+
+  <script type="module" src="../assets/js/feature/video/video.js?v=1"></script>
+</body>
+</html>
