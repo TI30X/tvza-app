@@ -155,6 +155,11 @@
       showErr('E-Mail bestätigt. Du kannst dich jetzt anmelden.');
     }
 
+    /* Von der Willkommen-Seite kommt man mit der Absicht, ein Konto
+       anzulegen. Die Seite dann im Anmelde-Modus zu zeigen, waere ein
+       Klick, den niemand versteht. setMode() steht weiter unten, der
+       Aufruf deshalb auch — siehe unter der Definition. */
+
     function setMode(nextMode) {
       mode = nextMode;
       $('nameGroup').style.display = mode === 'register' ? '' : 'none';
@@ -168,6 +173,8 @@
       $('fPass').setAttribute('autocomplete', mode === 'register' ? 'new-password' : 'current-password');
       hideErr();
     }
+
+    if (params.get('neu') === '1') setMode('register');
 
     $('switchLink').addEventListener('click', () => {
       setMode(mode === 'login' ? 'register' : 'login');

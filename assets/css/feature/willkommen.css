@@ -1,0 +1,137 @@
+/* ══════════════════════════════════════════════════════════════════
+   Die Willkommen-Seite.
+
+   Sie ist das Erste, was jemand von Firn sieht, der noch kein Konto
+   hat. Sie hat genau zwei Aufgaben: sagen, was das ist, und den Weg
+   zum Konto zeigen. Alles andere ist Ballast.
+
+   Blau und weiss, hell — kein dunkler Bildschirm, auf dem eine
+   Trainingsapp seriös aussehen will.
+
+   Jeder Abstand kommt aus der Skala in kit.css. Keine freien Zahlen:
+   die Seite wird auf einem Handy im Lift gelesen und auf einem
+   Bildschirm im Klubhaus, und sie soll auf beidem stimmen.
+   ══════════════════════════════════════════════════════════════════ */
+
+.wk {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: var(--s6) var(--s5) var(--s7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s7);
+}
+
+/* ── Kopf ──────────────────────────────────────────────────────────*/
+
+.wk-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+}
+.wk-kopf .firn { font-size: 1.5rem; }
+
+/* ── Aufmacher ─────────────────────────────────────────────────────
+   Eine Aussage, ein Satz darunter, zwei Knoepfe. Wer nach drei
+   Zeilen nicht weiss, worum es geht, klickt weg. */
+
+.wk-hero { display: flex; flex-direction: column; gap: var(--s4); }
+
+.wk-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.wk-hero p {
+  margin: 0;
+  max-width: 34em;
+  font-size: clamp(1rem, 2.2vw, 1.15rem);
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.wk-knoepfe { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s2); }
+
+/* ── Was es kann ───────────────────────────────────────────────────
+   Vier Karten, keine zwoelf. Was hier steht, muss die App heute
+   koennen — eine Liste mit Versprechen ist der schnellste Weg zu
+   einem enttaeuschten ersten Tag. */
+
+.wk-karten {
+  display: grid;
+  gap: var(--s4);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+.wk-karte {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  padding: var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.wk-karte h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.wk-karte p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* ── Abschnitte ────────────────────────────────────────────────────*/
+
+.wk-block { display: flex; flex-direction: column; gap: var(--s4); }
+.wk-block h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.wk-block p {
+  margin: 0;
+  max-width: 40em;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* ── Beta ──────────────────────────────────────────────────────────
+   Der ehrliche Kasten. Hier stuende sonst ein Preis, den es noch
+   nicht gibt. */
+
+.wk-beta {
+  background: var(--accent-bg);
+  border: 1px solid color-mix(in oklab, var(--accent) 18%, var(--border));
+  border-radius: var(--r-panel);
+  padding: var(--s6) var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.wk-beta ul { margin: 0; padding-left: var(--s5); display: grid; gap: var(--s2); }
+.wk-beta li { line-height: 1.5; color: var(--ink-soft); }
+.wk-beta li strong { color: var(--ink); font-weight: 700; }
+
+/* ── Fuss ──────────────────────────────────────────────────────────*/
+
+.wk-fuss {
+  border-top: 1px solid var(--border);
+  padding-top: var(--s5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}

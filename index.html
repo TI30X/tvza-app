@@ -462,7 +462,12 @@
     // Theme-Umschalter wird automatisch von theme.js verkabelt (#themeToggle).
 
     // Nicht angemeldet → öffentliche Seite zuerst (Login erst danach).
-    const user = await requireAuth('login.html');
+    /* Die Wurzel schickt Abgemeldete auf die Willkommen-Seite und
+       nicht ins Anmeldeformular: wer hier zum ersten Mal landet, weiss
+       noch gar nicht, wofuer er sich anmelden soll. Von dort geht es
+       weiter zu login.html — und nie zu public.html, das bleibt ein
+       Link, den man verschickt. */
+    const user = await requireAuth('willkommen.html');
     if (sessionStorage.getItem('tvza-send-verification') === '1') {
       sessionStorage.removeItem('tvza-send-verification');
       if (!user.emailVerified) {
@@ -2012,7 +2017,10 @@
 
   (async () => {
     let user;
-    try { user = await requireAuth('login.html'); } catch (e) { return; }
+    /* Dasselbe Ziel wie das Modul oben: zwei Weiterleitungen auf
+       verschiedene Seiten waeren ein Wettlauf, und wer ihn gewinnt,
+       haengt am Netz. */
+    try { user = await requireAuth('willkommen.html'); } catch (e) { return; }
     if (!user) return;
     const uid = user.uid;
     const profile = await getProfile(user);

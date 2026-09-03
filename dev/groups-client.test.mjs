@@ -239,14 +239,25 @@ test('die Tageszusammenfassung nimmt Gruppentermine auf, ohne an ihnen zu hänge
   assert.match(html, /Promise\.race\(\[\s*\n?\s*gruppenTermineHeute/);
 });
 
-test('abgemeldete Besucher landen im Login, nicht bei den Projekten', async () => {
+test('abgemeldete Besucher landen auf Willkommen, nie bei den Projekten', async () => {
   const [index, login] = await Promise.all([read('index.html'), read('login.html')]);
 
-  // Drei Wege führten dorthin. Keiner davon mehr: die Projektseite ist
-  // ein Link, den man verschickt, und kein Ort in der App.
+  /* Die Projektseite ist ein Link, den man verschickt, und kein Ort in
+     der App. Drei Wege fuehrten einmal dorthin; keiner davon mehr. */
   assert.doesNotMatch(index, /requireAuth\('public\.html'\)/);
-  assert.match(index, /requireAuth\('login\.html'\)/);
   assert.doesNotMatch(login, /href="public\.html"/);
+
+  /* Wer zum ersten Mal auf der Wurzel landet, weiss noch nicht, wofuer
+     er sich anmelden soll. Also erst die Willkommen-Seite, von dort
+     ins Formular. */
+  assert.doesNotMatch(index, /requireAuth\('login\.html'\)/,
+    'die Wurzel schickt noch direkt ins Anmeldeformular');
+
+  const ziele = [...index.matchAll(/requireAuth\('([^']+)'\)/g)].map(m => m[1]);
+  assert.ok(ziele.length >= 2, 'weniger requireAuth-Aufrufe als erwartet');
+  assert.deepEqual([...new Set(ziele)], ['willkommen.html'],
+    'zwei Module auf derselben Seite leiten an verschiedene Orte weiter — '
+    + 'das ist ein Wettlauf, und wer ihn gewinnt, haengt am Netz');
 
   // Aus dem Knopf, der die Seite aufrief, wurde einer, der sie
   // verschickbar macht.

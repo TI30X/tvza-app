@@ -1735,6 +1735,29 @@ body.reorder-editing .module-tile::after {
 .panel__grid dd { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 /* ── Bereichsmarke — the small uppercase section label ─────────────*/
+/* ── Das Wortzeichen ───────────────────────────────────────────────
+   Fir + n. Das "n" ist das Erkennungszeichen und wird spaeter das
+   App-Symbol und das Gruppenplaettchen — es muss deshalb auch dann
+   noch als eigenes Zeichen lesbar sein, wenn vom Rest nichts mehr da
+   ist. Darum traegt es nicht nur die Farbe, sondern auch das Gewicht.
+
+   --brand kommt in der ganzen App NUR hier vor. Das ist der Grund,
+   warum die Navigation auf --brand-navy-deep zeigt und nicht hierhin:
+   waere das Blau ueberall, waere es kein Zeichen mehr. */
+.firn {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.firn > b {
+  font-weight: 900;
+  color: var(--brand);
+  /* Optisch traegt das n sonst zu wenig: es ist der kuerzeste
+     Buchstabe im Wort und verliert gegen das grosse F. */
+  letter-spacing: 0;
+}
+
 .marke {
   font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--ink-faint, var(--ink-soft));
