@@ -1,0 +1,23 @@
+{
+  "//": [
+    "Nur Firestore. Die App selbst liegt auf GitHub Pages, nicht auf",
+    "Firebase Hosting — deshalb steht hier kein hosting-Block.",
+    "",
+    "Diese Datei fehlte bis v.34.2.0, und das ist der Grund, warum die",
+    "Regeln historisch von Hand in die Konsole kopiert wurden: ohne sie",
+    "weiss die CLI nicht, welche Datei sie ausrollen soll. Genau daraus",
+    "ist die Drift entstanden, die schon einmal den ganzen",
+    "maturaProgress-Block aus den Live-Regeln fallen liess.",
+    "",
+    "    firebase deploy --only firestore:rules",
+    "    firebase deploy --only firestore:indexes"
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "emulators": {
+    "firestore": { "port": 8089 },
+    "ui": { "enabled": false }
+  }
+}
