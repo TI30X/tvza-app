@@ -42,16 +42,55 @@ export const BEREICH_DER_ART = Object.freeze({
   rennen: 't-rennen',
 });
 
-const WORTE = Object.freeze({
-  training: 'Training',
-  lager: 'Lager',
-  rennen: 'Rennen',
+/* ── Dieselben drei Arten, andere Wörter ───────────────────────────
+   Eine Gruppe muss kein Rennkader sein. Ein Gym hat Kurse und
+   Workshops, eine Familie hat Termine und Reisen — strukturell ist das
+   dasselbe: etwas Kurzes, etwas Mehrtägiges, etwas mit einem Ergebnis.
+
+   Deshalb bleiben die drei Arten in den Daten unverändert und nur die
+   Beschriftung wechselt. Ein Gym-Kurs, der intern 'lager' heisst, ist
+   kein Problem; ein viertes und fünftes Datenmodell dafür schon.
+
+   Was NICHT wechselt, sind die FIS-Punkte: die gehören dem alpinen
+   Skirennsport. Ein Hyrox-Wettkampf im Gym hat ein Ergebnis, aber
+   keine Disziplin nach FIS-Faktor. Darum haengt der Disziplin-Teil an
+   'kader' und nicht an 'rennen'. */
+
+const WORTE_JE_GRUPPE = Object.freeze({
+  kader: Object.freeze({
+    training: 'Training', lager: 'Trainingslager', rennen: 'Rennen',
+  }),
+  organisation: Object.freeze({
+    training: 'Kurs', lager: 'Workshop', rennen: 'Wettkampf',
+  }),
+  familie: Object.freeze({
+    training: 'Termin', lager: 'Reise', rennen: 'Anlass',
+  }),
 });
 
-export function artWort(art) {
-  const eintrag = WORTE[art];
+/* Welche Arten eine Gruppe überhaupt anbietet. Eine Familie braucht
+   keinen Wettkampf-Eintrag — ein Auswahlfeld mit einer Möglichkeit,
+   die niemand nutzt, ist eine Möglichkeit zu viel. */
+export const ARTEN_JE_GRUPPE = Object.freeze({
+  kader: Object.freeze(['training', 'lager', 'rennen']),
+  organisation: Object.freeze(['training', 'lager', 'rennen']),
+  familie: Object.freeze(['training', 'lager']),
+});
+
+export function artenFuer(gruppenart) {
+  return ARTEN_JE_GRUPPE[gruppenart] || ARTEN_JE_GRUPPE.kader;
+}
+
+/* Die Disziplin und alles, was daran hängt, gilt nur im Rennkader. */
+export function kenntDisziplinen(gruppenart) {
+  return gruppenart === 'kader';
+}
+
+export function artWort(art, gruppenart = 'kader') {
+  const tabelle = WORTE_JE_GRUPPE[gruppenart] || WORTE_JE_GRUPPE.kader;
+  const eintrag = tabelle[art];
   if (!eintrag) return '';
-  return globalThis.window?.TVZAI18n?.t(`termin.art.${art}`) ?? eintrag;
+  return globalThis.window?.TVZAI18n?.t(`termin.art.${gruppenart}.${art}`) ?? eintrag;
 }
 
 /* ── Datum ─────────────────────────────────────────────────────────*/

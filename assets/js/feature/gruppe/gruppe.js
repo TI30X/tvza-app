@@ -31,6 +31,7 @@ import {
 } from '../../groups.js';
 import {
   kommende, zeitraum, artWort, BEREICH_DER_ART, pruefe, isoTag,
+  artenFuer, kenntDisziplinen,
 } from '../../termine.js';
 import {
   rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
@@ -125,12 +126,12 @@ function terminZeile(t) {
   const ort = t.ort ? ` · ${t.ort}` : '';
   return `
     <button class="row" type="button" data-termin="${escHtml(t.id)}" data-bereich="${escHtml(bereich)}">
-      <span class="row__icon">${escHtml(artWort(t.art).slice(0, 1))}</span>
+      <span class="row__icon">${escHtml(artWort(t.art, aktiv?.art).slice(0, 1))}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(t.titel)}</span>
         <span class="row__sub">${escHtml(wann + ort)}</span>
       </span>
-      <span class="row__end">${escHtml(artWort(t.art))}</span>
+      <span class="row__end">${escHtml(artWort(t.art, aktiv?.art))}</span>
     </button>`;
 }
 
@@ -162,15 +163,21 @@ function planZeile(p) {
     ? wort(aktiv?.art, 'mitglieder')
     : (mitglieder.find(m => m.uid === p.fuer)?.name || 'ein Athlet');
 
+  /* Ein Plan ist zum Machen da, nicht zum Ansehen: die Zeile führt
+     direkt in den Einheiten-Player. */
+  const ziel = `./einheit.html?g=${encodeURIComponent(aktiv.id)}&p=${encodeURIComponent(p.id)}`;
+
   return `
-    <div class="row" data-bereich="t-training">
+    <a class="row" href="${escHtml(ziel)}" data-bereich="t-training">
       <span class="row__icon">P</span>
       <span class="row__body">
         <span class="row__title">${escHtml(p.titel)}</span>
         <span class="row__sub">${escHtml(fuerAlle ? `Für ${empfaenger}` : `Nur für ${empfaenger}`)}</span>
       </span>
-      <span class="row__end"></span>
-    </div>`;
+      <span class="row__end">
+        <svg class="ic row__chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      </span>
+    </a>`;
 }
 
 async function zeichnePlaene() {
@@ -320,16 +327,20 @@ async function neueGruppe() {
   if (!sauber) return;
 
   /* Die Art entscheidet nur über Wortwahl und Vorgabe-Bereiche, nicht
-     über den Ablauf — deshalb reicht hier eine einzige Frage. */
-  const kader = confirm(
-    'Ist das ein Trainings- oder Rennkader?\n\n'
-    + 'OK  — Kader (Haupttrainer, Trainer, Athleten)\n'
-    + 'Abbrechen — Familie oder Freundeskreis');
+     über den Ablauf. Drei Möglichkeiten sind für ein confirm zu viele,
+     also eine Ziffer — bis das Anlegen ein eigenes Formular bekommt. */
+  const wahl = prompt(
+    'Was für eine Gruppe ist das?\n\n'
+    + '1 — Rennkader: Haupttrainer, Trainer, Athleten\n'
+    + '2 — Verein oder Gym: Leitung, Trainer, Mitglieder\n'
+    + '3 — Familie oder Freundeskreis', '1');
+  if (wahl === null) return;
+  const art = { 1: 'kader', 2: 'organisation', 3: 'familie' }[wahl.trim()] || 'kader';
 
   const btn = $('btnNeu');
   btn.disabled = true;
   try {
-    const gid = await gruppeAnlegen(user.uid, { name: sauber, art: kader ? 'kader' : 'familie' });
+    const gid = await gruppeAnlegen(user.uid, { name: sauber, art });
     aktiveGruppeSetzen(gid);
     /* Kein reload: beobachteMeineGruppen meldet die neue Gruppe von
        selbst, und der Umschalter steht dann schon richtig. */
@@ -396,7 +407,7 @@ function detailOeffnen(eid) {
   if (!offen) return;
 
   const darfFuehren = leitet(aktiv?.meineRolle);
-  const teile = [artWort(offen.art), zeitraum(offen)];
+  const teile = [artWort(offen.art, aktiv?.art), zeitraum(offen)];
   if (offen.ort) teile.push(offen.ort);
   if (offen.disziplin) teile.push(offen.disziplin);
 
@@ -460,11 +471,20 @@ function formAnpassen() {
   const art = $('fArt').value;
   zeige('grpBis', art === 'lager');
   zeige('grpZeit', art !== 'lager');
-  zeige('grpDisziplin', art === 'rennen');
+  /* Die Disziplin hängt an der GRUPPENART, nicht an der Terminart. Ein
+     Hyrox-Wettkampf im Gym hat ein Ergebnis, aber keinen FIS-Faktor —
+     das Feld stünde dort sinnlos da. */
+  zeige('grpDisziplin', art === 'rennen' && kenntDisziplinen(aktiv?.art));
 }
 
 function formOeffnen() {
-  $('fArt').value = 'training';
+  /* Was die Gruppe anbietet, entscheidet die Gruppenart: eine Familie
+     braucht keinen Wettkampf-Eintrag. Die Liste entsteht darum im
+     Code und nicht im Markup. */
+  $('fArt').innerHTML = artenFuer(aktiv?.art)
+    .map(a => `<option value="${a}">${escHtml(artWort(a, aktiv?.art))}</option>`)
+    .join('');
+  $('fArt').value = artenFuer(aktiv?.art)[0] || 'training';
   $('fTitel').value = '';
   $('fVon').value = isoTag();
   $('fBis').value = '';
@@ -555,6 +575,15 @@ function punkteVon(ergebnis) {
 function zeichnePunkte() {
   const liste = $('listPunkte');
   if (!liste) return;
+
+  /* FIS-Punkte gehören dem alpinen Skirennsport. In einem Gym oder in
+     einer Familie hat der Abschnitt keinen Sinn und erscheint nicht —
+     ein leerer Kasten mit einer Fachüberschrift ist schlechter als
+     kein Kasten. */
+  if (!kenntDisziplinen(aktiv?.art)) {
+    zeige('secPunkte', false);
+    return;
+  }
 
   /* Für den Stand zählen nur Ergebnisse, aus denen sich Punkte rechnen
      lassen — mit Disziplin und zwei brauchbaren Zeiten. */

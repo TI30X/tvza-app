@@ -43,6 +43,36 @@ test('jede Terminart hat eine Farbe, die es in kit.css wirklich gibt', async () 
   }
 });
 
+test('dieselben drei Arten, andere Wörter je Gruppenart', async () => {
+  const { artWort, artenFuer, kenntDisziplinen } = await import('../assets/js/termine.js');
+
+  // Ein Gym hat Kurse und Workshops, eine Familie Termine und Reisen.
+  // Strukturell ist das dasselbe: etwas Kurzes, etwas Mehrtägiges,
+  // etwas mit einem Ergebnis. Also wechselt nur die Beschriftung.
+  assert.equal(artWort('training', 'kader'), 'Training');
+  assert.equal(artWort('training', 'organisation'), 'Kurs');
+  assert.equal(artWort('training', 'familie'), 'Termin');
+  assert.equal(artWort('lager', 'organisation'), 'Workshop');
+  assert.equal(artWort('rennen', 'organisation'), 'Wettkampf');
+
+  // Unbekannte Gruppenart fällt auf den Kader zurück statt leer zu sein.
+  assert.equal(artWort('training', 'gibtsnicht'), 'Training');
+  assert.equal(artWort('quatsch', 'kader'), '');
+
+  // Eine Familie braucht keinen Wettkampf-Eintrag: ein Auswahlfeld mit
+  // einer Möglichkeit, die niemand nutzt, ist eine Möglichkeit zu viel.
+  assert.deepEqual([...artenFuer('familie')], ['training', 'lager']);
+  assert.deepEqual([...artenFuer('kader')], ['training', 'lager', 'rennen']);
+  assert.deepEqual([...artenFuer('organisation')], ['training', 'lager', 'rennen']);
+
+  // Aber FIS-Punkte gehören dem alpinen Skirennsport. Ein Hyrox im Gym
+  // hat ein Ergebnis, aber keinen Disziplinfaktor — darum hängt der
+  // Disziplin-Teil an der GRUPPENART und nicht an der Terminart.
+  assert.equal(kenntDisziplinen('kader'), true);
+  assert.equal(kenntDisziplinen('organisation'), false);
+  assert.equal(kenntDisziplinen('familie'), false);
+});
+
 test('ein Lager läuft an jedem Tag dazwischen, ein Training nur an einem', () => {
   assert.ok(istMehrtaegig(lager));
   assert.ok(!istMehrtaegig(training));

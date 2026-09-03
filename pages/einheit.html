@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="theme-color" content="#0B1B2A" />
+  <link rel="icon" href="../assets/icons/icon-192.png" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script src="../assets/js/theme.js"></script>
+  <script src="../assets/js/i18n.js?v=1"></script>
+  <link rel="stylesheet" href="../assets/css/kit.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <script src="../assets/js/ui-fx.js?v=26" defer></script>
+  <title>Einheit — TVZA</title>
+  <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
+       Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md. -->
+</head>
+<body class="app">
+
+  <div class="offline-banner" id="offlineBanner" hidden data-i18n="br.offline">Offline — Änderungen werden später gespeichert.</div>
+
+  <header class="appbar">
+    <div class="appbar__inner">
+      <div class="appbar__spacer">
+        <div class="appbar__greet" id="kopfTitel">Einheit</div>
+        <div class="appbar__date" id="kopfMeta" hidden></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main" id="main">
+
+    <!-- Erst wählen, welche Einheit. Ein Wochenplan hat mehrere, und
+         der Player zeigt immer genau eine. -->
+    <section class="section" id="secWahl" hidden>
+      <button class="backlink" id="btnZurueckGruppe" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zur Gruppe</button>
+      <div class="marke">Einheit wählen</div>
+      <div class="rows" id="listEinheiten"></div>
+    </section>
+
+    <!-- Der Player. Eine Übung, gross, mit den Sätzen darunter — im
+         Kraftraum hält man das Telefon in einer Hand. -->
+    <section class="section" id="secPlayer" hidden>
+      <button class="backlink" id="btnZurWahl" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Einheit wechseln</button>
+
+      <div class="form-card">
+        <p class="empty-hint" id="uebPos"></p>
+        <div class="form-title" id="uebName">—</div>
+        <p class="empty-hint" id="uebMeta" hidden></p>
+
+        <div class="rows" id="listSaetze"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="uebNotiz">Notiz</label>
+          <input class="form-input" id="uebNotiz" type="text" maxlength="200" placeholder="z.B. zog im Knie" />
+        </div>
+
+        <button class="b b--primary b--block" id="btnErledigt" type="button">Übung erledigt</button>
+      </div>
+
+      <div class="seg" id="blaettern" role="group" aria-label="Übung wechseln">
+        <button class="seg__item" type="button" id="btnVor">Zurück</button>
+        <button class="seg__item" type="button" id="btnWeiter">Weiter</button>
+      </div>
+    </section>
+
+    <!-- Am Ende. Kein Konfetti, aber auch nicht einfach die Liste von
+         vorn — man soll merken, dass es vorbei ist. -->
+    <section class="section" id="secFertig" hidden>
+      <div class="hint">
+        <div class="hint__text" id="fertigText">Einheit erledigt.</div>
+      </div>
+      <div class="rows">
+        <button class="b b--secondary b--block" id="btnNochmal" type="button">Einheit nochmal ansehen</button>
+        <button class="b b--secondary b--block" id="btnFertigZurueck" type="button">Zur Gruppe</button>
+      </div>
+    </section>
+
+    <p class="empty-hint" id="ladeFehler" hidden></p>
+
+  </main>
+
+  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=1"></script>
+</body>
+</html>

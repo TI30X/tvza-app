@@ -1524,7 +1524,22 @@ body.reorder-editing .module-tile::after {
 }
 
 /* Right column — exactly one of these per row. */
-.row__end   { flex: none; display: flex; align-items: center; gap: 8px; }
+.row__end   { flex: none; display: flex; align-items: center; gap: var(--s2); }
+
+/* ── Eingabe in einer Zeile ────────────────────────────────────────
+   Der Einheiten-Player traegt Wert und Wiederholungen rechts in der
+   Satzzeile ein. Ein .form-input ist dort zu breit — er ist auf
+   width:100% gebaut, weil er sonst in einem Formular steht.
+
+   64px reichen fuer "12.5" und drei Ziffern Gewicht, und die Hoehe
+   bleibt bei 44px: das ist die Flaeche, die man mit einer Hantel in
+   der anderen Hand noch trifft. */
+.row__end .form-input {
+  width: 64px; min-width: 0;
+  padding: var(--s1) var(--s2);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Zeile als Schalter (Modul-Liste in den Einstellungen). Gleiche Zeile
    wie überall, rechts ein Kästchen statt Chevron — statt eigener

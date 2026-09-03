@@ -44,6 +44,12 @@ import {
 
 export const ROLLEN = Object.freeze(['head', 'staff', 'mitglied']);
 
+/* Drei Gruppenarten, ein Code. Der Unterschied sind Woerter und
+   eingeschaltete Bereiche — ein Rennkader, ein Gym oder Verein, und
+   ein Haushalt. Wer eine vierte braucht, ergaenzt hier eine Zeile und
+   eine Wortliste, nicht ein Datenmodell. */
+export const ARTEN = Object.freeze(['kader', 'organisation', 'familie']);
+
 /* Kopf und Trainer kuratieren dasselbe; nur der Kopf übergibt, löscht
    und vergibt Rollen. Diese Trennung steht genauso in den Regeln — wer
    sie hier ändert, ändert nur die Oberfläche, nicht die Rechte. */
@@ -62,6 +68,12 @@ const WORTE = {
     staff:    { key: 'grp.kader.staff',    de: 'Trainer' },
     mitglied: { key: 'grp.kader.mitglied', de: 'Athlet' },
     mitglieder: { key: 'grp.kader.mitglieder', de: 'Kader' },
+  },
+  organisation: {
+    head:     { key: 'grp.org.head',     de: 'Leitung' },
+    staff:    { key: 'grp.org.staff',    de: 'Trainer' },
+    mitglied: { key: 'grp.org.mitglied', de: 'Mitglied' },
+    mitglieder: { key: 'grp.org.mitglieder', de: 'Mitglieder' },
   },
   familie: {
     head:     { key: 'grp.familie.head',     de: 'Verwaltet die Gruppe' },
@@ -84,8 +96,11 @@ export function wort(art, was) {
    vom Essen. */
 
 export const VORGABE_BEREICHE = Object.freeze({
-  kader:   { termine: true, training: true, video: false, chat: true },
-  familie: { termine: true, projekte: true, chat: true },
+  kader:        { termine: true, training: true, video: false, chat: true },
+  /* Ein Gym oder Verein: Kurse und Plaene ja, Videoanalyse eher nicht.
+     Der Unterschied zum Kader sind zwei Schalter, kein zweites Modell. */
+  organisation: { termine: true, training: true, chat: true },
+  familie:      { termine: true, projekte: true, chat: true },
 });
 
 /* ── Lesen ─────────────────────────────────────────────────────────*/
@@ -190,7 +205,7 @@ export async function gruppeAnlegen(uid, { name, art = 'familie', bereiche } = {
   const sauber = String(name ?? '').trim();
   if (!sauber) throw new Error('Die Gruppe braucht einen Namen.');
   if (sauber.length > 80) throw new Error('Der Name ist zu lang.');
-  if (art !== 'familie' && art !== 'kader') throw new Error('Unbekannte Gruppenart.');
+  if (!ARTEN.includes(art)) throw new Error('Unbekannte Gruppenart.');
 
   const ref = doc(collection(db, 'groups'));
   const stapel = writeBatch(db);
@@ -469,6 +484,46 @@ export function planLoeschen(gid, planId) {
 export async function eigeneProgramme(uid) {
   const snap = await getDocs(collection(db, 'users', uid, 'trainingPrograms'));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/* ── Trainingsprotokoll ────────────────────────────────────────────
+   Was ein Athlet an einem Tag tatsächlich gemacht hat.
+
+   Es liegt an der Gruppe und nicht unter users/{uid}/trainingLogs,
+   weil ein Trainer sehen muss, ob der Plan gemacht wurde — und ein
+   owner-only Dokument gibt das nicht her. Das Persönliche bleibt
+   persönlich: trainingLogs ist unberührt und trägt weiterhin das
+   eigene Training. Hier steht nur, was zu einem Plan DIESER Gruppe
+   gehört.
+
+   Geschrieben wird nur das eigene. Ein Trainer, der einträgt, was ein
+   Athlet geschafft habe, macht aus einem Protokoll eine Behauptung. */
+
+export function protokollId(uid, datum) {
+  return `${uid}__${datum}`;
+}
+
+export function protokollRef(gid, uid, datum) {
+  return doc(db, 'groups', gid, 'protokoll', protokollId(uid, datum));
+}
+
+export async function ladeProtokoll(gid, uid, datum) {
+  const snap = await getDoc(protokollRef(gid, uid, datum));
+  return snap.exists() ? snap.data() : { uid, datum, units: {} };
+}
+
+/** Alle Tage eines Athleten — für die Trainerübersicht. */
+export async function ladeProtokolle(gid, uid) {
+  const snap = await getDocs(
+    query(collection(db, 'groups', gid, 'protokoll'), where('uid', '==', uid)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export function protokollSpeichern(gid, uid, datum, units) {
+  return writeBatch(db)
+    .set(protokollRef(gid, uid, datum),
+         { uid, datum, units, updatedAt: serverTimestamp() })
+    .commit();
 }
 
 /* ── Rennergebnisse ────────────────────────────────────────────────

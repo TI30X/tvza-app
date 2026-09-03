@@ -145,7 +145,13 @@ test('die Übergabe geht nur an jemanden, der schon Mitglied ist', async () => {
 test('die Gruppenart steht nach der Gründung fest', async () => {
   const block = matchBlock(await readRules(), '/groups/{gid}');
 
-  assert.match(allowClause(block, 'create'), /request\.resource\.data\.art in \['familie', 'kader'\]/);
+  // Drei Gruppenarten, ein Code: ein Rennkader, ein Verein oder Gym,
+  // ein Haushalt. Der Unterschied sind Wörter und eingeschaltete
+  // Bereiche — wer eine vierte braucht, ergänzt eine Zeile.
+  assert.match(
+    allowClause(block, 'create'),
+    /request\.resource\.data\.art in \['familie', 'kader', 'organisation'\]/,
+  );
   // 'art' darf in keiner Änderungsliste auftauchen: ein Wechsel im
   // Betrieb würde bestehende Termine und Rollen sinnlos machen.
   const update = allowClause(block, 'update');
