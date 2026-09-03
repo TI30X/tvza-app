@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
-  <title>Einheit — TVZA</title>
+  <title data-i18n="eh.seitentitel">Einheit — Firn</title>
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
        Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md. -->
 </head>
@@ -38,8 +38,8 @@
     <!-- Erst wählen, welche Einheit. Ein Wochenplan hat mehrere, und
          der Player zeigt immer genau eine. -->
     <section class="section" id="secWahl" hidden>
-      <button class="backlink" id="btnZurueckGruppe" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Zur Gruppe</button>
-      <div class="marke">Einheit wählen</div>
+      <button class="backlink" id="btnZurueckGruppe" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="eh.zurGruppe">Zur Gruppe</span></button>
+      <div class="marke" data-i18n="eh.waehlen">Einheit wählen</div>
       <div class="rows" id="listEinheiten"></div>
     </section>
 
@@ -60,12 +60,12 @@
           <input class="form-input" id="uebNotiz" type="text" maxlength="200" placeholder="z.B. zog im Knie" />
         </div>
 
-        <button class="b b--primary b--block" id="btnErledigt" type="button">Übung erledigt</button>
+        <button class="b b--primary b--block" id="btnErledigt" type="button" data-i18n="eh.erledigt">Übung erledigt</button>
       </div>
 
       <div class="seg" id="blaettern" role="group" aria-label="Übung wechseln">
         <button class="seg__item" type="button" id="btnVor">Zurück</button>
-        <button class="seg__item" type="button" id="btnWeiter">Weiter</button>
+        <button class="seg__item" type="button" id="btnWeiter" data-i18n="eh.weiter">Weiter</button>
       </div>
     </section>
 

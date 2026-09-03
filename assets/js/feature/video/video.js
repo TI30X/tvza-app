@@ -39,6 +39,9 @@ import {
 
 const $ = id => document.getElementById(id);
 
+/* Siehe einheit.js: tOr statt t() mit ??. */
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
+
 /* Genau die Verbindungen, die pose.js auch benutzt. Ein vollständiges
    Skelett mit Fingern und Gesicht sähe beeindruckender aus und würde
    von dem ablenken, worauf es ankommt. */
@@ -147,12 +150,12 @@ function zeigeWinkel(landmarks) {
   const versatz = hueftversatz(landmarks || []);
 
   $('listWinkel').innerHTML = [
-    winkelZeile('Knie links', w.links.knie),
-    winkelZeile('Knie rechts', w.rechts.knie),
-    winkelZeile('Unterschied', seitenunterschied(w)),
-    winkelZeile('Hüfte links', w.links.huefte),
-    winkelZeile('Hüfte rechts', w.rechts.huefte),
-    winkelZeile('Hüftversatz', versatz, ''),
+    winkelZeile(t('vid.knieL', 'Knie links'), w.links.knie),
+    winkelZeile(t('vid.knieR', 'Knie rechts'), w.rechts.knie),
+    winkelZeile(t('vid.unterschied', 'Unterschied'), seitenunterschied(w)),
+    winkelZeile(t('vid.huefteL', 'Hüfte links'), w.links.huefte),
+    winkelZeile(t('vid.huefteR', 'Hüfte rechts'), w.rechts.huefte),
+    winkelZeile(t('vid.huftversatz', 'Hüftversatz'), versatz, ''),
   ].join('');
 }
 
@@ -233,26 +236,27 @@ async function analysiere() {
 
   try {
     stand.hidden = false;
-    stand.textContent = 'Modell wird geladen …';
+    stand.textContent = t('vid.modellLaedt', 'Modell wird geladen …');
     await ladeDetektor();
 
     const dauer = video.duration || 0;
-    if (!dauer || !Number.isFinite(dauer)) throw new Error('Die Länge des Videos ist unbekannt.');
+    if (!dauer || !Number.isFinite(dauer)) throw new Error(t('vid.f.dauer', 'Die Länge des Videos ist unbekannt.'));
 
     const schritt = 1 / bildrate;
     const bilder = [];
     const merkeZeit = video.currentTime;
 
-    for (let t = 0; t < dauer; t += schritt) {
+    for (let zeit = 0; zeit < dauer; zeit += schritt) {
       await new Promise(fertig => {
         video.addEventListener('seeked', fertig, { once: true });
-        video.currentTime = t;
+        video.currentTime = zeit;
       });
-      try { bilder.push(erkenne(t * 1000) || []); }
+      try { bilder.push(erkenne(zeit * 1000) || []); }
       catch { bilder.push([]); }
 
       if (bilder.length % 15 === 0) {
-        stand.textContent = `${Math.round((t / dauer) * 100)} % ausgewertet …`;
+        stand.textContent = t('vid.fortschritt', '{n} % ausgewertet …',
+          { n: Math.round((zeit / dauer) * 100) });
         /* Dem Browser Luft lassen, sonst friert die Seite ein und
            niemand kann abbrechen. */
         await new Promise(r => setTimeout(r, 0));
@@ -268,7 +272,7 @@ async function analysiere() {
     /* Der häufigste Grund ist, dass das Modell nicht geladen werden
        konnte — offline, blockiert, oder das CDN antwortet nicht. Die
        Wiedergabe funktioniert weiter. */
-    fehler('Die Auswertung ging nicht. Das Video lässt sich trotzdem ansehen.');
+    fehler(t('vid.f.auswertung', 'Die Auswertung ging nicht. Das Video lässt sich trotzdem ansehen.'));
   } finally {
     laeuft = false;
     knopf.disabled = false;
@@ -281,20 +285,22 @@ function zeigeBefund(b) {
   const anteil = b.bilder ? Math.round((b.auswertbar / b.bilder) * 100) : 0;
 
   $('listBefund').innerHTML = [
-    winkelZeile('Tiefste Beugung links', b.tiefsteBeugungLinks),
-    winkelZeile('Tiefste Beugung rechts', b.tiefsteBeugungRechts),
-    winkelZeile('Schwünge', b.schwuenge, ''),
-    winkelZeile('Schwungdauer', b.schwungdauerSekunden, ' s'),
-    winkelZeile('Auswertbare Bilder', `${b.auswertbar} von ${b.bilder}`, ''),
+    winkelZeile(t('vid.beugungL', 'Tiefste Beugung links'), b.tiefsteBeugungLinks),
+    winkelZeile(t('vid.beugungR', 'Tiefste Beugung rechts'), b.tiefsteBeugungRechts),
+    winkelZeile(t('vid.schwuenge', 'Schwünge'), b.schwuenge, ''),
+    winkelZeile(t('vid.schwungdauer', 'Schwungdauer'), b.schwungdauerSekunden, ' s'),
+    winkelZeile(t('vid.auswertbar', 'Auswertbare Bilder'), t('vid.vonN', '{a} von {b}', { a: b.auswertbar, b: b.bilder }), ''),
   ].join('');
 
   /* Die ehrlichste Zahl zuletzt: war nur ein Bruchteil auswertbar,
      sagt der Rest wenig, und das gehört dazugeschrieben statt in einer
      Fussnote versteckt. */
   $('befundHinweis').textContent = anteil < 60
-    ? `Nur ${anteil} % der Bilder waren auswertbar — der Fahrer war zu oft `
-      + 'verdeckt oder zu klein im Bild. Die Zahlen oben sagen entsprechend wenig.'
-    : `${anteil} % der Bilder waren auswertbar.`;
+    ? t('vid.wenigAuswertbar',
+        'Nur {n} % der Bilder waren auswertbar — der Fahrer war zu oft '
+        + 'verdeckt oder zu klein im Bild. Die Zahlen oben sagen entsprechend wenig.',
+        { n: anteil })
+    : t('vid.vielAuswertbar', '{n} % der Bilder waren auswertbar.', { n: anteil });
 
   zeige('secBefund', true);
 }
@@ -308,7 +314,7 @@ function zeigeBefund(b) {
   wireOfflineBanner();
   mountShell({
     variant: 'bereich',
-    title: 'Videoanalyse',
+    title: t('vid.videoanalyse', 'Videoanalyse'),
     backHref: '../index.html',
     profile: {},
     onSettings: () => window.tvzaOpenSettings?.(),
@@ -339,7 +345,7 @@ function zeigeBefund(b) {
   $('btnAbspielen').addEventListener('click', () => {
     if (video.paused) { video.play(); schleife(); }
     else video.pause();
-    $('btnAbspielen').textContent = video.paused ? 'Abspielen' : 'Pause';
+    $('btnAbspielen').textContent = video.paused ? t('vid.abspielen', 'Abspielen') : t('vid.pause', 'Pause');
   });
 
   $('btnVorBild').addEventListener('click', () => bildSchritt(1));
@@ -353,7 +359,7 @@ function zeigeBefund(b) {
   });
 
   video.addEventListener('seeked', aktualisiere);
-  video.addEventListener('pause', () => { $('btnAbspielen').textContent = 'Abspielen'; });
+  video.addEventListener('pause', () => { $('btnAbspielen').textContent = t('vid.abspielen', 'Abspielen'); });
   /* Das Skelett muss beim Drehen des Geräts neu gezeichnet werden,
      sonst sitzt es auf den alten Koordinaten. */
   window.addEventListener('resize', aktualisiere);

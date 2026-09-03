@@ -77,8 +77,10 @@ test('ein Plan wird über die erlaubte Abfrage geholt, nicht direkt gelesen', as
 test('der Vorgabewert aus dem Plan steht als Platzhalter, nicht als Wert', async () => {
   const js = await skript();
 
-  // Sonst stünde eine fremde Zahl da, als hätte man sie selbst gemacht.
-  assert.match(js, /placeholder="\$\{escHtml\(reihe\.zielWert \|\| 'Wert'\)\}"/);
+  /* Der Vorgabewert bleibt Platzhalter. Nur das Ersatzwort geht
+     jetzt durch den Katalog: "Wert" heisst auf Englisch Value. */
+  assert.match(js, /placeholder="\$\{escHtml\(reihe\.zielWert \|\| t\(/);
+  assert.match(js, /t\('eh.wert', 'Wert'\)/);
   assert.match(js, /value="\$\{escHtml\(reihe\.weight\)\}"/);
 });
 

@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="../assets/css/feature/video.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
-  <title>Videoanalyse — TVZA</title>
+  <title data-i18n="vid.seitentitel">Videoanalyse — Firn</title>
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
        Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md. -->
 </head>
@@ -41,10 +41,10 @@
          läuft und nicht auf einem Server. -->
     <section class="section" id="secWahl">
       <div class="hint">
-        <div class="hint__text">
+        <div class="hint__text" data-i18n-html="vid.hinweis">
           Wähle einen Clip von diesem Gerät. Die <strong>Auswertung läuft im
           Browser</strong> — das Video wird zur Analyse an keinen Server geschickt.
-          Ablegen und einem Athleten zuordnen kommt dazu, sobald der Worker steht.
+          Ablegen und einem Athleten zuordnen kommt später dazu.
         </div>
       </div>
       <div class="rows">
@@ -61,8 +61,8 @@
 
       <div class="seg" id="steuerung" role="group" aria-label="Wiedergabe">
         <button class="seg__item" type="button" id="btnZurueckBild">−1 Bild</button>
-        <button class="seg__item" type="button" id="btnAbspielen">Abspielen</button>
-        <button class="seg__item" type="button" id="btnVorBild">+1 Bild</button>
+        <button class="seg__item" type="button" id="btnAbspielen" data-i18n="vid.abspielen">Abspielen</button>
+        <button class="seg__item" type="button" id="btnVorBild" data-i18n="vid.einBild">+1 Bild</button>
       </div>
 
       <input class="vid-schieber" id="schieber" type="range" min="0" max="1000" value="0"
@@ -70,12 +70,12 @@
 
       <div class="rows" id="listWinkel"></div>
 
-      <button class="b b--secondary b--block" id="btnAnalyse" type="button">Ganzen Clip auswerten</button>
+      <button class="b b--secondary b--block" id="btnAnalyse" type="button" data-i18n="vid.auswerten">Ganzen Clip auswerten</button>
       <p class="empty-hint" id="analyseStand" hidden></p>
     </section>
 
     <section class="section" id="secBefund" hidden>
-      <div class="marke">Befund</div>
+      <div class="marke" data-i18n="vid.befund">Befund</div>
       <div class="rows" id="listBefund"></div>
       <p class="empty-hint" id="befundHinweis"></p>
     </section>

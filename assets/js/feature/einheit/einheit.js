@@ -32,6 +32,15 @@ import {
 import { isoTag } from '../../termine.js';
 
 const $ = id => document.getElementById(id);
+
+/* tOr und nicht t() mit ??: t() gibt bei unbekanntem Schluessel den
+   SCHLUESSEL zurueck, nie undefined. Solange der Katalog laedt, bleibt
+   es deutsch. */
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
+const tPlural = (key, n, eins, mehr) => {
+  const wert = window.TVZAI18n?.format?.plural(key, n);
+  return (!wert || String(wert).startsWith(key)) ? `${n} ${n === 1 ? eins : mehr}` : wert;
+};
 const VERZOEGERUNG = 900;
 
 let user = null;
@@ -91,13 +100,13 @@ function zeichneWahl() {
             <span class="row__body">
               <span class="row__title">${escHtml(e.titel)}</span>
               <span class="row__sub">${escHtml(e.anzahl
-                ? `${e.anzahl} ${e.anzahl === 1 ? 'Übung' : 'Übungen'}`
-                : 'Hinweise, keine Übungen')}</span>
+                ? tPlural('eh.uebungen', e.anzahl, 'Übung', 'Übungen')
+                : t('eh.nurHinweise', 'Hinweise, keine Übungen'))}</span>
             </span>
             <span class="row__end">${escHtml(rechts)}</span>
           </button>`;
       }).join('')
-    : '<p class="empty-hint">Dieser Plan enthält keine Einheiten.</p>';
+    : `<p class="empty-hint">${escHtml(t('eh.keineEinheiten', 'Dieser Plan enthält keine Einheiten.'))}</p>`;
 
   zeige('secWahl', true);
   zeige('secPlayer', false);
@@ -118,19 +127,19 @@ function satzZeile(reihe, index) {
       <span class="row__icon">${escHtml(String(index + 1))}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(reihe.label)}</span>
-        <span class="row__sub">${escHtml(ziel || 'kein Ziel angegeben')}</span>
+        <span class="row__sub">${escHtml(ziel || t('eh.keinZiel', 'kein Ziel angegeben'))}</span>
       </span>
       <span class="row__end">
         <input class="form-input" type="text" inputmode="decimal" maxlength="20"
                data-satz="${index}" data-feld="weight"
                value="${escHtml(reihe.weight)}"
-               placeholder="${escHtml(reihe.zielWert || 'Wert')}"
-               aria-label="Wert ${index + 1}. Satz" />
+               placeholder="${escHtml(reihe.zielWert || t('eh.wert', 'Wert'))}"
+               aria-label="${escHtml(t('eh.ariaWert', 'Wert {n}. Satz', { n: index + 1 }))}" />
         <input class="form-input" type="text" inputmode="numeric" maxlength="20"
                data-satz="${index}" data-feld="reps"
                value="${escHtml(reihe.reps)}"
-               placeholder="${escHtml(reihe.zielReps || 'Wdh')}"
-               aria-label="Wiederholungen ${index + 1}. Satz" />
+               placeholder="${escHtml(reihe.zielReps || t('eh.wdh', 'Wdh'))}"
+               aria-label="${escHtml(t('eh.ariaWdh', 'Wiederholungen {n}. Satz', { n: index + 1 }))}" />
       </span>
     </div>`;
 }
@@ -146,12 +155,13 @@ function zeichnePlayer() {
   $('kopfMeta').textContent = `${f.erledigt} von ${f.gesamt} erledigt`;
   $('kopfMeta').hidden = false;
 
-  $('uebPos').textContent = `Übung ${pos + 1} von ${items.length}`;
+  $('uebPos').textContent = t('eh.uebungVon', 'Übung {n} von {gesamt}',
+    { n: pos + 1, gesamt: items.length });
   $('uebName').textContent = item.name;
 
   /* Alternativname, Pause und TUT stehen im Plan und sind beim Machen
      genau das, was man wissen will. */
-  const meta = [item.alt, item.pause && `Pause ${item.pause}`, item.tut && `TUT ${item.tut}`,
+  const meta = [item.alt, item.pause && t('eh.pause', 'Pause {wert}', { wert: item.pause }), item.tut && `TUT ${item.tut}`,
                 ...(item.params || []), ...(item.lines || [])]
     .filter(Boolean).join(' · ');
   $('uebMeta').textContent = meta;
@@ -160,13 +170,13 @@ function zeichnePlayer() {
   const reihen = saetze(item, e);
   $('listSaetze').innerHTML = reihen.length
     ? reihen.map(satzZeile).join('')
-    : '<p class="empty-hint">Keine Sätze vorgegeben — nur abhaken.</p>';
+    : `<p class="empty-hint">${escHtml(t('eh.keineSaetze', 'Keine Sätze vorgegeben — nur abhaken.'))}</p>`;
 
   $('uebNotiz').value = e.note;
 
   const erledigt = e.done;
   const knopf = $('btnErledigt');
-  knopf.textContent = erledigt ? 'Erledigt — nochmal öffnen' : 'Übung erledigt';
+  knopf.textContent = erledigt ? t('eh.nochmal', 'Erledigt — nochmal öffnen') : t('eh.erledigt', 'Übung erledigt');
   knopf.classList.toggle('b--primary', !erledigt);
   knopf.classList.toggle('b--secondary', erledigt);
 
@@ -185,7 +195,7 @@ function starte(id) {
   if (!items.length) {
     /* Ein Notizblatt hat nichts zum Abhaken. Es zu öffnen und einen
        leeren Player zu zeigen wäre schlechter, als es zu sagen. */
-    fehler('Diese Einheit enthält Hinweise, aber keine Übungen zum Abhaken.');
+    fehler(t('eh.nurNotizen', 'Diese Einheit enthält Hinweise, aber keine Übungen zum Abhaken.'));
     return;
   }
 
@@ -204,8 +214,9 @@ function weiter() {
   if (offen === -1) {
     const f = fortschritt(items, protokoll, unitId);
     $('fertigText').textContent = f.fertig
-      ? `${einheitTitel(programm, unitId)} — alle ${f.gesamt} Übungen erledigt.`
-      : 'Das war die letzte Übung.';
+      ? t('eh.alleFertig', '{titel} — alle {n} Übungen erledigt.',
+          { titel: einheitTitel(programm, unitId), n: f.gesamt })
+      : t('eh.letzte', 'Das war die letzte Übung.');
     zeige('secPlayer', false);
     zeige('secFertig', true);
     return;
@@ -266,7 +277,7 @@ function erledigtGeklickt() {
 
   mountShell({
     variant: 'bereich',
-    title: 'Einheit',
+    title: t('eh.einheit', 'Einheit'),
     backHref: './gruppe.html',
     profile: {},
     onSettings: () => window.tvzaOpenSettings?.(),
@@ -287,7 +298,7 @@ function erledigtGeklickt() {
   });
 
   if (!gid || !planId) {
-    fehler('Zu dieser Adresse fehlt die Gruppe oder der Plan.');
+    fehler(t('eh.f.adresse', 'Zu dieser Adresse fehlt die Gruppe oder der Plan.'));
     return;
   }
 
@@ -307,7 +318,7 @@ function erledigtGeklickt() {
     protokoll = await ladeProtokoll(gid, user.uid, datum);
     if (!protokoll.units) protokoll.units = {};
 
-    $('kopfTitel').textContent = plan.titel || 'Einheit';
+    $('kopfTitel').textContent = plan.titel || t('eh.einheit', 'Einheit');
 
     if (unitId && uebungen(programm, unitId).length) starte(unitId);
     else zeichneWahl();
@@ -315,6 +326,6 @@ function erledigtGeklickt() {
     reportClientError('einheit/laden', e);
     /* Der häufigste Grund ist eine Regel oder ein Index, der noch nicht
        ausgerollt ist — beides sagt dem Nutzer nichts. */
-    fehler('Der Plan liess sich nicht laden.');
+    fehler(t('eh.f.laden', 'Der Plan liess sich nicht laden.'));
   }
 }());
