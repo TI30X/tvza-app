@@ -185,8 +185,49 @@ test('beide Dokumente haben ein begrenztes Schema', async () => {
   }
 
   const member = allowClause(matchBlock(rules, '/groups/{gid}/members/{uid}'), 'create');
-  assert.match(member, /hasOnly\(\['uid', 'rolle', 'seit'\]\)/);
+  // 'code' kam mit dem Beitritt per Einladung dazu: eine Regel kann nur
+  // prüfen, was geschrieben oder gelesen wird, also steht der benutzte
+  // Code im Dokument.
+  assert.match(member, /hasOnly\(\['uid', 'rolle', 'seit', 'code'\]\)/);
   assert.match(member, /request\.resource\.data\.uid == uid/);
+});
+
+test('mit einem Code tritt man bei — aber nur als Mitglied', async () => {
+  const rules = await readRules();
+  const create = allowClause(matchBlock(rules, '/groups/{gid}/members/{uid}'), 'create');
+
+  // Ohne diesen Weg gäbe es gar keinen: die Leitung kann Leute nur über
+  // ihre uid aufnehmen, und die kennt kein Trainer.
+  assert.match(create, /request\.resource\.data\.code is string/);
+  assert.match(
+    create,
+    /get\(\s*\/databases\/\$\(database\)\/documents\/groupInvites\/\$\(request\.resource\.data\.code\)\s*\)\.data\.gid == gid/,
+    'der Code muss auf genau diese Gruppe zeigen',
+  );
+
+  // Wer beitritt, ernennt sich nicht selbst zum Trainer. Der
+  // Beitritts-Zweig darf ausschliesslich 'mitglied' setzen.
+  const zweig = create.slice(create.indexOf('request.resource.data.code is string') - 200);
+  assert.match(zweig, /request\.resource\.data\.rolle == 'mitglied'/);
+  assert.doesNotMatch(zweig, /rolle in \['staff'/);
+});
+
+test('ein Einladungscode gilt mehrfach, ist aber nicht aufzählbar', async () => {
+  const block = matchBlock(await readRules(), '/groupInvites/{code}');
+
+  // Ein Kader lädt zehn Athleten mit demselben Zettel ein — anders als
+  // memberInvites, die an eine E-Mail gebunden und einmalig sind.
+  // Deshalb steht hier bewusst KEIN !existsAfter.
+  assert.doesNotMatch(block, /existsAfter/);
+
+  // Nachschlagen ja, auflisten nein: sonst wären alle Codes des Systems
+  // abgreifbar. Raten scheidet aus, die Codes sind 24 Hexzeichen lang.
+  assert.match(allowClause(block, 'get'), /isMember\(\)/);
+  assert.match(allowClause(block, 'list'), /if false/);
+
+  // Anlegen und zurückziehen darf nur, wer die Gruppe führt.
+  assert.match(allowClause(block, 'create'), /leadsGroup\(request\.resource\.data\.gid\)/);
+  assert.match(allowClause(block, 'delete'), /leadsGroup\(resource\.data\.get\('gid', ''\)\)/);
 });
 
 test('die Rollenhelfer trennen Kuratieren von Übergeben', async () => {

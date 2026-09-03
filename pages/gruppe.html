@@ -47,6 +47,7 @@
       </div>
       <div class="rows">
         <button class="b b--primary b--block" id="btnNeu" type="button">Gruppe erstellen</button>
+        <button class="b b--secondary b--block" id="btnBeitreten" type="button">Mit einem Code beitreten</button>
       </div>
     </section>
 
@@ -137,10 +138,10 @@
 
         <div class="form-group">
           <div class="form-label">Deine Antwort</div>
-          <div class="rows" id="zusageKnoepfe">
-            <button class="b b--secondary b--block" type="button" data-antwort="ja">Ja, ich komme</button>
-            <button class="b b--secondary b--block" type="button" data-antwort="vielleicht">Vielleicht</button>
-            <button class="b b--secondary b--block" type="button" data-antwort="nein">Nein</button>
+          <div class="seg" id="zusageKnoepfe" role="group" aria-label="Deine Antwort">
+            <button class="seg__item" type="button" data-antwort="ja" aria-pressed="false">Ja</button>
+            <button class="seg__item" type="button" data-antwort="vielleicht" aria-pressed="false">Vielleicht</button>
+            <button class="seg__item" type="button" data-antwort="nein" aria-pressed="false">Nein</button>
           </div>
           <p class="empty-hint" id="dZusagen"></p>
         </div>
@@ -169,6 +170,28 @@
       </div>
     </section>
 
+    <!-- Ein Mitglied von nahem. Nur fuer den Kopf: Rollen vergibt er
+         allein, sonst koennten sich zwei Trainer gegenseitig
+         herabstufen. -->
+    <section class="section" id="secPerson" hidden>
+      <div class="form-card">
+        <div class="form-title" id="pName">—</div>
+        <p class="empty-hint" id="pMeta"></p>
+
+        <div class="form-group">
+          <div class="form-label">Rolle</div>
+          <div class="seg" id="rolleWahl" role="group" aria-label="Rolle">
+            <button class="seg__item" type="button" data-rolle="staff" aria-pressed="false">Trainer</button>
+            <button class="seg__item" type="button" data-rolle="mitglied" aria-pressed="false">Athlet</button>
+          </div>
+        </div>
+
+        <button class="b b--secondary b--block" id="btnUebergeben" type="button">Leitung übergeben</button>
+        <button class="b b--secondary b--block" id="btnPersonZurueck" type="button">Zurück</button>
+        <button class="b b--danger b--block" id="btnEntfernen" type="button">Aus der Gruppe entfernen</button>
+      </div>
+    </section>
+
     <section class="section" id="secMitglieder" hidden>
       <div class="marke" id="mitgliederTitel">Mitglieder</div>
       <div class="rows" id="listMitglieder">
@@ -176,8 +199,12 @@
       </div>
     </section>
 
+    <!-- Ein Code gilt fuer beliebig viele Beitritte — ein Kader laedt
+         zehn Athleten mit demselben Zettel ein. Zuruecknehmen heisst
+         loeschen; wer schon drin ist, bleibt drin. -->
     <section class="section" id="secAktionen" hidden>
-      <button class="b b--secondary b--block" id="btnEinladen" type="button">Einladungscode kopieren</button>
+      <button class="b b--secondary b--block" id="btnEinladen" type="button">Einladungscode erzeugen</button>
+      <p class="empty-hint" id="einladungText" hidden></p>
     </section>
 
   </main>

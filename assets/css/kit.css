@@ -2429,6 +2429,39 @@ html.tvza-content-frame body > main {
 }
 .hint__x:hover { background: var(--surface-2); }
 
+/* ── Segmentwahl ───────────────────────────────────────────────────
+   Fuer eine Frage mit wenigen, sich ausschliessenden Antworten: die
+   Zusage zu einem Training, einem Lager oder einer Reise.
+
+   Vorher standen dort drei Knoepfe in voller Breite untereinander. Das
+   las sich wie drei Angebote statt wie eine Frage, und es kostete auf
+   dem Handy die halbe Bildschirmhoehe fuer eine Entscheidung, die aus
+   einem Tippen besteht. Nebeneinander ist ausserdem sichtbar, dass die
+   drei zusammengehoeren und sich gegenseitig ausschliessen.
+
+   44px Mindesthoehe: darunter wird ein Segment auf einem Handy zum
+   Zielproblem. */
+.seg {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  overflow: hidden;
+}
+.seg__item {
+  flex: 1 1 0; min-width: 0; min-height: 44px;
+  padding: 10px 8px;
+  border: 0; border-right: 1px solid var(--border);
+  background: transparent; color: var(--ink-soft);
+  font: inherit; font-size: var(--text-sm); font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.seg__item:last-child { border-right: 0; }
+.seg__item:hover { background: var(--surface-2); color: var(--ink); }
+.seg__item[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.seg__item[aria-pressed="true"]:hover { background: var(--accent-hover); color: #fff; }
+
 /* ── Die Tageszusammenfassung ──────────────────────────────────────
    Dieselbe Karte, aber gestapelt statt nebeneinander: sie traegt
    mehrere Saetze, waehrend der Hinweis immer genau einer ist.

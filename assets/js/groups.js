@@ -249,6 +249,52 @@ export function waehleAktive(gruppen) {
   return gruppen.find(g => g.id === gemerkt) || gruppen[0];
 }
 
+/* ── Beitreten ─────────────────────────────────────────────────────
+   Ohne diesen Weg gäbe es gar keinen. Die Leitung kann Leute nur über
+   ihre uid aufnehmen — und die kennt kein Trainer.
+
+   Ein Code zeigt auf genau eine Gruppe und gilt für beliebig viele
+   Beitritte. Das unterscheidet ihn von memberInvites, die an eine
+   E-Mail gebunden und einmalig sind: ein Kader lädt zehn Athleten mit
+   demselben Zettel ein, nicht mit zehn Zetteln. Zurückziehen heisst
+   löschen — danach trägt der Code ins Leere, und wer schon drin ist,
+   bleibt drin. */
+
+export async function einladungErzeugen(gid, uid) {
+  const kennung = code();
+  await writeBatch(db)
+    .set(doc(db, 'groupInvites', kennung),
+         { gid, createdBy: uid, createdAt: serverTimestamp() })
+    .commit();
+  return kennung;
+}
+
+export function einladungZuruecknehmen(kennung) {
+  return deleteDoc(doc(db, 'groupInvites', kennung));
+}
+
+export async function beitreten(kennung, uid) {
+  const sauber = String(kennung ?? '').trim().toLowerCase();
+  if (!sauber) throw new Error('Der Code fehlt.');
+
+  const snap = await getDoc(doc(db, 'groupInvites', sauber));
+  if (!snap.exists()) throw new Error('Diesen Code gibt es nicht (mehr).');
+
+  const gid = snap.data().gid;
+  if (!gid) throw new Error('Der Code zeigt auf keine Gruppe.');
+
+  /* Immer als 'mitglied' — wer beitritt, ernennt sich nicht selbst zum
+     Trainer. Die Regel besteht ohnehin darauf. Der Code bleibt im
+     Dokument: die Regel kann nur prüfen, was geschrieben wird, und
+     nebenbei ist damit nachvollziehbar, über welche Einladung jemand
+     hereinkam. */
+  await writeBatch(db)
+    .set(mitgliedRef(gid, uid),
+         { uid, rolle: 'mitglied', seit: serverTimestamp(), code: sauber })
+    .commit();
+  return gid;
+}
+
 /* ── Termine ───────────────────────────────────────────────────────
    Training, Lager, Rennen. Was ein Termin IST, steht in termine.js —
    dort ohne Firebase, damit es sich testen lässt. Hier nur das Lesen

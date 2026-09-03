@@ -859,7 +859,7 @@ service cloud.firestore {
       allow create: if isMember()
                     && request.resource.data.uid == uid
                     && request.resource.data.rolle is string
-                    && request.resource.data.keys().hasOnly(['uid', 'rolle', 'seit'])
+                    && request.resource.data.keys().hasOnly(['uid', 'rolle', 'seit', 'code'])
                     && (
                       // Der Gruender legt sich selbst als Kopf an. Erlaubt nur,
                       // wenn die Gruppe im selben Stapel ihn auch als Kopf
@@ -886,6 +886,30 @@ service cloud.firestore {
                         headsGroup(gid)
                         && request.resource.data.rolle in ['staff', 'mitglied']
                       )
+                      // Selbst beitreten mit einem Code. Ohne diesen Weg
+                      // gaebe es gar keinen: die Leitung kann Leute nur
+                      // ueber ihre uid aufnehmen, und die kennt kein
+                      // Trainer.
+                      //
+                      // Der Code steht im Dokument, weil eine Regel nur
+                      // pruefen kann, was geschrieben oder gelesen wird.
+                      // Er ist harmlos — es ist der Code, den man ohnehin
+                      // bekommen hat — und macht nachvollziehbar, ueber
+                      // welche Einladung jemand hereinkam.
+                      //
+                      // Immer als 'mitglied': wer beitritt, ernennt sich
+                      // nicht selbst zum Trainer.
+                      || (
+                        request.auth.uid == uid
+                        && request.resource.data.rolle == 'mitglied'
+                        && request.resource.data.code is string
+                        && exists(
+                          /databases/$(database)/documents/groupInvites/$(request.resource.data.code)
+                        )
+                        && get(
+                          /databases/$(database)/documents/groupInvites/$(request.resource.data.code)
+                        ).data.gid == gid
+                      )
                     );
 
       // Rollen vergibt nur der Kopf — wie bei families, wo auch nur der
@@ -909,6 +933,32 @@ service cloud.firestore {
                       leadsGroup(gid)
                       && resource.data.get('rolle', '') != 'head'
                     );
+    }
+
+    /* Einladungscodes. Ein Code zeigt auf genau eine Gruppe und gilt
+       fuer beliebig viele Beitritte — anders als memberInvites, die
+       an eine E-Mail gebunden und einmalig sind. Ein Kader laedt zehn
+       Athleten mit demselben Zettel ein, nicht mit zehn Zetteln.
+
+       Zurueckziehen heisst loeschen: danach traegt der Code ins Leere,
+       und wer schon drin ist, bleibt drin.
+
+       'get' fuer jedes Mitglied, damit der Beitretende die Gruppe
+       ueberhaupt nachschlagen kann — die Gruppe selbst darf er ja noch
+       nicht lesen. 'list' bleibt zu, sonst waeren alle Codes des
+       Systems aufzaehlbar. Raten scheidet aus: die Codes sind 24
+       Hexzeichen lang. */
+    match /groupInvites/{code} {
+      allow get: if isMember();
+      allow list: if false;
+
+      allow create: if isMember()
+                    && request.resource.data.gid is string
+                    && leadsGroup(request.resource.data.gid)
+                    && request.resource.data.keys().hasOnly(['gid', 'createdBy', 'createdAt'])
+                    && request.resource.data.createdBy == request.auth.uid;
+
+      allow delete: if leadsGroup(resource.data.get('gid', ''));
     }
 
     /* Termine einer Gruppe. Drei Arten, die sich wirklich verschieden

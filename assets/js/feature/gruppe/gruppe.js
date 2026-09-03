@@ -23,6 +23,8 @@ import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminAendern, terminLoeschen,
   zusagen, ladeZusagen,
+  rolleSetzen, mitgliedEntfernen, uebergeben,
+  einladungErzeugen, beitreten,
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
@@ -73,15 +75,22 @@ function mitgliedZeile(m, art) {
   const name = m.name || m.uid;
   const rolle = wort(art, m.rolle);
   const suffix = m.uid === user.uid ? ' (du)' : '';
+
+  /* Nur der Kopf verwaltet Leute. Für alle anderen bleibt die Zeile
+     eine Zeile und wird nicht zu einem Knopf, der nichts tut. */
+  const klickbar = fuehrt(aktiv?.meineRolle);
+  const tag = klickbar ? 'button' : 'div';
+  const attrs = klickbar ? ` type="button" data-person="${escHtml(m.uid)}"` : '';
+
   return `
-    <div class="row" data-bereich="msg">
+    <${tag} class="row"${attrs} data-bereich="msg">
       <span class="row__icon">${escHtml(initialen(name))}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(name + suffix)}</span>
         <span class="row__sub">${escHtml(rolle)}</span>
       </span>
       <span class="row__end"></span>
-    </div>`;
+    </${tag}>`;
 }
 
 async function zeichneMitglieder() {
@@ -239,10 +248,10 @@ async function zeichneZusagen() {
        separaten Satz zu wiederholen. */
     const meine = liste.find(z => z.uid === user.uid)?.antwort || '';
     $('zusageKnoepfe').querySelectorAll('[data-antwort]').forEach(btn => {
-      const gewaehlt = btn.dataset.antwort === meine;
-      btn.classList.toggle('b--primary', gewaehlt);
-      btn.classList.toggle('b--secondary', !gewaehlt);
-      btn.setAttribute('aria-pressed', String(gewaehlt));
+      /* Der Zustand hängt allein an aria-pressed: die CSS liest es
+         direkt, und ein Screenreader bekommt damit dieselbe Wahrheit
+         wie das Auge — statt einer Klasse, die nur sichtbar ist. */
+      btn.setAttribute('aria-pressed', String(btn.dataset.antwort === meine));
     });
   } catch (e) {
     reportClientError('gruppe/zusagen', e);
@@ -417,18 +426,141 @@ async function terminSpeichern() {
   }
 }
 
-async function einladen() {
-  if (!aktiv?.inviteToken) return;
+/* ── Kaderverwaltung ───────────────────────────────────────────────
+   Nur für den Kopf. Rollen vergibt er allein — dürfte die Leitung das,
+   könnten sich zwei Trainer gegenseitig herabstufen. Die Regel besteht
+   ohnehin darauf; hier steht es, damit die Oberfläche gar nicht erst
+   etwas anbietet, das scheitern würde. */
+
+let person = null;   // das gerade geöffnete Mitglied
+
+function personOeffnen(uid) {
+  if (!aktiv || !fuehrt(aktiv.meineRolle)) return;
+  person = mitglieder.find(m => m.uid === uid) || null;
+  if (!person) return;
+
+  const name = person.name || person.uid;
+  const istKopf = person.rolle === 'head';
+  const ichSelbst = person.uid === user.uid;
+
+  $('pName').textContent = name;
+  $('pMeta').textContent = wort(aktiv.art, person.rolle);
+  $('pMeta').hidden = false;
+
+  $('rolleWahl').querySelectorAll('[data-rolle]').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(btn.dataset.rolle === person.rolle));
+    /* Am Kopf lässt sich die Rolle nicht drehen — er übergibt zuerst,
+       sonst stünde die Gruppe ohne Kopf da. */
+    btn.disabled = istKopf;
+  });
+
+  /* An sich selbst übergibt niemand, und den Kopf entfernt niemand. */
+  $('btnUebergeben').hidden = istKopf || ichSelbst;
+  $('btnEntfernen').hidden = istKopf;
+
+  zeige('secPerson', true);
+  zeige('secMitglieder', false);
+  zeige('secTermine', false);
+}
+
+function personSchliessen() {
+  person = null;
+  zeige('secPerson', false);
+  zeige('secMitglieder', !!aktiv);
+  zeige('secTermine', !!aktiv);
+}
+
+async function rolleAendern(rolle) {
+  if (!person || !aktiv || person.rolle === rolle) return;
   try {
-    await navigator.clipboard.writeText(aktiv.inviteToken);
-    const btn = $('btnEinladen');
-    const alt = btn.textContent;
-    btn.textContent = 'Kopiert';
-    setTimeout(() => { btn.textContent = alt; }, 1600);
-  } catch {
-    /* Ohne Zwischenablage — älteres iOS, kein sicherer Kontext — bleibt
-       der Code wenigstens sichtbar und lässt sich abschreiben. */
-    prompt('Einladungscode:', aktiv.inviteToken);
+    await rolleSetzen(aktiv.id, person.uid, rolle);
+    await zeichneMitglieder();
+    personOeffnen(person.uid);
+  } catch (e) {
+    reportClientError('gruppe/rolle', e);
+    alert('Die Rolle konnte nicht geändert werden.');
+  }
+}
+
+async function personEntfernen() {
+  if (!person || !aktiv) return;
+  const name = person.name || person.uid;
+  if (!confirm(`${name} wirklich aus der Gruppe entfernen?`)) return;
+  try {
+    await mitgliedEntfernen(aktiv.id, person.uid);
+    personSchliessen();
+    await zeichneMitglieder();
+  } catch (e) {
+    reportClientError('gruppe/entfernen', e);
+    alert('Das Mitglied konnte nicht entfernt werden.');
+  }
+}
+
+async function leitungUebergeben() {
+  if (!person || !aktiv) return;
+  const name = person.name || person.uid;
+  /* Eine Übergabe ist nicht rückgängig zu machen: danach bist du nicht
+     mehr der Kopf und kannst sie nicht zurückholen. Das gehört gesagt,
+     bevor jemand tippt. */
+  if (!confirm(
+    `Die Leitung an ${name} übergeben?\n\n`
+    + 'Danach bist du nur noch Trainer und kannst die Leitung nicht '
+    + 'selbst zurückholen.')) return;
+
+  try {
+    await uebergeben(aktiv.id, person.uid);
+    personSchliessen();
+    /* beobachteMeineGruppen meldet die neue Rolle von selbst; die Seite
+       zeichnet sich daraufhin mit den passenden Rechten neu. */
+  } catch (e) {
+    reportClientError('gruppe/uebergeben', e);
+    alert('Die Übergabe hat nicht geklappt.');
+  }
+}
+
+/* ── Beitreten ─────────────────────────────────────────────────────*/
+
+async function codeEinloesen() {
+  const eingabe = prompt('Einladungscode eingeben:');
+  if (eingabe === null) return;
+  const sauber = eingabe.trim();
+  if (!sauber) return;
+
+  const btn = $('btnBeitreten');
+  btn.disabled = true;
+  try {
+    const gid = await beitreten(sauber, user.uid);
+    aktiveGruppeSetzen(gid);
+  } catch (e) {
+    reportClientError('gruppe/beitreten', e);
+    alert(e?.message || 'Der Beitritt hat nicht geklappt.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function einladen() {
+  if (!aktiv) return;
+  const btn = $('btnEinladen');
+  btn.disabled = true;
+  try {
+    const kennung = await einladungErzeugen(aktiv.id, user.uid);
+    const feld = $('einladungText');
+    feld.textContent = kennung;
+    feld.hidden = false;
+    try {
+      await navigator.clipboard.writeText(kennung);
+      btn.textContent = 'Kopiert';
+      setTimeout(() => { btn.textContent = 'Einladungscode erzeugen'; }, 1600);
+    } catch {
+      /* Ohne Zwischenablage — älteres iOS, kein sicherer Kontext —
+         steht der Code wenigstens lesbar darunter. */
+    }
+  } catch (e) {
+    reportClientError('gruppe/einladen', e);
+    alert('Der Code konnte nicht erzeugt werden.');
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -456,22 +588,35 @@ async function einladen() {
   $('btnTermin')?.addEventListener('click', formOeffnen);
   $('btnAbbrechen')?.addEventListener('click', formSchliessen);
   $('btnSpeichern')?.addEventListener('click', terminSpeichern);
-  $(fArt)?.addEventListener(change, formAnpassen);
+  $('fArt')?.addEventListener('change', formAnpassen);
 
-  /* Ein Zuhoerer auf der Liste statt einer pro Zeile: die Zeilen werden
-     bei jeder Aenderung neu gezeichnet, einzeln gebundene Zuhoerer
-     waeren nach dem ersten Neuzeichnen ins Leere gebunden. */
-  $(listTermine)?.addEventListener(click, event => {
-    const eid = event.target.closest([data-termin])?.dataset.termin;
+  /* Ein Zuhörer auf der Liste statt einer pro Zeile: die Zeilen werden
+     bei jeder Änderung neu gezeichnet, einzeln gebundene Zuhörer wären
+     nach dem ersten Neuzeichnen ins Leere gebunden. */
+  $('listTermine')?.addEventListener('click', event => {
+    const eid = event.target.closest('[data-termin]')?.dataset.termin;
     if (eid) detailOeffnen(eid);
   });
-  $(zusageKnoepfe)?.addEventListener(click, event => {
-    const antwort = event.target.closest([data-antwort])?.dataset.antwort;
+  $('zusageKnoepfe')?.addEventListener('click', event => {
+    const antwort = event.target.closest('[data-antwort]')?.dataset.antwort;
     if (antwort) antworten(antwort);
   });
-  $(btnZurueck)?.addEventListener(click, detailSchliessen);
-  $(btnErgebnis)?.addEventListener(click, ergebnisSpeichern);
-  $(btnLoeschen)?.addEventListener(click, terminEntfernen);
+  $('btnZurueck')?.addEventListener('click', detailSchliessen);
+  $('btnErgebnis')?.addEventListener('click', ergebnisSpeichern);
+  $('btnLoeschen')?.addEventListener('click', terminEntfernen);
+
+  $('btnBeitreten')?.addEventListener('click', codeEinloesen);
+  $('listMitglieder')?.addEventListener('click', event => {
+    const uid = event.target.closest('[data-person]')?.dataset.person;
+    if (uid) personOeffnen(uid);
+  });
+  $('rolleWahl')?.addEventListener('click', event => {
+    const rolle = event.target.closest('[data-rolle]')?.dataset.rolle;
+    if (rolle) rolleAendern(rolle);
+  });
+  $('btnPersonZurueck')?.addEventListener('click', personSchliessen);
+  $('btnEntfernen')?.addEventListener('click', personEntfernen);
+  $('btnUebergeben')?.addEventListener('click', leitungUebergeben);
 
   $('grpWahl')?.addEventListener('change', event => {
     aktiveGruppeSetzen(event.target.value);
@@ -512,8 +657,5 @@ function hoereAufTermine() {
   });
 }
 
-/* fuehrt() wird hier noch nicht gebraucht — Übergeben und Rollen setzen
-   kommen mit der Kaderverwaltung in Phase 3. Der Import steht schon, weil
-   die Regel dazu bereits scharf ist und die Oberfläche sie nicht neu
-   erfinden soll. */
-export { fuehrt };
+/* fuehrt() wird inzwischen wirklich gebraucht — für die Kaderverwaltung.
+   Der Blind-Export, der es bis dahin am Leben hielt, kann weg. */
