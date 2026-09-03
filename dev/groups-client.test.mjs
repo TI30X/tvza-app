@@ -180,3 +180,40 @@ test('der Index für die Sammelgruppen-Abfrage ist hinterlegt', async () => {
     'die Sammlungs-Reichweite allein genügt nicht',
   );
 });
+
+/* ── Gruppentermine auf dem privaten Start ─────────────────────────*/
+
+test('die Tageszusammenfassung nimmt Gruppentermine auf, ohne an ihnen zu hängen', async () => {
+  const html = await read('index.html');
+
+  // Was heute in einer Gruppe läuft, gehört in den Tag — ein Training
+  // um 14:00 auch dann, wenn der Trainer es eingetragen hat.
+  assert.match(html, /import \{ meineGruppen, ladeTermine \}/);
+  assert.match(html, /import \{ alsBriefingTermine, isoTag \}/);
+  assert.match(html, /termine: \[\.\.\.\(window\.tvzaHeuteTermine \|\| \[\]\), \.\.\.ausGruppen\]/);
+
+  // Die Gruppenabfrage ist das Einzige auf dieser Seite, das den
+  // COLLECTION_GROUP-Index braucht. Fehlt er, muss die Karte trotzdem
+  // erscheinen — mit den eigenen Terminen.
+  const lader = html.slice(html.indexOf('const gruppenTermineHeute'));
+  assert.match(lader.slice(0, 700), /catch \{ return \[\]; \}/);
+
+  // Und eine langsame Verbindung darf die Karte nicht verschlucken.
+  assert.match(html, /Promise\.race\(\[\s*\n?\s*gruppenTermineHeute/);
+});
+
+test('abgemeldete Besucher landen im Login, nicht bei den Projekten', async () => {
+  const [index, login] = await Promise.all([read('index.html'), read('login.html')]);
+
+  // Drei Wege führten dorthin. Keiner davon mehr: die Projektseite ist
+  // ein Link, den man verschickt, und kein Ort in der App.
+  assert.doesNotMatch(index, /requireAuth\('public\.html'\)/);
+  assert.match(index, /requireAuth\('login\.html'\)/);
+  assert.doesNotMatch(login, /href="public\.html"/);
+
+  // Aus dem Knopf, der die Seite aufrief, wurde einer, der sie
+  // verschickbar macht.
+  assert.doesNotMatch(index, /id="publicPageLink" href="public\.html"/);
+  assert.match(index, /id="publicPageLink"/);
+  assert.match(index, /navigator\.clipboard\.writeText\(adresse\)/);
+});

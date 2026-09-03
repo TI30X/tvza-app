@@ -21,7 +21,8 @@ import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError 
 import { mountShell } from '../../shell.js?v=7';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
-  beobachteTermine, terminAnlegen,
+  beobachteTermine, terminAnlegen, terminAendern, terminLoeschen,
+  zusagen, ladeZusagen,
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
@@ -35,6 +36,8 @@ let user = null;
 let gruppen = [];
 let aktiv = null;
 let termine = [];
+let mitglieder = [];
+let offen = null;       // der gerade geoeffnete Termin
 let terminAbo = null;   // onSnapshot-Abmeldung der aktuellen Gruppe
 
 /* ── Darstellung ───────────────────────────────────────────────────*/
@@ -85,8 +88,7 @@ async function zeichneMitglieder() {
   if (!aktiv) return;
   const liste = $('listMitglieder');
   try {
-    const roh = await ladeMitglieder(aktiv.id);
-    const mitglieder = sortiere(roh);
+    mitglieder = sortiere(await ladeMitglieder(aktiv.id));
 
     $('mitgliederTitel').textContent = wort(aktiv.art, 'mitglieder');
     liste.innerHTML = mitglieder.map(m => mitgliedZeile(m, aktiv.art)).join('');
@@ -111,14 +113,14 @@ function terminZeile(t) {
   const wann = zeitraum(t);
   const ort = t.ort ? ` · ${t.ort}` : '';
   return `
-    <div class="row" data-bereich="${escHtml(bereich)}">
+    <button class="row" type="button" data-termin="${escHtml(t.id)}" data-bereich="${escHtml(bereich)}">
       <span class="row__icon">${escHtml(artWort(t.art).slice(0, 1))}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(t.titel)}</span>
         <span class="row__sub">${escHtml(wann + ort)}</span>
       </span>
       <span class="row__end">${escHtml(artWort(t.art))}</span>
-    </div>`;
+    </button>`;
 }
 
 function zeichneTermine() {
@@ -128,10 +130,10 @@ function zeichneTermine() {
   /* Nur was noch kommt — ein laufendes Lager zählt dazu, bis es vorbei
      ist. Vergangenes gehört in eine Saisonübersicht, nicht auf die
      erste Seite der Gruppe. */
-  const offen = kommende(termine, isoTag(), 6);
+  const naechste = kommende(termine, isoTag(), 6);
 
-  liste.innerHTML = offen.length
-    ? offen.map(terminZeile).join('')
+  liste.innerHTML = naechste.length
+    ? naechste.map(terminZeile).join('')
     : '<p class="empty-hint">Noch keine Termine.</p>';
 }
 
@@ -200,6 +202,140 @@ async function neueGruppe() {
     alert('Die Gruppe konnte nicht erstellt werden.');
   } finally {
     btn.disabled = false;
+  }
+}
+
+/* ── Ein Termin von nahem ──────────────────────────────────────────
+   Für Athleten die Zusage, für die Leitung das Ergebnis. Beides an
+   derselben Stelle, weil ein Rennen genau das ist: etwas mit einem
+   Vorher und einem Nachher. */
+
+function zusagenText(liste) {
+  const zahl = a => liste.filter(z => z.antwort === a).length;
+  const ja = zahl('ja');
+  const nein = zahl('nein');
+  const vielleicht = zahl('vielleicht');
+  /* Wer nicht geantwortet hat, ist nicht dasselbe wie wer abgesagt hat —
+     und für einen Trainer ist genau das die Zahl, die zählt. */
+  const stumm = Math.max(0, mitglieder.length - liste.length);
+
+  const teile = [];
+  if (ja) teile.push(`${ja} zugesagt`);
+  if (vielleicht) teile.push(`${vielleicht} vielleicht`);
+  if (nein) teile.push(`${nein} abgesagt`);
+  if (stumm) teile.push(`${stumm} offen`);
+  return teile.length ? teile.join(' · ') : 'Noch keine Antworten.';
+}
+
+async function zeichneZusagen() {
+  if (!offen || !aktiv) return;
+  const feld = $('dZusagen');
+  try {
+    const liste = await ladeZusagen(aktiv.id, offen.id);
+    feld.textContent = zusagenText(liste);
+    feld.hidden = false;
+
+    /* Die eigene Antwort wird hervorgehoben, statt sie in einem
+       separaten Satz zu wiederholen. */
+    const meine = liste.find(z => z.uid === user.uid)?.antwort || '';
+    $('zusageKnoepfe').querySelectorAll('[data-antwort]').forEach(btn => {
+      const gewaehlt = btn.dataset.antwort === meine;
+      btn.classList.toggle('b--primary', gewaehlt);
+      btn.classList.toggle('b--secondary', !gewaehlt);
+      btn.setAttribute('aria-pressed', String(gewaehlt));
+    });
+  } catch (e) {
+    reportClientError('gruppe/zusagen', e);
+    feld.hidden = true;
+  }
+}
+
+function detailOeffnen(eid) {
+  offen = termine.find(t => t.id === eid) || null;
+  if (!offen) return;
+
+  const darfFuehren = leitet(aktiv?.meineRolle);
+  const teile = [artWort(offen.art), zeitraum(offen)];
+  if (offen.ort) teile.push(offen.ort);
+  if (offen.disziplin) teile.push(offen.disziplin);
+
+  $('dTitel').textContent = offen.titel;
+  $('dMeta').textContent = teile.filter(Boolean).join(' · ');
+  $('dMeta').hidden = false;
+
+  /* Ein Ergebnis gibt es nur beim Rennen, und eintragen darf es nur
+     die Leitung. Bei einem Krafttraining stünde das Feld sinnlos da. */
+  zeige('grpErgebnis', offen.art === 'rennen' && darfFuehren);
+  $('eRang').value = offen.ergebnis?.rang ?? '';
+  $('eZeit').value = offen.ergebnis?.zeit ?? '';
+  $('ePunkte').value = offen.ergebnis?.punkte ?? '';
+
+  const loeschen = $('btnLoeschen');
+  if (loeschen) loeschen.hidden = !darfFuehren;
+
+  zeige('secDetail', true);
+  zeige('secTermine', false);
+  zeige('secMitglieder', false);
+  zeichneZusagen();
+}
+
+function detailSchliessen() {
+  offen = null;
+  zeige('secDetail', false);
+  zeige('secTermine', !!aktiv);
+  zeige('secMitglieder', !!aktiv);
+}
+
+async function antworten(antwort) {
+  if (!offen || !aktiv) return;
+  try {
+    await zusagen(aktiv.id, offen.id, user.uid, antwort);
+    await zeichneZusagen();
+  } catch (e) {
+    reportClientError('gruppe/zusage', e);
+    $('dZusagen').textContent = 'Die Antwort konnte nicht gespeichert werden.';
+    $('dZusagen').hidden = false;
+  }
+}
+
+async function ergebnisSpeichern() {
+  if (!offen || !aktiv) return;
+  const rang = $('eRang').value.trim();
+  const zeit = $('eZeit').value.trim();
+  const punkte = $('ePunkte').value.trim();
+
+  /* Leere Felder werden nicht als '' geschrieben — ein Ergebnis mit
+     rang:'' läse sich später wie "es gibt einen Rang, er ist bloss
+     leer". Ist gar nichts ausgefüllt, wird das Ergebnis entfernt. */
+  const ergebnis = {};
+  if (rang) ergebnis.rang = Number(rang);
+  if (zeit) ergebnis.zeit = zeit;
+  if (punkte) ergebnis.punkte = punkte;
+
+  const btn = $('btnErgebnis');
+  btn.disabled = true;
+  try {
+    await terminAendern(aktiv.id, offen.id,
+      { ergebnis: Object.keys(ergebnis).length ? ergebnis : null });
+    btn.textContent = 'Gespeichert';
+    setTimeout(() => { btn.textContent = 'Ergebnis speichern'; }, 1600);
+  } catch (e) {
+    reportClientError('gruppe/ergebnis', e);
+    alert('Das Ergebnis konnte nicht gespeichert werden.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function terminEntfernen() {
+  if (!offen || !aktiv) return;
+  if (!confirm(`"${offen.titel}" wirklich löschen?`)) return;
+  try {
+    await terminLoeschen(aktiv.id, offen.id);
+    detailSchliessen();
+  } catch (e) {
+    reportClientError('gruppe/termin-loeschen', e);
+    alert('Der Termin konnte nicht gelöscht werden.');
   }
 }
 
@@ -320,7 +456,22 @@ async function einladen() {
   $('btnTermin')?.addEventListener('click', formOeffnen);
   $('btnAbbrechen')?.addEventListener('click', formSchliessen);
   $('btnSpeichern')?.addEventListener('click', terminSpeichern);
-  $('fArt')?.addEventListener('change', formAnpassen);
+  $(fArt)?.addEventListener(change, formAnpassen);
+
+  /* Ein Zuhoerer auf der Liste statt einer pro Zeile: die Zeilen werden
+     bei jeder Aenderung neu gezeichnet, einzeln gebundene Zuhoerer
+     waeren nach dem ersten Neuzeichnen ins Leere gebunden. */
+  $(listTermine)?.addEventListener(click, event => {
+    const eid = event.target.closest([data-termin])?.dataset.termin;
+    if (eid) detailOeffnen(eid);
+  });
+  $(zusageKnoepfe)?.addEventListener(click, event => {
+    const antwort = event.target.closest([data-antwort])?.dataset.antwort;
+    if (antwort) antworten(antwort);
+  });
+  $(btnZurueck)?.addEventListener(click, detailSchliessen);
+  $(btnErgebnis)?.addEventListener(click, ergebnisSpeichern);
+  $(btnLoeschen)?.addEventListener(click, terminEntfernen);
 
   $('grpWahl')?.addEventListener('change', event => {
     aktiveGruppeSetzen(event.target.value);
@@ -343,6 +494,7 @@ async function einladen() {
    antwortende überschriebe die Liste — die Termine der falschen
    Gruppe stünden dann auf der richtigen Seite. */
 function hoereAufTermine() {
+  detailSchliessen();
   terminAbo?.();
   terminAbo = null;
   termine = [];
@@ -355,6 +507,7 @@ function hoereAufTermine() {
        überschreiben. */
     if (aktiv?.id !== fuer) return;
     termine = liste;
+    if (offen && !termine.some(t => t.id === offen.id)) detailSchliessen();
     zeichneTermine();
   });
 }

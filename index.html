@@ -210,7 +210,7 @@
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           <button class="btn btn-primary" id="addProjectBtn"><span class="ui-plus" aria-hidden="true"></span><span data-i18n="home.projektHinzufuegen">Projekt hinzufügen</span></button>
-          <a class="btn btn-secondary" id="publicPageLink" href="public.html"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> Öffentliche Seite ansehen</a>
+          <button class="btn btn-secondary" type="button" id="publicPageLink"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> <span>Link kopieren</span></button>
         </div>
       </section>
 
@@ -473,7 +473,7 @@
     // Theme-Umschalter wird automatisch von theme.js verkabelt (#themeToggle).
 
     // Nicht angemeldet → öffentliche Seite zuerst (Login erst danach).
-    const user = await requireAuth('public.html');
+    const user = await requireAuth('login.html');
     if (sessionStorage.getItem('tvza-send-verification') === '1') {
       sessionStorage.removeItem('tvza-send-verification');
       if (!user.emailVerified) {
@@ -2049,11 +2049,13 @@
   import { weatherIcon } from './assets/js/shell.js?v=7';
   import { chooseHint, markShown, dismissHint } from './assets/js/hints.js';
   import { buildBriefing, renderBriefing } from './assets/js/briefing.js';
+  import { meineGruppen, ladeTermine } from './assets/js/groups.js';
+  import { alsBriefingTermine, isoTag } from './assets/js/termine.js';
   import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   (async () => {
     let user;
-    try { user = await requireAuth('public.html'); } catch (e) { return; }
+    try { user = await requireAuth('login.html'); } catch (e) { return; }
     if (!user) return;
     const uid = user.uid;
     const profile = await getProfile(user);
@@ -2395,7 +2397,47 @@
 
        markShown() zählt nur, wenn wirklich ein Hinweis drin war: Regel 1
        begrenzt die Hinweise, nicht den Tagesüberblick. */
-    setTimeout(() => {
+    /* Die Projektseite ist ein Link, den man verschickt, und kein Ort
+       in der App. Der Knopf ruft sie darum nicht auf, sondern legt ihre
+       Adresse in die Zwischenablage. */
+    $('publicPageLink')?.addEventListener('click', async () => {
+      const adresse = new URL('public.html', location.href).href;
+      const btn = $('publicPageLink');
+      const feld = btn.querySelector('span[data-i18n]') || btn;
+      const alt = feld.textContent;
+      try {
+        await navigator.clipboard.writeText(adresse);
+        feld.textContent = 'Kopiert';
+        setTimeout(() => { feld.textContent = alt; }, 1600);
+      } catch {
+        /* Ohne Zwischenablage — älteres iOS, kein sicherer Kontext —
+           bleibt die Adresse wenigstens lesbar. */
+        prompt('Link zur Projektseite:', adresse);
+      }
+    });
+
+    /* Was heute in einer Gruppe läuft, gehört in die Zusammenfassung —
+       ein Training um 14:00 ist Teil deines Tages, auch wenn es der
+       Trainer eingetragen hat.
+
+       Läuft früh los, damit es bis zur Karte da ist, und liegt
+       vollständig in einem catch: die Gruppenabfrage ist das Einzige
+       auf dieser Seite, das den COLLECTION_GROUP-Index braucht. Fehlt
+       er, bleibt die Zusammenfassung bei den eigenen Terminen, statt
+       ganz auszufallen. */
+    const gruppenTermineHeute = (async () => {
+      try {
+        const heute = isoTag();
+        const gruppen = await meineGruppen(uid);
+        const listen = await Promise.all(gruppen.map(async g => {
+          try { return alsBriefingTermine(await ladeTermine(g.id), heute); }
+          catch { return []; }
+        }));
+        return listen.flat();
+      } catch { return []; }
+    })();
+
+    setTimeout(async () => {
       try {
         const slot = $('hintSlot'); if (!slot) return;
         const cal = heuteRows.get('cal');
@@ -2411,8 +2453,17 @@
           maturaDue: window.tvzaMaturaDue || null,
         };
         const hint = chooseHint(sources, uid);
+
+        /* Auf die Gruppentermine wird gewartet, aber nicht ewig: eine
+           langsame Verbindung darf die Karte nicht verschlucken.
+           Kommen sie zu spät, steht der eigene Tag trotzdem da. */
+        const ausGruppen = await Promise.race([
+          gruppenTermineHeute,
+          new Promise(fertig => setTimeout(() => fertig([]), 900)),
+        ]);
+
         const briefing = buildBriefing({
-          termine: window.tvzaHeuteTermine || [],
+          termine: [...(window.tvzaHeuteTermine || []), ...ausGruppen],
           hint,
         });
         if (!briefing) return;

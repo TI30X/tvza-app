@@ -127,6 +127,48 @@
       </div>
     </section>
 
+    <!-- Ein Termin von nahem. Für Athleten die Zusage, für die Leitung
+         das Ergebnis — und beides an derselben Stelle, weil ein Rennen
+         genau das ist: etwas mit einem Vorher und einem Nachher. -->
+    <section class="section" id="secDetail" hidden>
+      <div class="form-card">
+        <div class="form-title" id="dTitel">—</div>
+        <p class="empty-hint" id="dMeta"></p>
+
+        <div class="form-group">
+          <div class="form-label">Deine Antwort</div>
+          <div class="rows" id="zusageKnoepfe">
+            <button class="b b--secondary b--block" type="button" data-antwort="ja">Ja, ich komme</button>
+            <button class="b b--secondary b--block" type="button" data-antwort="vielleicht">Vielleicht</button>
+            <button class="b b--secondary b--block" type="button" data-antwort="nein">Nein</button>
+          </div>
+          <p class="empty-hint" id="dZusagen"></p>
+        </div>
+
+        <div id="grpErgebnis" hidden>
+          <div class="form-title">Ergebnis</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="eRang">Rang</label>
+              <input class="form-input" id="eRang" type="number" min="1" max="999" inputmode="numeric" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="eZeit">Laufzeit</label>
+              <input class="form-input" id="eZeit" type="text" maxlength="12" placeholder="1:23.45" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ePunkte">FIS-Punkte</label>
+            <input class="form-input" id="ePunkte" type="text" maxlength="10" placeholder="kann leer bleiben" />
+          </div>
+          <button class="b b--primary b--block" id="btnErgebnis" type="button">Ergebnis speichern</button>
+        </div>
+
+        <button class="b b--secondary b--block" id="btnZurueck" type="button">Zurück</button>
+        <button class="b b--danger b--block" id="btnLoeschen" type="button" hidden>Termin löschen</button>
+      </div>
+    </section>
+
     <section class="section" id="secMitglieder" hidden>
       <div class="marke" id="mitgliederTitel">Mitglieder</div>
       <div class="rows" id="listMitglieder">
