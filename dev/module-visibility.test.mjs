@@ -128,3 +128,43 @@ test('saved visibility refreshes the dashboard, Bereiche page, and shell navigat
   assert.match(shell, /window\.tvzaShellModulesHandler = event =>/);
   assert.match(nav, /onSnapshot\(doc\(db, 'users', user\.uid\)/);
 });
+
+/* ── Projekte ──────────────────────────────────────────────────────
+   "Meine Projekte" stand fest verdrahtet auf der Startseite: kein
+   Modul, kein Schalter, fuer jedes Konto sichtbar. Ein neues, leeres
+   Konto sah damit einen Abschnitt mit einer leeren Liste und einem
+   Knopf "Link kopieren" fuer eine oeffentliche Seite, die es gar
+   nicht hat — genau der Fall, den Regel 4 aus CLAUDE.md (Tag-eins-
+   Test) ausschliesst.
+
+   Projekte ist darum ein Bereich wie publicProjects: aus, bis jemand
+   ihn einschaltet. */
+
+function realDefaults() {
+  const quelle = firebase.match(/export const DEFAULT_MODULES = (\{[^}]*\});/)?.[1];
+  assert.ok(quelle, 'DEFAULT_MODULES nicht gefunden');
+  return vm.runInNewContext(`(${quelle})`);
+}
+
+test('Projekte ist ein Modul und fuer neue Konten aus', () => {
+  assert.equal(realDefaults().projects, false,
+    'Projekte darf fuer ein frisches Konto nicht an sein — es hat noch keine');
+
+  const eintrag = firebase.match(/^\s*projects:\s*\{[^}]*\}/m)?.[0];
+  assert.ok(eintrag, 'kein projects-Eintrag in MODULES');
+  assert.ok(!/\bpage\s*:/.test(eintrag),
+    'projects darf keine page haben: der Abschnitt wohnt auf Start und bekaeme '
+    + 'sonst zusaetzlich eine Zeile in der Bereiche-Liste (Regel 3, eine Sache, ein Ort)');
+});
+
+test('die Startseite zeigt Projekte nur mit dem Modul', () => {
+  assert.match(dashboard,
+    /getElementById\('projectsSection'\)\.style\.display = mods\.projects \? '' : 'none';/,
+    'der Projekte-Abschnitt haengt an keinem Modulschalter');
+
+  const abschnitt = dashboard.match(/<section[^>]*id="projectsSection"[^>]*>/)?.[0];
+  assert.ok(abschnitt, 'projectsSection nicht gefunden');
+  assert.match(abschnitt, /display:\s*none/,
+    'der Abschnitt muss verborgen starten, sonst blitzt er auf, bevor der '
+    + 'Schalter greift');
+});

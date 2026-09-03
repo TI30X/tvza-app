@@ -199,7 +199,7 @@
       </section>
 
       <!-- My projects -->
-      <section class="section" id="projectsSection" data-overview-section="projects">
+      <section class="section" id="projectsSection" data-overview-section="projects" style="display:none">
         <div class="section-head">
           <button class="overview-toggle" type="button" data-section-toggle="projects" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
           <h2 class="section-title" data-i18n="home.meineProjekte">Meine Projekte</h2>
@@ -632,6 +632,7 @@
       setTrackerTile('matura', mods.matura);
       setTrackerTile('maturatracker', mods.maturatracker);
       setTrackerTile('training', mods.training);
+      document.getElementById('projectsSection').style.display = mods.projects ? '' : 'none';
       document.getElementById('publicFeedSection').style.display = mods.publicProjects ? '' : 'none';
       const anyTracker = mods.ski || mods.food || mods.weather || mods.matura || mods.maturatracker || mods.training;
       // The chip may not have registered yet — it is a module too, and

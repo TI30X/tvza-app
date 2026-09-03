@@ -138,13 +138,14 @@ export const MODULES = {
   matura: { key:'matura', name:'Maturaarbeit', sub:'Status & Fortschritt', emoji:'📊', page:'pages/maturaarbeit.html', perUser:false, shareable:false },
   maturatracker: { key:'maturatracker', name:'Maturaarbeit-Tracker', sub:'To-dos & Countdown', emoji:'🧵', page:'pages/maturaarbeit-tracker.html', perUser:true, shareable:false },
   training: { key:'training', name:'Training', sub:'Wochenplan & Übungen', emoji:'🏋️', page:'pages/training.html', perUser:true, shareable:true },
+  projects: { key:'projects', name:'Projekte', sub:'Eigene Webprojekte', emoji:'🗂️', perUser:false, shareable:false },
   publicProjects: { key:'publicProjects', name:'Öffentliche Projekte', sub:'Von allen geteilt', emoji:'🌐', perUser:false, shareable:false },
   admin: { key:'admin', name:'Admin', sub:'Benutzer, Einladungen & Food-Anfragen', emoji:'🛡️', page:'pages/admin.html', perUser:false, shareable:false },
 };
 
 // Neue Nutzer starten schlank: nur Familien-Planer, Watchlist und Food sind
 // standardmässig an — alles andere muss angefragt / vom Admin freigeschaltet werden.
-export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:false, training:false, publicProjects:false, watch:true, weather:true, dm:true, admin:false };
+export const DEFAULT_MODULES = { ski:false, food:true, trip:true, matura:false, maturatracker:false, training:false, projects:false, publicProjects:false, watch:true, weather:true, dm:true, admin:false };
 export const ALL_MODULES = Object.fromEntries(Object.keys(MODULES).map(key => [key, true]));
 // Persönliche Standardansicht, getrennt von der Zugriffsfreigabe:
 // Maturaarbeit ist für den Admin sichtbar, der zusätzliche Tracker erst
