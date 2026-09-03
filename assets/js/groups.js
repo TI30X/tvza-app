@@ -98,9 +98,39 @@ export async function ladeGruppe(gid) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
+/* Namen stehen nicht am Mitgliedsdokument, sondern im Profil. Sie dort
+   zu spiegeln hiesse, sie bei jeder Namensänderung in jeder Gruppe
+   nachziehen zu müssen — und irgendwann stünde in einer Gruppe ein
+   Name, den es nicht mehr gibt.
+
+   Die Regeln erlauben jedem Mitglied, ein Profil zu lesen
+   (allow get: … || isMember()), also wird hier nachgeschlagen. Ein
+   Kader hat acht bis zwanzig Leute; das ist ein Lesezugriff pro Person
+   und einmal pro Aufruf, nicht pro Bildaufbau.
+
+   Der Zwischenspeicher gilt für die Lebensdauer der Seite. Ein Name,
+   der sich währenddessen ändert, ist beim nächsten Öffnen richtig —
+   das ist der Preis dafür, nicht bei jedem Neuzeichnen zu lesen. */
+const namensSpeicher = new Map();
+
+async function nameVon(uid) {
+  if (namensSpeicher.has(uid)) return namensSpeicher.get(uid);
+  let name = '';
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists()) {
+      const d = snap.data();
+      name = String(d.displayName || d.name || '').trim();
+    }
+  } catch { /* fremdes Profil nicht lesbar — dann eben ohne Namen */ }
+  namensSpeicher.set(uid, name);
+  return name;
+}
+
 export async function ladeMitglieder(gid) {
   const snap = await getDocs(collection(db, 'groups', gid, 'members'));
-  return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  const roh = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  return Promise.all(roh.map(async m => ({ ...m, name: await nameVon(m.uid) })));
 }
 
 export async function rolleVon(gid, uid) {

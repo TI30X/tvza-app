@@ -444,8 +444,16 @@ function personOeffnen(uid) {
   const ichSelbst = person.uid === user.uid;
 
   $('pName').textContent = name;
-  $('pMeta').textContent = wort(aktiv.art, person.rolle);
-  $('pMeta').hidden = false;
+
+  /* Hier stand die Rolle — und damit dasselbe Wort, das die Segmentwahl
+     zwei Zeilen tiefer schon zeigt. Eine Zeile, die nichts hinzufügt,
+     ist eine Zeile zu viel. Stattdessen das, was sonst nirgends steht:
+     seit wann jemand dabei ist. */
+  const seit = person.seit?.toDate?.();
+  $('pMeta').textContent = seit
+    ? `Dabei seit ${seit.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric' })}`
+    : '';
+  $('pMeta').hidden = !$('pMeta').textContent;
 
   $('rolleWahl').querySelectorAll('[data-rolle]').forEach(btn => {
     btn.setAttribute('aria-pressed', String(btn.dataset.rolle === person.rolle));

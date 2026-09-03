@@ -153,6 +153,34 @@ test('Familie und Kader unterscheiden sich in Wörtern und Vorgaben, nicht in Co
   assert.match(fnBody(src, 'wort'), /window\.TVZAI18n\?\.t\(eintrag\.key\) \?\? eintrag\.de/);
 });
 
+test('die Kaderliste zeigt Namen, nicht UIDs', async () => {
+  const src = await groups();
+
+  // Namen stehen im Profil, nicht am Mitgliedsdokument — sie dort zu
+  // spiegeln hiesse, sie bei jeder Namensänderung in jeder Gruppe
+  // nachziehen zu müssen. Also wird nachgeschlagen.
+  assert.match(fnBody(src, 'ladeMitglieder'), /name: await nameVon\(m\.uid\)/);
+  assert.match(fnBody(src, 'nameVon'), /doc\(db, 'users', uid\)/);
+  assert.match(fnBody(src, 'nameVon'), /displayName \|\| d\.name/);
+
+  // Ein nicht lesbares Profil darf die Liste nicht kippen — dann steht
+  // dort eben kein Name.
+  assert.match(fnBody(src, 'nameVon'), /catch \{[^}]*\}/);
+
+  // Und nicht bei jedem Neuzeichnen erneut lesen.
+  assert.match(src, /const namensSpeicher = new Map\(\)/);
+  assert.match(fnBody(src, 'nameVon'), /namensSpeicher\.has\(uid\)/);
+});
+
+test('die Rolle steht einmal da, nicht zweimal', async () => {
+  const js = await read('assets/js/feature/gruppe/gruppe.js');
+
+  // Die Zeile unter dem Namen zeigte dasselbe Wort wie die Segmentwahl
+  // zwei Zeilen tiefer. Jetzt zeigt sie, was sonst nirgends steht.
+  assert.doesNotMatch(js, /\$\('pMeta'\)\.textContent = wort\(/);
+  assert.match(js, /Dabei seit \$\{seit\.toLocaleDateString/);
+});
+
 test('die Sammelgruppen-Regel steht und ist auf list beschränkt', async () => {
   const rules = await read('firestore.rules');
 
