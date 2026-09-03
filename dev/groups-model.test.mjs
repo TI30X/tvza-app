@@ -73,9 +73,34 @@ test('ein Mitgliedsdokument kann sich nicht zum Kopf einer fremden Gruppe erklä
     create,
     /getAfter\(\/databases\/\$\(database\)\/documents\/groups\/\$\(gid\)\)\s*\n?\s*\.data\.headUid == request\.auth\.uid/,
   );
-  // Die Leitung darf aufnehmen, aber nie einen zweiten Kopf setzen.
-  assert.match(create, /leadsGroup\(gid\)/);
-  assert.match(create, /request\.resource\.data\.rolle in \['staff', 'mitglied'\]/);
+  // Die Leitung nimmt Athleten auf, mehr nicht.
+  assert.match(create, /leadsGroup\(gid\)\s*\n?\s*&& request\.resource\.data\.rolle == 'mitglied'/);
+  // Weitere Trainer ernennt allein der Kopf — beliebig viele. Ohne diese
+  // Trennung wäre das Aufnehmen lockerer als das Befördern: ein Trainer
+  // könnte sich unbegrenzt Mit-Trainer danebenstellen, während er ein
+  // bestehendes Mitglied nicht befördern dürfte.
+  assert.match(create, /headsGroup\(gid\)\s*\n?\s*&& request\.resource\.data\.rolle in \['staff', 'mitglied'\]/);
+  // Und in keinem Zweig entsteht ein zweiter Kopf.
+  assert.doesNotMatch(create, /rolle in \['head'/);
+});
+
+test('mehrere Trainer sind vorgesehen, mehrere Köpfe nicht', async () => {
+  const rules = await readRules();
+  const block = matchBlock(rules, '/groups/{gid}/members/{uid}');
+
+  // staff ist unbegrenzt: nirgends steht eine Zählung oder eine Grenze.
+  // Begrenzt ist allein der Kopf, und zwar durch headUid auf dem
+  // Gruppendokument — ein einzelnes Feld kann nur einen Wert tragen.
+  assert.match(rules, /function headsGroup\(gid\) \{[\s\S]*?get\('headUid', ''\) == request\.auth\.uid/);
+
+  // 'head' als Rolle entsteht ausschliesslich im Gründungszweig, der an
+  // getAfter gegen genau dieses headUid gebunden ist.
+  const headWrites = block.match(/rolle == 'head'/g) || [];
+  assert.equal(headWrites.length, 1, 'nur der Gründungszweig darf einen Kopf setzen');
+
+  const create = allowClause(block, 'create');
+  const headBranch = create.slice(create.indexOf("rolle == 'head'"));
+  assert.match(headBranch, /getAfter\(/, 'der Kopf-Zweig muss an die Gruppe gebunden bleiben');
 });
 
 test('Rollen vergibt nur der Kopf, und niemand wird zum zweiten Kopf', async () => {

@@ -852,9 +852,18 @@ service cloud.firestore {
                         && getAfter(/databases/$(database)/documents/groups/$(gid))
                           .data.headUid == request.auth.uid
                       )
-                      // Die Leitung nimmt jemanden auf, nie als zweiten Kopf.
+                      // Die Leitung nimmt Athleten auf. Wer mitleiten darf,
+                      // entscheidet allein der Kopf — sonst waere das Aufnehmen
+                      // lockerer als das Befoerdern, und ein Trainer koennte
+                      // sich beliebig viele Mit-Trainer danebenstellen.
                       || (
                         leadsGroup(gid)
+                        && request.resource.data.rolle == 'mitglied'
+                      )
+                      // Der Kopf ernennt weitere Trainer. Beliebig viele —
+                      // begrenzt ist nur der Kopf selbst, nicht die Leitung.
+                      || (
+                        headsGroup(gid)
                         && request.resource.data.rolle in ['staff', 'mitglied']
                       )
                     );
