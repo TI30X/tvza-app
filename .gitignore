@@ -33,3 +33,7 @@ worker/node_modules/
 
 # Abzug der Live-Regeln fuer einen Vergleich — nie committen
 firestore.rules.live
+
+# Design-Audit-Archive gehoeren nicht ins Repo — sie sind Zulieferung,
+# kein Quelltext, und schleppen Binaerdaten in jede Historie.
+*.zip
