@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { leserMitStart } from './start-quelle.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const read = relative => readFile(join(root, relative), 'utf8');
+/* Liest index.html samt ihren Modulen — der Code der Startseite
+   liegt seit v.35.11.0 in assets/js/feature/start/. */
+const read = leserMitStart(root);
 
 test('invite codes contain 128 bits from Web Crypto', async () => {
   const index = await read('index.html');

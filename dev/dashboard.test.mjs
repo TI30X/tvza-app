@@ -2,8 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { leserMitStart } from './start-quelle.mjs';
 
-const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+/* Samt der Module: der Code der Startseite liegt seit v.35.11.0
+   in assets/js/feature/start/, die Zusagen gelten weiter. */
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const html = await leserMitStart(root)('index.html');
 
 test('dashboard state exists before modules are rendered', () => {
   assert.ok(
@@ -19,10 +25,10 @@ test('quick access shows four eligible tiles and never duplicates tabs', () => {
   );
 
   const match = html.match(
-    /function applyQuickAccess\(\) \{[\s\S]*?\n    \}\n\n    const h/
+    /function applyQuickAccess\(\) \{[\s\S]*?\n\}\n\nconst h/
   );
   assert.ok(match, 'applyQuickAccess not found');
-  const source = match[0].replace(/\n\n    const h$/, '');
+  const source = match[0].replace(/\n\nconst h$/, '');
   const ids = [
     'ski', 'food', 'watch', 'weather',
     'dm', 'trip', 'matura', 'maturatracker'

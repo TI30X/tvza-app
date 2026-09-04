@@ -2,15 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { leserMitStart } from './start-quelle.mjs';
 
 const firebase = await readFile(
   new URL('../assets/js/firebase-config.js', import.meta.url),
   'utf8'
 );
-const dashboard = await readFile(
-  new URL('../index.html', import.meta.url),
-  'utf8'
-);
+/* Samt der Module — siehe dev/start-quelle.mjs. */
+const wurzel = join(dirname(fileURLToPath(import.meta.url)), '..');
+const dashboard = await leserMitStart(wurzel)('index.html');
 const areas = await readFile(
   new URL('../assets/js/feature/bereiche/bereiche.js', import.meta.url),
   'utf8'
