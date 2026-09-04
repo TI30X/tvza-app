@@ -54,6 +54,12 @@ KEYS = {
 'common.alleAnsehen':('Alle ansehen', 'See all', 'Tout voir', 'Vedi tutto', 'Zobacz wszystko', 'Alles bekijken', 'Ver todo'),
 
 # ── Startseite ────────────────────────────────────────────────────
+# Der Startbildschirm heisst nach dem Produkt, nicht nach dem Absender.
+'home.seitentitel': ('Firn', 'Firn', 'Firn', 'Firn', 'Firn', 'Firn', 'Firn'),
+# Frueher 'Schnellzugriff' und nur die ersten vier. Jetzt stehen alle da.
+'home.bereiche':    ('Bereiche', 'Areas', 'Domaines', 'Aree', 'Obszary', 'Onderdelen', 'Áreas'),
+'home.linkKopieren':('Link kopieren', 'Copy the link', 'Copier le lien', 'Copia il link',
+                     'Kopiuj link', 'Link kopiëren', 'Copiar el enlace'),
 'home.heute':       ('Heute', 'Today', 'Aujourd’hui', 'Oggi', 'Dzisiaj', 'Vandaag', 'Hoy'),
 'home.schnellzugriff':('Schnellzugriff', 'Quick access', 'Accès rapide', 'Accesso rapido',
                      'Szybki dostęp', 'Snelle toegang', 'Acceso rápido'),

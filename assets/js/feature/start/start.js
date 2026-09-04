@@ -153,14 +153,13 @@ function applyOverviewLayout() {
 
 function setTrackerTile(key, enabled) {
   const tile = document.querySelector(`[data-tracker-tile="${key}"]`);
-  const link = tile?.querySelector('.card');
+  const link = tile?.querySelector('.row');
   if (!tile || !link) return;
-  // Record whether the module is on; which four are actually shown on
-  // Start is applyQuickAccess's decision, so the two never fight over
-  // style.display.
+  /* Ob das Modul an ist, steht am Element; sichtbar machen tut es
+     zeigeBereiche(). So streiten die beiden nie um display. */
   tile.dataset.enabled = enabled ? '1' : '0';
-  tile.style.display = enabled ? '' : 'none';
-  link.style.display = enabled ? '' : 'none';
+  tile.hidden = !enabled;
+  link.hidden = !enabled;
 }
 
 function applyTrackerTileOrder() {
@@ -171,27 +170,25 @@ function applyTrackerTileOrder() {
   });
 }
 
-/* Im Alltag sind nur die ersten vier aktivierten Kacheln sichtbar.
-   Im Anpassungsmodus erscheinen alle aktivierten Kacheln; durch ihre
-   Reihenfolge bestimmt der Nutzer, welche vier im Schnellzugriff
-   bleiben. So wird eine Kachel durch Verschieben über die vierte
-   Position direkt gegen eine bisher sichtbare ausgetauscht. */
-function applyQuickAccess() {
+/* Jeder eingeschaltete Bereich steht in der Liste.
+ *
+ * Frueher waren es die ersten VIER, und "der Rest" sollte im
+ * Bereiche-Tab wohnen. Den Tab gibt es seit v.33 nicht mehr, und
+ * pages/bereiche.html verlinkt niemand — fuenf eingeschaltete Module
+ * waren damit von Start aus schlicht nicht erreichbar. Eine Liste
+ * traegt alle, also faellt die Begrenzung weg.
+ *
+ * quickAccessExcluded bleibt: Kalender und Nachrichten haben eigene
+ * Tabs, und "eine Sache, ein Ort" (§6.4) gilt weiter. */
+function zeigeBereiche() {
   const tiles = [...document.querySelectorAll('[data-tracker-tile]')];
-  const eligibleTiles = tiles.filter(tile =>
-    tile.dataset.enabled === '1' &&
-    !quickAccessExcluded.has(tile.dataset.trackerTile)
-  );
-  const quickTiles = new Set(eligibleTiles.slice(0, 4));
-
   tiles.forEach(tile => {
-    const eligible = tile.dataset.enabled === '1' &&
+    const sichtbar = tile.dataset.enabled === '1' &&
       !quickAccessExcluded.has(tile.dataset.trackerTile);
-    const visible = eligible && (reorderEditing || quickTiles.has(tile));
-    tile.style.display = visible ? '' : 'none';
-    tile.setAttribute('aria-hidden', visible ? 'false' : 'true');
-    const link = tile.querySelector('.card');
-    if (link) link.style.display = visible ? '' : 'none';
+    tile.hidden = !sichtbar;
+    tile.setAttribute('aria-hidden', sichtbar ? 'false' : 'true');
+    const link = tile.querySelector('.row');
+    if (link) link.hidden = !sichtbar;
   });
 }
 
@@ -220,9 +217,9 @@ function applyModules() {
   window.tvzaWeatherWanted = !!mods.weather;
   if (window.tvzaWeatherChip) window.tvzaWeatherChip.setVisible(!!mods.weather);
   if (mods.dm) startDmBadge(); else stopDmBadge();
-  document.getElementById('noModulesHint').style.display = anyTracker ? 'none' : '';
+  document.getElementById('noModulesHint').hidden = anyTracker;
   applyTrackerTileOrder();
-  applyQuickAccess();
+  zeigeBereiche();
   applyOverviewLayout();
 }
 
@@ -472,10 +469,10 @@ function setReorderEditing(on) {
   editModeBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
   editModeBtn.querySelector('.edit-label').textContent = on ? 'Fertig' : 'Anordnen';
   if (!on && drag) endDrag();
-  // Arranging shows every active Bereich so one can be dragged into
-  // the four Schnellzugriff slots (§7: the same gesture, now for the
-  // quick access too); leaving trims it back to four.
-  if (typeof applyQuickAccess === 'function') applyQuickAccess();
+  /* Beim Anordnen aendert sich nichts an der Sichtbarkeit mehr — es
+     stehen ohnehin alle in der Liste. Neu gezeichnet wird trotzdem,
+     damit eine gerade eingeschaltete Zeile sofort erscheint. */
+  zeigeBereiche();
 }
 editModeBtn.addEventListener('click', () => setReorderEditing(!reorderEditing));
 document.getElementById('reorderHintDone').addEventListener('click', () => setReorderEditing(false));
@@ -1342,8 +1339,8 @@ async function renderFoodRequests() {
     shares.push({ ownerUid: timoUid, module: 'ski', role: 'view', ownerName: 'Timo' });
   }
   const sec = document.getElementById('sharedSection');
-  if (!shares.length) { sec.style.display = 'none'; applyOverviewLayout(); return; }
-  sec.style.display = '';
+  if (!shares.length) { sec.hidden = true; applyOverviewLayout(); return; }
+  sec.hidden = false;
   document.getElementById('sharedList').innerHTML = shares.map(s => {
     const m = MODULES[s.module];
     if (!m || !m.page) return '';

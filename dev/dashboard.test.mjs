@@ -18,17 +18,24 @@ test('dashboard state exists before modules are rendered', () => {
   );
 });
 
-test('quick access shows four eligible tiles and never duplicates tabs', () => {
+/* Frueher zeigte Start nur die ersten VIER Bereiche; "der Rest" sollte
+   im Bereiche-Tab wohnen. Den Tab gibt es seit v.33 nicht mehr, und
+   pages/bereiche.html verlinkt niemand — fuenf eingeschaltete Module
+   waren damit von Start aus schlicht nicht erreichbar.
+
+   Die Liste traegt alle. Was BLEIBT, ist der Ausschluss der drei mit
+   eigenem Tab: "eine Sache, ein Ort" (§6.4). */
+test('jeder eingeschaltete Bereich steht in der Liste, ausser den Tabs', () => {
   assert.match(
     html,
     /const quickAccessExcluded = new Set\(\['dm', 'watch', 'trip'\]\);/
   );
 
   const match = html.match(
-    /function applyQuickAccess\(\) \{[\s\S]*?\n\}\n\nconst h/
+    /function zeigeBereiche\(\) \{[\s\S]*?\n\}/
   );
-  assert.ok(match, 'applyQuickAccess not found');
-  const source = match[0].replace(/\n\nconst h$/, '');
+  assert.ok(match, 'zeigeBereiche nicht gefunden');
+
   const ids = [
     'ski', 'food', 'watch', 'weather',
     'dm', 'trip', 'matura', 'maturatracker'
@@ -36,40 +43,35 @@ test('quick access shows four eligible tiles and never duplicates tabs', () => {
   const tiles = ids.map(id => ({
     id,
     dataset: { enabled: '1', trackerTile: id },
-    style: {},
+    hidden: false,
     attrs: {},
     setAttribute(name, value) { this.attrs[name] = value; },
-    link: { style: {} },
+    link: { hidden: false },
     querySelector(selector) {
-      return selector === '.card' ? this.link : null;
+      return selector === '.row' ? this.link : null;
     }
   }));
   const context = {
-    reorderEditing: false,
     quickAccessExcluded: new Set(['dm', 'watch', 'trip']),
     document: { querySelectorAll: () => tiles }
   };
 
-  vm.runInNewContext(source, context);
-  const visibleIds = () => tiles
-    .filter(tile => tile.style.display !== 'none')
-    .map(tile => tile.id);
+  vm.runInNewContext(match[0], context);
+  const sichtbar = () => tiles.filter(t => !t.hidden).map(t => t.id);
 
-  context.applyQuickAccess();
-  assert.deepEqual(visibleIds(), ['ski', 'food', 'weather', 'matura']);
+  context.zeigeBereiche();
+  assert.deepEqual(sichtbar(),
+    ['ski', 'food', 'weather', 'matura', 'maturatracker'],
+    'ein eingeschalteter Bereich fehlt in der Liste');
 
-  context.reorderEditing = true;
-  context.applyQuickAccess();
-  assert.deepEqual(
-    visibleIds(),
-    ['ski', 'food', 'weather', 'matura', 'maturatracker']
-  );
+  /* Und die Zeile selbst wird mit versteckt, nicht nur ihr Rahmen —
+     sonst bliebe ein anklickbarer Streifen stehen. */
+  const aus = tiles.find(t => t.id === 'dm');
+  assert.equal(aus.hidden, true);
+  assert.equal(aus.link.hidden, true);
 
-  tiles.unshift(tiles.splice(7, 1)[0]);
-  context.reorderEditing = false;
-  context.applyQuickAccess();
-  assert.deepEqual(
-    visibleIds(),
-    ['maturatracker', 'ski', 'food', 'weather']
-  );
+  /* Ein ausgeschaltetes Modul verschwindet, auch wenn es keinen Tab hat. */
+  tiles.find(t => t.id === 'food').dataset.enabled = '0';
+  context.zeigeBereiche();
+  assert.deepEqual(sichtbar(), ['ski', 'weather', 'matura', 'maturatracker']);
 });

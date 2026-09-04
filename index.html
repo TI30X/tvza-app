@@ -21,22 +21,11 @@
   </script>
   <script src="assets/js/theme.js?v=3"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=1" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=2" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="assets/css/feature/access.css?v=1" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
-  <title>TVZA</title>
-  <style>
-    .icon-btn { cursor:pointer; color:var(--ink-soft); min-width:40px; min-height:40px;
-      display:inline-flex; align-items:center; justify-content:center; }
-    .wx-chip-mini.loading { opacity:.6; }
-    .share-list .link-row small { color:var(--ink-soft); }
-    .role-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius: var(--r-pill);
-      background:var(--accent-bg); color:var(--accent); }
-    .settings-divider { border:0; border-top:1px solid var(--border); margin:18px 0; }
-    .radio-row { display:flex; gap:14px; align-items:center; font-size:14px; }
-    .radio-row label { display:flex; gap:6px; align-items:center; cursor:pointer; }
-  </style>
+  <title data-i18n="home.seitentitel">Firn</title>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
   <script src="assets/js/ui-fx.js?v=26" defer></script>
 </head>
@@ -83,135 +72,199 @@
 
     <main class="main">
 
-      <!-- Der proaktive Hinweis (§8). Stays empty unless two sources
-           together say something; an empty slot renders nothing. -->
+      <!-- Der proaktive Hinweis (§8) und die Tageszusammenfassung.
+           Bleibt leer, wenn heute nichts zu sagen ist — eine Karte, die
+           "nichts los" meldet, ist der Grund, warum man ab Tag drei
+           wegschaut. -->
       <div id="hintSlot"></div>
 
-      <!-- Heute (§6.1): at most five rows, and never a Nachrichten row —
-           that has its own tab, and "eine Sache, ein Ort" (§6.4) says a
-           thing with a tab does not also appear here. -->
+      <!-- Der Tag steht zuerst. Er ist das, wofuer man die Seite
+           aufmacht; das Kachelfeld stand hier nur, weil es zuerst da
+           war. Hoechstens fuenf Zeilen, und nie eine Nachricht — die
+           hat einen eigenen Tab, und "eine Sache, ein Ort" (§6.4). -->
       <section class="section" id="heuteSection" hidden>
         <div class="marke" data-i18n="home.heute">Heute</div>
         <div class="rows" id="heuteList"></div>
       </section>
 
-      <!-- Schnellzugriff (§6.1): the first four active Bereiche in the
-           order the user already had. The rest live in the Bereiche tab. -->
+      <!-- Mit mir geteilt -->
+      <section class="section" id="sharedSection" data-overview-section="shared" hidden>
+        <div class="marke marke--reihe">
+          <span data-i18n="home.mitMirGeteilt">Mit mir geteilt</span>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="shared" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
+        </div>
+        <div class="rows share-list" id="sharedList"></div>
+      </section>
+
+      <!-- Projekte. Ein persoenlicher Bereich: fuer neue Konten aus,
+           fuer TvZ an. Der Link darunter macht die oeffentliche Seite
+           verschickbar — sie ist kein Ort in der App. -->
+      <section class="section" id="projectsSection" data-overview-section="projects" style="display:none">
+        <div class="marke marke--reihe">
+          <span data-i18n="home.meineProjekte">Meine Projekte</span>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="projects" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
+        </div>
+        <div class="rows" id="projectList">
+          <div class="spinner" data-fx-rows="2" data-i18n="common.laden">Lade…</div>
+        </div>
+        <div class="knopfreihe">
+          <button class="b b--primary" id="addProjectBtn" type="button">
+            <span class="ui-plus" aria-hidden="true"></span><span data-i18n="home.projektHinzufuegen">Projekt hinzufügen</span>
+          </button>
+          <button class="b b--secondary" type="button" id="publicPageLink">
+            <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+            <span data-i18n="home.linkKopieren">Link kopieren</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Die Bereiche. Frueher neun Kacheln, von denen nur die ersten
+           VIER sichtbar waren — der Rest sollte "im Bereiche-Tab"
+           wohnen, den es nicht mehr gibt. Fuenf Module waren damit von
+           Start aus gar nicht erreichbar.
+
+           Jetzt eine Liste, und jedes eingeschaltete Modul steht darin.
+           Die Farbe am Plaettchen ist dieselbe wie drinnen. -->
       <section class="section" id="trackerSection" data-overview-section="tracker">
-        <div class="section-head">
-          <button class="overview-toggle" type="button" data-section-toggle="tracker" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title" data-i18n="home.schnellzugriff">Schnellzugriff</h2>
-          <button class="reorder-fab" id="editModeBtn" type="button" aria-pressed="false" data-i18n-attr="title:home.anordnenTitel" title="Kacheln &amp; Bereiche anordnen">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+        <div class="marke marke--reihe">
+          <span data-i18n="home.bereiche">Bereiche</span>
+          <button class="reorder-fab" id="editModeBtn" type="button" aria-pressed="false" data-i18n-attr="title:home.anordnenTitel" title="Bereiche anordnen">
+            <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
             <span class="edit-label" data-i18n="home.anordnen">Anordnen</span>
           </button>
           <button class="overview-drag" type="button" draggable="true" data-section-drag="tracker" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
         </div>
-        <div class="card-grid card-grid--quick" id="trackerGrid">
+        <div class="rows" id="trackerGrid">
 
           <div class="module-tile" data-tracker-tile="ski">
-            <a href="pages/skitracker.html" class="card card--ski" id="cardSki" draggable="false" style="display:none">
-              <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg></div>
-              <div class="card-content"><h3 data-i18n="mod.ski.name">Ski Tracker</h3><p data-i18n="mod.ski.sub">Schliff &amp; Wachs</p></div>
-            <div class="tile-live" id="tileSki" hidden></div>
+            <a class="row" href="pages/skitracker.html" id="cardSki" data-bereich="ski" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3l4 8 5-5 5 15H2L8 3z"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.ski.name">Ski Tracker</span>
+                <span class="row__sub" data-i18n="mod.ski.sub">Schliff &amp; Wachs</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live" id="tileSki" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="food">
-            <a href="pages/foodtracker.html" class="card card--food" id="cardFood" draggable="false" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>
-            <div class="card-content"><h3 data-i18n="mod.food.name">Food Tracker</h3><p data-i18n="mod.food.sub">Kalorien &amp; Nährstoffe</p></div>
-            <div class="tile-live tile-prog" id="tileFood" hidden></div>
+            <a class="row" href="pages/foodtracker.html" id="cardFood" data-bereich="food" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.food.name">Food Tracker</span>
+                <span class="row__sub" data-i18n="mod.food.sub">Kalorien &amp; Nährstoffe</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live tile-prog" id="tileFood" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="watch">
-            <a href="pages/watchlist.html" class="card card--watch" id="cardWatch" draggable="false" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
-            <div class="card-content"><h3 data-i18n="mod.watch.name">TVZA Watchlist</h3><p data-i18n="mod.watch.sub">Kurse, Märkte &amp; News</p></div>
-            <div class="tile-live tile-ticker" id="tileWatch" hidden></div>
+            <a class="row" href="pages/watchlist.html" id="cardWatch" data-bereich="watch" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.watch.name">TVZA Watchlist</span>
+                <span class="row__sub" data-i18n="mod.watch.sub">Kurse, Märkte &amp; News</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live tile-ticker" id="tileWatch" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="weather">
-            <a href="pages/weather.html?v=3" class="card card--weather" id="cardWeather" draggable="false" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg></div>
-            <div class="card-content"><h3 data-i18n="mod.weather.name">Wetter</h3><p data-i18n="mod.weather.sub">Wetter &amp; Bergprognose</p></div>
-            <div class="tile-live" id="tileWeather" hidden></div>
+            <a class="row" href="pages/weather.html?v=3" id="cardWeather" data-bereich="weather" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.weather.name">Wetter</span>
+                <span class="row__sub" data-i18n="mod.weather.sub">Wetter &amp; Bergprognose</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live" id="tileWeather" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="dm">
-            <a href="pages/messages.html" class="card card--dm" id="cardDm" draggable="false" style="display:none">
-            <span class="dm-tile-badge" id="dmTileBadge" style="display:none">0</span>
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
-            <div class="card-content"><h3 data-i18n="nav.nachrichten">Nachrichten</h3><p data-i18n="mod.dm.sub">Direktnachrichten</p></div>
-            <div class="tile-live" id="tileDm" hidden></div>
+            <a class="row" href="pages/messages.html" id="cardDm" data-bereich="msg" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="nav.nachrichten">Nachrichten</span>
+                <span class="row__sub" data-i18n="mod.dm.sub">Direktnachrichten</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live" id="tileDm" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="trip">
-            <a href="pages/planner.html" class="card card--trip" id="cardTrip" draggable="false" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
-            <div class="card-content"><h3 data-i18n="mod.trip.name">Kalender &amp; Erinnerungen</h3><p data-i18n="mod.trip.sub">Termine, Reisen &amp; Erinnerungen</p></div>
-            <div class="tile-live" id="tileTrip" hidden></div>
+            <a class="row" href="pages/planner.html" id="cardTrip" data-bereich="kalender" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.trip.name">Kalender &amp; Erinnerungen</span>
+                <span class="row__sub" data-i18n="mod.trip.sub">Termine, Reisen &amp; Erinnerungen</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live" id="tileTrip" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="matura">
-            <a href="pages/maturaarbeit.html" class="card card--matura" id="cardMatura" draggable="false" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-            <div class="card-content"><h3 data-i18n="mod.matura.name">Maturaarbeit</h3><p data-i18n="mod.matura.sub">Status &amp; Fortschritt</p></div>
-            <div class="tile-live tile-prog" id="tileMatura" hidden></div>
+            <a class="row" href="pages/maturaarbeit.html" id="cardMatura" data-bereich="matura" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.matura.name">Maturaarbeit</span>
+                <span class="row__sub" data-i18n="mod.matura.sub">Status &amp; Fortschritt</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live tile-prog" id="tileMatura" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="maturatracker">
-            <a href="pages/maturaarbeit-tracker.html" class="card card--matura" id="cardMaturaTracker" draggable="false" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-            <div class="card-content"><h3 data-i18n="mod.maturatracker.name">Maturaarbeit-Tracker</h3><p data-i18n="mod.maturatracker.sub">To-dos &amp; Countdown</p></div>
-            <div class="tile-live tile-prog" id="tileMaturaTracker" hidden></div>
+            <a class="row" href="pages/maturaarbeit-tracker.html" id="cardMaturaTracker" data-bereich="matura" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.maturatracker.name">Maturaarbeit-Tracker</span>
+                <span class="row__sub" data-i18n="mod.maturatracker.sub">To-dos &amp; Countdown</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live tile-prog" id="tileMaturaTracker" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
 
           <div class="module-tile" data-tracker-tile="training">
-            <a href="pages/training.html" class="card card--training" id="cardTraining" draggable="false" style="display:none">
-            <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></div>
-            <div class="card-content"><h3 data-i18n="mod.training.name">Training</h3><p data-i18n="mod.training.sub">Wochenplan &amp; Übungen</p></div>
-            <div class="tile-live tile-prog" id="tileTraining" hidden></div>
+            <a class="row" href="pages/training.html" id="cardTraining" data-bereich="training" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.training.name">Training</span>
+                <span class="row__sub" data-i18n="mod.training.sub">Wochenplan &amp; Übungen</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live tile-prog" id="tileTraining" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
             </a>
           </div>
-
         </div>
-        <p id="noModulesHint" style="display:none;color:var(--ink-soft);font-size:14px">
-          Keine Module aktiviert. Öffne <a id="openSettingsLink" style="color:var(--accent);cursor:pointer" data-i18n="set.titel">Einstellungen</a> im Konto-Menü, um Module zu aktivieren.
+        <p class="empty-hint" id="noModulesHint" hidden data-i18n="home.keineModule">
+          Noch kein Bereich eingeschaltet. Du findest sie in den Einstellungen im Konto-Menü.
         </p>
-      </section>
-
-      <!-- Shared with me -->
-      <section class="section" id="sharedSection" data-overview-section="shared" hidden style="display:none">
-        <div class="section-head">
-          <button class="overview-toggle" type="button" data-section-toggle="shared" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title" data-i18n="home.mitMirGeteilt">Mit mir geteilt</h2>
-          <button class="overview-drag" type="button" draggable="true" data-section-drag="shared" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
-        </div>
-        <div class="link-list share-list" id="sharedList"></div>
-      </section>
-
-      <!-- My projects -->
-      <section class="section" id="projectsSection" data-overview-section="projects" style="display:none">
-        <div class="section-head">
-          <button class="overview-toggle" type="button" data-section-toggle="projects" aria-expanded="true" data-i18n-attr="title:a11y.bereichKlappen" title="Bereich auf- oder zuklappen"></button>
-          <h2 class="section-title" data-i18n="home.meineProjekte">Meine Projekte</h2>
-          <button class="overview-drag" type="button" draggable="true" data-section-drag="projects" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
-        </div>
-        <div class="link-list" id="projectList">
-          <div class="spinner" data-i18n="common.laden">Lade…</div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <button class="btn btn-primary" id="addProjectBtn"><span class="ui-plus" aria-hidden="true"></span><span data-i18n="home.projektHinzufuegen">Projekt hinzufügen</span></button>
-          <button class="btn btn-secondary" type="button" id="publicPageLink"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg> <span>Link kopieren</span></button>
-        </div>
       </section>
 
     </main>

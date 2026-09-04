@@ -212,15 +212,16 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.match(sw, /assets\/js\/reminders-overlay\.js/);
 });
 
-test('arranging is docked beside Schnellzugriff instead of floating over cards', async () => {
+test('der Anordnen-Knopf sitzt in der Bereiche-Ueberschrift', async () => {
   const [dashboard, css] = await Promise.all([
     read('index.html'),
     read('assets/css/kit.css'),
   ]);
 
-  // Die Ueberschrift traegt seit v.32 einen i18n-Schluessel; geprueft wird
-  // weiterhin die Nachbarschaft, nicht die genaue Attributliste.
-  assert.match(dashboard, /<h2 class="section-title"[^>]*>Schnellzugriff<\/h2>\s*<button class="reorder-fab" id="editModeBtn"/);
+  /* Aus der section-head mit h2 wurde eine .marke--reihe: die
+     Ueberschrift links, die Knoepfe rechts. Geprueft wird die
+     Nachbarschaft, nicht die genaue Attributliste. */
+  assert.match(dashboard, /data-i18n="home.bereiche">Bereiche<\/span>\s*<button class="reorder-fab" id="editModeBtn"/);
   assert.match(css, /\.reorder-fab \{[\s\S]*position: static;[\s\S]*background: var\(--surface\)/);
   assert.doesNotMatch(css, /global-reminder-fab:not\(\[hidden\]\)\) \.reorder-fab/);
 });
