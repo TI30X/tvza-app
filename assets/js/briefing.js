@@ -49,6 +49,77 @@ function gleicherTag(a, b) {
     && a.getDate() === b.getDate();
 }
 
+/* ── Heute oder morgen? ────────────────────────────────────────────
+   Am Abend will niemand mehr wissen, was heute anstand. Die
+   Schul-Mail, an der sich diese Karte orientiert, heisst darum
+   "Morgen" und kommt am Vorabend.
+
+   Ab ABEND_AB kippt die Karte auf den naechsten Tag. Die Grenze ist
+   ein Parameter und keine feste Zahl, damit der Test sie setzen kann,
+   ohne die Uhr zu stellen. */
+
+export const ABEND_AB = 17;
+
+export function tagesfenster(now = new Date(), abendAb = ABEND_AB) {
+  const d = now instanceof Date ? now : new Date(now);
+  if (Number.isNaN(d.getTime())) return null;
+
+  const abend = d.getHours() >= abendAb;
+  const tag = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  if (abend) tag.setDate(tag.getDate() + 1);
+
+  return {
+    id: abend ? 'morgen' : 'heute',
+    /* Deutsch als Ruecklage; der Katalog gewinnt in renderBriefing. */
+    titel: abend ? 'Morgen' : 'Dein Tag',
+    tag,
+  };
+}
+
+/* ── Die naechsten vierzehn Tage ───────────────────────────────────
+   Der dritte Abschnitt der Mail. Er zeigt, was NACH dem Fenster
+   kommt — was heute (oder morgen) ansteht, steht ja schon oben, und
+   es zweimal zu schreiben ist der Fuelltext, den Regel 3 verhindert.
+
+   Ein Abschnitt ohne Inhalt verschwindet nicht, er sagt einen Satz.
+   Genau das macht die Mail bei den Pruefungen richtig: "Keine
+   Pruefungen in den naechsten 14 Tagen" ist eine Auskunft, ein
+   fehlender Abschnitt waere bloss eine Luecke. */
+
+export const VORSCHAU_TAGE = 14;
+
+function alsDatum(wert) {
+  const d = wert instanceof Date ? wert : new Date(wert);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function naechsteTage(termine, { now = new Date(), tage = VORSCHAU_TAGE,
+                                        abendAb = ABEND_AB } = {}) {
+  const fenster = tagesfenster(now, abendAb);
+  if (!fenster) return [];
+
+  /* Ab dem Tag NACH dem Fenster, damit sich oben und hier nichts
+     doppelt. */
+  const von = new Date(fenster.tag);
+  von.setDate(von.getDate() + 1);
+  const bis = new Date(fenster.tag);
+  bis.setDate(bis.getDate() + tage);
+  bis.setHours(23, 59, 59, 999);
+
+  return (Array.isArray(termine) ? termine : [])
+    .map(t => {
+      const start = alsDatum(t?.start);
+      return start && t?.titel ? { ...t, start, ganztags: !!t.ganztags } : null;
+    })
+    .filter(t => t && t.start >= von && t.start <= bis)
+    .sort((a, b) => {
+      const tagA = a.start.toDateString();
+      const tagB = b.start.toDateString();
+      if (tagA !== tagB) return a.start - b.start;
+      return (b.ganztags - a.ganztags) || (a.start - b.start);
+    });
+}
+
 /* ── Die Termine des Tages ─────────────────────────────────────────
    Erwartet Einträge der Form { titel, start, ganztags }. start darf ein
    Date oder etwas sein, das new Date() versteht; alles Unlesbare fällt
@@ -60,13 +131,17 @@ function gleicherTag(a, b) {
    Karte "Heute um 00:00: Versicherung bezahlen", und das ist schlicht
    falsch. Lieber gar keine Zeit als eine erfundene. */
 
-export function termineHeute(termine, now = new Date()) {
+export function termineHeute(termine, now = new Date(), abendAb = null) {
+  /* Ohne abendAb bleibt es beim alten Verhalten: der heutige Tag.
+     Mit abendAb folgt es dem Fenster und kippt am Abend auf morgen. */
+  const fenster = abendAb === null ? null : tagesfenster(now, abendAb);
+  const bezug = fenster ? fenster.tag : now;
   return (Array.isArray(termine) ? termine : [])
     .map(t => {
       const start = t?.start instanceof Date ? t.start : new Date(t?.start);
       return Number.isNaN(start?.getTime?.()) ? null : { ...t, start, ganztags: !!t.ganztags };
     })
-    .filter(t => t && t.titel && gleicherTag(t.start, now))
+    .filter(t => t && t.titel && gleicherTag(t.start, bezug))
     /* Ganztägiges zuerst: es gilt für den ganzen Tag und ist damit der
        Rahmen, in dem die Uhrzeiten stehen. */
     .sort((a, b) => (b.ganztags - a.ganztags) || (a.start - b.start));
@@ -80,7 +155,10 @@ function stueck(t) {
 /* Ein Satz, keine Liste. Die Liste steht schon darunter auf der Seite —
    sie hier zu wiederholen wäre genau der Fülltext, den Regel 3 bei den
    Hinweisen verhindert. */
-export function tagesSatz(termine, now = new Date()) {
+export function tagesSatz(termine, now = new Date(), wort = 'Heute') {
+  /* Das Wort kommt herein, weil der Satz am Abend von MORGEN handelt.
+     Es fest einzubauen hiess: die Karte traegt "Morgen" als Titel und
+     faengt darunter mit "Heute" an. */
   const heute = termineHeute(termine, now);
   if (!heute.length) return null;
 
@@ -88,17 +166,17 @@ export function tagesSatz(termine, now = new Date()) {
 
   if (heute.length === 1) {
     return erster.ganztags
-      ? `Heute: ${erster.titel}.`
-      : `Heute um ${uhrzeit(erster.start)}: ${erster.titel}.`;
+      ? `${wort}: ${erster.titel}.`
+      : `${wort} um ${uhrzeit(erster.start)}: ${erster.titel}.`;
   }
   if (heute.length === 2) {
-    return `Heute ${stueck(erster)} und ${stueck(zweiter)}.`;
+    return `${wort} ${stueck(erster)} und ${stueck(zweiter)}.`;
   }
   /* Ab drei wird gezählt statt aufgezählt, sonst wächst die Karte mit
      dem Kalender — und genau das soll sie nicht. */
   return erster.ganztags
-    ? `Heute stehen ${heute.length} Sachen an, zuerst ${erster.titel}.`
-    : `Heute stehen ${heute.length} Sachen an — die erste um `
+    ? `${wort} stehen ${heute.length} Sachen an, zuerst ${erster.titel}.`
+    : `${wort} stehen ${heute.length} Sachen an — die erste um `
       + `${uhrzeit(erster.start)}: ${erster.titel}.`;
 }
 
@@ -112,20 +190,35 @@ export function tagesSatz(termine, now = new Date()) {
  * @returns {null|{saetze: string[], hinweisTyp: string|null}}
  *   null heisst: heute nichts zu sagen. Dann erscheint keine Karte.
  */
-export function buildBriefing({ termine, hint, now = new Date() } = {}) {
+export function buildBriefing({ termine, hint, now = new Date(),
+                                abendAb = null } = {}) {
   const saetze = [];
+  /* abendAb === null heisst: wie bisher, immer heute. Die Startseite
+     reicht ABEND_AB durch und bekommt damit die Umschaltung. */
+  const fenster = tagesfenster(now, abendAb === null ? 24 : abendAb);
+  const bezug = fenster ? fenster.tag : now;
 
-  const tag = tagesSatz(termine, now);
+  const tag = tagesSatz(termine, bezug, fenster?.id === 'morgen' ? 'Morgen' : 'Heute');
   if (tag) saetze.push(tag);
+
+  const kommende = abendAb === null ? [] : naechsteTage(termine, { now, abendAb });
 
   const hinweis = hint?.text ? String(hint.text).trim() : '';
   if (hinweis) saetze.push(hinweis);
 
   /* Regel 2. Eine Karte, die nur "Heute ist nichts los" sagt, ist der
-     Grund, warum man ab Tag drei wegschaut. */
+     Grund, warum man ab Tag drei wegschaut.
+
+     Die Vorschau ist eine ERGAENZUNG, kein Anlass: "in neun Tagen ist
+     etwas" allein waere derselbe Fuelltext mit mehr Zeilen. */
   if (!saetze.length) return null;
 
-  return { saetze, hinweisTyp: hinweis ? (hint.type || null) : null };
+  return {
+    saetze,
+    hinweisTyp: hinweis ? (hint.type || null) : null,
+    fenster: fenster ? fenster.id : 'heute',
+    kommende,
+  };
 }
 
 /* ── Darstellung ───────────────────────────────────────────────────
@@ -134,10 +227,18 @@ export function buildBriefing({ termine, hint, now = new Date() } = {}) {
    das später App-Symbol und Gruppenplättchen wird. */
 
 export function renderBriefing(briefing, { onDismiss, onLater, titel } = {}) {
+  const i18n = globalThis.window?.TVZAI18n;
+  const t = (key, deutsch) => i18n?.tOr(key, deutsch) ?? deutsch;
+
   /* Der Katalog gewinnt, das deutsche Wort ist die Rueckfallebene —
-     genau die additive Regel aus CLAUDE.md. */
+     genau die additive Regel aus CLAUDE.md.
+
+     Am Abend heisst die Karte "Morgen": wer um sieben draufschaut,
+     will nicht mehr wissen, was heute anstand. */
   const ueberschrift = titel
-    ?? (globalThis.window?.TVZAI18n?.tOr('brief.deinTag', 'Dein Tag') || 'Dein Tag');
+    ?? (briefing.fenster === 'morgen'
+      ? t('brief.morgen', 'Morgen')
+      : t('brief.deinTag', 'Dein Tag'));
   const el = document.createElement('div');
   el.className = 'hint hint--tag';
 
@@ -156,7 +257,7 @@ export function renderBriefing(briefing, { onDismiss, onLater, titel } = {}) {
   const zu = document.createElement('button');
   zu.className = 'hint__x';
   zu.type = 'button';
-  zu.setAttribute('aria-label', 'Ausblenden');
+  zu.setAttribute('aria-label', t('brief.ausblenden', 'Ausblenden'));
   zu.innerHTML = '<svg class="ic" viewBox="0 0 24 24" width="14" height="14">'
     + '<path d="M18 6L6 18M6 6l12 12"/></svg>';
   zu.onclick = () => { el.remove(); onDismiss?.(briefing.hinweisTyp); };
@@ -171,6 +272,47 @@ export function renderBriefing(briefing, { onDismiss, onLater, titel } = {}) {
     el.appendChild(p);
   }
 
+  /* Was NACH dem Fenster kommt. Datum und Wochentag ueber Intl, nie
+     ueber Strings — sonst bekaeme ein polnischer Nutzer einen
+     Schweizer Wochentag. */
+  if (briefing.kommende?.length) {
+    const marke = document.createElement('div');
+    marke.className = 'marke brief__marke';
+    marke.textContent = t('brief.naechste14', 'Nächste 14 Tage');
+    el.appendChild(marke);
+
+    const liste = document.createElement('div');
+    liste.className = 'brief__liste';
+
+    for (const termin of briefing.kommende) {
+      const zeile = document.createElement('div');
+      zeile.className = 'brief__zeile';
+
+      const wann = document.createElement('span');
+      wann.className = 'brief__wann';
+      wann.textContent = i18n?.format?.date(termin.start,
+        { weekday: 'short', day: '2-digit', month: '2-digit' })
+        ?? termin.start.toLocaleDateString();
+
+      const was = document.createElement('span');
+      was.className = 'brief__was';
+      was.textContent = termin.titel;
+
+      zeile.append(wann, was);
+
+      /* Ganztaegiges bekommt keine erfundene Uhrzeit — dieselbe Regel
+         wie oben im Tagessatz. */
+      if (!termin.ganztags) {
+        const zeit = document.createElement('span');
+        zeit.className = 'brief__zeit';
+        zeit.textContent = i18n?.format?.time(termin.start) ?? uhrzeit(termin.start);
+        zeile.appendChild(zeit);
+      }
+      liste.appendChild(zeile);
+    }
+    el.appendChild(liste);
+  }
+
   /* Regel 4 aus hints.js hat drei Stufen: X für heute, "Später" für eine
      Woche, zweimal weggeklickt heisst nie wieder. Ohne diesen Knopf
      ginge die mittlere Stufe verloren.
@@ -182,7 +324,7 @@ export function renderBriefing(briefing, { onDismiss, onLater, titel } = {}) {
     const spaeter = document.createElement('button');
     spaeter.className = 'b b--secondary';
     spaeter.type = 'button';
-    spaeter.textContent = 'Hinweis später';
+    spaeter.textContent = t('brief.spaeter', 'Hinweis später');
     spaeter.onclick = () => { el.remove(); onLater(briefing.hinweisTyp); };
     el.appendChild(spaeter);
   }

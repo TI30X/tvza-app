@@ -59,4 +59,14 @@ KEYS = {
 
 # ── Tageszusammenfassung ──────────────────────────────────────────
 'brief.deinTag': ('Dein Tag', 'Your day', 'Ta journée', 'La tua giornata', 'Twój dzień', 'Jouw dag', 'Tu día'),
+# Am Abend heisst die Karte anders: wer um sieben draufschaut, will
+# nicht mehr wissen, was heute anstand.
+'brief.morgen': ('Morgen', 'Tomorrow', 'Demain', 'Domani', 'Jutro', 'Morgen', 'Mañana'),
+'brief.naechste14': ('Nächste 14 Tage', 'Next 14 days', 'Les 14 prochains jours',
+                    'Prossimi 14 giorni', 'Najbliższe 14 dni', 'Komende 14 dagen',
+                    'Próximos 14 días'),
+'brief.spaeter': ('Hinweis später', 'Remind me later', 'Plus tard',
+                 'Più tardi', 'Później', 'Later', 'Más tarde'),
+'brief.ausblenden': ('Ausblenden', 'Dismiss', 'Masquer', 'Nascondi',
+                    'Ukryj', 'Verbergen', 'Ocultar'),
 }

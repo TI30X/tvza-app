@@ -233,17 +233,22 @@ test('die Tageszusammenfassung nimmt Gruppentermine auf, ohne an ihnen zu hänge
   // Was heute in einer Gruppe läuft, gehört in den Tag — ein Training
   // um 14:00 auch dann, wenn der Trainer es eingetragen hat.
   assert.match(html, /import \{ meineGruppen, ladeTermine \}/);
-  assert.match(html, /import \{ alsBriefingTermine, isoTag \}/);
-  assert.match(html, /termine: \[\.\.\.\(window\.tvzaHeuteTermine \|\| \[\]\), \.\.\.ausGruppen\]/);
+  assert.match(html, /import \{ alsBriefingTermine, alsVorschauTermine, isoTag \}/);
+  /* Der Tagesteil kommt aus dem Stichtag des Fensters, die Vorschau
+     aus dem Zeitraum danach — beides aus DERSELBEN Abfrage. Zweimal
+     zu laden waere derselbe Weg fuer dieselben Daten. */
+  assert.match(html, /window\.tvzaHeuteTermine/);
+  assert.match(html, /alsBriefingTermine\(roh, stichtag\)/);
+  assert.match(html, /alsVorschauTermine\(roh, /);
 
   // Die Gruppenabfrage ist das Einzige auf dieser Seite, das den
   // COLLECTION_GROUP-Index braucht. Fehlt er, muss die Karte trotzdem
   // erscheinen — mit den eigenen Terminen.
-  const lader = html.slice(html.indexOf('const gruppenTermineHeute'));
+  const lader = html.slice(html.indexOf('const gruppenTermine'));
   assert.match(lader.slice(0, 700), /catch \{ return \[\]; \}/);
 
   // Und eine langsame Verbindung darf die Karte nicht verschlucken.
-  assert.match(html, /Promise\.race\(\[\s*\n?\s*gruppenTermineHeute/);
+  assert.match(html, /Promise\.race\(\[\s*\n?\s*gruppenTermine/);
 });
 
 test('abgemeldete Besucher landen auf Willkommen, nie bei den Projekten', async () => {

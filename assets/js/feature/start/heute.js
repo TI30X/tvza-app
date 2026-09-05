@@ -9,9 +9,11 @@
 import { db, requireAuth, getFinnhubKey, getProfile, reportClientError } from '../../firebase-config.js';
 import { weatherIcon } from '../../shell.js?v=7';
 import { chooseHint, markShown, dismissHint } from '../../hints.js';
-import { buildBriefing, renderBriefing } from '../../briefing.js';
+import {
+  buildBriefing, renderBriefing, tagesfenster, ABEND_AB, VORSCHAU_TAGE,
+} from '../../briefing.js';
 import { meineGruppen, ladeTermine } from '../../groups.js';
-import { alsBriefingTermine, isoTag } from '../../termine.js';
+import { alsBriefingTermine, alsVorschauTermine, isoTag } from '../../termine.js';
 import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 (async () => {
@@ -389,13 +391,14 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
      auf dieser Seite, das den COLLECTION_GROUP-Index braucht. Fehlt
      er, bleibt die Zusammenfassung bei den eigenen Terminen, statt
      ganz auszufallen. */
-  const gruppenTermineHeute = (async () => {
+  /* Dieselbe Abfrage liefert beides: was am Stichtag laeuft, und was
+     in den zwei Wochen danach kommt. Zweimal zu laden waere derselbe
+     Weg fuer dieselben Daten. */
+  const gruppenTermine = (async () => {
     try {
-      const heute = isoTag();
       const gruppen = await meineGruppen(uid);
       const listen = await Promise.all(gruppen.map(async g => {
-        try { return alsBriefingTermine(await ladeTermine(g.id), heute); }
-        catch { return []; }
+        try { return await ladeTermine(g.id); } catch { return []; }
       }));
       return listen.flat();
     } catch { return []; }
@@ -421,14 +424,31 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
       /* Auf die Gruppentermine wird gewartet, aber nicht ewig: eine
          langsame Verbindung darf die Karte nicht verschlucken.
          Kommen sie zu spät, steht der eigene Tag trotzdem da. */
-      const ausGruppen = await Promise.race([
-        gruppenTermineHeute,
+      const roh = await Promise.race([
+        gruppenTermine,
         new Promise(fertig => setTimeout(() => fertig([]), 900)),
       ]);
 
+      /* Der Stichtag folgt dem Fenster: am Abend zeigt die Karte
+         morgen, also muss auch der Tagesteil von morgen kommen. */
+      const jetzt = new Date();
+      const fenster = tagesfenster(jetzt, ABEND_AB);
+      const stichtag = isoTag(fenster.tag);
+
+      const bis = new Date(fenster.tag);
+      bis.setDate(bis.getDate() + VORSCHAU_TAGE);
+      const abMorgen = new Date(fenster.tag);
+      abMorgen.setDate(abMorgen.getDate() + 1);
+
       const briefing = buildBriefing({
-        termine: [...(window.tvzaHeuteTermine || []), ...ausGruppen],
+        termine: [
+          ...(window.tvzaHeuteTermine || []),
+          ...alsBriefingTermine(roh, stichtag),
+          ...alsVorschauTermine(roh, isoTag(abMorgen), isoTag(bis)),
+        ],
         hint,
+        now: jetzt,
+        abendAb: ABEND_AB,
       });
       if (!briefing) return;
 

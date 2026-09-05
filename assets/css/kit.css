@@ -1805,6 +1805,38 @@ body.reorder-editing .module-tile::after {
 .marke--reihe button { flex: none; }
 
 /* Knoepfe unter einem Abschnitt. Nebeneinander, solange sie passen. */
+/* ── Die Vorschau in der Tageskarte ────────────────────────────────
+   Aufbau wie in der Schul-Mail, an der sich die Karte orientiert:
+   Datum links, Sache in der Mitte, Uhrzeit rechts. Tabellarische
+   Ziffern, damit die Spalten stehen und nicht tanzen. */
+.brief__marke {
+  margin-top: var(--s5);
+  margin-bottom: var(--s2);
+  padding-top: var(--s3);
+  border-top: 1px solid color-mix(in oklab, var(--accent) 18%, var(--border));
+}
+.brief__liste { display: grid; gap: var(--s2); }
+.brief__zeile {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.brief__wann {
+  flex: none;
+  min-width: 5.5em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.brief__was  { flex: 1; min-width: 0; color: var(--ink-soft); }
+.brief__zeit {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
 .knopfreihe {
   display: flex;
   flex-wrap: wrap;

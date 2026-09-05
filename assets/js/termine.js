@@ -223,6 +223,34 @@ export function alsBriefingTermine(termine, tag = isoTag()) {
     .filter(t => t.titel && !Number.isNaN(t.start.getTime()));
 }
 
+/* Dieselbe Form wie alsBriefingTermine, aber ueber einen ZEITRAUM
+   statt ueber einen Tag — fuer den Abschnitt "Naechste 14 Tage".
+
+   Jeder Termin erscheint genau EINMAL, an seinem Anfangstag. Ein Lager
+   ueber sechs Tage steht in der Mail auch als eine Zeile
+   ("07.-12.09: Skicamp Zermatt") und nicht sechsmal. Wer laufende
+   Mehrtaegige an jedem Tag sehen will, nimmt laeuftAm — das ist die
+   andere Frage und der andere Ort. */
+export function alsVorschauTermine(termine, vonTag, bisTag) {
+  if (!istIsoTag(vonTag) || !istIsoTag(bisTag)) return [];
+
+  return (Array.isArray(termine) ? termine : [])
+    .filter(t => !istAbgesagt(t))
+    .filter(t => istIsoTag(t?.von) && t.von >= vonTag && t.von <= bisTag)
+    .map(t => {
+      const ganztags = istMehrtaegig(t) || !t.zeit;
+      const zeit = ganztags ? '12:00' : t.zeit;
+      return {
+        titel: t.titel,
+        start: new Date(`${t.von}T${zeit}:00`),
+        ganztags,
+        art: t.art || null,
+      };
+    })
+    .filter(t => t.titel && !Number.isNaN(t.start.getTime()))
+    .sort((a, b) => (a.start - b.start) || (b.ganztags - a.ganztags));
+}
+
 /* ── Prüfung vor dem Schreiben ─────────────────────────────────────
    Dieselben Grenzen wie in firestore.rules. Sie stehen hier noch
    einmal, damit die Oberfläche gar nicht erst etwas anbietet, das die

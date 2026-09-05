@@ -11,6 +11,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildBriefing, tagesSatz, termineHeute, uhrzeit,
+  tagesfenster, naechsteTage, ABEND_AB, VORSCHAU_TAGE,
 } from '../assets/js/briefing.js';
 
 /* Ein fester Dienstag, damit nichts von der echten Uhr abhängt. */
@@ -170,4 +171,135 @@ test('der Hinweistyp wandert mit, damit Wegklicken die Regeln aus hints.js triff
   // Ohne Hinweis gibt es auch nichts zu unterdrücken.
   const ohne = buildBriefing({ termine: [{ titel: 'X', start: heute(9) }], now: NOW });
   assert.equal(ohne.hinweisTyp, null);
+});
+
+/* ── Heute oder morgen ─────────────────────────────────────────────
+   Die Schul-Mail, an der sich die Karte orientiert, heisst "Morgen"
+   und kommt am Vorabend. Wer um sieben abends draufschaut, will nicht
+   mehr wissen, was heute anstand. */
+
+test('vor dem Abend zeigt die Karte heute, danach morgen', () => {
+  const morgens = tagesfenster(new Date(2026, 8, 3, 7, 0));
+  assert.equal(morgens.id, 'heute');
+  assert.equal(morgens.tag.getDate(), 3);
+
+  const abends = tagesfenster(new Date(2026, 8, 3, 18, 0));
+  assert.equal(abends.id, 'morgen');
+  assert.equal(abends.tag.getDate(), 4);
+});
+
+test('die Grenze kippt ueber den Monat und ueber das Jahr', () => {
+  assert.equal(tagesfenster(new Date(2026, 8, 30, 20, 0)).tag.getMonth(), 9);
+  const silvester = tagesfenster(new Date(2026, 11, 31, 20, 0)).tag;
+  assert.equal(silvester.getFullYear(), 2027);
+  assert.equal(silvester.getMonth(), 0);
+  assert.equal(silvester.getDate(), 1);
+});
+
+test('die Abendgrenze ist ein Parameter, keine feste Zahl', () => {
+  /* Sonst muesste ein Test die Uhr stellen. */
+  assert.equal(tagesfenster(new Date(2026, 8, 3, 15, 0), 14).id, 'morgen');
+  assert.equal(tagesfenster(new Date(2026, 8, 3, 15, 0), 20).id, 'heute');
+  assert.equal(ABEND_AB, 17);
+});
+
+/* ── Die naechsten vierzehn Tage ───────────────────────────────── */
+
+const T = (tag, stunde, titel, ganztags = false) =>
+  ({ titel, start: new Date(2026, 8, tag, stunde, 0), ganztags });
+
+test('die Vorschau beginnt NACH dem Fenster, damit sich nichts doppelt', () => {
+  const now = new Date(2026, 8, 3, 7, 0);          // morgens am 3.
+  const liste = naechsteTage([
+    T(3, 14, 'heute'), T(4, 8, 'morgen'), T(10, 9, 'in einer Woche'),
+  ], { now });
+
+  assert.deepEqual(liste.map(t => t.titel), ['morgen', 'in einer Woche'],
+    'was schon oben im Tagessatz steht, gehoert nicht noch einmal darunter');
+});
+
+test('am Abend rutscht auch die Vorschau einen Tag weiter', () => {
+  const now = new Date(2026, 8, 3, 19, 0);         // abends am 3.
+  const liste = naechsteTage([T(4, 8, 'morgen'), T(5, 8, 'uebermorgen')], { now });
+  assert.deepEqual(liste.map(t => t.titel), ['uebermorgen'],
+    'der 4. steht abends schon oben als "Morgen"');
+});
+
+test('vierzehn Tage heisst vierzehn Tage', () => {
+  const now = new Date(2026, 8, 3, 7, 0);
+  const liste = naechsteTage([T(17, 9, 'gerade noch'), T(18, 9, 'zu spaet')], { now });
+  assert.deepEqual(liste.map(t => t.titel), ['gerade noch']);
+  assert.equal(VORSCHAU_TAGE, 14);
+});
+
+test('die Vorschau steht in zeitlicher Reihenfolge, Ganztaegiges zuerst', () => {
+  const now = new Date(2026, 8, 3, 7, 0);
+  const liste = naechsteTage([
+    T(6, 9, 'spaeter am Tag'), T(6, 12, 'ganztaegig', true), T(5, 9, 'frueher'),
+  ], { now });
+  assert.deepEqual(liste.map(t => t.titel), ['frueher', 'ganztaegig', 'spaeter am Tag']);
+});
+
+test('unlesbare Termine fallen auch hier still heraus', () => {
+  const now = new Date(2026, 8, 3, 7, 0);
+  const liste = naechsteTage([
+    { titel: 'ohne Datum' },
+    { titel: 'Unsinn', start: 'gestern' },
+    { start: new Date(2026, 8, 6, 9, 0) },          // ohne Titel
+    T(6, 9, 'gut'),
+  ], { now });
+  assert.deepEqual(liste.map(t => t.titel), ['gut']);
+});
+
+/* ── Zusammenspiel ─────────────────────────────────────────────── */
+
+test('ohne abendAb bleibt alles wie vorher — immer heute, keine Vorschau', () => {
+  /* Die additive Regel: wer buildBriefing wie bisher aufruft, bekommt
+     wie bisher. */
+  const now = new Date(2026, 8, 3, 19, 0);
+  const alt = buildBriefing({ termine: [T(3, 20, 'heute Abend')], now });
+  assert.ok(alt.saetze.length, 'der heutige Termin faellt weg');
+  assert.deepEqual(alt.kommende, []);
+  assert.equal(alt.fenster, 'heute');
+});
+
+test('eine Vorschau allein traegt die Karte nicht', () => {
+  /* Regel 2: lieber nichts sagen. Eine Karte, die nur "in neun Tagen
+     ist etwas" meldet, ist der Grund, warum man wegschaut. */
+  const now = new Date(2026, 8, 3, 7, 0);
+  const leer = buildBriefing({ termine: [T(12, 9, 'weit weg')], now, abendAb: ABEND_AB });
+  assert.equal(leer, null);
+});
+
+test('am Abend zeigt die Karte den morgigen Tagessatz', () => {
+  const now = new Date(2026, 8, 3, 19, 0);
+  const brief = buildBriefing({
+    termine: [T(3, 14, 'heute gewesen'), T(4, 8, 'Spielsporttag')],
+    now, abendAb: ABEND_AB,
+  });
+  assert.equal(brief.fenster, 'morgen');
+  assert.match(brief.saetze[0], /Spielsporttag/);
+  assert.doesNotMatch(brief.saetze[0], /heute gewesen/,
+    'was heute war, gehoert am Abend nicht mehr in die Karte');
+});
+
+test('am Abend faengt der Satz mit "Morgen" an, nicht mit "Heute"', () => {
+  /* Die Karte trug den Titel "Morgen" und der Satz darunter fing mit
+     "Heute" an — das Wort steckte fest in tagesSatz. */
+  const brief = buildBriefing({
+    termine: [{ titel: 'Spielsporttag', start: new Date(2026, 8, 4, 8, 0) }],
+    now: new Date(2026, 8, 3, 19, 0),
+    abendAb: ABEND_AB,
+  });
+  assert.match(brief.saetze[0], /^Morgen /);
+  assert.doesNotMatch(brief.saetze[0], /Heute/);
+});
+
+test('tagsueber bleibt es bei "Heute"', () => {
+  const brief = buildBriefing({
+    termine: [{ titel: 'Kraft Beine', start: new Date(2026, 8, 3, 14, 0) }],
+    now: new Date(2026, 8, 3, 7, 0),
+    abendAb: ABEND_AB,
+  });
+  assert.match(brief.saetze[0], /^Heute /);
 });
