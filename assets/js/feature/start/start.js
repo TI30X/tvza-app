@@ -16,6 +16,11 @@ import {
   MODULES, CORE_MODULE_KEYS, allowedModules, enabledModules, getProfile, sharesForEmail,
   sharesByOwner, reportClientError
 } from '../../firebase-config.js';
+
+/* tOr und nicht t() mit ??: t() gibt bei unbekanntem Schluessel den
+   SCHLUESSEL zurueck, nie undefined. Solange der Katalog laedt, bleibt
+   es deutsch. */
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
 import {
   signOut, sendEmailVerification
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -1424,29 +1429,45 @@ registerSortable({
 function renderProjects(items) {
   const wrap = document.getElementById('projectList');
   if (!items.length) {
-    wrap.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">📁</div><p class="empty-text">Noch keine Projekte. Füge dein erstes hinzu!</p></div>`;
+    wrap.innerHTML = `<p class="empty-hint">${escHtml(
+      t('home.keineProjekte', 'Noch kein Projekt. Der Knopf darunter legt das erste an.'))}</p>`;
     return;
   }
   items = sortProjects(items);
+  /* Der Zustand steht in der Unterzeile, nicht noch einmal auf dem
+     Knopf — drei beschriftete Knoepfe je Projekt waren der Grund,
+     warum die Liste unruhig wirkte. Was der Knopf tut, sagt sein
+     title und sein aria-label. */
+  const offen = t('home.projektOeffentlich', 'Öffentlich');
+  const privat = t('home.projektPrivat', 'Privat');
+
   wrap.innerHTML = items.map(p => `
-    <div class="link-row project-row" data-project-row="${p.id}">
-      <span class="link-icon">${escHtml(p.emoji || '🔗')}</span>
-      <a class="link-title" href="${escHtml(p.url)}" target="_blank" rel="noopener">
-        <span>${escHtml(p.name)}</span>
-        <small>${p.isPublic ? 'Öffentlich' : 'Privat'}</small>
+    <div class="row" data-project-row="${p.id}">
+      <span class="row__icon row__icon--emoji">${escHtml(p.emoji || '🔗')}</span>
+      <a class="row__body" href="${escHtml(p.url)}" target="_blank" rel="noopener">
+        <span class="row__title">${escHtml(p.name)}</span>
+        <span class="row__sub">${p.isPublic ? escHtml(offen) : escHtml(privat)}</span>
       </a>
-      <div class="project-actions">
-        <button class="action-btn ${p.isPublic ? 'action-btn--public' : ''}" data-pub="${p.id}" data-ispub="${p.isPublic ? '1':''}" title="${p.isPublic ? 'Veröffentlichung beenden' : 'Projekt veröffentlichen'}">
-          <span>${p.isPublic ? ICON_GLOBE : ICON_LOCK}</span>
-          <b>${p.isPublic ? 'Öffentlich' : 'Privat'}</b>
+      <span class="row__end">
+        <button class="row__aktion${p.isPublic ? ' row__aktion--an' : ''}" type="button"
+                data-pub="${p.id}" data-ispub="${p.isPublic ? '1':''}"
+                title="${p.isPublic ? escHtml(t('home.nichtMehrTeilen', 'Veröffentlichung beenden')) : escHtml(t('home.teilen', 'Projekt veröffentlichen'))}"
+                aria-label="${p.isPublic ? escHtml(t('home.nichtMehrTeilen', 'Veröffentlichung beenden')) : escHtml(t('home.teilen', 'Projekt veröffentlichen'))}">
+          ${p.isPublic ? ICON_GLOBE : ICON_LOCK}
         </button>
-        <button class="action-btn" data-edit="${p.id}" data-emoji="${escHtml(p.emoji||'')}" data-name="${escHtml(p.name)}" data-url="${escHtml(p.url)}" title="Projekt bearbeiten">
-          <span>${ICON_PENCIL}</span><b>Bearbeiten</b>
+        <button class="row__aktion" type="button"
+                data-edit="${p.id}" data-emoji="${escHtml(p.emoji||'')}"
+                data-name="${escHtml(p.name)}" data-url="${escHtml(p.url)}"
+                title="${escHtml(t('home.projektBearbeiten', 'Projekt bearbeiten'))}"
+                aria-label="${escHtml(t('home.projektBearbeiten', 'Projekt bearbeiten'))}">
+          ${ICON_PENCIL}
         </button>
-        <button class="action-btn action-btn--danger" data-del="${p.id}" title="Projekt löschen">
-          <span>${ICON_CLOSE}</span><b>Löschen</b>
+        <button class="row__aktion row__aktion--gefahr" type="button" data-del="${p.id}"
+                title="${escHtml(t('home.projektLoeschen', 'Projekt löschen'))}"
+                aria-label="${escHtml(t('home.projektLoeschen', 'Projekt löschen'))}">
+          ${ICON_CLOSE}
         </button>
-      </div>
+      </span>
     </div>`).join('');
 
   wrap.querySelectorAll('[data-del]').forEach(b =>

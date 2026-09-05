@@ -49,7 +49,7 @@ const relabel = root => window.TVZAI18n?.applyTo(root);
 
 /* Die Regel "eine Sache, ein Ort" (§6.4) liegt in shell.js, weil beide
    Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
-   weitergereicht, damit index.html und bereiche.html sie wie bisher
+   weitergereicht, damit index.html sie wie bisher
    von nav.js beziehen können. */
 export { ownsTab } from './shell.js?v=7';
 

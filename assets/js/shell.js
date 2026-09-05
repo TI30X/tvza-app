@@ -123,9 +123,12 @@ const relabel = root => window.TVZAI18n?.applyTo(root);
    van Zanten" —, denn er IST die Gruppe und nicht eine Funktion.
    setzeGruppenTab() traegt den Namen nach, sobald er geladen ist.
 
-   'bereiche' hat keinen Tab mehr. Die Module wohnen im privaten Start,
-   und "eine Sache, ein Ort" gilt auch fuer sie. pages/bereiche.html
-   bleibt erreichbar, nur nicht mehr ueber die Leiste. */
+   'bereiche' hat keinen Tab. Die Module wohnen im privaten Start,
+   und "eine Sache, ein Ort" gilt auch fuer sie.
+
+   pages/bereiche.html gab es einmal daneben; sie war zuletzt von
+   nirgends verlinkt und ist seit v.35.13.0 geloescht. Ihr Inhalt —
+   die Liste der eingeschalteten Bereiche — steht auf Start. */
 export const TABS = [
   { id: 'start',    label: 'Start',    icon: 'start',    href: 'index.html' },
   { id: 'kalender', label: 'Kalender', icon: 'kalender', href: 'pages/planner.html' },

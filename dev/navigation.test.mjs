@@ -10,16 +10,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
    liegt seit v.35.11.0 in assets/js/feature/start/. */
 const read = leserMitStart(root);
 
-test('areas page and sidebar share one module ordering source', async () => {
-  const [shell, areas] = await Promise.all([
-    read('assets/js/shell.js'),
-    read('assets/js/feature/bereiche/bereiche.js'),
-  ]);
-
-  assert.match(shell, /export function areaModuleKeys\(profile\)/);
-  assert.match(areas, /areaModuleKeys\(profile\)/);
-  assert.doesNotMatch(areas, /quick_access_order/);
-});
 
 test('die vier Orte stehen an genau einer Stelle', async () => {
   const [nav, shell, css] = await Promise.all([
@@ -81,36 +71,6 @@ test('der Zähler sitzt am Chat-Tab, nicht mehr an "nachrichten"', async () => {
   }
 });
 
-test('current area uses the same active band as Start and settings stay above the page', async () => {
-  const [nav, shell, settingsLayer, css, dashboard, areas] = await Promise.all([
-    read('assets/js/nav.js'),
-    read('assets/js/shell.js'),
-    read('assets/js/settings-layer.js'),
-    read('assets/css/kit.css'),
-    read('index.html'),
-    read('assets/js/feature/bereiche/bereiche.js'),
-  ]);
-
-  assert.match(nav, /aria-current="page"/);
-  assert.match(nav, /appbar\.dataset\.profileName = profileName/);
-  assert.match(nav, /localStorage\.setItem\('tvza-name', profileName\)/);
-  assert.doesNotMatch(nav, /nav__current|>Aktuell</);
-  assert.doesNotMatch(shell, /nav__current|>Aktuell</);
-  assert.doesNotMatch(css, /content:\s*"Aktueller Bereich"/);
-  assert.doesNotMatch(css, /\.nav__bereich\.is-active[^}]*box-shadow/s);
-  assert.match(css, /\.appbar--bereich \.back-btn,[\s\S]*#shellBack\s*\{\s*display:\s*none/);
-  assert.match(css, /\.appbar \.appbar__inner::before/);
-  assert.match(settingsLayer, /url\.searchParams\.set\('embed', 'settings'\)/);
-  assert.match(settingsLayer, /url\.hash = 'settings'/);
-  assert.match(settingsLayer, /tvza-settings-close/);
-  assert.doesNotMatch(nav, /location\.href\s*=\s*base\(\)\s*\+\s*'index\.html#settings'/);
-  assert.match(dashboard, /classList\.add\('settings-embed'\)/);
-  assert.match(dashboard, /function personAvatarStyle\(identity\)/);
-  assert.match(dashboard, /personAvatarStyle\(s\.targetUid\|\|s\.targetEmail\)/);
-  assert.match(dashboard, /personAvatarStyle\(invite\.email\)/);
-  assert.match(areas, /onSettings:\s*openSettingsLayer/);
-  assert.match(areas, /manageBtn'\)\.onclick\s*=\s*openSettingsLayer/);
-});
 
 test('app destinations are prefetched and use a progressive page transition', async () => {
   const [nav, router, theme, css, sw] = await Promise.all([

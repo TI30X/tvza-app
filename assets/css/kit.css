@@ -1527,6 +1527,31 @@ body.reorder-editing .module-tile::after {
 /* Right column — exactly one of these per row. */
 .row__end   { flex: none; display: flex; align-items: center; gap: var(--s2); }
 
+/* Ein Plaettchen, das ein Emoji traegt statt eines Strichsymbols.
+   Das Emoji ist Inhalt — der Nutzer hat es selbst gewaehlt —, also
+   bekommt es keine Strichfarbe aufgezwungen. */
+.row__icon--emoji { font-size: 17px; line-height: 1; }
+
+/* Kleine Aktionen am rechten Rand einer Zeile: veroeffentlichen,
+   bearbeiten, loeschen. Nur Symbol; was sie tun, sagen title und
+   aria-label. Drei beschriftete Knoepfe je Zeile waren der Grund,
+   warum die Projektliste unruhig wirkte. */
+.row__aktion {
+  flex: none;
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--r-icon);
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.row__aktion svg { width: 16px; height: 16px; }
+.row__aktion:hover { background: var(--surface-2); color: var(--ink); border-color: var(--border); }
+.row__aktion--an { color: var(--accent); }
+.row__aktion--gefahr:hover { color: var(--danger, #B4453C); }
+
 /* ── Eingabe in einer Zeile ────────────────────────────────────────
    Der Einheiten-Player traegt Wert und Wiederholungen rechts in der
    Satzzeile ein. Ein .form-input ist dort zu breit — er ist auf

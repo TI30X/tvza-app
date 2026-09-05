@@ -9,7 +9,6 @@
 const FRAME_PARAM = 'tvzaFrame';
 const APP_FILES = new Set([
   'index.html',
-  'bereiche.html',
   'planner.html',
   'messages.html',
   'skitracker.html',
@@ -122,7 +121,6 @@ function routeLabel(nav, target) {
       'index.html':'Start',
       'planner.html':'Kalender',
       'messages.html':'Nachrichten',
-      'bereiche.html':'Bereiche',
       'skitracker.html':'Ski Tracker',
       'foodtracker.html':'Food Tracker',
       'watchlist.html':'TVZA Watchlist',

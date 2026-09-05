@@ -88,7 +88,7 @@ function initialen(name) {
   return '·';
 }
 
-/* Dieselben Bausteine wie auf bereiche.html — .row/.row__body/.row__end
+/* Dieselben Bausteine wie auf Start — .row/.row__body/.row__end
    aus kit.css. Eine eigene Zeilenform waere die neunte im Repo. */
 function mitgliedZeile(m, art) {
   const name = m.name || m.uid;

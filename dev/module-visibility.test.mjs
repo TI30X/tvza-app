@@ -13,10 +13,6 @@ const firebase = await readFile(
 /* Samt der Module — siehe dev/start-quelle.mjs. */
 const wurzel = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dashboard = await leserMitStart(wurzel)('index.html');
-const areas = await readFile(
-  new URL('../assets/js/feature/bereiche/bereiche.js', import.meta.url),
-  'utf8'
-);
 const shell = await readFile(
   new URL('../assets/js/shell.js', import.meta.url),
   'utf8'
@@ -115,7 +111,10 @@ test('calendar and direct messages remain enabled regardless of saved flags', ()
   assert.equal(enabledModules(profile).dm, true);
 });
 
-test('saved visibility refreshes the dashboard, Bereiche page, and shell navigation', () => {
+/* Die Bereiche-Seite ist geloescht — ihr Inhalt steht auf Start.
+   Geprueft wird darum nur noch, dass eine gespeicherte Auswahl die
+   Startseite UND die Huelle erreicht. */
+test('eine gespeicherte Auswahl erreicht Start und die Huelle', () => {
   assert.match(dashboard, />Meine Bereiche</);
   assert.match(dashboard, /id="modulesSaveStatus"[\s\S]*id="moduleToggles"/);
   assert.match(dashboard, /moduleToggles'\)\.addEventListener\('change'/);
@@ -124,8 +123,7 @@ test('saved visibility refreshes the dashboard, Bereiche page, and shell navigat
     dashboard,
     /window\.dispatchEvent\(new CustomEvent\('tvza-modules-change'/
   );
-  assert.match(areas, /window\.addEventListener\('tvza-modules-change'/);
-  assert.match(areas, /profile = \{ \.\.\.profile, modules:event\.detail \};[\s\S]*renderMine\(\)/);
+  assert.match(shell, /window\.addEventListener\('tvza-modules-change'/);
   assert.match(shell, /export function refreshShellAreaNavigation\(profile\)/);
   assert.match(shell, /window\.tvzaShellModulesHandler = event =>/);
   assert.match(nav, /onSnapshot\(doc\(db, 'users', user\.uid\)/);
@@ -199,15 +197,10 @@ test('Projekte bleibt fuer TvZ sichtbar, obwohl es fuer neue Konten aus ist', ()
    Speicher dafuer und darf nicht mitverschwinden. */
 
 test('die App hat keinen globalen Projekt-Feed mehr', async () => {
-  const bereicheJs = await readFile(
-    new URL('../assets/js/feature/bereiche/bereiche.js', import.meta.url), 'utf8');
-  const bereicheHtml = await readFile(
-    new URL('../pages/bereiche.html', import.meta.url), 'utf8');
 
   /* In diesen Dateien darf der Name gar nicht mehr vorkommen. */
-  for (const [name, quelle] of [['bereiche.js', bereicheJs], ['bereiche.html', bereicheHtml],
-                                ['firebase-config.js', firebase], ['shell.js', shell],
-                                ['nav.js', nav]]) {
+  for (const [name, quelle] of [['firebase-config.js', firebase],
+                                ['shell.js', shell], ['nav.js', nav]]) {
     assert.ok(!quelle.includes('publicProjects'),
       `${name} kennt publicProjects noch — der Feed sollte weg sein`);
   }

@@ -26,8 +26,8 @@ test('Modul ist in firebase-config eingetragen und standardmässig gesperrt', as
   assert.match(config, /DEFAULT_VISIBLE_MODULES = \{[\s\S]*?training:false/);
 });
 
-test('alle vier Kopien der Bereich-Zuordnung kennen training', async () => {
-  const files = ['assets/js/nav.js', 'assets/js/shell.js', 'assets/js/feature/bereiche/bereiche.js', 'index.html'];
+test('alle drei Kopien der Bereich-Zuordnung kennen training', async () => {
+  const files = ['assets/js/nav.js', 'assets/js/shell.js', 'index.html'];
   for (const file of files) {
     assert.match(await read(file), /training: 'training'/, `${file} ohne Bereich-Zuordnung`);
   }

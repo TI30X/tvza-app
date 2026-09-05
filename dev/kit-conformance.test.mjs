@@ -13,7 +13,6 @@ const MIGRIERT = [
   'pages/video.html',
   'pages/einheit.html',
   'pages/gruppe.html',
-  'pages/bereiche.html',
   'pages/skitracker.html',
 ];
 
