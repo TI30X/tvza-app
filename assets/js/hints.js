@@ -258,7 +258,7 @@ export function renderHint(hint, { onDismiss, onLater } = {}) {
   const el = document.createElement('div');
   el.className = 'hint';
   el.innerHTML = `
-    <span class="hint__from">TvZ</span>
+    <span class="hint__from firn">Fir<b>n</b></span>
     <span class="hint__text"></span>
     <button class="hint__x" aria-label="Ausblenden">
       <svg class="ic" viewBox="0 0 24 24" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>

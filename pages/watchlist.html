@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
   <meta name="theme-color" content="#0a3d2c" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230e5c43'/><polyline points='4 23 12 13 18 18 28 7' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
@@ -14,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=3" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=4" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <title>TVZA Watchlist</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
@@ -178,6 +177,8 @@
       .news-grid { grid-template-columns:1fr; }
     }
   </style>
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/firn.svg" />
+  <link rel="apple-touch-icon" href="../assets/icons/firn-192.png" />
 </head>
 <body class="wl">
 
@@ -303,7 +304,7 @@
     </main>
 
     <footer class="tvz-footer">
-      <img src="../assets/icons/TvZ_Logo.svg" alt="TvZ" />
+      <span class="firn">Fir<b>n</b></span>
     </footer>
   </div>
 
@@ -837,7 +838,7 @@
           try {
             new Notification(`${dispSym(i.symbol)} ${dir} ${Math.abs(q.dp).toFixed(1)}%`, {
               body: `Aktueller Kurs: ${fmtPrice(q.price, q.cur)}`,
-              icon: '../assets/icons/icon-192.png', tag: 'wl-' + i.symbol
+              icon: '../assets/icons/firn-192.png', tag: 'wl-' + i.symbol
             });
           } catch (e) {}
         }

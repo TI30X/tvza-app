@@ -1,22 +1,27 @@
 {
-  "name": "TVZA Family App",
-  "short_name": "TVZA",
-  "description": "Deine Familie, deine App — Tracker, Planer & mehr",
+  "name": "Firn",
+  "short_name": "Firn",
+  "description": "Training, Termine und Videoanalyse für Kader, Vereine und Gyms",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FAF9F6",
-  "theme_color": "#1A1A2E",
+  "background_color": "#EFF4FA",
+  "theme_color": "#0B1B2A",
   "icons": [
     {
-      "src": "./assets/icons/icon-192.png",
+      "src": "./assets/icons/firn.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "./assets/icons/firn-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./assets/icons/icon-512.png",
+      "src": "./assets/icons/firn-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

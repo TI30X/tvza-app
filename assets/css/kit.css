@@ -1775,6 +1775,11 @@ body.reorder-editing .module-tile::after {
   color: var(--ink);
   white-space: nowrap;
 }
+/* Auf dunklem Grund traegt das Marken-Blau nicht — es faellt gegen
+   Navy zusammen. Das n bleibt das Zeichen, also wird es hell. */
+.firn--hell { color: #FFFFFF; }
+.firn--hell > b { color: var(--brand-navy-hell, #9CC4F5); }
+
 .firn > b {
   font-weight: 900;
   color: var(--brand);

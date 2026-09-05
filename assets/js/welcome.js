@@ -113,7 +113,7 @@
     <div class="blob b2"></div>
     <div class="blob b3"></div>
     <div class="tvza-inner">
-      <div class="tvza-mark">TvZ</div>
+      <div class="tvza-mark firn">Fir<b>n</b></div>
       <div class="tvza-line" id="tvzaLine">${greetLine(cached).replace(/</g,'&lt;')}</div>
       <div class="tvza-sub">Willkommen bei TVZA</div>
     </div>

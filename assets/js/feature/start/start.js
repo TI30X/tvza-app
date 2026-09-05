@@ -242,7 +242,7 @@ function startDmBadge() {
     }
     // Foreground ping when new messages arrive (skip the first snapshot).
     if (dmPrevTotal != null && total > dmPrevTotal && 'Notification' in window && Notification.permission === 'granted') {
-      try { new Notification('💬 Neue Nachricht', { body: 'Du hast neue Nachrichten in TVZA.', icon: 'assets/icons/icon-192.png', tag: 'tvza-dm' }); } catch (e) {}
+      try { new Notification('💬 Neue Nachricht', { body: 'Du hast neue Nachrichten in TVZA.', icon: 'assets/icons/firn-192.png', tag: 'firn-dm' }); } catch (e) {}
     }
     dmPrevTotal = total;
   }, err => reportClientError('dm-badge', err));

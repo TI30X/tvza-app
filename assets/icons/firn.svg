@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
+     role="img" aria-label="Firn">
+  <!--
+    Das App-Symbol von Firn.
+
+    ── Warum ein n ──────────────────────────────────────────────────
+    Das Wortzeichen ist Fir + n, und das n traegt die Farbe. Ein
+    Erkennungszeichen muss auch dann lesbar bleiben, wenn vom Rest
+    nichts mehr da ist — auf einem Startbildschirm ist es 48 Pixel
+    gross und steht neben zwanzig anderen. Also ist das Symbol genau
+    dieser Buchstabe.
+
+    Sein Bogen ist nebenbei ein Hang. Das ist kein Zufall, aber es
+    wird auch nicht betont: eine Schneeflocke oder ein Bergchen im
+    Symbol waere bei 16 Pixeln nur noch Matsch.
+
+    ── Warum gezeichnet und nicht geschrieben ───────────────────────
+    Ein <text> braucht die Schrift. Ein Favicon laedt aber, bevor
+    irgendeine Schrift da ist, und ein PWA-Symbol wird ausserhalb des
+    Browsers gerendert. Das n ist darum ein Pfad: ein Stiel, ein
+    Bogen, ein zweiter Stiel — mit runden Enden, wie die Schrift sie
+    auch hat.
+
+    ── Maskierbar ───────────────────────────────────────────────────
+    Android beschneidet Symbole auf einen Kreis. Alles Wichtige liegt
+    darum innerhalb von 80 % der Flaeche: der aeusserste Punkt des n
+    ist rund 24 von 32 Einheiten vom Mittelpunkt entfernt, die Grenze
+    liegt bei 25,6.
+  -->
+  <defs>
+    <linearGradient id="firnGrund" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0C2138" />
+      <stop offset="1" stop-color="#1256B0" />
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="url(#firnGrund)" />
+
+  <!-- Der linke Stiel geht bis ganz oben, die Schulter zweigt auf
+       halber Hoehe von ihm ab und trifft den Scheitel auf derselben
+       Hoehe. Ohne den ueberstehenden Stiel liest sich das Zeichen als
+       Bogen und nicht als Buchstabe. -->
+  <path d="M20 45 V19 M20 31 a12 12 0 0 1 24 0 V45"
+        fill="none" stroke="#FFFFFF" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round" />
+</svg>

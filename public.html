@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="theme-color" content="#1A1A2E" />
   <meta name="description" content="Webprojekte von Timothy van Zanten" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%231a1a2e'/><stop offset='.55' stop-color='%2316213e'/><stop offset='1' stop-color='%230f3460'/></linearGradient></defs><rect width='32' height='32' rx='7' fill='url(%23g)'/><text x='16' y='22' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white' text-anchor='middle'>TvZ</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
@@ -97,7 +96,7 @@
       display: flex; align-items: center; gap: 22px;
     }
     .hero-logo { min-width: 104px; }
-    .hero-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 34px; font-weight: 700; line-height: 1; color: white; text-shadow: none; }
+    .hero-logo .firn { display: block; font-size: 34px; }
     .hero-logo .logo-rule { width: 100px; height: 1px; background: rgba(255,255,255,0.22); margin: 8px 0 4px; }
     .hero-logo span:last-child { font-size: 11px; color: rgba(255,255,255,0.58); }
     .hero-divider { width: 1px; align-self: stretch; background: rgba(255,255,255,0.18); }
@@ -142,7 +141,7 @@
       border-radius: var(--r2); padding: 24px 26px;
     }
     .tvz-footer-logo { border-right: 1px solid rgba(255,255,255,0.24); padding-right: 20px; }
-    .tvz-footer-logo .tvz-wordmark { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 32px; font-weight: 700; line-height: 1; color: white; text-shadow: none; }
+    .tvz-footer-logo .firn { display: block; font-size: 32px; }
     .tvz-footer-logo span:last-child { display:block; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.72); }
     .tvz-footer-copy strong { display:block; font-size: 15px; margin-bottom: 5px; }
     .tvz-footer-copy span { display:block; font-size: 13px; color: rgba(255,255,255,0.78); }
@@ -156,7 +155,7 @@
       .hero { padding: 13px 16px; }
       .hero-inner { flex-wrap: wrap; gap: 6px 12px; align-items: center; }
       .hero-logo { order: 1; min-width: 0; }
-      .hero-logo .tvz-wordmark { font-size: 23px; }
+      .hero-logo .firn { font-size: 23px; }
       .hero-logo .logo-rule { display: none; }
       .hero-logo span:last-child { display: none; }
       .hero-divider { display: none; }
@@ -173,6 +172,8 @@
   </style>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
   <script src="assets/js/ui-fx.js?v=26" defer></script>
+  <link rel="icon" type="image/svg+xml" href="assets/icons/firn.svg" />
+  <link rel="apple-touch-icon" href="assets/icons/firn-192.png" />
 </head>
 <body>
   <script src="assets/js/welcome.js?v=5"></script>
@@ -180,14 +181,14 @@
   <div class="hero">
     <div class="hero-inner">
       <div class="hero-logo">
-        <span class="tvz-wordmark">TvZ</span>
+        <span class="firn firn--hell">Fir<b>n</b></span>
         <div class="logo-rule"></div>
         <span>Timothy van Zanten</span>
       </div>
       <div class="hero-divider"></div>
       <div class="hero-copy">
         <h1>TVZA · Projekte</h1>
-        <p>Webprojekte · eine Webseite von TvZ</p>
+        <p>Webprojekte · eine Seite von Timothy van Zanten</p>
       </div>
       <div class="hero-actions">
         <button id="themeToggle" type="button" title="Theme wechseln" data-i18n-attr="title:pg.theme">◐</button>
@@ -204,12 +205,12 @@
   <footer>
     <div class="tvz-footer-box">
       <div class="tvz-footer-logo">
-        <span class="tvz-wordmark">TvZ</span>
+        <span class="firn firn--hell">Fir<b>n</b></span>
         <span>Timothy van Zanten</span>
       </div>
       <div class="tvz-footer-copy">
         <strong>TVZA · Webprojekte</strong>
-        <span>Eine öffentliche Projektübersicht von TvZ.</span>
+        <span>Eine öffentliche Projektübersicht von Timothy van Zanten.</span>
         <p>Alle hier aufgeführten Projekte sind bewusst öffentlich freigegeben.</p>
       </div>
     </div>
