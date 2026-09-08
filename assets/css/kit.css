@@ -2904,3 +2904,104 @@ html.tvza-content-frame body > main {
 }
 
 /* ══ v.32 Oberflaeche — Ende ════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════════
+   Der Einheiten-Player.
+
+   Gebaut fuer den Kraftraum: eine Hand am Handy, die andere an der
+   Hantel, Finger feucht. Darum ist der Normalfall EIN TIPP auf die
+   Zeile — die Vorgabe stimmt ja fast immer. Die Eingabefelder
+   erscheinen erst, wenn es anders lief.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Fortschritt ───────────────────────────────────────────────────
+   Als Leiste, nicht als graue Zeile. Sie ist das, was einen bei der
+   Stange haelt, und "2 von 6" in 12 Pixeln grau ist das nicht. */
+.fortschritt {
+  height: var(--s2);
+  background: var(--surface-2);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  margin-bottom: var(--s4);
+}
+.fortschritt__fuellung {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  transition: width 260ms cubic-bezier(.22,.61,.36,1);
+}
+
+/* ── Name und Video ────────────────────────────────────────────────
+   Das Video gehoert an den Namen. In der Vorlage steht es eine Zeile
+   darunter; hier waere das eine Zeile, die man ueberliest. */
+.ueb-kopf { display: flex; align-items: center; gap: var(--s3); }
+.ueb-kopf .form-title { flex: 1; min-width: 0; margin: 0; }
+
+.ueb-video {
+  flex: none;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--accent-bg);
+  color: var(--accent);
+  transition: background-color 150ms ease;
+}
+.ueb-video:hover { background: color-mix(in oklab, var(--accent) 18%, var(--surface)); }
+.ueb-video svg { fill: currentColor; stroke: none; }
+
+/* ── Ein Satz ──────────────────────────────────────────────────────*/
+
+.satz--gemacht { border-color: color-mix(in oklab, var(--accent) 32%, var(--border)); }
+
+/* Der Haken ist die ganze Bedienung: gross genug fuer einen Daumen,
+   und er sagt durch seine Form, ob der Satz steht. */
+.satz__haken {
+  flex: none;
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 14px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.satz__haken:hover { border-color: var(--ink-soft); }
+.satz__haken[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+.satz__haken svg { stroke: currentColor; stroke-width: 2.6; fill: none;
+                   stroke-linecap: round; stroke-linejoin: round; }
+
+.satz__wert {
+  font-size: 14px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  min-width: 4.5em; text-align: right;
+}
+
+/* ── Die andere Trainingswoche ─────────────────────────────────────
+   Ein Plan laeuft zwei Wochen, und genau aus dem Nebeneinander liest
+   man ab, ob es besser geworden ist. */
+.vorwoche {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  padding: var(--s2) 0;
+  font-size: 13px;
+  border-top: 1px solid var(--rule-soft, var(--border));
+}
+.vorwoche__tag {
+  flex: none; min-width: 4em;
+  font-weight: 800; letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.vorwoche__werte { flex: 1; min-width: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+.vorwoche__notiz { flex: none; color: var(--ink-soft); font-style: italic; }

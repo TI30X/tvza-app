@@ -202,3 +202,65 @@ export function saetze(item, e) {
     reps: e.sets[i]?.reps ?? '',
   }));
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Was der Player bisher nicht angezeigt hat.
+
+   Der Parser liest all das seit jeher aus der Excel — der Player las
+   nur name, alt, params, lines, pause und tut. Video und Vorwochen
+   lagen also im Dokument und kamen nie auf den Bildschirm.
+   ══════════════════════════════════════════════════════════════════ */
+
+/**
+ * Die Adresse des Übungsvideos, oder ''.
+ *
+ * In der Vorlage steht sie eine Zeile unter dem Übungsnamen. Geprüft
+ * wird sie hier, weil sie in ein href wandert: alles ausser http und
+ * https fällt weg — eine javascript:-Adresse aus einer fremden Excel
+ * wäre sonst ein Weg in die Seite hinein.
+ */
+export function videoUrl(item) {
+  const roh = String(item?.video ?? '').trim();
+  if (!roh) return '';
+  try {
+    const u = new URL(roh);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : '';
+  } catch { return ''; }
+}
+
+/**
+ * Die anderen Trainingswochen derselben Übung.
+ *
+ * Ein Plan läuft zwei Wochen — in der Vorlage stehen TW17 und TW18
+ * untereinander in DERSELBEN Übung. Genau daraus liest man ab, ob es
+ * besser geworden ist, und das ist der einzige Grund, warum die
+ * zweite Zeile existiert.
+ *
+ * Leere Zeilen fallen heraus: eine Woche ohne einen einzigen Wert ist
+ * keine Auskunft, sondern eine Zeile, die noch niemand ausgefüllt hat.
+ */
+export function vorwochen(item) {
+  const roh = Array.isArray(item?.history) ? item.history : [];
+  return roh
+    .map(h => ({
+      woche: String(h?.week ?? '').trim(),
+      werte: (Array.isArray(h?.values) ? h.values : []).map(v => String(v ?? '').trim()),
+      bemerkung: String(h?.note ?? '').trim(),
+    }))
+    .filter(h => h.werte.some(Boolean) || h.bemerkung);
+}
+
+/* Welche Modi der Parser vergibt: sets, rounds, timed, block, note,
+   video. Nur bei 'sets' gibt es Sätze zum Eintragen — ein Mobi-Video
+   oder eine Notiz mit Gewichtsfeldern darunter wäre Unsinn. */
+const MIT_SAETZEN = new Set(['sets']);
+
+/** Zeigt diese Übung Satz-Eingaben, oder ist sie nur zum Abhaken? */
+export function zeigtSaetze(item) {
+  const mode = String(item?.mode ?? '').trim();
+  /* Ohne mode entscheidet der Inhalt: eine Übung mit geplanten Sätzen
+     bekommt Felder, alles andere nicht. Alte Pläne aus der Zeit vor
+     dem mode-Feld verhalten sich damit wie bisher. */
+  if (!mode) return Array.isArray(item?.sets) && item.sets.length > 0;
+  return MIT_SAETZEN.has(mode);
+}

@@ -11,6 +11,7 @@ import {
   einheiten, uebungen, einheitTitel,
   eintrag, mitEintrag, hatInhalt, sauber,
   fortschritt, naechsteOffene, saetze,
+  videoUrl, vorwochen, zeigtSaetze,
 } from '../assets/js/einheit.js';
 
 /* Ein Programm in der Form, die training-parser.js liefert. */
@@ -205,4 +206,64 @@ test('mehr gemachte Sätze als geplante gehen nicht verloren', () => {
 test('eine Übung ohne geplante Sätze zeigt keine Zeilen', () => {
   const reihen = saetze(items[2], eintrag({}, 'kraft', items[2].key));
   assert.deepEqual(reihen, []);
+});
+
+/* ══ Was im Dokument stand und nie auf den Bildschirm kam ══════════
+   Die Vorlage von Timothys Kader traegt zu jeder Kraftuebung einen
+   YouTube-Link und ZWEI Trainingswochen (TW17 und TW18 untereinander
+   in derselben Uebung). Der Parser liest beides seit jeher; der
+   Player las es nie. */
+
+test('der Videolink kommt aus der Uebung', () => {
+  assert.equal(videoUrl({ video: 'https://www.youtube.com/shorts/lEjSFEH4bRk' }),
+    'https://www.youtube.com/shorts/lEjSFEH4bRk');
+  assert.equal(videoUrl({}), '');
+  assert.equal(videoUrl({ video: '   ' }), '');
+});
+
+test('nur http und https kommen in ein href', () => {
+  /* Die Adresse stammt aus einer fremden Excel und wandert in ein
+     href. Eine javascript:-Adresse waere ein Weg in die Seite hinein. */
+  assert.equal(videoUrl({ video: 'javascript:alert(1)' }), '');
+  assert.equal(videoUrl({ video: 'data:text/html,<script>' }), '');
+  assert.equal(videoUrl({ video: 'kein-link' }), '');
+  assert.equal(videoUrl({ video: 'http://example.com/x' }), 'http://example.com/x');
+});
+
+test('die zweite Trainingswoche steht in der Uebung', () => {
+  const item = {
+    history: [
+      { week: 'TW18', values: ['62', '62', '60', '60'], note: 'ging besser' },
+      { week: 'TW19', values: ['', '', '', ''], note: '' },
+    ],
+  };
+  const w = vorwochen(item);
+  assert.equal(w.length, 1, 'eine Woche ohne einen einzigen Wert ist keine Auskunft');
+  assert.deepEqual(w[0], { woche: 'TW18', werte: ['62', '62', '60', '60'], bemerkung: 'ging besser' });
+});
+
+test('eine Woche nur mit Bemerkung zaehlt auch', () => {
+  const w = vorwochen({ history: [{ week: 'TW18', values: [], note: 'Knie zwickte' }] });
+  assert.equal(w.length, 1);
+  assert.equal(w[0].bemerkung, 'Knie zwickte');
+});
+
+test('ohne history kippt nichts', () => {
+  assert.deepEqual(vorwochen({}), []);
+  assert.deepEqual(vorwochen({ history: 'kaputt' }), []);
+});
+
+test('nur Kraftuebungen bekommen Satz-Eingaben', () => {
+  /* Ein Mobi-Video oder eine Notiz mit Gewichtsfeldern darunter waere
+     Unsinn. Der Parser vergibt sechs Modi; nur sets hat Saetze. */
+  assert.equal(zeigtSaetze({ mode: 'sets', sets: [{ reps: '5' }] }), true);
+  for (const mode of ['rounds', 'timed', 'block', 'note', 'video']) {
+    assert.equal(zeigtSaetze({ mode, sets: [{ reps: '5' }] }), false, mode);
+  }
+});
+
+test('alte Plaene ohne mode verhalten sich wie bisher', () => {
+  assert.equal(zeigtSaetze({ sets: [{ reps: '5' }] }), true);
+  assert.equal(zeigtSaetze({ sets: [] }), false);
+  assert.equal(zeigtSaetze({}), false);
 });

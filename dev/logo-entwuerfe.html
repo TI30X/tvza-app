@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Firn — Entwürfe</title>
+<link rel="stylesheet" href="/assets/css/kit.css?v=4">
+<style>
+  body { background: var(--bg); color: var(--ink); font-family: 'Hanken Grotesk', system-ui, sans-serif;
+         margin: 0; padding: 24px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .weg { color: var(--ink-soft); font-size: 13px; margin: 0 0 28px; max-width: 46em; line-height: 1.5; }
+  .entwurf { background: var(--surface); border: 1px solid var(--border);
+             border-radius: var(--r-panel); padding: 18px; margin-bottom: 16px; }
+  .kopf { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .kopf b { font-size: 15px; }
+  .kopf span { color: var(--ink-soft); font-size: 13px; }
+  .reihe { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+  .probe { text-align: center; }
+  .probe small { display: block; margin-top: 6px; color: var(--ink-soft); font-size: 10.5px; }
+  .kreis svg { clip-path: circle(40%); }
+  .dunkel { background: #0C2138; border-radius: var(--r-row); padding: 12px 16px; }
+  .wort { display: flex; align-items: center; gap: 10px; }
+  .wort .firn { font-size: 26px; }
+</style></head>
+<body>
+
+<h1>Vier Entwürfe · Richtung Slalomspur</h1>
+<p class="weg">Jeder in fünf Grössen, im Kreisbeschnitt (so schneidet Android zu),
+auf dunklem Grund und neben dem Wortzeichen. Ein Zeichen stirbt bei 16 Pixeln —
+darum steht die Grösse hier immer dabei.</p>
+
+<!-- ══ A ══ -->
+<div class="entwurf">
+  <div class="kopf"><b>A · Nur die Spur</b><span>zwei Schwünge, sonst nichts</span></div>
+  <div class="reihe">
+    <div class="probe"><svg width="112" height="112" viewBox="0 0 64 64"><defs><linearGradient id="gA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0C2138"/><stop offset="1" stop-color="#1256B0"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#gA)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg><small>112</small></div>
+    <div class="probe"><svg width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gA)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg><small>64</small></div>
+    <div class="probe"><svg width="32" height="32" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gA)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg><small>32</small></div>
+    <div class="probe"><svg width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gA)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg><small>16</small></div>
+    <div class="probe kreis"><svg width="56" height="56" viewBox="0 0 64 64"><rect width="64" height="64" fill="url(#gA)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg><small>Kreis</small></div>
+    <div class="probe dunkel"><svg width="48" height="48" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#12335C"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg><small style="color:#9DB4CE">dunkel</small></div>
+    <div class="probe"><span class="wort"><svg width="34" height="34" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gA)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg><span class="firn">Fir<b>n</b></span></span><small>im Gebrauch</small></div>
+  </div>
+</div>
+
+<!-- ══ B ══ -->
+<div class="entwurf">
+  <div class="kopf"><b>B · Spur mit Toren</b><span>zwei Punkte an den Scheitelpunkten</span></div>
+  <div class="reihe">
+    <div class="probe"><svg width="112" height="112" viewBox="0 0 64 64"><defs><linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0C2138"/><stop offset="1" stop-color="#1256B0"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#gB)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="46" cy="25" r="3.2" fill="#F6A183"/><circle cx="18" cy="43" r="3.2" fill="#F6A183"/></svg><small>112</small></div>
+    <div class="probe"><svg width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gB)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="46" cy="25" r="3.2" fill="#F6A183"/><circle cx="18" cy="43" r="3.2" fill="#F6A183"/></svg><small>64</small></div>
+    <div class="probe"><svg width="32" height="32" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gB)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="46" cy="25" r="3.2" fill="#F6A183"/><circle cx="18" cy="43" r="3.2" fill="#F6A183"/></svg><small>32</small></div>
+    <div class="probe"><svg width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gB)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="46" cy="25" r="3.2" fill="#F6A183"/><circle cx="18" cy="43" r="3.2" fill="#F6A183"/></svg><small>16</small></div>
+    <div class="probe kreis"><svg width="56" height="56" viewBox="0 0 64 64"><rect width="64" height="64" fill="url(#gB)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="46" cy="25" r="3.2" fill="#F6A183"/><circle cx="18" cy="43" r="3.2" fill="#F6A183"/></svg><small>Kreis</small></div>
+    <div class="probe dunkel"><svg width="48" height="48" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#12335C"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="46" cy="25" r="3.2" fill="#F6A183"/><circle cx="18" cy="43" r="3.2" fill="#F6A183"/></svg><small style="color:#9DB4CE">dunkel</small></div>
+    <div class="probe"><span class="wort"><svg width="34" height="34" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gB)"/><path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><circle cx="46" cy="25" r="3.2" fill="#F6A183"/><circle cx="18" cy="43" r="3.2" fill="#F6A183"/></svg><span class="firn">Fir<b>n</b></span></span><small>im Gebrauch</small></div>
+  </div>
+</div>
+
+<!-- ══ C ══ -->
+<div class="entwurf">
+  <div class="kopf"><b>C · Spur auf dem Hang</b><span>die Spur endet im Berg</span></div>
+  <div class="reihe">
+    <div class="probe"><svg width="112" height="112" viewBox="0 0 64 64"><defs><linearGradient id="gC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0C2138"/><stop offset="1" stop-color="#1256B0"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#gC)"/><path d="M0 64 L20 40 L30 50 L44 32 L64 64 Z" fill="#fff" opacity=".22"/><path d="M32 14 a8.5 8.5 0 0 1 0 17 a8.5 8.5 0 0 0 0 17" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/></svg><small>112</small></div>
+    <div class="probe"><svg width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gC)"/><path d="M0 64 L20 40 L30 50 L44 32 L64 64 Z" fill="#fff" opacity=".22"/><path d="M32 14 a8.5 8.5 0 0 1 0 17 a8.5 8.5 0 0 0 0 17" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/></svg><small>64</small></div>
+    <div class="probe"><svg width="32" height="32" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gC)"/><path d="M0 64 L20 40 L30 50 L44 32 L64 64 Z" fill="#fff" opacity=".22"/><path d="M32 14 a8.5 8.5 0 0 1 0 17 a8.5 8.5 0 0 0 0 17" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/></svg><small>32</small></div>
+    <div class="probe"><svg width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gC)"/><path d="M0 64 L20 40 L30 50 L44 32 L64 64 Z" fill="#fff" opacity=".22"/><path d="M32 14 a8.5 8.5 0 0 1 0 17 a8.5 8.5 0 0 0 0 17" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/></svg><small>16</small></div>
+    <div class="probe kreis"><svg width="56" height="56" viewBox="0 0 64 64"><rect width="64" height="64" fill="url(#gC)"/><path d="M0 64 L20 40 L30 50 L44 32 L64 64 Z" fill="#fff" opacity=".22"/><path d="M32 14 a8.5 8.5 0 0 1 0 17 a8.5 8.5 0 0 0 0 17" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/></svg><small>Kreis</small></div>
+    <div class="probe dunkel"><svg width="48" height="48" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#12335C"/><path d="M0 64 L20 40 L30 50 L44 32 L64 64 Z" fill="#fff" opacity=".22"/><path d="M32 14 a8.5 8.5 0 0 1 0 17 a8.5 8.5 0 0 0 0 17" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/></svg><small style="color:#9DB4CE">dunkel</small></div>
+    <div class="probe"><span class="wort"><svg width="34" height="34" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gC)"/><path d="M0 64 L20 40 L30 50 L44 32 L64 64 Z" fill="#fff" opacity=".22"/><path d="M32 14 a8.5 8.5 0 0 1 0 17 a8.5 8.5 0 0 0 0 17" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/></svg><span class="firn">Fir<b>n</b></span></span><small>im Gebrauch</small></div>
+  </div>
+</div>
+
+<!-- ══ D ══ -->
+<div class="entwurf">
+  <div class="kopf"><b>D · Doppelspur</b><span>zwei Ski, eine Spur im Firn</span></div>
+  <div class="reihe">
+    <div class="probe"><svg width="112" height="112" viewBox="0 0 64 64"><defs><linearGradient id="gD" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0C2138"/><stop offset="1" stop-color="#1256B0"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#gD)"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M27 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16"/><path d="M37 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16" opacity=".55"/></g></svg><small>112</small></div>
+    <div class="probe"><svg width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gD)"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M27 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16"/><path d="M37 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16" opacity=".55"/></g></svg><small>64</small></div>
+    <div class="probe"><svg width="32" height="32" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gD)"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M27 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16"/><path d="M37 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16" opacity=".55"/></g></svg><small>32</small></div>
+    <div class="probe"><svg width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gD)"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M27 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16"/><path d="M37 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16" opacity=".55"/></g></svg><small>16</small></div>
+    <div class="probe kreis"><svg width="56" height="56" viewBox="0 0 64 64"><rect width="64" height="64" fill="url(#gD)"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M27 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16"/><path d="M37 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16" opacity=".55"/></g></svg><small>Kreis</small></div>
+    <div class="probe dunkel"><svg width="48" height="48" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#12335C"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M27 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16"/><path d="M37 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16" opacity=".55"/></g></svg><small style="color:#9DB4CE">dunkel</small></div>
+    <div class="probe"><span class="wort"><svg width="34" height="34" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="url(#gD)"/><g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"><path d="M27 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16"/><path d="M37 16 a8 8 0 0 1 0 16 a8 8 0 0 0 0 16" opacity=".55"/></g></svg><span class="firn">Fir<b>n</b></span></span><small>im Gebrauch</small></div>
+  </div>
+</div>
+
+</body></html>

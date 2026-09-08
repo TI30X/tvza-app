@@ -28,6 +28,7 @@ import {
 import {
   einheiten, uebungen, einheitTitel,
   eintrag, mitEintrag, sauber, fortschritt, naechsteOffene, saetze,
+  videoUrl, vorwochen, zeigtSaetze,
 } from '../../einheit.js';
 import { isoTag } from '../../termine.js';
 
@@ -115,21 +116,44 @@ function zeichneWahl() {
 
 /* ── Der Player ────────────────────────────────────────────────────*/
 
-function satzZeile(reihe, index) {
-  /* Der Vorgabewert aus dem Plan steht als Platzhalter, nicht als Wert.
-     Sonst stünde eine fremde Zahl da, als hätte man sie selbst
-     gemacht. */
+/* Ein Satz ist erledigt, sobald irgendein Wert darin steht. */
+function satzGemacht(reihe) {
+  return Boolean(String(reihe.weight).trim() || String(reihe.reps).trim());
+}
+
+/**
+ * Eine Satzzeile.
+ *
+ * Der Normalfall ist "lief wie geplant" — ein Tipp auf die Zeile
+ * uebernimmt die Vorgabe und hakt sie ab. Die Felder erscheinen erst,
+ * wenn es anders lief. Wer im Kraftraum steht, tippt sonst zwei Zahlen
+ * je Satz auf 60 Pixel breite Felder, und das trifft niemand.
+ */
+function satzZeile(reihe, index, offen) {
   const ziel = [reihe.zielReps && `${reihe.zielReps}×`, reihe.zielWert]
     .filter(Boolean).join(' ');
+  const gemacht = satzGemacht(reihe);
+  const zeigeFelder = offen || (gemacht && !passtZurVorgabe(reihe));
+
+  const werte = gemacht
+    ? [reihe.reps && `${reihe.reps}×`, reihe.weight].filter(Boolean).join(' ')
+    : '';
 
   return `
-    <div class="row" data-bereich="t-training">
-      <span class="row__icon">${escHtml(String(index + 1))}</span>
+    <div class="row satz${gemacht ? ' satz--gemacht' : ''}" data-bereich="t-training" data-satz-zeile="${index}">
+      <button class="satz__haken" type="button" data-satz-tippen="${index}"
+              aria-pressed="${gemacht ? 'true' : 'false'}"
+              aria-label="${escHtml(t('eh.satzAbhaken', 'Satz {n} wie geplant', { n: index + 1 }))}">
+        ${gemacht
+          ? '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>'
+          : escHtml(String(index + 1))}
+      </button>
       <span class="row__body">
         <span class="row__title">${escHtml(reihe.label)}</span>
         <span class="row__sub">${escHtml(ziel || t('eh.keinZiel', 'kein Ziel angegeben'))}</span>
       </span>
       <span class="row__end">
+        ${zeigeFelder ? `
         <input class="form-input" type="text" inputmode="decimal" maxlength="20"
                data-satz="${index}" data-feld="weight"
                value="${escHtml(reihe.weight)}"
@@ -139,14 +163,37 @@ function satzZeile(reihe, index) {
                data-satz="${index}" data-feld="reps"
                value="${escHtml(reihe.reps)}"
                placeholder="${escHtml(reihe.zielReps || t('eh.wdh', 'Wdh'))}"
-               aria-label="${escHtml(t('eh.ariaWdh', 'Wiederholungen {n}. Satz', { n: index + 1 }))}" />
+               aria-label="${escHtml(t('eh.ariaWdh', 'Wiederholungen {n}. Satz', { n: index + 1 }))}" />`
+        : `<span class="satz__wert">${escHtml(werte)}</span>
+        <button class="row__aktion" type="button" data-satz-oeffnen="${index}"
+                title="${escHtml(t('eh.abweichend', 'Anders gelaufen'))}"
+                aria-label="${escHtml(t('eh.abweichend', 'Anders gelaufen'))}">
+          <svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        </button>`}
       </span>
     </div>`;
 }
 
+/* Stimmt das Eingetragene mit der Vorgabe ueberein? Dann bleibt die
+   Zeile zugeklappt — die Zahl steht ja schon als Vorgabe da. */
+function passtZurVorgabe(reihe) {
+  const gleich = (a, b) => String(a).trim() === String(b).trim();
+  return gleich(reihe.weight, reihe.zielWert) && gleich(reihe.reps, reihe.zielReps);
+}
+
+/* Welche Zeilen der Nutzer aufgeklappt hat — nur fuer diese Ansicht,
+   nichts davon gehoert ins Protokoll. */
+let offeneSaetze = new Set();
+let offenFuer = null;          // fuer welche Uebung sie gelten
+
 function zeichnePlayer() {
   const item = items[pos];
   if (!item) return;
+
+  /* Die aufgeklappten Zeilen gehoeren zur ANSICHT einer Uebung, nicht
+     zum Protokoll. Wer weiterblaettert, faengt zugeklappt an — und
+     kein Aufrufer muss daran denken. */
+  if (offenFuer !== item.key) { offeneSaetze = new Set(); offenFuer = item.key; }
 
   const e = eintrag(protokoll, unitId, item.key);
   const f = fortschritt(items, protokoll, unitId);
@@ -159,6 +206,19 @@ function zeichnePlayer() {
     { n: pos + 1, gesamt: items.length });
   $('uebName').textContent = item.name;
 
+  /* Der Fortschritt als Leiste statt als graue Zeile. */
+  const anteil = f.gesamt ? Math.round((f.erledigt / f.gesamt) * 100) : 0;
+  $('uebFuellung').style.width = anteil + '%';
+  $('uebLeiste').setAttribute('aria-valuenow', String(anteil));
+  $('uebLeiste').setAttribute('aria-label',
+    t('eh.fortschritt', '{n} von {gesamt} erledigt', { n: f.erledigt, gesamt: f.gesamt }));
+
+  /* Das Video steht in der Vorlage eine Zeile unter dem Namen. Hier
+     gehoert es an den Namen — wer die Uebung kennt, sieht es nicht. */
+  const video = videoUrl(item);
+  $('uebVideo').hidden = !video;
+  if (video) $('uebVideo').href = video;
+
   /* Alternativname, Pause und TUT stehen im Plan und sind beim Machen
      genau das, was man wissen will. */
   const meta = [item.alt, item.pause && t('eh.pause', 'Pause {wert}', { wert: item.pause }), item.tut && `TUT ${item.tut}`,
@@ -167,10 +227,25 @@ function zeichnePlayer() {
   $('uebMeta').textContent = meta;
   $('uebMeta').hidden = !meta;
 
-  const reihen = saetze(item, e);
+  const reihen = zeigtSaetze(item) ? saetze(item, e) : [];
   $('listSaetze').innerHTML = reihen.length
-    ? reihen.map(satzZeile).join('')
+    ? reihen.map((r, i) => satzZeile(r, i, offeneSaetze.has(i))).join('')
     : `<p class="empty-hint">${escHtml(t('eh.keineSaetze', 'Keine Sätze vorgegeben — nur abhaken.'))}</p>`;
+
+  /* Die andere Trainingswoche. Ein Plan laeuft zwei Wochen, und genau
+     aus dem Nebeneinander liest man ab, ob es besser geworden ist. */
+  const wochen = vorwochen(item);
+  const kasten = $('uebVorwochen');
+  kasten.hidden = !wochen.length;
+  kasten.innerHTML = wochen.length
+    ? `<div class="marke brief__marke">${escHtml(t('eh.vorwoche', 'Andere Trainingswoche'))}</div>`
+      + wochen.map(w => `
+        <div class="vorwoche">
+          <span class="vorwoche__tag">${escHtml(w.woche || '—')}</span>
+          <span class="vorwoche__werte">${escHtml(w.werte.filter(Boolean).join(' · ') || '—')}</span>
+          ${w.bemerkung ? `<span class="vorwoche__notiz">${escHtml(w.bemerkung)}</span>` : ''}
+        </div>`).join('')
+    : '';
 
   $('uebNotiz').value = e.note;
 
@@ -292,6 +367,40 @@ function erledigtGeklickt() {
   $('btnErledigt')?.addEventListener('click', erledigtGeklickt);
   $('uebNotiz')?.addEventListener('input', notizGeaendert);
   $('listSaetze')?.addEventListener('input', satzGeaendert);
+
+  /* Ein Tipp auf die Zeile heisst "lief wie geplant": die Vorgabe
+     wird uebernommen. Noch einmal getippt nimmt sie zurueck. Der
+     Stift daneben klappt die Felder auf, wenn es anders lief. */
+  $('listSaetze')?.addEventListener('click', event => {
+    const auf = event.target.closest('[data-satz-oeffnen]');
+    if (auf) {
+      offeneSaetze.add(Number(auf.dataset.satzOeffnen));
+      zeichnePlayer();
+      return;
+    }
+
+    const tipp = event.target.closest('[data-satz-tippen]');
+    if (!tipp) return;
+
+    const item = items[pos];
+    if (!item) return;
+
+    const i = Number(tipp.dataset.satzTippen);
+    const e = eintrag(protokoll, unitId, item.key);
+    const reihen = saetze(item, e);
+    if (!reihen[i]) return;
+
+    const sets = reihen.map((r, n) => n === i
+      ? (satzGemacht(r)
+          ? { weight: '', reps: '' }              // noch einmal getippt: zurueck
+          : { weight: r.zielWert, reps: r.zielReps })
+      : { weight: r.weight, reps: r.reps });
+
+    offeneSaetze.delete(i);
+    protokoll = mitEintrag(protokoll, unitId, item.key, { sets });
+    speichereBald();
+    zeichnePlayer();
+  });
   $('listEinheiten')?.addEventListener('click', event => {
     const id = event.target.closest('[data-einheit]')?.dataset.einheit;
     if (id) starte(id);

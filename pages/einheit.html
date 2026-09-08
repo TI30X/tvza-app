@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=4" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=5" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -49,12 +49,33 @@
     <section class="section" id="secPlayer" hidden>
       <button class="backlink" id="btnZurWahl" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Einheit wechseln</button>
 
+      <!-- Der Fortschritt als Leiste, nicht als graue Zeile. Er ist
+           das, was einen bei der Stange haelt. -->
+      <div class="fortschritt" id="uebLeiste" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+        <span class="fortschritt__fuellung" id="uebFuellung"></span>
+      </div>
+
       <div class="form-card">
         <p class="empty-hint" id="uebPos"></p>
-        <div class="form-title" id="uebName">—</div>
+
+        <!-- Name und Video in einer Zeile: das Video gehoert an den
+             Namen, nicht in eine eigene Zeile darunter. Wer die Uebung
+             kennt, sieht es nicht; wer sie nicht kennt, findet es dort,
+             wo er ohnehin hinschaut. -->
+        <div class="ueb-kopf">
+          <div class="form-title" id="uebName">—</div>
+          <a class="ueb-video" id="uebVideo" target="_blank" rel="noopener" hidden
+             data-i18n-attr="title:eh.videoAnsehen;aria-label:eh.videoAnsehen" title="Video ansehen">
+            <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          </a>
+        </div>
         <p class="empty-hint" id="uebMeta" hidden></p>
 
         <div class="rows" id="listSaetze"></div>
+
+        <!-- Die andere Trainingswoche. Genau daraus liest man ab, ob
+             es besser geworden ist. -->
+        <div id="uebVorwochen" hidden></div>
 
         <div class="form-group">
           <label class="form-label" for="uebNotiz">Notiz</label>
@@ -86,6 +107,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=1"></script>
+  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=2"></script>
 </body>
 </html>
