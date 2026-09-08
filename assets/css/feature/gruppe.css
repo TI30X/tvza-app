@@ -1,0 +1,104 @@
+/* ══════════════════════════════════════════════════════════════════
+   Die Woche auf der Gruppenseite.
+
+   Sieben Tage nebeneinander, darunter der gewaehlte Tag als Zeilen.
+   Warum der Streifen und nicht sieben Ueberschriften untereinander:
+   auf einem Telefon waere die Woche dann zwei Bildschirme hoch, und
+   die Frage "was ist heute" braeuchte Scrollen.
+
+   Alle Abstaende kommen aus der Skala in kit.css. Freie Zahlen stehen
+   nur dort, wo es um eine physische Groesse geht — die Punkte im
+   Streifen sind 5 Pixel, weil sie sonst kein Punkt mehr sind.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Der Wochenstreifen ────────────────────────────────────────────*/
+
+.woche {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--s1);
+  margin-bottom: var(--s4);
+}
+
+.woche__tag {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--s1);
+  padding: var(--s2) var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-icon);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+  /* Sieben Spalten auf 320 Pixeln: ohne das sprengt ein langes Datum
+     das Raster, statt sich zu kuerzen. */
+  min-width: 0;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.woche__tag:hover { border-color: var(--accent); }
+
+/* Heute ist markiert, auch wenn ein anderer Tag gewaehlt ist — sonst
+   verliert man beim Blaettern den Bezugspunkt. */
+.woche__tag.ist-heute { border-color: var(--accent); color: var(--ink); }
+
+.woche__tag[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+
+.woche__name { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; }
+.woche__datum { font-size: 11px; opacity: 0.75; }
+
+/* Ein Punkt je Einheit des Tages. Eine Zahl wie "3/8" ist in einer
+   Siebtel-Spalte nicht lesbar; ein voller Punkt schon. */
+.woche__punkte {
+  display: flex; gap: 3px; justify-content: center;
+  min-height: 5px;
+}
+.woche__punkt {
+  width: 5px; height: 5px;
+  border-radius: var(--r-pill);
+  background: currentColor;
+  opacity: 0.35;
+}
+.woche__punkt.ist-fertig { background: var(--ok); opacity: 1; }
+.woche__tag[aria-selected="true"] .woche__punkt.ist-fertig { background: var(--surface); }
+
+/* ── Der gewaehlte Tag ─────────────────────────────────────────────*/
+
+.marke--tag { display: flex; align-items: baseline; gap: var(--s2); }
+.marke--tag .tag__datum { font-weight: 600; letter-spacing: 0; opacity: 0.8; }
+
+/* Vormittag / Nachmittag steht am Eintrag, nicht als Zwischentitel:
+   ein Kasten je Tageshaelfte waere viel Rahmen um oft eine Zeile. */
+.eintrag__slot {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+/* Im Plan genannt, aber ohne Blatt — "evtl. Spiel (Tennis…)". Nichts
+   zum Antippen, und das muss man sehen, bevor man tippt. */
+.row--ohneBlatt { cursor: default; background: var(--surface-2); }
+.row--ohneBlatt .row__icon { background: var(--surface); color: var(--ink-soft); }
+
+.row__zaehler {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.row__zaehler.ist-fertig { color: var(--ok); }
+
+/* Die Fortschrittsleiste ist .row__bar aus dem Kit — sie sitzt im
+   .row__body und laeuft damit unter dem Namen statt neben ihm.
+   Fertig faerbt sie um; sonst muesste man die Zahl daneben lesen,
+   um zu wissen, ob es fertig ist. */
+.row__bar > i.ist-fertig { background: var(--ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .woche__tag { transition: none; }
+}

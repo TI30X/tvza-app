@@ -69,4 +69,20 @@ KEYS = {
                  'Più tardi', 'Później', 'Later', 'Más tarde'),
 'brief.ausblenden': ('Ausblenden', 'Dismiss', 'Masquer', 'Nascondi',
                     'Ukryj', 'Verbergen', 'Ocultar'),
+# ── Die Woche des Plans ───────────────────────────────────────────
+# Der Plan ist eine Woche, kein Aktenschrank: was heute dran ist,
+# steht oben, und ein Tag ohne Eintrag ist ein Ruhetag und keine
+# Luecke.
+'grp.heute': ('Heute', 'Today', "Aujourd'hui", 'Oggi', 'Dzisiaj', 'Vandaag', 'Hoy'),
+'grp.ruhetag': ('Ruhetag — nichts geplant.', 'Rest day — nothing planned.',
+               'Jour de repos — rien de prévu.', 'Giorno di riposo — niente in programma.',
+               'Dzień odpoczynku — nic nie zaplanowano.', 'Rustdag — niets gepland.',
+               'Día de descanso — nada planificado.'),
+# Im Plan genannt, aber ohne Uebungsblatt: "evtl. Spiel (Tennis…)".
+# Kein Fehler beim Import, sondern eine Ansage des Trainers.
+'grp.keinBlatt': ('kein Blatt hinterlegt', 'no sheet attached', 'aucune fiche jointe',
+                 'nessuna scheda allegata', 'brak arkusza', 'geen blad gekoppeld',
+                 'sin ficha adjunta'),
+'grp.nurFuerDich': ('nur für dich', 'just for you', 'rien que pour toi',
+                   'solo per te', 'tylko dla ciebie', 'alleen voor jou', 'sólo para ti'),
 }

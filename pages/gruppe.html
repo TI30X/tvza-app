@@ -15,6 +15,7 @@
   <script src="../assets/js/i18n.js?v=1"></script>
   <link rel="stylesheet" href="../assets/css/kit.css?v=7" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
   <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
@@ -126,9 +127,25 @@
     <!-- Trainingsplaene. Ein Plan gilt fuer den ganzen Kader oder fuer
          genau einen Athleten — das ist der Unterschied, den das alte
          Modell nicht abbilden konnte. -->
+    <!-- Der Plan ist eine WOCHE, kein Aktenschrank. Der Parser liest
+         aus der Kadervorlage sieben Tage mal Vormittag/Nachmittag —
+         wer am Dienstag im Kraftraum steht, will nicht wissen, wie das
+         Blatt heisst, sondern was heute dran ist. Bis v.35.21.0 stand
+         hier eine alphabetische Liste der Blaetter. -->
     <section class="section" id="secPlaene" hidden>
-      <div class="marke" data-i18n="grp.plan">Plan</div>
+      <div class="marke marke--reihe">
+        <span data-i18n="grp.plan">Plan</span>
+        <span id="planZeitraum" hidden></span>
+      </div>
+
+      <!-- Nur wenn es mehr als einen gibt. Der Normalfall ist ein
+           Plan fuer den Kader, und der braucht keine Auswahl. -->
+      <select class="form-select" id="planWahl" hidden></select>
+
+      <div class="woche" id="wocheStreifen" role="tablist" hidden></div>
+      <div class="marke marke--tag" id="tagTitel" hidden></div>
       <div class="rows" id="listPlaene"></div>
+
       <button class="b b--secondary b--block" id="btnPlanNeu" type="button" hidden data-i18n="grp.planNeu">Plan veröffentlichen</button>
     </section>
 
@@ -299,6 +316,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=1"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=2"></script>
 </body>
 </html>
