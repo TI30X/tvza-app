@@ -304,3 +304,61 @@ test('splash skip hints are immediate and arranging stays on Start', async () =>
   assert.match(welcome, /#tvza-welcome \.tvza-hint[\s\S]*opacity:1/);
   assert.match(css, /body:has\(\.tvza-route-frame\) \.reorder-fab,[\s\S]*\.reorder-hint\s*\{\s*display:\s*none/);
 });
+
+test('die Leiste laesst sich einklappen und behaelt dabei ihr Scrollen', async () => {
+  const [css, shell, katalog] = await Promise.all([
+    read('assets/css/kit.css'),
+    read('assets/js/shell.js'),
+    read('assets/i18n/de.json'),
+  ]);
+
+  /* ── Der Fehler, den dieser Test festhaelt ──────────────────────
+     Der Klappknopf hing zuerst am Rand der Leiste (position:
+     absolute, right: -14px). Damit er sichtbar blieb, bekam .nav ein
+     overflow: visible — im selben Block, in dem zwei Zeilen davor
+     overflow-y: auto stand. Das Kurzschreiben gewinnt, und damit war
+     das Scrollen weg: bei kurzem Fenster und mehr Eintraegen als
+     Platz waeren die unteren nicht mehr erreichbar gewesen.
+
+     Beide Haelften des Fehlers werden geprueft, nicht nur eine —
+     sonst kommt der Knopf zurueck an den Rand und nimmt das
+     overflow: visible wieder mit. */
+  const navBlock = css.match(/\n {2}\.nav \{([^}]*)\}/);
+  assert.ok(navBlock, '.nav-Regel in der Laptop-Fassung nicht gefunden');
+  assert.match(navBlock[1], /overflow-y:\s*auto/,
+    'die Leiste muss scrollen koennen, wenn mehr Eintraege als Platz da sind');
+  assert.doesNotMatch(navBlock[1], /(^|[\s;]) {0,}overflow:\s/,
+    'ein overflow-Kurzschreiben ueberschreibt das overflow-y der Leiste');
+
+  assert.doesNotMatch(css, /\.nav__klapp[^{]*\{[^}]*position:\s*absolute/,
+    'der Klappknopf gehoert in die Leiste, nicht an ihren Rand');
+
+  /* Zugeklappt bleibt eine Symbolspalte stehen — der Weg zurueck
+     darf nicht verschwinden. Die Breite steht an beiden Stellen: an
+     der Leiste selbst und am Platz, den der Inhalt freilaesst. */
+  assert.match(css, /body\.nav-schmal \.nav \{[^}]*width:\s*64px/);
+  assert.match(css, /body\.nav-schmal\.has-nav \{[^}]*padding-left:\s*64px/);
+  assert.match(css, /body\.nav-schmal \.nav__marke\s*\{\s*display:\s*none/,
+    'in 64 Pixeln bricht das Wortzeichen um');
+  assert.match(css, /body\.nav-schmal \.nav__zeichen\s*\{\s*display:\s*block/,
+    'zugeklappt traegt der Kopf das App-Zeichen');
+
+  /* Am Handy gibt es nichts einzuklappen: die Leiste liegt unten. */
+  assert.match(css, /\.appbar__marke,\s*\.nav__kopf\s*\{\s*display:\s*none/);
+
+  /* Die Wahl haengt am Geraet, nicht am Konto — wer am grossen
+     Bildschirm aufgeklappt arbeitet und am kleinen zu, will genau
+     das. Darum localStorage und nicht users/{uid}. */
+  assert.match(shell, /const LEISTE = 'firn\.leiste'/);
+  assert.match(shell, /localStorage\.setItem\(LEISTE/);
+  assert.match(shell, /verkabelLeiste\(\);/);
+
+  /* Der Knopf sagt, was er tut — und der Schluessel wandert mit dem
+     Zustand, sonst beschriftet der Katalog beim naechsten Anwenden
+     wieder den anderen. */
+  const worte = JSON.parse(katalog);
+  for (const k of ['nav.einklappen', 'nav.ausklappen']) {
+    assert.ok(worte[k], `${k} fehlt im Katalog`);
+  }
+  assert.match(shell, /knopf\.dataset\.i18nAttr = schmal/);
+});

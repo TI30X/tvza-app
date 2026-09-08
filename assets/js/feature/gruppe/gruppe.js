@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle } from '../../shell.js?v=8';
+import { mountShell, setShellTitle } from '../../shell.js?v=9';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,

@@ -212,7 +212,6 @@ export function mountShell(o = {}) {
   if (variant === 'bereich') {
     bar.innerHTML = `
       <div class="appbar__inner">
-        <span class="appbar__marke firn firn--hell" aria-hidden="true">Fir<b>n</b></span>
         <button class="appbar__btn" id="shellBack" data-i18n-attr="aria-label:a11y.zurueck" aria-label="Zurück">${icon('back')}</button>
         <span class="appbar__title">${esc(o.title || '')}</span>
         ${o.onSettings
@@ -227,7 +226,6 @@ export function mountShell(o = {}) {
       : `<div class="appbar__greet">${esc(o.title || '')}</div>`;
     bar.innerHTML = `
       <div class="appbar__inner">
-        <span class="appbar__marke firn firn--hell" aria-hidden="true">Fir<b>n</b></span>
         <div class="appbar__spacer">${heading}</div>
         <a class="wx-pill" id="shellWx" href="${b}pages/weather.html" style="display:none"></a>
         <button class="avatar" id="shellAvatar" data-i18n-attr="aria-label:a11y.konto" aria-label="Konto">${esc(initials)}</button>
@@ -257,7 +255,23 @@ export function mountShell(o = {}) {
      zweimal auf demselben Bildschirm. */
   const currentFile = location.pathname.split('/').pop() || 'index.html';
 
-  nav.innerHTML = tabs + (o.onSettings
+  /* Der Kopf der Leiste: Wortzeichen und der Knopf zum Einklappen.
+     Auf dem Navy traegt das Marken-Blau nicht, darum firn--hell.
+
+     Zugeklappt steht dort das App-Symbol — in 64 Pixeln bricht "Firn"
+     um und sieht aus wie ein Fehler. */
+  const marke = `
+    <div class="nav__kopf">
+      <span class="nav__marke firn firn--hell" aria-hidden="true">Fir<b>n</b></span>
+      <img class="nav__zeichen" src="${b}assets/icons/firn.svg" alt="" aria-hidden="true" />
+      <button class="nav__klapp" id="shellNavKlapp" type="button"
+              data-i18n-attr="title:nav.einklappen;aria-label:nav.einklappen"
+              title="Leiste einklappen" aria-expanded="true">
+        <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>`;
+
+  nav.innerHTML = marke + tabs + (o.onSettings
     ? `<a class="nav__item nav__settings" id="shellNavSettings" href="#">${icon('gear', 21)}<span data-i18n="nav.einstellungen">Einstellungen</span></a>`
     : '');
 
@@ -283,6 +297,8 @@ export function mountShell(o = {}) {
   if (navSettings && o.onSettings) navSettings.onclick = e => { e.preventDefault(); o.onSettings(); };
   const avatar = document.getElementById('shellAvatar');
   if (avatar) avatar.onclick = o.onAccount || o.onSettings || null;
+
+  verkabelLeiste();
 
   if (window.tvzaShellModulesHandler) {
     window.removeEventListener('tvza-modules-change', window.tvzaShellModulesHandler);
@@ -314,6 +330,46 @@ export function setShellTitle(text) {
   const wert = String(text ?? '');
   const el = document.querySelector('.appbar__title, .appbar__greet');
   if (el) el.textContent = wert;
+}
+
+/* ── Ein- und Ausklappen ───────────────────────────────────────────
+   Zugeklappt bleibt die Leiste als Symbolspalte stehen. Ganz
+   verschwinden waere bequemer zu bauen und schlechter zu benutzen:
+   der Weg zurueck muesste dann irgendwo anders aufgehen.
+
+   Die Wahl haengt am GERAET. Wer am grossen Bildschirm aufgeklappt
+   arbeitet und am kleinen Laptop zu, will genau das — darum
+   localStorage und nicht das Profil. */
+
+const LEISTE = 'firn.leiste';
+
+function leisteSchmal() {
+  try { return localStorage.getItem(LEISTE) === 'schmal'; } catch { return false; }
+}
+
+function setzeLeiste(schmal) {
+  document.body.classList.toggle('nav-schmal', schmal);
+  const knopf = document.getElementById('shellNavKlapp');
+  if (knopf) {
+    knopf.setAttribute('aria-expanded', schmal ? 'false' : 'true');
+    const wort = schmal
+      ? label('nav.ausklappen', 'Leiste ausklappen')
+      : label('nav.einklappen', 'Leiste einklappen');
+    knopf.title = wort;
+    knopf.setAttribute('aria-label', wort);
+    /* Der Schluessel wandert mit, sonst beschriftet der Katalog beim
+       naechsten Anwenden wieder den anderen Zustand. */
+    knopf.dataset.i18nAttr = schmal
+      ? 'title:nav.ausklappen;aria-label:nav.ausklappen'
+      : 'title:nav.einklappen;aria-label:nav.einklappen';
+  }
+  try { localStorage.setItem(LEISTE, schmal ? 'schmal' : 'breit'); } catch {}
+}
+
+function verkabelLeiste() {
+  setzeLeiste(leisteSchmal());
+  const knopf = document.getElementById('shellNavKlapp');
+  if (knopf) knopf.onclick = () => setzeLeiste(!document.body.classList.contains('nav-schmal'));
 }
 
 export function setUnread(n) {

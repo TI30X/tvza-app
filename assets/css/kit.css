@@ -2058,7 +2058,7 @@ body.reorder-editing .module-tile::after {
   width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--danger);
 }
 .nav__count { display: none; }
-.appbar__marke { display: none; }         /* nur auf dem Laptop */
+.appbar__marke, .nav__kopf { display: none; }    /* nur auf dem Laptop */
 .nav__settings { display: none; }
 .nav a[aria-current="page"] { cursor: default; }
 /* Keep the bottom bar from covering the last row of content. */
@@ -2486,50 +2486,112 @@ html.tvza-content-frame body > main {
      (Mockup, Runde 4). Der Rumpf trägt padding-left:248px für den
      Inhalt — die Kopfzeile zieht sich da wieder heraus, statt neben der
      Leiste zu beginnen und den Farbverlauf abzuschneiden. */
+  /* Am Laptop stehen zwei Spalten nebeneinander statt eines Balkens
+     ueber allem. Der Kopf gehoert zum INHALT und laeuft nicht mehr
+     unter der Leiste durch; das Navy sitzt jetzt in der Leiste, wo es
+     die Navigation und die Marke traegt. */
   .appbar {
-    margin-left: -248px;
-    width: calc(100% + 248px);
+    margin-left: 0;
+    width: 100%;
     z-index: 50;
+    background: var(--surface);
+    color: var(--ink);
+    border-bottom: 1px solid var(--border);
   }
+  .appbar__accent { display: none; }
   .appbar__inner {
     --ctl: 34px;
     max-width: none; margin: 0;
-    height: 64px; padding: 0 26px;
+    height: 60px; padding: 0 24px;
     display: flex; align-items: center; gap: calc(var(--ctl) * 0.25);
   }
-  /* Dasselbe Wortzeichen und derselbe Trennstrich auf jeder Seite.
-     Als echtes Element und nicht mehr als content: — generierter
-     Inhalt laesst sich nicht teilweise einfaerben, und das n braucht
-     seine eigene Farbe. Auf dem Navy traegt das Marken-Blau nicht,
-     darum firn--hell. */
-  .appbar__marke {
-    display: block;
-    font-size: 22px;
-    padding-right: 16px;
-    border-right: 1px solid rgba(255,255,255,0.2);
-    align-self: center;
+  /* Auf hellem Grund braucht der Avatar Gewicht, sonst verschwindet
+     er zwischen Weiss und Haarlinie. */
+  .appbar .avatar { background: var(--brand-navy); color: var(--surface); }
+  .appbar__btn { color: var(--ink-soft); }
+  /* Das Wortzeichen steht am Kopf der LEISTE, nicht im Balken. Vorher
+     sass es im dunklen Balken, die Spalte darunter war weiss, und die
+     senkrechte Kante brach mitten durch die Marke. */
+  .appbar__marke { display: none; }
+  /* Kopf der Leiste: Wortzeichen links, Klappknopf rechts. */
+  .nav__kopf {
+    display: flex; align-items: center; gap: var(--s2);
+    height: 60px;
+    margin: 0 -12px 14px;
+    padding: 0 12px 0 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
     flex: none;
   }
+  .nav__marke  { flex: 1; min-width: 0; font-size: 22px; }
+  .nav__zeichen { display: none; width: 28px; height: 28px; border-radius: 7px; }
+  .nav__klapp {
+    flex: none;
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    border: 0; border-radius: var(--r-icon);
+    background: none; color: rgba(255,255,255,0.55);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+  .nav__klapp:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav__klapp svg { stroke: currentColor; fill: none; stroke-width: 2;
+                    stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Zugeklappt ─────────────────────────────────────────────────
+     Symbolspalte statt Verschwinden: der Weg zurueck bleibt sichtbar.
+     Die Beschriftungen gehen, die Ziele bleiben. */
+  body.nav-schmal .nav { width: 64px; padding: 0 8px 16px; }
+  /* Zugeklappt stapelt der Kopf: Zeichen oben, Klappknopf darunter.
+     Der Knopf haengt NICHT aus der Leiste heraus — dafuer braeuchte
+     sie overflow: visible, und das nimmt ihr das Scrollen. */
+  body.nav-schmal .nav__kopf {
+    flex-direction: column; gap: 4px;
+    height: auto; padding: 12px 0 10px;
+    margin: 0 -8px 10px;
+  }
+  body.nav-schmal .nav__marke { display: none; }
+  body.nav-schmal .nav__zeichen { display: block; }
+  body.nav-schmal .nav__klapp svg { transform: rotate(180deg); }
+  body.nav-schmal .nav__item {
+    flex-direction: column; gap: 4px;
+    padding: 9px 2px;
+    font-size: 10px; text-align: center;
+  }
+  body.nav-schmal .nav__count { margin-left: 0; position: absolute; top: 4px; right: 8px; }
+  body.nav-schmal .nav__item { position: relative; }
+  body.nav-schmal .nav__settings span { display: none; }
+  body.nav-schmal .nav__settings { justify-content: center; }
+  body.nav-schmal.has-nav { padding-left: 64px; }
+  body.nav-schmal .tvza-route-frame,
+  body.nav-schmal .tvza-route-progress { left: 64px; }
   .appbar--bereich .appbar__title { margin-left: 16px; }
   /* Begrüssung und Datum stehen nebeneinander, nicht gestapelt. */
-  .appbar__spacer { display: flex; align-items: baseline; gap: 14px; margin-left: 16px; }
-  .appbar__greet  { font-size: 15px; font-weight: 700; }
-  .appbar__date   { font-size: 13px; margin-top: 0; color: rgba(255,255,255,0.66); flex: none; }
+  .appbar__spacer { display: flex; align-items: baseline; gap: 14px; margin-left: 0; }
+  .appbar__greet  { font-size: 16px; font-weight: 700; color: var(--ink); }
+  .appbar__date   { font-size: 13px; margin-top: 0; color: var(--ink-soft); flex: none; }
 
   /* Navigation becomes a left rail, below the header. */
   .nav {
-    position: fixed; top: 64px; bottom: 0; left: 0; right: auto;
-    width: 248px;
+    position: fixed; top: 0; bottom: 0; left: 0; right: auto;
+    width: 216px;
     display: flex; flex-direction: column; gap: 2px;
-    padding: 18px 12px;
-    border-top: none; border-right: 1px solid var(--border);
+    padding: 0 12px 16px;
+    border-top: none; border-right: none;
+    background: linear-gradient(165deg, var(--brand-navy) 0%, var(--brand-navy-mid) 100%);
     overflow-y: auto;
+    /* Auf dem Navy braucht der aktive Eintrag eine eigene Farbe — die
+       hellen Werte des Kits waeren darauf unsichtbar. */
+    --nav-active-bg: rgba(255, 255, 255, 0.13);
+    --nav-active: #FFFFFF;
   }
   .nav__item {
     flex-direction: row; justify-content: flex-start; gap: 12px;
-    padding: 10px 12px; border-radius: var(--r-icon);
+    padding: 9px 12px; border-radius: var(--r-icon);
     font-size: 14px; font-weight: 700;
+    color: rgba(255, 255, 255, 0.72);
+    transition: background-color 150ms ease, color 150ms ease;
   }
+  .nav__item:hover { background: rgba(255, 255, 255, 0.07); color: #fff; }
   .nav__item.is-active { background: var(--nav-active-bg); color: var(--nav-active); }
   /* Hier stand eine Regel, die den Bereiche-Tab am Desktop ausblendete,
      weil die Bereiche darunter ohnehin offen in der Leiste stehen. Den
@@ -2543,18 +2605,19 @@ html.tvza-content-frame body > main {
     font-size: 11px; font-weight: 800;
   }
   /* Bereiche are listed open in the rail — one click instead of two. */
-  .nav__settings { display: flex; margin-top: auto; }
+  .nav__settings { display: flex; margin-top: auto; color: rgba(255, 255, 255, 0.6); }
+  .nav__settings:hover { color: #fff; }
 
   .tvza-route-frame {
-    left: 248px;
+    left: 216px;
     bottom: 0;
   }
-  .tvza-route-progress { left: 248px; }
+  .tvza-route-progress { left: 216px; }
 
   /* Content sits beside the rail; the header pulls itself back out over
      the full width (siehe oben). */
   /* Am Laptop ist die Leiste links, der untere Rand also wieder frei. */
-  .has-nav      { padding-bottom: 0; padding-left: 248px; }
+  .has-nav      { padding-bottom: 0; padding-left: 216px; }
   body.has-nav .app  { min-height: 100vh; }
   body.dm-thread .app { height: 100vh; }
   @supports (height: 100dvh) {
