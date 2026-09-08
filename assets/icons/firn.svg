@@ -1,51 +1,67 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
      role="img" aria-label="Firn">
   <!--
-    Das App-Symbol von Firn: eine Slalomspur mit zwei Toren.
+    Das App-Symbol von Firn: ein Berg aus drei Baendern.
 
-    ── Warum nicht das n ────────────────────────────────────────────
-    Der erste Entwurf war der Buchstabe aus dem Wortzeichen. Er
-    funktioniert IM Wort, weil er dort die Farbe traegt —
-    herausgeloest verliert er seinen Grund. Er sagt nichts ueber
-    Schnee, Berg oder Training, und Buchstabenmarken gibt es
-    tausende.
+    ── Woher das kommt ──────────────────────────────────────────────
+    Firn ist verdichteter Altschnee — die Schicht zwischen Neuschnee
+    und Gletschereis. Sein Kennzeichen ist die SCHICHTUNG: ein
+    Schneeprofil zeigt waagrechte Baender unterschiedlicher Dichte.
 
-    Die Spur sagt in einem Blick, worum es geht.
+    Genau das ist das Zeichen. Die Luecken zwischen den Baendern sind
+    die Schichten; zusammen ergeben sie einen Gipfel. Firn und Berg in
+    einer Form, ohne dass eines vom anderen ablenkt.
 
-    ── Warum die Tore so gross sind ─────────────────────────────────
-    Der erste Zuschnitt hatte sie mit Radius 3.2 neben der Kurve. Bei
-    16 Pixeln — der Groesse im Browsertab — waren sie 0.8 Pixel breit
-    und schlicht verschwunden. Mit 4.4 und enger an der Spur ueberleben
-    sie; nachgemessen an einer 16-Pixel-Ausgabe, vierfach vergroessert.
+    ── Zwei Entwuerfe davor, und warum sie es nicht sind ────────────
+    Der erste war das n aus dem Wortzeichen. Es funktioniert IM Wort,
+    weil es dort die Farbe traegt — herausgeloest sagt es nichts ueber
+    Schnee, Berg oder Training, und Buchstabenmarken gibt es tausende.
 
-    Eine dritte Variante setzte die Tore AUF die Spur. Dort verschmelzen
-    sie im Kleinen mit dem Weiss zu einem Klecks.
+    Der zweite war eine Slalomspur mit zwei Toren. Timothys Urteil war
+    richtig: ohne Erklaerung ist das ein S mit zwei orangen Punkten,
+    und mit FIRN hat es gar nichts zu tun. Es beschrieb den Sport,
+    nicht den Namen.
+
+    ── Warum das Warme oben sitzt ───────────────────────────────────
+    Alpengluehen trifft am Berg immer zuerst den Gipfel. Es unten
+    hinzusetzen waere huebsch und falsch. Es ist ausserdem der einzige
+    warme Ton im Symbol — dieselbe Farbe wie auf der Willkommen-Seite.
+
+    ── Bei 16 Pixeln nachgemessen ───────────────────────────────────
+    Das ist die Groesse im Browsertab, und dort sterben Zeichen. Die
+    drei Baender ueberleben, weil sie breit sind und die Luecken
+    dazwischen ein Drittel ihrer Hoehe haben. Ein viertes Band waere
+    dort Matsch gewesen.
+
+    Eine Variante zeigte nur die Baender ohne Berg. Bei 16 Pixeln ist
+    das ein Hamburger-Menue.
 
     ── Maskierbar ───────────────────────────────────────────────────
-    Android beschneidet Symbole auf einen Kreis. Der aeusserste Punkt
-    liegt rund 20 von 32 Einheiten vom Mittelpunkt entfernt, die
+    Android beschneidet auf einen Kreis. Der aeusserste Punkt des
+    Bergs liegt 23.6 von 32 Einheiten vom Mittelpunkt entfernt, die
     Grenze bei 25.6.
 
-    Die runden Ecken hat nur diese Fassung. Die PNG-Symbole sind
-    randlos: Android und iOS legen ihre eigene Maske darueber, und ein
-    Symbol, das seine Ecken selbst rundet, bekaeme eine doppelte.
+    Die runden Ecken hat nur diese Fassung. Die PNG sind randlos:
+    Android und iOS legen ihre eigene Maske darueber, und ein Symbol,
+    das seine Ecken selbst rundet, bekaeme eine doppelte.
   -->
   <defs>
     <linearGradient id="firnGrund" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0C2138" />
       <stop offset="1" stop-color="#1256B0" />
     </linearGradient>
+    <clipPath id="firnBerg">
+      <path d="M32 17 L51 46 L13 46 Z" />
+    </clipPath>
   </defs>
 
   <rect width="64" height="64" rx="14" fill="url(#firnGrund)" />
 
-  <!-- Zwei Schwuenge: rechts herum, dann links herum. -->
-  <path d="M32 16 a9 9 0 0 1 0 18 a9 9 0 0 0 0 18"
-        fill="none" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" />
-
-  <!-- Die Tore im Alpengluehen — dieselbe warme Farbe wie auf der
-       Willkommen-Seite, und der einzige Ort im Symbol, an dem sie
-       vorkommt. -->
-  <circle cx="45" cy="25" r="4.4" fill="#F6A183" />
-  <circle cx="19" cy="43" r="4.4" fill="#F6A183" />
+  <g clip-path="url(#firnBerg)">
+    <!-- Der Gipfel im Alpengluehen. -->
+    <rect x="0" y="0" width="64" height="28" fill="#F6A183" />
+    <!-- Zwei Firnschichten darunter; die Luecken zeigen den Grund. -->
+    <rect x="0" y="30.5" width="64" height="6.5" fill="#FFFFFF" />
+    <rect x="0" y="39.5" width="64" height="7" fill="#FFFFFF" />
+  </g>
 </svg>
