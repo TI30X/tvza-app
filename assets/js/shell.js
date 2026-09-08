@@ -158,55 +158,13 @@ function base() {
   return location.pathname.includes('/pages/') ? '../' : './';
 }
 
-function shellAreaLinks(profile, linkBase, currentFile) {
-  return areaModuleKeys(profile)
-    .map(k => {
-      const m = MODULES[k];
-      const isCurrent = m.page.split('/').pop() === currentFile;
-      return `<a class="nav__bereich${isCurrent ? ' is-active' : ''}" href="${linkBase}${m.page}"
-                 data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
-                <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
-                <span class="nav__bereich-name" data-i18n="mod.${k}.name">${esc(m.name)}</span>
-              </a>`;
-    }).join('');
-}
+/* Hier standen shellAreaLinks und refreshShellAreaNavigation — die
+   offene Bereichsliste der Laptop-Leiste. Sie sind weg, seit die
+   Startseite die Bereiche traegt: sonst stehen sie zweimal auf
+   demselben Bildschirm.
 
-/** Refresh the open desktop area list after a personal visibility change. */
-export function refreshShellAreaNavigation(profile) {
-  const nav = document.querySelector('.nav');
-  if (!nav) return;
-
-  const links = shellAreaLinks(
-    profile,
-    base(),
-    location.pathname.split('/').pop() || 'index.html'
-  );
-  let section = nav.querySelector('.nav__section');
-  let list = nav.querySelector('.nav__bereiche');
-
-  if (!links) {
-    section?.remove();
-    list?.remove();
-    return;
-  }
-
-  const settings = nav.querySelector('.nav__settings');
-  if (!section) {
-    section = document.createElement('div');
-    section.className = 'nav__section marke';
-    section.textContent = label('nav.bereiche', 'Bereiche');
-    section.dataset.i18n = 'nav.bereiche';
-    nav.insertBefore(section, settings);
-  }
-  if (!list) {
-    list = document.createElement('div');
-    list.className = 'nav__bereiche';
-    nav.insertBefore(list, settings);
-  }
-  list.innerHTML = links;
-  relabel(list);
-  list.querySelectorAll('a[href]').forEach(link => { link.href = link.href; });
-}
+   areaModuleKeys bleibt: nav.js baut daraus weiterhin die Liste der
+   Seiten, die vorgeladen werden duerfen. */
 
 /** Which tab should be lit for the page we are on. */
 export function activeTab() {
@@ -254,6 +212,7 @@ export function mountShell(o = {}) {
   if (variant === 'bereich') {
     bar.innerHTML = `
       <div class="appbar__inner">
+        <span class="appbar__marke firn firn--hell" aria-hidden="true">Fir<b>n</b></span>
         <button class="appbar__btn" id="shellBack" data-i18n-attr="aria-label:a11y.zurueck" aria-label="Zurück">${icon('back')}</button>
         <span class="appbar__title">${esc(o.title || '')}</span>
         ${o.onSettings
@@ -268,6 +227,7 @@ export function mountShell(o = {}) {
       : `<div class="appbar__greet">${esc(o.title || '')}</div>`;
     bar.innerHTML = `
       <div class="appbar__inner">
+        <span class="appbar__marke firn firn--hell" aria-hidden="true">Fir<b>n</b></span>
         <div class="appbar__spacer">${heading}</div>
         <a class="wx-pill" id="shellWx" href="${b}pages/weather.html" style="display:none"></a>
         <button class="avatar" id="shellAvatar" data-i18n-attr="aria-label:a11y.konto" aria-label="Konto">${esc(initials)}</button>
@@ -292,15 +252,12 @@ export function mountShell(o = {}) {
       ${t.id === 'chat' ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>' : ''}
     </a>`).join('');
 
-  /* On a laptop the Bereiche are listed open under the tabs, so
-     reaching one is a single click. On a phone they are not rendered
-     at all — the Bereiche tab is the way there. */
+  /* Die Leiste traegt die vier Tabs und die Einstellungen. Die
+     Bereiche stehen auf Start — auf einem Laptop standen sie sonst
+     zweimal auf demselben Bildschirm. */
   const currentFile = location.pathname.split('/').pop() || 'index.html';
-  const bereiche = shellAreaLinks(o.profile, b, currentFile);
 
-  nav.innerHTML = tabs + (bereiche
-    ? `<div class="nav__section marke" data-i18n="nav.bereiche">Bereiche</div><div class="nav__bereiche">${bereiche}</div>`
-    : '') + (o.onSettings
+  nav.innerHTML = tabs + (o.onSettings
     ? `<a class="nav__item nav__settings" id="shellNavSettings" href="#">${icon('gear', 21)}<span data-i18n="nav.einstellungen">Einstellungen</span></a>`
     : '');
 
@@ -330,10 +287,12 @@ export function mountShell(o = {}) {
   if (window.tvzaShellModulesHandler) {
     window.removeEventListener('tvza-modules-change', window.tvzaShellModulesHandler);
   }
+  /* Die Huelle merkt sich die neue Auswahl, zeichnet aber nichts
+     nach: in der Leiste steht kein Bereich mehr. Die Startseite hoert
+     auf dasselbe Ereignis und zieht ihre Liste nach. */
   window.tvzaShellModulesHandler = event => {
     if (!event.detail || typeof event.detail !== 'object') return;
     shellState.profile = { ...(shellState.profile || {}), modules:event.detail };
-    refreshShellAreaNavigation(shellState.profile);
   };
   window.addEventListener('tvza-modules-change', window.tvzaShellModulesHandler);
 

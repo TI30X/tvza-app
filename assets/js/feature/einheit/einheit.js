@@ -21,7 +21,7 @@
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell } from '../../shell.js?v=7';
+import { mountShell } from '../../shell.js?v=8';
 import {
   ladeGruppe, ladePlaene, ladeProtokoll, protokollSpeichern,
 } from '../../groups.js';

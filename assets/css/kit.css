@@ -2058,7 +2058,8 @@ body.reorder-editing .module-tile::after {
   width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--danger);
 }
 .nav__count { display: none; }
-.nav__section, .nav__bereiche, .nav__settings { display: none; }
+.appbar__marke { display: none; }         /* nur auf dem Laptop */
+.nav__settings { display: none; }
 .nav a[aria-current="page"] { cursor: default; }
 /* Keep the bottom bar from covering the last row of content. */
 .has-nav { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
@@ -2496,11 +2497,14 @@ html.tvza-content-frame body > main {
     height: 64px; padding: 0 26px;
     display: flex; align-items: center; gap: calc(var(--ctl) * 0.25);
   }
-  /* Dasselbe Wortzeichen und derselbe Trennstrich auf jeder Seite. */
-  .appbar .appbar__inner::before {
-    content: "TvZ";
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 24px; font-weight: 700; line-height: 1;
+  /* Dasselbe Wortzeichen und derselbe Trennstrich auf jeder Seite.
+     Als echtes Element und nicht mehr als content: — generierter
+     Inhalt laesst sich nicht teilweise einfaerben, und das n braucht
+     seine eigene Farbe. Auf dem Navy traegt das Marken-Blau nicht,
+     darum firn--hell. */
+  .appbar__marke {
+    display: block;
+    font-size: 22px;
     padding-right: 16px;
     border-right: 1px solid rgba(255,255,255,0.2);
     align-self: center;
@@ -2539,31 +2543,6 @@ html.tvza-content-frame body > main {
     font-size: 11px; font-weight: 800;
   }
   /* Bereiche are listed open in the rail — one click instead of two. */
-  .nav__section  { display: block; margin: 18px 0 6px; padding: 0 12px; }
-  .nav__bereiche { display: flex; flex-direction: column; gap: 2px; }
-  .nav__bereich  {
-    display: flex; align-items: center; gap: 10px;
-    padding: 7px 12px; border-radius: var(--r-icon);
-    font-size: 13px; font-weight: 700; color: var(--ink);
-  }
-  .nav__bereich:hover { background: var(--surface-2); }
-  .nav__bereich.is-active {
-    background: var(--nav-active-bg);
-    color: var(--nav-active);
-  }
-  .nav__bereich-name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .nav__bereich i {
-    width: 26px; height: 26px; flex: none;
-    display: inline-flex; align-items: center; justify-content: center;
-    border-radius: var(--r-icon);
-    background: var(--tint, var(--surface-2)); color: var(--deep, var(--ink-soft));
-  }
-  .nav__bereich svg { width: 14px; height: 14px; }
   .nav__settings { display: flex; margin-top: auto; }
 
   .tvza-route-frame {

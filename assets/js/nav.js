@@ -23,7 +23,7 @@
 import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon, areaModuleKeys, TABS, TAB_I18N, activeTab } from './shell.js?v=7';
+import { ICONS, icon, areaModuleKeys, TABS, TAB_I18N, activeTab } from './shell.js?v=8';
 import { mountSettingsLayer } from './settings-layer.js';
 import { mountAppRouter } from './router.js?v=7';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
@@ -51,7 +51,7 @@ const relabel = root => window.TVZAI18n?.applyTo(root);
    Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
    weitergereicht, damit index.html sie wie bisher
    von nav.js beziehen können. */
-export { ownsTab } from './shell.js?v=7';
+export { ownsTab } from './shell.js?v=8';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');
@@ -65,53 +65,13 @@ function esc(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function areaLinks(profile) {
-  const b = base();
-  const currentFile = location.pathname.split('/').pop() || 'index.html';
-  return areaModuleKeys(profile)
-    .map(k => {
-      const isCurrent = MODULES[k].page.split('/').pop() === currentFile;
-      return `
-        <a class="nav__bereich${isCurrent ? ' is-active' : ''}" href="${b}${MODULES[k].page}"
-           data-bereich="${BEREICH_OF[k] || ''}" ${isCurrent ? 'aria-current="page"' : ''}>
-          <i>${icon(ICONS[k] ? k : 'bereiche', 14)}</i>
-          <span class="nav__bereich-name" data-i18n="mod.${k}.name">${esc(MODULES[k].name)}</span>
-        </a>`;
-    }).join('');
-}
+/* Hier stand einmal die Bereichsliste der Seitenleiste. Sie ist weg,
+   seit die Startseite sie traegt: auf einem Laptop standen die
+   Bereiche sonst ZWEIMAL auf demselben Bildschirm, links und in der
+   Mitte. "Eine Sache, ein Ort" (§6.4) gilt auch fuer Navigation.
 
-function refreshAreaNavigation(profile) {
-  const nav = document.querySelector('.nav');
-  if (!nav) return;
-  const links = areaLinks(profile);
-  let section = nav.querySelector('.nav__section');
-  let list = nav.querySelector('.nav__bereiche');
-
-  if (!links) {
-    section?.remove();
-    list?.remove();
-    return;
-  }
-  if (!section) {
-    section = document.createElement('div');
-    section.className = 'nav__section marke';
-    section.textContent = label('nav.bereiche', 'Bereiche');
-    section.dataset.i18n = 'nav.bereiche';
-    nav.appendChild(section);
-  }
-  if (!list) {
-    list = document.createElement('div');
-    list.className = 'nav__bereiche';
-    nav.appendChild(list);
-  }
-  list.innerHTML = links;
-  relabel(list);
-
-  /* pushState may have moved the address bar into /pages/. Freeze the
-     freshly rendered relative destinations now, just like the router
-     does on first mount. */
-  list.querySelectorAll('a[href]').forEach(link => { link.href = link.href; });
-}
+   Der Preis ist ein Klick mehr von einer anderen Seite aus — genau
+   der Weg, den ein Handy ohnehin immer geht. */
 
 function mount(profile) {
   const profileName = String(profile?.displayName || profile?.name || '').trim();
@@ -140,18 +100,11 @@ function mount(profile) {
         : ''}
     </a>`).join('');
 
-  /* On a laptop the Bereiche are listed open beneath the tabs, so a
-     Bereich is one click instead of two. On a phone they are not
-     rendered — that is what the Bereiche tab is for. */
-  const bereiche = areaLinks(profile);
-
   const nav = document.createElement('nav');
   nav.className = 'nav';
   nav.setAttribute('aria-label', label('nav.haupt', 'Hauptnavigation'));
   nav.dataset.i18nAttr = 'aria-label:nav.haupt';
-  nav.innerHTML = tabs + (bereiche
-    ? `<div class="nav__section marke" data-i18n="nav.bereiche">Bereiche</div><div class="nav__bereiche">${bereiche}</div>`
-    : '');
+  nav.innerHTML = tabs;
 
   document.body.appendChild(nav);
   relabel(nav);

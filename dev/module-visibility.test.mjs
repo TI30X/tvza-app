@@ -124,7 +124,11 @@ test('eine gespeicherte Auswahl erreicht Start und die Huelle', () => {
     /window\.dispatchEvent\(new CustomEvent\('tvza-modules-change'/
   );
   assert.match(shell, /window\.addEventListener\('tvza-modules-change'/);
-  assert.match(shell, /export function refreshShellAreaNavigation\(profile\)/);
+  /* Die Huelle MERKT sich die neue Auswahl, zeichnet aber nichts
+     nach — in der Leiste steht kein Bereich mehr. Die Startseite
+     hoert auf dasselbe Ereignis und zieht ihre Liste nach. */
+  assert.doesNotMatch(shell, /refreshShellAreaNavigation\(/,
+    'die Huelle zeichnet wieder eine Bereichsliste');
   assert.match(shell, /window\.tvzaShellModulesHandler = event =>/);
   assert.match(nav, /onSnapshot\(doc\(db, 'users', user\.uid\)/);
 });

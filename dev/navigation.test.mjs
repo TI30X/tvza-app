@@ -269,7 +269,11 @@ test('admin tools are an admin-only Bereich and module toggles show their real s
   assert.doesNotMatch(css, /\.tvza-route-(?:loader|skeleton)/);
   assert.match(css, /--nav-active:\s*var\(--brand-navy-deep\)/);
   assert.match(css, /\.nav__item\.is-active \{ color: var\(--nav-active\); font-weight: 700; \}/);
-  assert.match(css, /\.nav__bereich\.is-active \{[\s\S]*background: var\(--nav-active-bg\);[\s\S]*color: var\(--nav-active\)/);
+  /* Die Bereiche standen einmal offen in der Laptop-Leiste. Seit
+     v.35.19.0 traegt sie nur noch die vier Tabs — sonst standen sie
+     zweimal auf demselben Bildschirm. */
+  assert.doesNotMatch(css, /\.nav__bereich[ .{]/,
+    'die Leiste hat wieder eine Bereichsliste');
   // Phase A split .row--check (kit.css) and .admin-mod (feature/access.css)
   // into separate files, so the old fused comma-selector can no longer
   // appear in either — a direct confirmation the split kept them apart.
