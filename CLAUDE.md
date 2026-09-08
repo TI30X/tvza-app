@@ -1,197 +1,199 @@
 # CLAUDE.md
 
-Guidance for Claude Code when working in this repository.
+Anleitung für Claude Code in diesem Repository.
 
-## What this is
+## Was das ist
 
-TVZA is a private family web app (dashboard, calendar/reminders, Maturaarbeit
-tracker, food tracker, ski tracker, watchlist, weather, DMs). It is Timo's
-project; Michel builds and hosts it. The UI language is **German** — all
-user-facing strings, and commit messages, are written in German.
+**Firn** ist eine Trainingsplattform für Kader, Vereine und Gyms: Pläne,
+Termine, Videoanalyse, FIS-Punkte. Sie ist aus TVZA hervorgegangen — einer
+privaten Familien-App — und trägt deren Bereiche weiter (Kalender, Food,
+Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
 
-Current version: **v.31.2.6**. Remote: `TI30x/tvza-app`, branch `main`.
+**Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
+Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
 
-## Architecture — read this before suggesting tooling
+Version: **v.35.16.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Ausgerollt wird `main` — siehe Deploy weiter unten.
 
-- **Static site, no build step.** Plain HTML + ES modules + CSS. There is no
-  bundler, no framework, no `npm run build`. `index.html` is ~108 kB with the
-  app logic in an inline `<script type="module">`. Do not propose migrating to
-  React/Vite/TypeScript unless explicitly asked.
-- **Hosted on GitHub Pages** (`.nojekyll` at the root). Deploy = push to `main`.
-- **Firebase on the free Spark tier.** This is a hard budget constraint, not an
-  oversight. **No Cloud Functions, no Firebase Extensions, no Blaze-only
-  features.** `mailer/` exists to hold any server-side logic Spark can't run —
-  but there is currently no VPS or other host running it, so nothing drains
-  the `mail` collection today (see Commands below).
-- **Shared code lives in `assets/js/`**, feature pages in `pages/`, tests and
-  the style guide in `dev/` (nothing in `dev/` ships).
+Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
+Commit-Messages sind deutsch**, UI-Texte sind Katalogschlüssel.
 
-See `README.md` for the full Firestore data model — it is accurate and detailed;
-don't duplicate it here.
+## Aufbau — vor jedem Werkzeugvorschlag lesen
 
-## Commands
+- **Statische Seite, kein Build-Schritt.** HTML + ES-Module + CSS. Kein
+  Bundler, kein Framework, kein `npm run build`. Kein React/Vite/TypeScript
+  vorschlagen, solange nicht ausdrücklich danach gefragt wird.
+- **GitHub Pages** (`.nojekyll` in der Wurzel).
+- **Firebase auf dem Spark-Tarif.** Harte Budgetgrenze, kein Versehen.
+  **Keine Cloud Functions, keine Extensions, nichts, was Blaze braucht.**
+- **Gemeinsamer Code in `assets/js/`**, Seitenmodule in
+  `assets/js/feature/<seite>/`, Seiten in `pages/`, Tests und Werkzeuge in
+  `dev/` (nichts aus `dev/` wird ausgeliefert).
 
-Run tests from the repo root:
+Das Firestore-Datenmodell steht ausführlich in `README.md`.
+
+## Befehle
 
 ```bash
 cd dev
-npm install                                        # first time only (jsdom)
+npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-The `--experimental-vm-modules` flag is required by `html-module-syntax.test.mjs`.
-`itinerary.test.mjs` is the slow one (jsdom); the other 15 files run in ~2 s and
-total 73 tests. All should pass before any commit.
+41 Testdateien, **424 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+Alle grün vor jedem Commit.
 
-Firestore rules — validate against the emulator:
-
-```bash
-cd validation
-firebase emulators:start --only firestore
-```
-
-Deploy the rules:
+Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
 
 ```bash
-firebase deploy --only firestore:rules --project <project-id>
+node dev/i18n-src/build.mjs
 ```
 
-Mail worker — **not currently running anywhere.** `mailer/README.md` documents
-a PM2-on-a-Hostinger-VPS setup, but no such VPS exists; invitation emails are
-confirmed not being delivered. The commands below are what to run *if* a host
-is provisioned, not a description of current state:
+Firestore-Regeln ausrollen:
 
 ```bash
-pm2 restart tvza-mailer && pm2 logs tvza-mailer
+firebase deploy --only firestore:rules
 ```
 
-## Traps specific to this repo
+## Fallen in diesem Repo
 
-**1. Firestore rules drift.** The rules have historically been deployed by
-pasting into the Firebase Console, so the live copy and `firestore.rules` in git
-drift apart. This has already caused a silent production outage — the live rules
-were missing the whole `users/{uid}/maturaProgress/{progressId}` block, so
-Maturaarbeit progress sync was denied for days with no error surfaced.
+**1. Versionsnummern sind zwei Dateien.** `APP_VERSION` in
+`assets/js/ui-fx.js` und `const CACHE` in `sw.js` müssen übereinstimmen.
+`dev/security-model.test.mjs` erzwingt es. Bei **jeder** Änderung an einer
+Hüllendatei bumpen, sonst bekommen zurückkehrende Nutzer einen alten
+Service-Worker-Vorrat.
 
-Never assume the deployed rules match the file. When auditing security, diff the
-live rules against `git show HEAD:firestore.rules` first. Prefer
-`firebase deploy --only firestore:rules` over manual pasting — using the CLI is
-the actual fix for this class of bug.
+Dasselbe gilt für `?v=` an `kit.css` und den Seitenmodulen: ändert sich das
+Stylesheet, muss die Zahl in **allen** Seiten und in `sw.js` mitwandern.
+Sonst sieht man neues Markup mit altem Stylesheet.
 
-**2. Version bumps are two files.** `APP_VERSION` in `assets/js/ui-fx.js` and
-`const CACHE` in `sw.js` must always match. A test in
-`dev/security-model.test.mjs` enforces it. Bump both on **every** change to a
-shell file (`index.html`, `login.html`, anything in `assets/`) or returning
-users get a stale service-worker cache.
+**2. Die Regeln sind die Wahrheit, nicht die Oberfläche.** Mitgliedschaft,
+Gruppenisolation und einmalige Einladungscodes stehen in `firestore.rules`
+(1229 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
+halten die Invarianten fest — Regeländerungen gehören im selben Commit dorthin.
 
-**3. Security rules are the source of truth, not the UI.** Membership,
-per-calendar-group isolation, and single-use invites are all enforced in
-`firestore.rules` — e.g. `inviteIsValid` requires `!existsAfter(...)` on the
-invite doc so the code is atomically consumed. `dev/security-model.test.mjs` and
-`dev/rules-regression.test.mjs` assert these invariants statically. If you change
-the rules, update those tests in the same commit.
+Historisch drifteten Datei und Live-Stand auseinander, weil die Regeln in die
+Konsole gepastet wurden. Seit es `firebase.json` gibt, läuft der Ausrollweg
+über die CLI. Vor jedem Audit trotzdem gegen den Live-Stand prüfen.
 
-**4. Guest vs. member.** A Firebase login alone is not membership. `isMember()`
-requires a `users/{uid}` profile, absence of a `guestProfiles/{uid}` doc, and —
-only when `config/tvza.requireEmailVerification` is true — a verified email.
-Note this is deliberately **fail-open**: if `config/tvza` doesn't exist,
-verification is not required. That's the intended beta default.
+**3. Was ein Bereich ist.** Ein Bereich qualifiziert sich, wenn alle fünf
+zutreffen. Das ist die Schranke, die verhindert, dass die App wieder elf
+Module wird.
 
-**5. Was ein Bereich ist.** A Bereich qualifies when all five are true. This
-is the gate for every future feature, and it is what stops the app from
-becoming eleven modules again.
+1. **Für sich allein lauffähig.** Keine Abhängigkeit von anderen Modulen.
+2. **Für neue Konten aus.** Nur der Kern ist an.
+3. **Ein Ort.** Was einen Tab hat, steht nicht zusätzlich in der Heute-Liste.
+4. **Tag-eins-Test.** Ein frisches, leeres Konto öffnet ihn und sieht in
+   einem Tipp eine offensichtliche erste Handlung. Ist die Antwort „ein
+   leerer Bildschirm", ist er nicht öffentlich, sondern persönlich.
+5. **Eine Plättchenfarbe**, ein Eintrag in der Bereichsliste. Nichts bekommt
+   eine zweite Oberfläche.
 
-1. **Self-contained.** It works with no other module switched on. No
-   cross-module dependency.
-2. **Off by default** for new accounts. The Kern is the only thing that is on.
-3. **One place only.** If it has a tab it does not also appear in the Heute
-   list (the old handoff's "eine Sache, ein Ort" rule — it stands, and it is
-   right).
-4. **Day-one test.** A brand-new empty account opens it and sees an obvious
-   first action, in one tap, with no setup. If the answer is "an empty
-   screen", it is not ready to be public — it is ready to be `Persönlich`.
-5. **One icon plate colour** from the palette, one entry in the Bereiche
-   list, one row in the desktop sidebar. Nothing gets a second surface.
+**4. Seiten-Invariante.** Eine Seitendatei enthält Markup, `<link>`s und
+**ein** `<script type="module" src="…">`. Kein `<style>`-Block, kein
+Inline-Modul, kein `style="…"`, keine Hex-Farbe ausser `theme-color`, kein
+Emoji als Funktionssymbol.
 
-**6. Seiten-Invariante.** A page file contains markup, `<link>`s, and one
-`<script type="module" src="…">`. No `<style>` block, no inline module, no
-`style="…"`, no hex colour, no emoji as a function symbol.
+`index.html` hielt das lange nicht — sie trug 2000 Zeilen Code in drei
+Inline-Modulen. Seit v.35.11.0 liegen die in `assets/js/feature/start/`.
 
-## Known open items
+**5. Der Katalog gewinnt, aber erst später.** `t()` gibt bei einem
+unbekannten Schlüssel den **Schlüssel** zurück, nie `undefined` — darum
+greift `t(k) ?? 'deutsch'` **nie**. Immer `tOr(key, fallback)` benutzen.
 
-- `APP_CHECK_SITE_KEY` in `assets/js/app-check-config.js` is still `''`, so App
-  Check is prepped but not enforced. Free on Spark; worth finishing before wider
-  beta distribution.
-- The login lockout in `assets/js/auth-security.js` is localStorage-only
-  (5 attempts / 15 min). It is UX friction, **not** brute-force protection — it
-  is trivially bypassed by clearing storage or switching browsers. Firebase's
-  server-side throttling plus App Check are the real defence.
-- No 2FA/MFA anywhere. SMS 2FA needs Identity Platform (paid), so this is
-  deferred rather than forgotten.
-- `mailer/worker.js` reads the **entire** `mail` collection every poll and
-  filters in JS, because `index.html` enqueues docs with no `delivery` field to
-  query on. Fine at current volume; fix by writing
-  `delivery: { state: 'PENDING', attempts: 0 }` at enqueue time and querying
-  with a `.limit()`.
+Und: der Katalog kommt asynchron. Wer einem Element, das der Code selbst
+beschriftet, zusätzlich ein `data-i18n` gibt, bekommt einen Wettlauf, den der
+Katalog gewinnt — die Ansicht steht dann in einem Zustand und trägt die
+Beschriftung des anderen. Auf `pages/gruppe.html` hält ein Test sechs solche
+Elemente frei.
 
-## Conventions
+**6. Gast gegen Mitglied.** Eine Firebase-Anmeldung allein ist keine
+Mitgliedschaft. `isMember()` verlangt ein `users/{uid}`-Profil, kein
+`guestProfiles/{uid}`, und — nur wenn `config/tvza.requireEmailVerification`
+gesetzt ist — eine bestätigte Adresse. Bewusst **fail-open**: ohne
+`config/tvza` wird nicht verlangt. Das ist die Beta-Vorgabe.
 
-- German for UI strings, comments in the rules file, and commit messages.
-  Feature commits use the form `v.31.2.0: <German summary>`.
-- Secrets never enter the repo: `mailer/.env` and all `*service-account*.json`
-  are gitignored. The reCAPTCHA site key is public and safe to commit.
-- Every behavioural change gets a test in `dev/`. That suite is the main safety
-  net given there's no type checker and no build step.
+## Ausrollen
 
-## Mehrsprachigkeit (seit v.32.0.0)
+`main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
 
-Die Oberfläche gibt es in sieben Sprachen: de, en, fr, it, pl, nl, es.
+```bash
+git push origin firn:main
+```
 
-- **Quelle sind die Tabellen in `dev/i18n-src/`:** `catalog.py` für Hülle,
-  Navigation und Einstellungen, `catalog_pages*.py` für die Bereichsseiten.
-  Alle haben dieselbe Form — Schlüssel auf ein Tupel `(de, en, fr, it, pl, nl,
-  es)`. `node dev/i18n-src/build.mjs` führt sie zusammen und erzeugt
-  `assets/i18n/<lang>.json`. Die JSON-Dateien werden mitversioniert — die App
-  hat weiterhin keinen Build-Schritt, das Skript läuft nur, wenn jemand am
-  Katalog arbeitet. Doppelte Schlüssel über zwei Tabellen brechen den Build.
-- **Schlüssel ins Markup setzen:** `python3 dev/i18n-src/apply_keys.py [seite …]`
-  annotiert Elemente, deren Inhalt reiner Text ist und genau einer deutschen
-  Beschriftung entspricht. `<script>` und `<style>` bleiben unberührt. Jede
-  Seite bekommt nur ihre eigenen Namensräume zugestanden — darum darf „Datum"
-  auf der Ski-Seite `ski.datum` und im Kalender `cal.datum` sein. Danach immer
-  gegenprüfen, dass wirklich nur Attribute dazugekommen sind (Tag-Folge und
-  sichtbarer Text müssen identisch bleiben).
-- **UI-Strings sind Schlüssel, `de.json` ist die Quelle.** Die alte Regel
-  „UI-Strings sind deutsch" gilt für neue Texte nicht mehr. Kommentare und
-  Commit-Messages bleiben deutsch.
-- **Markup-Verträge:** `data-i18n="key"` für Text, `data-i18n-html` nur wo
-  Markup im String steckt, `data-i18n-attr="aria-label:key;title:key2"` für
-  Attribute, `data-i18n-vars='{"n":3}'` für Platzhalter.
-- **Additiv:** `assets/js/i18n.js` übersetzt ausschliesslich Elemente mit
-  `data-i18n`. Eine Seite ohne diese Attribute läuft unverändert weiter und
-  zeigt ihr deutsches Markup. Deshalb kann eine halb umgestellte Seite nichts
-  kaputt machen — was fehlt, bleibt deutsch.
+**Michel entscheidet, wann.** Nie ungefragt auf `main` pushen.
+
+## Mehrsprachigkeit
+
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **574 Schlüssel** aus zehn
+Tabellen in `dev/i18n-src/`.
+
+- **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
+  `(de, en, fr, it, pl, nl, es)`. `node dev/i18n-src/build.mjs` erzeugt
+  `assets/i18n/<lang>.json`; die JSON-Dateien werden mitversioniert, damit
+  die App ohne Build-Schritt auskommt. Doppelte Schlüssel über zwei Tabellen
+  brechen den Bau.
+- **Der Bau läuft in Node, nicht in Python.** Auf dieser Maschine ist kein
+  Python installiert. `apply_keys.py` ist deshalb **nicht** benutzbar —
+  Schlüssel werden von Hand oder per Skript gesetzt, und danach wird
+  gegengeprüft, dass nur Attribute dazugekommen sind (Tag-Folge und
+  sichtbarer Text identisch).
+- **Verträge:** `data-i18n` für Text, `data-i18n-html` nur wo Markup im
+  String steckt, `data-i18n-attr="aria-label:key;title:key2"`,
+  `data-i18n-vars='{"n":3}'`.
+- **Additiv.** Übersetzt wird nur, was ein `data-i18n` trägt. Eine halb
+  umgestellte Seite kann nichts kaputt machen — was fehlt, bleibt deutsch.
 - **Inhalte werden nicht übersetzt.** Termine, Nachrichten, Projektnamen und
-  die Übungsnamen aus dem Excel-Import gehören den Nutzern und bleiben so,
-  wie sie eingegeben wurden.
+  Übungsnamen gehören den Nutzern.
 - **Formate über `Intl`,** nie über Strings: `TVZAI18n.format.date/time/
-  number/relative/plural`. Polnisch hat drei Pluralformen — von Hand geht das
-  nicht gut.
-- **Persistenz:** `localStorage['tvza-lang']` trägt die Wahl auf dem Gerät,
-  `users/{uid}.lang` über Geräte hinweg. Ohne eigene Wahl folgt die App
-  `navigator.language`.
-- **`dev/i18n.test.mjs`** prüft, dass alle sieben Dateien denselben
-  Schlüsselsatz haben, dass kein `data-i18n` ins Leere zeigt und dass die
-  Kataloge im Service-Worker-Vorrat stehen. Nach jeder Katalog-Änderung
-  laufen lassen.
+  number/relative/plural`. Polnisch hat drei Pluralformen.
+- **`dev/i18n.test.mjs`** findet die Seiten selbst, statt sie aufzuzählen.
+  Eine neue Seite ist damit automatisch abgedeckt.
 
-**Der Katalogbau läuft in Node, nicht in Python.** Auf dieser Maschine ist
-kein Python installiert, und dadurch war der Katalog monatelang nicht baubar
-— jede neue Beschriftung blieb ohne Schlüssel. `dev/i18n-src/build.mjs`
-liest dieselben `catalog*.py`-Tabellen und erzeugt dieselben Dateien;
-`build.py` bleibt liegen und funktioniert weiter. Dass beide dasselbe
-ergeben, hält `dev/i18n-build.test.mjs` fest — inklusive der Prüfung, dass
-die eingecheckten JSON-Dateien wirklich aus dem Katalog gebaut sind.
+## Trainingspläne
 
-**Nicht mehr aktuell:** `dev/training-ui.test.mjs` galt als hängend. Er
-läuft (13 Tests, grün) — der Vermerk stammte aus einer älteren Umgebung.
+Die Vorlage ist die Excel des Kaders (BSV Perspektivkader): ein
+**Wochenplan** als Raster 7 Tage × Vormittag/Nachmittag, dessen Zellen die
+Einheiten beim Namen nennen — und je ein Blatt pro Einheit.
+
+`assets/js/training-parser.js` (840 Zeilen) liest sie und vergibt sechs Modi:
+`sets`, `rounds`, `timed`, `block`, `note`, `video`. Nur `sets` hat Sätze zum
+Eintragen; Mobi ist eine Liste von Videolinks, Ausdauer eine Zonentabelle.
+
+Zwei Dinge, die leicht übersehen werden:
+
+- **Der Videolink** steht in der Vorlage eine Zeile unter dem Übungsnamen und
+  liegt als `item.video` vor. Er wandert in ein `href` — `videoUrl()` prüft
+  darum das Protokoll.
+- **Ein Plan läuft zwei Wochen.** TW17 und TW18 stehen untereinander in
+  derselben Übung; das ist der Vergleich, der Fortschritt zeigt. `item.history`
+  trägt die andere Woche, `vorwochen()` räumt leere Zeilen weg.
+
+## Offene Punkte
+
+- **Kein Server.** Das blockiert vier Dinge auf einmal: Einladungsmails
+  (`mailer/` schreibt in die `mail`-Sammlung, niemand leert sie), das
+  Kalender-Abo (`worker/` ist fertig, nirgends ausgerollt), das Abo/Bezahlen
+  (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
+  Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
+  entschieden, dass ein Server später dazukommt.
+- **Die App ist nie end-zu-end durchgeklickt worden.** 424 Unit-Tests, aber
+  kein einziger Lauf gegen echtes Firestore.
+- `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
+- Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
+  Bequemlichkeit, **kein** Schutz gegen Brute Force.
+- Kein 2FA. SMS braucht Identity Platform (kostenpflichtig).
+- Ältere Seiten sind noch überwiegend deutsch: `maturaarbeit.html`,
+  `guest.html`, `training.html`, `admin.html`.
+
+## Gewohnheiten
+
+- Deutsch für Kommentare und Commit-Messages. Form:
+  `v.35.16.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  **Warum** erklärt — besonders bei Fehlern, die still waren.
+- Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
+  `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
+- **Jede Verhaltensänderung bekommt einen Test in `dev/`.** Ohne
+  Typprüfung und ohne Build-Schritt ist die Suite das einzige Netz.
+- Findet ein Test einen Fehler, ist meistens der Test im Recht. Wenn nicht,
+  gehört in denselben Commit, warum nicht.
