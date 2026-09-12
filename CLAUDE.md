@@ -298,7 +298,8 @@ Zwei Dinge, die leicht übersehen werden:
 - **Regeln ohne Emulator.** Auf dieser Maschine gibt es kein Java; die
   Regeln werden vor dem Ausrollen nur mit `--dry-run` gegen das Projekt
   kompiliert, nicht gegen Testfaelle gefahren. Zuletzt ausgerollt mit
-  v.35.27.0 (`bezeichnung` an Terminen, `groups/{gid}/kontakte`).
+  v.35.32.0 (`tripGruppe()`, Übernahme-Marke an `families`, Schutz der
+  Familienkennung beim Anlegen einer Gruppe) — Regeln VOR dem Code.
 
 ## Gewohnheiten
 
