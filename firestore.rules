@@ -170,10 +170,25 @@ service cloud.firestore {
           .data.get('headUid', '') == request.auth.uid;
     }
 
+    /* Eine Reise gehoert einer Gruppe. trips.familyId heisst noch so, meint
+       aber seit v.35.32.0 die Gruppe: eine uebernommene Familie traegt als
+       Gruppe DIESELBE Kennung (groups/{familyId}), und eine Gruppe, die nie
+       eine Familie war, schreibt ihre eigene Kennung hinein. Zugang hat, wer
+       in der alten Familie steht ODER Mitglied der Gruppe ist — das Erste,
+       damit nichts verschwindet, solange der Kopf noch nicht uebernommen
+       hat. Dass niemand eine Gruppe mit der Kennung einer FREMDEN Familie
+       anlegt und so an deren Reisen kommt, haelt die Regel fuer
+       /groups/{gid} (create). */
+    function tripGruppe(gid) {
+      return gid is string
+        && gid.size() > 0
+        && (inFamily(gid) || inGroup(gid));
+    }
+
     function canUseTrip(tripId) {
       return tripId is string
         && exists(/databases/$(database)/documents/trips/$(tripId))
-        && inFamily(
+        && tripGruppe(
           get(/databases/$(database)/documents/trips/$(tripId)).data.get('familyId', '')
         );
     }
@@ -771,6 +786,17 @@ service cloud.firestore {
                         == resource.data.get('members', []).removeAll([request.auth.uid])
                       && request.resource.data.get('managers', [])
                         == resource.data.get('managers', []).removeAll([request.auth.uid])
+                    )
+                    // Uebernahme (v.35.32.0): der Kopf markiert die Familie als
+                    // uebernommen — nur dieses eine Feld, nur auf true, und nur,
+                    // wenn die Gruppe mit derselben Kennung wirklich steht.
+                    || (
+                      isMember()
+                      && resource.data.get('headUid', '') == request.auth.uid
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['uebernommen'])
+                      && request.resource.data.uebernommen == true
+                      && exists(/databases/$(database)/documents/groups/$(id))
                     );
 
       allow delete: if isMember()
@@ -800,6 +826,15 @@ service cloud.firestore {
                     ])
                     && existsAfter(
                       /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid)
+                    )
+                    // Die Kennung einer alten Familie darf nur deren Kopf
+                    // belegen. Sonst legte jemand groups/{fremdeFamilie} an,
+                    // waere dort Kopf — und laese ueber tripGruppe() die
+                    // Reisen einer Familie, der er nie angehoert hat.
+                    && (
+                      !exists(/databases/$(database)/documents/families/$(gid))
+                      || get(/databases/$(database)/documents/families/$(gid))
+                        .data.get('headUid', '') == request.auth.uid
                     );
 
       allow update: if
@@ -1231,17 +1266,17 @@ service cloud.firestore {
     }
 
     match /trips/{tripId} {
-      allow get: if inFamily(resource.data.get('familyId', ''))
+      allow get: if tripGruppe(resource.data.get('familyId', ''))
                  || hasGuestAccess(tripId);
-      allow list: if inFamily(resource.data.get('familyId', ''));
-      allow create: if inFamily(request.resource.data.get('familyId', ''))
+      allow list: if tripGruppe(resource.data.get('familyId', ''));
+      allow create: if tripGruppe(request.resource.data.get('familyId', ''))
                     && request.resource.data.createdBy == request.auth.uid;
       // Moving a trip is allowed only between groups the caller belongs to.
-      allow update: if inFamily(resource.data.get('familyId', ''))
-                    && inFamily(request.resource.data.get('familyId', ''))
+      allow update: if tripGruppe(resource.data.get('familyId', ''))
+                    && tripGruppe(request.resource.data.get('familyId', ''))
                     && request.resource.data.get('createdBy', '')
                       == resource.data.get('createdBy', '');
-      allow delete: if inFamily(resource.data.get('familyId', ''));
+      allow delete: if tripGruppe(resource.data.get('familyId', ''));
     }
 
     match /activities/{id} {

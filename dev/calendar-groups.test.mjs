@@ -24,13 +24,26 @@ test('dashboard calendar includes trips from all memberships', async () => {
   assert.match(dashboard, /familyIds\.has\(x\.familyId\)/);
 });
 
-test('calendar colors belong to calendars and group management has real controls', async () => {
+/* Bis v.35.31.0 stand hier: "group management has real controls" — der
+   Test verlangte renameGroup, toggleGroupManager, transferGroupHead und
+   removeGroupMember im Kalender. Das war die zweite Gruppenverwaltung
+   (families) neben dem Gruppe-Tab. Seit v.35.32.0 gibt es EIN Modell;
+   der Test haelt jetzt fest, dass die zweite nicht zurueckkommt. */
+test('der Kalender verwaltet keine eigenen Gruppen mehr — das tut der Gruppe-Tab', async () => {
   const planner = await read('pages/planner.html');
-  assert.match(planner, /calendarColor:color/);
-  assert.match(planner, /function renameGroup\(\)/);
-  assert.match(planner, /function toggleGroupManager\(uid\)/);
-  assert.match(planner, /function transferGroupHead\(uid,name\)/);
-  assert.match(planner, /function removeGroupMember\(uid,name\)/);
+  for (const fn of ['renameGroup', 'toggleGroupManager', 'transferGroupHead', 'removeGroupMember',
+                    'createGroup', 'joinGroup', 'leaveGroup', 'approve', 'renderGroupCard']) {
+    assert.doesNotMatch(planner, new RegExp(`function ${fn}\\(`), `${fn} ist zurueck`);
+  }
+  assert.doesNotMatch(planner, /(updateDoc|addDoc|setDoc)\(\s*(doc|collection)\(db,\s*'families'/,
+    'der Kalender schreibt wieder in families');
+  assert.doesNotMatch(planner, /'familyDirectory'/, 'Beitritt per Namenssuche ist zurueck');
+  assert.match(planner, /function zurGruppenseite\(\) \{ location\.href = '\.\/gruppe\.html'; \}/);
+  assert.match(planner, /\$\('manageGroupsBtn'\)\.onclick=zurGruppenseite/);
+  assert.match(planner, /\$\('addGroupBtn'\)\.onclick=zurGruppenseite/);
+  /* Eine Farbe je Gruppe, fuer Reisen und Termine dieselbe — und
+     dieselbe wie im Gruppenwechsler. */
+  assert.match(planner, /gruppenFarben = teamFarben\(groups, GROUP_COLORS\)/);
   assert.doesNotMatch(planner, /id="tSwatch"|id="dSwatch"/);
 });
 
@@ -57,18 +70,17 @@ test('calendar actions use aligned icons and compact calendars remain readable',
   assert.match(css, /\.calendar-month \.evchip \{[\s\S]*font-size:12px/);
 });
 
-test('group people use consistent initial avatars in lists and requests', async () => {
+/* Hier stand bis v.35.31.0 ein Test auf die Avatare in der Mitglieder-
+   liste und den Beitrittsanfragen der Kalendergruppen. Beides gibt es im
+   Kalender nicht mehr (die Mitglieder zeigt der Gruppe-Tab). Was bleibt:
+   keine toten Reste — kein Markup, keine Helfer, keine Stile. */
+test('von der alten Mitgliederliste bleibt nichts zurueck', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
     read('assets/css/feature/calendar.css'),
   ]);
-
-  assert.match(planner, /function personInitials\(name\)/);
-  assert.match(planner, /function personAvatar\(name, uid/);
-  assert.match(planner, /group-avatar-stack/);
-  assert.match(planner, /group-request-copy/);
-  assert.match(css, /--person-bg/);
-  assert.match(css, /\.group-member-avatar--stacked/);
+  assert.doesNotMatch(planner, /personAvatar|group-avatar-stack|group-request-copy|id="groupManageSheet"|id="groupSheet"/);
+  assert.doesNotMatch(css, /\.group-(manage|member|avatar|request)/);
 });
 
 test('imported programs stay in TVZA and share completion state live', async () => {

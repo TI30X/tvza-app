@@ -108,10 +108,17 @@ test('calendar group data is scoped to the group, not to the whole family', asyn
   }
   assert.match(rules, /function inFamily\(familyId\)[\s\S]*request\.auth\.uid in familyData\(familyId\)\.get\('members', \[\]\)/);
 
+  /* Seit v.35.32.0 gehoert eine Reise einer GRUPPE: trips.familyId ist die
+     Kennung der Gruppe, und eine uebernommene Familie traegt als Gruppe
+     dieselbe. Zugang: alte Familie ODER Mitglied der Gruppe — und nie
+     mit leerer Kennung, sonst pruefte inGroup('') einen Unsinnspfad. */
+  assert.match(rules, /function tripGruppe\(gid\) \{\s*return gid is string\s*&& gid\.size\(\) > 0\s*&& \(inFamily\(gid\) \|\| inGroup\(gid\)\);/);
   const trips = rules.match(/match \/trips\/\{tripId\} \{([\s\S]*?)\n    \}/)?.[1] || '';
   assert.ok(trips);
-  assert.match(trips, /allow list: if inFamily\(resource\.data\.get\('familyId', ''\)\)/);
-  assert.match(trips, /allow create: if inFamily\(request\.resource\.data\.get\('familyId', ''\)\)/);
+  assert.match(trips, /allow list: if tripGruppe\(resource\.data\.get\('familyId', ''\)\)/);
+  assert.match(trips, /allow create: if tripGruppe\(request\.resource\.data\.get\('familyId', ''\)\)/);
+  assert.doesNotMatch(trips, /inFamily\(/, 'eine Reiseregel prueft wieder nur die alte Familie');
+  assert.match(rules, /function canUseTrip\(tripId\)[\s\S]*?tripGruppe\(/);
 
   const activities = rules.match(/match \/activities\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] || '';
   const attachments = rules.match(/match \/attachments\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] || '';
@@ -132,8 +139,33 @@ test('group documents stay unreadable outside the group and names live in a dire
   assert.match(families, /request\.resource\.data\.inviteToken == resource\.data\.inviteToken/);
   assert.match(rules, /match \/familyDirectory\/\{familyId\}/);
 
-  assert.match(planner, /collection\(db,'familyDirectory'\), where\('name','==',name\)/);
+  /* Bis v.35.31.0 suchte der Kalender Gruppen per Name im Verzeichnis
+     (Beitrittsanfrage). Beigetreten wird jetzt nur mit einem Code im
+     Gruppe-Tab; der Kalender liest das Verzeichnis nicht mehr. */
+  assert.doesNotMatch(planner, /'familyDirectory'/);
   assert.doesNotMatch(planner, /Math\.random\(\)\.toString\(36\)\.slice\(2,10\)/);
+});
+
+test('niemand belegt die Kennung einer fremden Familie mit einer Gruppe', async () => {
+  /* Die Uebernahme legt groups/{familyId} an, und tripGruppe() gibt den
+     Mitgliedern dieser Gruppe die Reisen der Familie. Ohne diese Klammer
+     legte jemand groups/{fremdeFamilie} an, waere dort Kopf und laese
+     die Reisen einer Familie, der er nie angehoert hat. */
+  const rules = await read('firestore.rules');
+  const gruppen = rules.match(/match \/groups\/\{gid\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  const anlegen = gruppen.match(/allow create:([\s\S]*?);\n/)?.[1] || '';
+  assert.match(anlegen, /!exists\(\/databases\/\$\(database\)\/documents\/families\/\$\(gid\)\)\s*\|\| get\(\/databases\/\$\(database\)\/documents\/families\/\$\(gid\)\)\s*\.data\.get\('headUid', ''\) == request\.auth\.uid/);
+});
+
+test('als uebernommen markiert nur der Kopf, nur dieses Feld, und nur mit stehender Gruppe', async () => {
+  const rules = await read('firestore.rules');
+  const families = rules.match(/match \/families\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  const zweig = families.match(/\/\/ Uebernahme \(v\.35\.32\.0\)[\s\S]*?\)\s*;/)?.[0] || '';
+  assert.ok(zweig, 'der Zweig fuer die Uebernahme fehlt');
+  assert.match(zweig, /resource\.data\.get\('headUid', ''\) == request\.auth\.uid/);
+  assert.match(zweig, /affectedKeys\(\)\s*\.hasOnly\(\['uebernommen'\]\)/);
+  assert.match(zweig, /request\.resource\.data\.uebernommen == true/);
+  assert.match(zweig, /exists\(\/databases\/\$\(database\)\/documents\/groups\/\$\(id\)\)/);
 });
 
 test('a member cannot slip into a calendar group by editing their own profile', async () => {

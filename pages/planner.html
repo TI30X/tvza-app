@@ -14,7 +14,7 @@
   <script src="../assets/js/i18n.js?v=1"></script>
   <link rel="stylesheet" href="../assets/css/kit.css?v=12" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=14" />
+  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=15" />
   <link rel="stylesheet" href="../assets/css/feature/planner.css?v=2" />
   <title>Kalender &amp; Erinnerungen — Firn</title>
   <style>
@@ -259,17 +259,14 @@
 
     <main class="main">
       <!-- No group -->
+      <!-- Ohne Gruppe: EIN Weg hinein, in den Gruppe-Tab. Bis v.35.31.0
+           standen hier ein eigenes Anlegen und ein Beitritt per Namenssuche
+           fuer die Kalendergruppen — ein zweites Gruppensystem. -->
       <div id="noGroup" style="display:none">
         <div class="grp-card">
-          <p class="sub-title" data-i18n="cal.gruppeErstellen">Gruppe erstellen</p>
-          <div class="field"><input class="form-input" id="newGrpName" type="text" placeholder="Name der Gruppe (z.B. Familie van Zanten)" data-i18n-attr="placeholder:cal.gruppennameBsp" /></div>
-          <button class="btn btn-primary btn-block" id="createGrpBtn" data-i18n="cal.gruppeErstellen">Gruppe erstellen</button>
-        </div>
-        <div class="grp-card">
-          <p class="sub-title" data-i18n="cal.gruppeBeitreten">Gruppe beitreten</p>
-          <div class="field"><input class="form-input" id="joinGrpName" type="text" placeholder="Gruppenname eingeben" data-i18n-attr="placeholder:cal.gruppennameEingeben" /></div>
-          <button class="btn btn-primary btn-block" id="joinGrpBtn" data-i18n="cal.beitrittAnfragen">Beitritt anfragen</button>
-          <p id="joinStatus" style="font-size:12px;color:var(--ink-soft);margin-top:8px"></p>
+          <p class="sub-title" data-i18n="cal.keineGruppe">Noch keine Gruppe</p>
+          <p class="calendar-setup-copy" data-i18n="cal.keineGruppeSub">Reisen und Termine teilst du in einer Gruppe. Lege eine an oder tritt mit einem Code bei.</p>
+          <a class="btn btn-primary btn-block" id="noGroupLink" href="./gruppe.html" data-i18n="cal.zurGruppenseite">Gruppe anlegen oder beitreten</a>
         </div>
       </div>
 
@@ -494,34 +491,6 @@
     <button class="btn btn-danger btn-block" id="tripFormDelete" style="display:none;margin-top:8px" data-i18n="cal.terminLoeschen">Termin löschen</button>
   </div>
 
-  <!-- Group create/join sheet -->
-  <div class="backdrop" id="groupBackdrop"></div>
-  <div class="sheet" id="groupSheet">
-    <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.gruppeHinzufuegenTitel">Kalendergruppe hinzufügen</span>
-      <button class="icon-pill" id="groupSheetClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen">×</button></div>
-    <div class="grp-card">
-      <p class="sub-title" data-i18n="cal.neueGruppe">Neue Gruppe</p>
-      <div class="field"><input class="form-input" id="newGrpNameMore" type="text" placeholder="z.B. Familie, Verein oder Arbeit" data-i18n-attr="placeholder:cal.bspGruppe" /></div>
-      <button class="btn btn-primary btn-block" id="createMoreGrpBtn" type="button" data-i18n="cal.gruppeErstellen">Gruppe erstellen</button>
-    </div>
-    <div class="grp-card">
-      <p class="sub-title" data-i18n="cal.weitererGruppe">Weiterer Gruppe beitreten</p>
-      <div class="field"><input class="form-input" id="joinGrpNameMore" type="text" placeholder="Gruppenname eingeben" data-i18n-attr="placeholder:cal.gruppennameEingeben" /></div>
-      <button class="btn btn-secondary btn-block" id="joinMoreGrpBtn" type="button" data-i18n="cal.beitrittAnfragen">Beitritt anfragen</button>
-      <p id="joinMoreStatus" style="font-size:12px;color:var(--ink-soft);margin-top:8px"></p>
-    </div>
-  </div>
-
-  <!-- Group management -->
-  <div class="backdrop" id="groupManageBackdrop"></div>
-  <div class="sheet group-management-sheet" id="groupManageSheet">
-    <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.gruppenFamilien">Gruppen &amp; Familien verwalten</span>
-      <button class="icon-pill" id="groupManageClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen">×</button></div>
-    <div id="grpCard"></div>
-  </div>
-
   <!-- Calendar style/setup sheet -->
   <div class="backdrop" id="calendarSetupBackdrop"></div>
   <div class="sheet calendar-setup-sheet" id="calendarSetupSheet">
@@ -632,12 +601,16 @@
     } from '../assets/js/calendar-view.js';
     import {
       collection, addDoc, getDocs, getDoc, query, where, doc, setDoc, updateDoc, deleteDoc,
-      onSnapshot, serverTimestamp, arrayUnion, arrayRemove
+      onSnapshot, serverTimestamp, writeBatch
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    /* Die Gruppen (groups/{gid}) mit ihren Terminen — neben den alten
-       Familien-Kalendern eine eigene Quelle je Team. */
-    import { beobachteMeineGruppen, beobachteTermine, aktiveGruppeSetzen } from '../assets/js/groups.js';
+    /* EIN Gruppenmodell: groups/{gid}. Die alten Kalendergruppen
+       (families) werden beim Oeffnen vom Kopf uebernommen (uebernahme.js)
+       und stehen bis dahin als Quelle mit ihren Reisen daneben. */
+    import {
+      beobachteMeineGruppen, beobachteTermine, aktiveGruppeSetzen, aktiveGruppeId, VORGABE_BEREICHE
+    } from '../assets/js/groups.js';
     import { teamEintraege, teamTerminText, teamFarben } from '../assets/js/kalender-teams.js';
+    import { familieUebernehmen, sollUebernehmen, vereinigeGruppen } from '../assets/js/uebernahme.js';
     import { frage } from '../assets/js/dialog.js';
     const tt = (key, deutsch, vars) => window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch, vars) : deutsch;
 
@@ -653,24 +626,6 @@
     document.documentElement.dataset.routeReady = 'false';
     const fmtDateKey = k => { if(!k) return ''; const [y,m,d]=k.split('-').map(Number); const dt=new Date(y,m-1,d); return `${WD[dt.getDay()].slice(0,2)}, ${d}. ${MONTHS[m-1]}`; };
     const esc = s => escHtml(s);
-    const PERSON_COLORS = [
-      ['#dcecff','#174a88'], ['#e4f4e8','#27613b'], ['#f4e5ff','#63358a'],
-      ['#fff0d7','#7b4c10'], ['#ffe2e8','#85334b'], ['#dff5f3','#17635d']
-    ];
-    function personInitials(name) {
-      const clean = String(name||'').trim().replace(/@.*$/,'');
-      const parts = clean.split(/[\s._-]+/).filter(Boolean);
-      if (parts.length > 1) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
-      return parts.length ? parts[0].slice(0,2).toUpperCase() : '·';
-    }
-    function personAvatar(name, uid, extraClass = '') {
-      const hash = [...String(uid||name||'')].reduce((sum,char)=>sum+char.charCodeAt(0),0);
-      const [background, ink] = PERSON_COLORS[hash % PERSON_COLORS.length];
-      return `<span class="group-member-avatar${extraClass?' '+extraClass:''}"
-        style="--person-bg:${background};--person-ink:${ink}"
-        title="${esc(name||'Mitglied')}" aria-label="${esc(name||'Mitglied')}">${esc(personInitials(name))}</span>`;
-    }
-
     /* ── Files on the FREE plan: stored in Firestore (no Cloud Storage / Blaze).
        Images are downscaled+compressed so they fit. Big files → use the Link tab. */
     const MAX_FILE = 900 * 1024;
@@ -700,6 +655,11 @@
        beitritt, sieht dessen Termine sofort, statt sie erst suchen und
        einschalten zu muessen. */
     let teams = [], teamTermine = new Map(), teamAbos = new Map(), versteckteTeams = new Set();
+    /* familien: die alten Kalendergruppen, in denen man steht. groups ist
+       die Vereinigung: alle Gruppen, dazu jede Familie, die (noch) keine
+       Gruppe ist. Beide Quellen kommen getrennt an; erst wenn beide da
+       sind, wird vereinigt. */
+    let familien = [], teamsGeladen = false, familienGeladen = false, gruppenFarben = new Map();
     let anchorKey = todayKey, curView = 'month';
     let calendarPreference = {
       style:'google',
@@ -799,57 +759,48 @@
       $('calendarSetupSheet').classList.remove('visible');
     }
 
-    /* ── Multiple calendar groups ── */
-    const groupColor = id => {
-      const stored = groups.find(item => item.id === id)?.calendarColor;
-      if (CALENDAR_COLORS.some(color => color.value === stored)) return stored;
-      const hash = [...String(id||'')].reduce((value, char) => ((value * 31) + char.charCodeAt(0)) | 0, 0);
-      return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
-    };
-    const groupName = id => groups.find(item => item.id === id)?.name || 'Gruppe';
+    /* ── Gruppen ──
+       Eine Farbe je Gruppe, aus teamFarben: dieselbe wie im Wechsler und
+       fuer Reisen und Termine derselben Gruppe, und zwei Gruppen einer
+       Person nie gleich. Gerechnet wird in vereinige(), nicht je Eintrag. */
+    const groupColor = id => gruppenFarben.get(id) || GROUP_COLORS[0];
+    const groupName = id => groups.find(item => item.id === id)?.name || tt('nav.gruppe','Gruppe');
     const personalCalendarColor = () => normalizeCalendarColor(calendarPreference.personalColor);
     const eventColorVars = color => `--event-color:${normalizeCalendarColor(color)};--event-ink:${calendarColorInk(normalizeCalendarColor(color))}`;
 
-    const directorySynced = new Set();
-
+    /* Die alten Einladungslinks (?invite=&token=) trugen in eine
+       Kalendergruppe hinein. Die gibt es als eigenes Modell nicht mehr —
+       eingeladen wird im Gruppe-Tab mit einem Code. Ein alter Link
+       fuehrt darum dorthin, statt still in families zu schreiben. */
     async function resolveGroups() {
       const params = new URLSearchParams(location.search);
-      const invite = params.get('invite'), token = params.get('token');
-      const userRef = doc(db, 'users', user.uid);
-      if (invite && token) {
-        try {
-          // Wer noch nicht Mitglied ist, darf die Gruppe nicht mehr lesen. Das
-          // Token wird deshalb unverändert mitgeschickt und serverseitig
-          // verglichen — ein falsches Token lässt den Schreibvorgang scheitern.
-          await updateDoc(doc(db,'families',invite), {
-            members:arrayUnion(user.uid),
-            inviteToken:token
-          });
-          if (!profile.familyId) {
-            await updateDoc(userRef, { familyId:invite, role:'member' });
-            profile.familyId = invite;
-          }
-        } catch(e){ reportClientError('family-invite', e); }
+      if (params.get('invite') && params.get('token')) {
         history.replaceState({}, '', location.pathname);
+        const hin = await frage({
+          titel:tt('cal.alterLinkTitel','Dieser Einladungslink ist veraltet'),
+          text:tt('cal.alterLink','Kalendergruppen sind jetzt Gruppen. Bitte um einen neuen Einladungscode und tritt im Gruppe-Tab bei.'),
+          ja:tt('kal.zurGruppe','Zur Gruppe'),
+          nein:tt('a11y.schliessen','Schliessen'),
+        });
+        if (hin) { location.href = './gruppe.html'; return; }
       }
       watchGroups();
     }
 
+    /* Sichtbar ist jede Gruppe, die nicht ausgeschaltet ist. Gemerkt
+       werden die AUSGESCHALTETEN — eine neue Gruppe ist sofort zu sehen. */
     function loadVisibleSources() {
       let saved = null;
       try { saved = JSON.parse(localStorage.getItem(sourceKey()) || 'null'); } catch {}
-      const valid = new Set(groups.map(item => item.id));
-      const chosen = Array.isArray(saved?.groups) ? saved.groups.filter(id => valid.has(id)) : groups.map(item => item.id);
-      visibleGroupIds = new Set(chosen);
+      versteckteTeams = new Set(Array.isArray(saved?.teamsAus) ? saved.teamsAus : []);
       showPersonal = saved?.personal !== false;
+      visibleGroupIds = new Set(groups.map(item => item.id).filter(id => !versteckteTeams.has(id)));
     }
     function saveVisibleSources() {
       try {
         localStorage.setItem(sourceKey(), JSON.stringify({
           personal:showPersonal,
-          groups:[...visibleGroupIds],
           teamsAus:[...versteckteTeams],
-          active:group?.id || ''
         }));
       } catch {}
     }
@@ -860,12 +811,10 @@
        gefuehrt, damit ein Beitritt oder Austritt nur die eine Gruppe
        an- oder abmeldet. */
     function watchTeams() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(sourceKey()) || 'null');
-        versteckteTeams = new Set(Array.isArray(saved?.teamsAus) ? saved.teamsAus : []);
-      } catch {}
+      loadVisibleSources();
       beobachteMeineGruppen(user.uid, liste => {
         teams = liste;
+        teamsGeladen = true;
         const ids = new Set(liste.map(item => item.id));
         for (const [gid, abmelden] of teamAbos) {
           if (ids.has(gid)) continue;
@@ -880,11 +829,12 @@
             renderCurrentView();
           }));
         }
-        renderCalendarSources();
-        renderCurrentView();
+        vereinige();
       });
     }
-    const teamMap = () => teamEintraege(teams, teamTermine, { versteckt:versteckteTeams, palette:GROUP_COLORS });
+    /* Ueber ALLE Gruppen gerechnet (auch die noch nicht uebernommenen
+       Familien), damit die Farben dieselben sind wie in groupColor. */
+    const teamMap = () => teamEintraege(groups, teamTermine, { versteckt:versteckteTeams, palette:GROUP_COLORS });
     async function zeigeTeamTermin(event) {
       const zurGruppe = await frage({
         titel:event.title,
@@ -896,68 +846,83 @@
       aktiveGruppeSetzen(event.ref.gid);
       location.href = './gruppe.html';
     }
+    /* Die alten Kalendergruppen, in denen man steht. Sie werden nicht mehr
+       verwaltet — nur noch gelesen, bis der Kopf sie uebernommen hat. */
     function watchGroups() {
       if (groupsUnsub) groupsUnsub();
       groupsUnsub = onSnapshot(
         query(collection(db,'families'), where('members','array-contains',user.uid)),
-        async snap => {
-          const previousActive = group?.id;
-          groups = snap.docs.map(item => ({ id:item.id, ...item.data() }))
-            .sort((a,b) => (a.name||'').localeCompare(b.name||''));
-          // Gruppen von früher haben noch keinen Verzeichniseintrag. Wer die
-          // Gruppe leitet, legt ihn beim ersten Laden einmal nach.
-          groups.forEach(item => {
-            if (!item.name || directorySynced.has(item.id)) return;
-            if (![...(item.managers||[]), item.headUid].includes(user.uid)) return;
-            directorySynced.add(item.id);
-            syncGroupDirectory(item.id, item.name);
-          });
-          if (!groups.length) { group=null; await showNoGroup(); return; }
-          loadVisibleSources();
-          let savedActive = '';
-          try { savedActive = JSON.parse(localStorage.getItem(sourceKey()) || '{}').active || ''; } catch {}
-          group = groups.find(item => item.id === previousActive)
-            || groups.find(item => item.id === savedActive)
-            || groups.find(item => item.id === profile.familyId)
-            || groups[0];
-          saveVisibleSources();
-          updateNoGroupVisibility();
-          $('groupView').style.display='';
-          $('addTripBtn').style.display='';
-          $('manageGroupsBtn').style.display='';
-          document.body.dataset.calendarWorkspace='true';
-          renderCalendarSources();
-          await renderGroupCard();
-          await reload();
-          initialGroupsLoaded = true;
-          focusCalendarEntryWhenReady();
-          watchTrips();
+        snap => {
+          familien = snap.docs.map(item => ({ id:item.id, ...item.data() }));
+          familienGeladen = true;
+          vereinige();
         },
         error => {
           reportClientError('calendar-groups-load', error);
-          showNoGroup();
+          familien = [];
+          familienGeladen = true;
+          vereinige();
         }
       );
     }
-    async function showNoGroup() {
-      tripUnsubs.forEach(unsubscribe => unsubscribe());
-      tripUnsubs = [];
-      groups = [];
-      allTrips = [];
-      trips = [];
-      visibleGroupIds = new Set();
-      loadVisibleSources();
+
+    /* Gruppen und noch nicht uebernommene Familien zu EINER Liste. Eine
+       Familie, die schon eine Gruppe ist (gleiche Kennung), erscheint nur
+       als Gruppe — ihre Reisen haengen an derselben Kennung und bleiben
+       damit sichtbar. */
+    let letzteGruppenIds = null;
+    async function vereinige() {
+      if (!teamsGeladen || !familienGeladen) return;
+      const teamIds = new Set(teams.map(item => item.id));
+      uebernimmFamilien(teamIds);
+      groups = vereinigeGruppen(teams, familien);
+      gruppenFarben = teamFarben(groups, GROUP_COLORS);
+      visibleGroupIds = new Set(groups.map(item => item.id).filter(id => !versteckteTeams.has(id)));
+      /* Neue Reisen gehen in die aktive Gruppe — derselbe Merker wie im
+         Gruppe-Tab und in der Leiste, kein zweiter "Standardkalender". */
+      group = groups.find(item => item.id === aktiveGruppeId()) || groups[0] || null;
+
+      const hat = groups.length > 0;
+      $('groupView').style.display='';
+      document.body.dataset.calendarWorkspace='true';
+      $('addTripBtn').style.display = hat ? '' : 'none';
+      $('manageGroupsBtn').style.display = hat ? '' : 'none';
+      if (!hat) $('tripDetail').style.display='none';
+      renderCalendarSources();
+
+      const ids = groups.map(item => item.id).join('|');
+      if (ids !== letzteGruppenIds) {
+        letzteGruppenIds = ids;
+        await reload();
+        watchTrips();
+      } else {
+        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
+        renderCurrentView();
+      }
       initialGroupsLoaded = true;
       updateNoGroupVisibility();
-      $('groupView').style.display='';
-      $('tripDetail').style.display='none';
-      document.body.dataset.calendarWorkspace='true';
-      $('addTripBtn').style.display='none';
-      $('manageGroupsBtn').style.display='none';
-      renderCalendarSources();
-      await reload();
       focusCalendarEntryWhenReady();
-      watchTrips();
+    }
+
+    /* Der Kopf einer Familie uebernimmt sie beim Oeffnen des Kalenders
+       (uebernahme.js). Einmal je Sitzung versucht: scheitert es, laeuft es
+       beim naechsten Oeffnen wieder — jeder Schritt ist wiederholbar. */
+    const inUebernahme = new Set();
+    function uebernimmFamilien(teamIds) {
+      for (const familie of familien) {
+        if (!sollUebernehmen(familie, user.uid) || inUebernahme.has(familie.id)) continue;
+        inUebernahme.add(familie.id);
+        familieUebernehmen({
+          db,
+          fs:{ doc, collection, getDocs, writeBatch, updateDoc, serverTimestamp },
+          familie,
+          uid:user.uid,
+          istGruppe:teamIds.has(familie.id),
+          bereiche:VORGABE_BEREICHE.familie,
+          token:randToken(),
+          palette:GROUP_COLORS,
+        }).catch(error => reportClientError('calendar-uebernahme', error));
+      }
     }
 
     function updateNoGroupVisibility() {
@@ -1031,31 +996,25 @@
 
     function renderCalendarSources() {
       const personalColor = personalCalendarColor();
-      const farbenDerTeams = teamFarben(teams, GROUP_COLORS);
       const personal = `
         <button class="calendar-source-row${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:${personalColor}">
           <span class="calendar-source-dot"></span><span>Persönlich &amp; Erinnerungen</span>
         </button>`;
+      /* EINE Zeile je Gruppe — Reisen und Termine derselben Gruppe stehen
+         unter derselben Farbe. "Standard" ist die aktive Gruppe: dorthin
+         geht eine neue Reise. */
       $('calendarSources').innerHTML = personal + groups.map(item => `
-        <button class="calendar-source-row${visibleGroupIds.has(item.id)?' is-visible':''}" type="button"
-          data-source-group="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
-          <span class="calendar-source-dot"></span><span>${esc(item.name||'Gruppe')}</span>
-          ${item.id===group?.id?'<small>Standard</small>':''}
-        </button>`).join('') + teams.map(item => `
         <button class="calendar-source-row${versteckteTeams.has(item.id)?'':' is-visible'}" type="button"
-          data-source-team="${esc(item.id)}" style="--source-color:${farbenDerTeams.get(item.id)}">
+          data-source-team="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
           <span class="calendar-source-dot"></span><span>${esc(item.name||tt('nav.gruppe','Gruppe'))}</span>
+          ${item.id===group?.id && groups.length>1?`<small>${esc(tt('cal.standard','Standard'))}</small>`:''}
         </button>`).join('');
       $('calendarMobileSources').innerHTML = `
         <button class="calendar-source-chip${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:${personalColor}">
           <span class="calendar-source-dot"></span>Persönlich
         </button>` + groups.map(item => `
-        <button class="calendar-source-chip${visibleGroupIds.has(item.id)?' is-visible':''}" type="button"
-          data-source-group="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
-          <span class="calendar-source-dot"></span>${esc(item.name||'Gruppe')}
-        </button>`).join('') + teams.map(item => `
         <button class="calendar-source-chip${versteckteTeams.has(item.id)?'':' is-visible'}" type="button"
-          data-source-team="${esc(item.id)}" style="--source-color:${farbenDerTeams.get(item.id)}">
+          data-source-team="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
           <span class="calendar-source-dot"></span>${esc(item.name||tt('nav.gruppe','Gruppe'))}
         </button>`).join('') + (groups.length ? `
         <button class="calendar-source-chip is-visible" id="mobileManageGroupsBtn" type="button" style="--source-color:var(--ink-soft)">
@@ -1073,278 +1032,35 @@
         renderCalendarSources();
         renderCurrentView();
       });
-      document.querySelectorAll('[data-source-group]').forEach(button => button.onclick = () => {
-        const id = button.dataset.sourceGroup;
-        if (visibleGroupIds.has(id)) visibleGroupIds.delete(id); else visibleGroupIds.add(id);
-        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
-        saveVisibleSources();
-        renderCalendarSources();
-        renderCurrentView();
-      });
+      /* Ausschalten blendet beides aus: die Termine der Gruppe UND ihre
+         Reisen. Eine Gruppe ist eine Quelle, nicht zwei. */
       document.querySelectorAll('[data-source-team]').forEach(button => button.onclick = () => {
         const id = button.dataset.sourceTeam;
         if (versteckteTeams.has(id)) versteckteTeams.delete(id); else versteckteTeams.add(id);
-        saveVisibleSources();
-        renderCalendarSources();
-        renderCurrentView();
-      });
-      if ($('mobileManageGroupsBtn')) $('mobileManageGroupsBtn').onclick = openMobileGroupManager;
-      $('mobileAddGroupBtn').onclick = openGroupSheet;
-    }
-
-    function isManager(target = group) { return !!target && [...(target.managers||[]), target.headUid].includes(user.uid); }
-    const isHead = (target = group) => !!target && target.headUid === user.uid;
-    function groupRole(uid) {
-      if (uid === group?.headUid) return 'Leitung';
-      if ((group?.managers||[]).includes(uid)) return 'Verwaltung';
-      return 'Mitglied';
-    }
-    function groupManageStatus(message, isError = false) {
-      const status = $('groupManageStatus');
-      if (!status) return;
-      status.textContent = message;
-      status.classList.toggle('is-error',isError);
-    }
-
-    async function renderGroupCard() {
-      if (!group) { $('grpCard').innerHTML=''; return; }
-      const names = {};
-      await Promise.all((group.members||[]).concat(group.pendingRequests||[]).map(async uid => {
-        try { const snap = await getDoc(doc(db,'users',uid)); names[uid] = snap.exists() ? (snap.data().displayName || snap.data().email || 'Mitglied') : 'Mitglied'; }
-        catch { names[uid] = 'Mitglied'; }
-      }));
-      const managerSet = new Set([...(group.managers||[]),group.headUid]);
-      const members = (group.members||[]).map(uid => {
-        const targetIsManager = managerSet.has(uid);
-        const canRemove = isManager() && uid!==user.uid && uid!==group.headUid && (isHead() || !targetIsManager);
-        const actions = [
-          isHead() && uid!==group.headUid
-            ? `<button class="group-member-action" type="button" data-toggle-manager="${uid}">${targetIsManager?'Verwaltung entziehen':'Zur Verwaltung machen'}</button>`
-            : '',
-          isHead() && uid!==user.uid
-            ? `<button class="group-member-action" type="button" data-transfer-head="${uid}">Leitung übertragen</button>`
-            : '',
-          canRemove
-            ? `<button class="group-member-action is-danger" type="button" data-remove-member="${uid}">Aus Gruppe entfernen</button>`
-            : ''
-        ].filter(Boolean).join('');
-        return `<div class="group-member-row">
-          ${personAvatar(names[uid]||'Mitglied',uid)}
-          <span class="group-member-copy"><strong>${esc(names[uid]||'Mitglied')}${uid===user.uid?' (du)':''}</strong><small>${groupRole(uid)}</small></span>
-          ${actions?`<details class="group-member-menu"><summary aria-label="Mitglied verwalten">•••</summary><div>${actions}</div></details>`:''}
-        </div>`;
-      }).join('');
-      let pending = '';
-      if (isManager() && (group.pendingRequests||[]).length) {
-        pending = `<section class="group-manage-section"><div class="group-manage-heading"><h3>Beitrittsanfragen</h3><span>${group.pendingRequests.length}</span></div>` +
-          (group.pendingRequests||[]).map(uid =>
-            `<div class="group-request-row">${personAvatar(names[uid]||'Mitglied',uid)}
-             <span class="group-request-copy">${esc(names[uid]||'Mitglied')}</span>
-             <button class="pill primary" type="button" data-appr="${uid}">Annehmen</button>
-             <button class="pill" type="button" data-rej="${uid}">Ablehnen</button></div>`).join('') + `</section>`;
-      }
-      const groupColorValue = groupColor(group.id);
-      const managerSettings = isManager() ? `
-        <section class="group-manage-section">
-          <div class="group-manage-heading"><h3>Gruppeneinstellungen</h3></div>
-          <div class="group-settings-grid">
-            <div class="field"><label for="groupRenameInput">Name</label>
-              <div class="group-inline-control"><input class="form-input" id="groupRenameInput" value="${esc(group.name||'')}" maxlength="80">
-              <button class="pill" id="groupRenameBtn" type="button">Speichern</button></div>
-            </div>
-            <div class="field"><label>Kalenderfarbe</label>
-              <div class="calendar-color-options" id="groupCalendarColors"></div>
-            </div>
-          </div>
-        </section>` : `
-        <section class="group-manage-section group-color-readonly">
-          <span class="calendar-source-dot" style="--source-color:${groupColorValue}"></span>
-          <span>Kalenderfarbe: ${esc(CALENDAR_COLORS.find(color=>color.value===groupColorValue)?.label||'Standard')}</span>
-        </section>`;
-      $('grpCard').innerHTML = `
-        <div class="group-manager-hero">
-          <div class="field"><label for="manageGroupSelect">Gewählte Gruppe / Standardkalender</label>
-            <select class="form-input" id="manageGroupSelect">${groups.map(item=>`<option value="${esc(item.id)}"${item.id===group.id?' selected':''}>${esc(item.name||'Gruppe')}</option>`).join('')}</select>
-          </div>
-          <div class="group-manager-title"><span class="calendar-source-dot" style="--source-color:${groupColorValue}"></span>
-            <div><strong>${esc(group.name||'Gruppe')}</strong><small>${(group.members||[]).length} Mitglied${(group.members||[]).length===1?'':'er'} · Du bist ${groupRole(user.uid).toLowerCase()}</small></div>
-            <div class="group-avatar-stack" aria-label="Mitglieder">
-              ${(group.members||[]).slice(0,4).map(uid=>personAvatar(names[uid]||'Mitglied',uid,'group-member-avatar--stacked')).join('')}
-              ${(group.members||[]).length>4?`<span class="group-avatar-more" title="${(group.members||[]).length-4} weitere">+${(group.members||[]).length-4}</span>`:''}
-            </div>
-          </div>
-        </div>
-        ${managerSettings}
-        <section class="group-manage-section">
-          <div class="group-manage-heading"><h3>Mitglieder</h3><span>${(group.members||[]).length}</span></div>
-          <div class="group-member-list">${members}</div>
-        </section>
-        ${pending}
-        <section class="group-manage-section">
-          <div class="group-manage-heading"><h3>Teilen &amp; Daten</h3></div>
-          <div class="group-management-actions">
-            <button class="pill" id="inviteBtn" type="button">Einladungslink kopieren</button>
-            ${isManager()?'<button class="pill" id="resetInviteBtn" type="button">Link erneuern</button>':''}
-            <button class="pill" id="icsAllBtn" type="button">Sichtbare Termine exportieren</button>
-          </div>
-          <p id="inviteOut" class="group-invite-output"></p>
-        </section>
-        <div class="group-manager-footer">
-          <button class="group-leave-button" id="leaveBtn" type="button">Diese Gruppe verlassen</button>
-          <p class="group-manage-status" id="groupManageStatus" aria-live="polite"></p>
-        </div>`;
-      $('leaveBtn').onclick = leaveGroup;
-      $('inviteBtn').onclick = showInvite;
-      $('icsAllBtn').onclick = exportAllIcs;
-      if ($('resetInviteBtn')) $('resetInviteBtn').onclick = resetInvite;
-      if ($('groupRenameBtn')) $('groupRenameBtn').onclick = renameGroup;
-      renderColorOptions($('groupCalendarColors'), groupColorValue, 'data-group-color');
-      $('groupCalendarColors')?.querySelectorAll('[data-group-color]').forEach(button => button.onclick = () => setGroupCalendarColor(button.dataset.groupColor));
-      $('manageGroupSelect').onchange = async event => {
-        group = groups.find(item => item.id === event.target.value) || group;
-        visibleGroupIds.add(group.id);
+        visibleGroupIds = new Set(groups.map(item => item.id).filter(gid => !versteckteTeams.has(gid)));
         trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
         saveVisibleSources();
         renderCalendarSources();
         renderCurrentView();
-        await renderGroupCard();
-      };
-      $('grpCard').querySelectorAll('[data-appr]').forEach(button => button.onclick=()=>approve(button.dataset.appr));
-      $('grpCard').querySelectorAll('[data-rej]').forEach(button => button.onclick=()=>reject(button.dataset.rej));
-      $('grpCard').querySelectorAll('[data-toggle-manager]').forEach(button => button.onclick=()=>toggleGroupManager(button.dataset.toggleManager));
-      $('grpCard').querySelectorAll('[data-transfer-head]').forEach(button => button.onclick=()=>transferGroupHead(button.dataset.transferHead,names[button.dataset.transferHead]));
-      $('grpCard').querySelectorAll('[data-remove-member]').forEach(button => button.onclick=()=>removeGroupMember(button.dataset.removeMember,names[button.dataset.removeMember]));
-    }
-    async function renameGroup() {
-      if(!isManager())return;
-      const name=$('groupRenameInput').value.trim();
-      if(!name){ groupManageStatus('Bitte einen Gruppennamen eingeben.',true); return; }
-      try {
-        await updateDoc(doc(db,'families',group.id),{name});
-        await syncGroupDirectory(group.id,name);
-      }
-      catch(error){ reportClientError('calendar-group-rename',error); groupManageStatus('Der Name konnte nicht gespeichert werden.',true); }
-    }
-    /* Der Gruppenname liegt zusätzlich in familyDirectory: Suchende dürfen die
-       Gruppe selbst nicht lesen (dort stehen Mitglieder und Einladungstoken),
-       brauchen aber einen Namen, um eine Beitrittsanfrage stellen zu können. */
-    async function syncGroupDirectory(id, name) {
-      if(!id || !name) return;
-      try { await setDoc(doc(db,'familyDirectory',id),{name}); }
-      catch(error){ reportClientError('calendar-group-directory',error); }
-    }
-    async function setGroupCalendarColor(color) {
-      if(!isManager())return;
-      color=normalizeCalendarColor(color,groupColor(group.id));
-      try { await updateDoc(doc(db,'families',group.id),{calendarColor:color}); }
-      catch(error){ reportClientError('calendar-group-color',error); groupManageStatus('Die Kalenderfarbe konnte nicht gespeichert werden.',true); }
-    }
-    async function approve(uid){
-      try { await updateDoc(doc(db,'families',group.id),{members:arrayUnion(uid),pendingRequests:arrayRemove(uid)}); }
-      catch(error){ reportClientError('calendar-group-approve',error); groupManageStatus('Die Anfrage konnte nicht angenommen werden.',true); }
-    }
-    async function reject(uid){
-      try { await updateDoc(doc(db,'families',group.id),{pendingRequests:arrayRemove(uid)}); }
-      catch(error){ reportClientError('calendar-group-reject',error); groupManageStatus('Die Anfrage konnte nicht abgelehnt werden.',true); }
-    }
-    async function toggleGroupManager(uid) {
-      if(!isHead() || uid===group.headUid)return;
-      const managers=group.managers||[];
-      try {
-        await updateDoc(doc(db,'families',group.id),{
-          managers:managers.includes(uid)?arrayRemove(uid):arrayUnion(uid)
-        });
-      } catch(error){ reportClientError('calendar-group-manager',error); groupManageStatus('Die Rolle konnte nicht geändert werden.',true); }
-    }
-    async function transferGroupHead(uid,name) {
-      if(!isHead() || uid===user.uid || !confirm(`Leitung wirklich an „${name||'dieses Mitglied'}“ übertragen?`))return;
-      try { await updateDoc(doc(db,'families',group.id),{headUid:uid,managers:arrayUnion(uid)}); }
-      catch(error){ reportClientError('calendar-group-head-transfer',error); groupManageStatus('Die Leitung konnte nicht übertragen werden.',true); }
-    }
-    async function removeGroupMember(uid,name) {
-      if(!isManager() || uid===user.uid || uid===group.headUid || !confirm(`„${name||'Mitglied'}“ aus der Gruppe entfernen?`))return;
-      try { await updateDoc(doc(db,'families',group.id),{members:arrayRemove(uid),managers:arrayRemove(uid)}); }
-      catch(error){ reportClientError('calendar-group-member-remove',error); groupManageStatus('Das Mitglied konnte nicht entfernt werden.',true); }
-    }
-    async function leaveGroup(){
-      if(group?.headUid===user.uid){ alert('Übertrage zuerst die Leitung an ein anderes Mitglied.'); return; }
-      if(!group || !confirm(`„${group.name||'Gruppe'}“ verlassen?`))return;
-      const leavingId = group.id;
-      try { await updateDoc(doc(db,'families',leavingId),{members:arrayRemove(user.uid),managers:arrayRemove(user.uid)}); }
-      catch(error){ reportClientError('calendar-group-leave',error); groupManageStatus('Die Gruppe konnte nicht verlassen werden.',true); return; }
-      if (profile.familyId === leavingId) {
-        const next = groups.find(item => item.id !== leavingId);
-        await updateDoc(doc(db,'users',user.uid),{familyId:next?.id||null,role:next?'member':profile.role}).catch(()=>{});
-        profile.familyId = next?.id || null;
-      }
-      closeGroupManager();
-    }
-    async function showInvite(){
-      let token=group.inviteToken;
-      if(!token || token.length<16){
-        token=randToken();
-        try { await updateDoc(doc(db,'families',group.id),{inviteToken:token}); group.inviteToken=token; }
-        catch(error){ reportClientError('calendar-group-invite',error); groupManageStatus('Der Einladungslink konnte nicht erstellt werden.',true); return; }
-      }
-      const url=`${location.origin}${location.pathname}?invite=${group.id}&token=${token}`;
-      const out=$('inviteOut'); out.classList.add('is-visible'); out.textContent=url;
-      try{ await navigator.clipboard.writeText(url); out.textContent='✓ Link kopiert'; }
-      catch{ out.textContent='Link zum Kopieren: '+url; }
-    }
-    async function resetInvite(){
-      if(!isManager() || !confirm('Der bisherige Einladungslink funktioniert danach nicht mehr. Link erneuern?'))return;
-      const inviteToken=randToken();
-      try { await updateDoc(doc(db,'families',group.id),{inviteToken}); group.inviteToken=inviteToken; await showInvite(); }
-      catch(error){ reportClientError('calendar-group-invite-reset',error); groupManageStatus('Der Link konnte nicht erneuert werden.',true); }
+      });
+      if ($('mobileManageGroupsBtn')) $('mobileManageGroupsBtn').onclick = zurGruppenseite;
+      $('mobileAddGroupBtn').onclick = zurGruppenseite;
     }
 
-    /* ── Create / join ── */
-    async function createGroup(name) {
-      name = name.trim(); if(!name){ alert('Bitte einen Namen eingeben.'); return; }
-      const token = randToken();
-      const ref = await addDoc(collection(db,'families'), { name, headUid:user.uid, managers:[user.uid], members:[user.uid], pendingRequests:[], inviteToken:token, createdAt:serverTimestamp() });
-      await syncGroupDirectory(ref.id, name);
-      if (!profile.familyId) {
-        await updateDoc(doc(db,'users',user.uid), { familyId:ref.id, role:'manager' });
-        profile.familyId = ref.id;
-      }
-      closeGroupSheet();
-    }
-    async function joinGroup(name, statusEl) {
-      name = name.trim(); if(!name)return;
-      // Gesucht wird im Namensverzeichnis — die Gruppe selbst bleibt für
-      // Nichtmitglieder unlesbar.
-      const qs = await getDocs(query(collection(db,'familyDirectory'), where('name','==',name)));
-      if (qs.empty){ statusEl.textContent='Keine Gruppe mit diesem Namen gefunden.'; return; }
-      const candidate = qs.docs[0];
-      if (groups.some(item => item.id === candidate.id)){ statusEl.textContent='Du bist bereits Mitglied dieser Gruppe.'; return; }
-      try { await updateDoc(doc(db,'families',candidate.id), { pendingRequests:arrayUnion(user.uid) }); }
-      catch(error){ reportClientError('calendar-group-join',error); statusEl.textContent='Die Anfrage konnte nicht gesendet werden.'; return; }
-      statusEl.textContent='Anfrage gesendet — ein Gruppen-Manager muss dich bestätigen.';
-    }
-    function openGroupManager(){
-      renderGroupCard();
-      $('groupManageBackdrop').classList.add('visible');
-      $('groupManageSheet').classList.add('visible');
-    }
-    const openMobileGroupManager = openGroupManager;
-    function closeGroupManager(){
-      $('groupManageBackdrop').classList.remove('visible');
-      $('groupManageSheet').classList.remove('visible');
-    }
-    function openGroupSheet(){
-      $('groupBackdrop').classList.add('visible');
-      $('groupSheet').classList.add('visible');
-    }
-    function closeGroupSheet(){
-      $('groupBackdrop').classList.remove('visible');
-      $('groupSheet').classList.remove('visible');
-    }
+    /* Gruppen werden an EINER Stelle angelegt, betreten und verwaltet: im
+       Gruppe-Tab. Bis v.35.31.0 hatte der Kalender eine zweite Verwaltung
+       fuer seine Kalendergruppen — Mitglieder, Rollen, Beitrittsanfragen,
+       Einladungslink, Farbe —, alles doppelt und alles auf families. */
+    function zurGruppenseite() { location.href = './gruppe.html'; }
+    /* Wechselt jemand die aktive Gruppe (Leiste, Gruppe-Tab), wandert der
+       "Standard" fuer neue Reisen mit. */
+    window.addEventListener('firn-gruppe', () => vereinige());
 
-    $('createGrpBtn').onclick = () => createGroup($('newGrpName').value);
-    $('joinGrpBtn').onclick = () => joinGroup($('joinGrpName').value, $('joinStatus'));
-    $('createMoreGrpBtn').onclick = () => createGroup($('newGrpNameMore').value);
-    $('joinMoreGrpBtn').onclick = () => joinGroup($('joinGrpNameMore').value, $('joinMoreStatus'));
+    /* Hier stand die Verwaltung der Kalendergruppen (families): Karte mit
+       Mitgliedern, Rollen, Beitrittsanfragen, Umbenennen, Farbe, Einladungs-
+       link, Verlassen, Anlegen, Beitreten per Namenssuche — rund 250 Zeilen,
+       ein zweites Gruppensystem neben dem Gruppe-Tab. Seit v.35.32.0 fuehrt
+       alles davon nach gruppe.html (zurGruppenseite). */
 
     /* ── Data load ── */
     async function reload() {
@@ -2720,12 +2436,8 @@
       $('calendarSetupSave').onclick=()=>{ saveCalendarPreference(); closeCalendarSetup(); };
       $('calendarSetupClose').onclick=closeCalendarSetup;
       $('calendarSetupBackdrop').onclick=()=>{ if(calendarPreferenceExists)closeCalendarSetup(); };
-      $('addGroupBtn').onclick=openGroupSheet;
-      $('manageGroupsBtn').onclick=openGroupManager;
-      $('groupBackdrop').onclick=closeGroupSheet;
-      $('groupSheetClose').onclick=closeGroupSheet;
-      $('groupManageBackdrop').onclick=closeGroupManager;
-      $('groupManageClose').onclick=closeGroupManager;
+      $('addGroupBtn').onclick=zurGruppenseite;
+      $('manageGroupsBtn').onclick=zurGruppenseite;
       $('createBackdrop').onclick=closeCreateSheet;
       $('createSheetClose').onclick=closeCreateSheet;
       $('createEventOption').onclick=()=>{
@@ -2770,8 +2482,6 @@
         else if($('reminderHubSheet').classList.contains('visible'))closeReminderHub();
         else if($('createSheet').classList.contains('visible'))closeCreateSheet();
         else if($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists)closeCalendarSetup();
-        else if($('groupManageSheet').classList.contains('visible'))closeGroupManager();
-        else if($('groupSheet').classList.contains('visible'))closeGroupSheet();
         else if($('reminderSheet').classList.contains('visible'))closeReminderForm();
         else if($('dayForm').classList.contains('visible'))closeDayForm();
         else if($('tripSheet').classList.contains('visible'))closeTripForm();
@@ -2783,8 +2493,6 @@
         if ($('viewer').classList.contains('visible')) { e.preventDefault(); closeViewer(); return; }
         if ($('reminderHubSheet').classList.contains('visible')) { e.preventDefault(); closeReminderHub(); return; }
         if ($('createSheet').classList.contains('visible')) { e.preventDefault(); closeCreateSheet(); return; }
-        if ($('groupManageSheet').classList.contains('visible')) { e.preventDefault(); closeGroupManager(); return; }
-        if ($('groupSheet').classList.contains('visible')) { e.preventDefault(); closeGroupSheet(); return; }
         if ($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists) { e.preventDefault(); closeCalendarSetup(); return; }
         if ($('reminderSheet').classList.contains('visible')) { e.preventDefault(); closeReminderForm(); return; }
         if ($('dayForm').classList.contains('visible')) { e.preventDefault(); closeDayForm(); return; }

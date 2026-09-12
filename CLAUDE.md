@@ -12,7 +12,7 @@ Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
 **Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
 Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
 
-Version: **v.35.31.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.32.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -40,7 +40,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-52 Testdateien, **535 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+53 Testdateien, **546 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -69,7 +69,7 @@ Sonst sieht man neues Markup mit altem Stylesheet.
 
 **2. Die Regeln sind die Wahrheit, nicht die Oberfläche.** Mitgliedschaft,
 Gruppenisolation und einmalige Einladungscodes stehen in `firestore.rules`
-(1284 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
+(1319 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
 halten die Invarianten fest — Regeländerungen gehören im selben Commit dorthin.
 
 Historisch drifteten Datei und Live-Stand auseinander, weil die Regeln in die
@@ -193,6 +193,26 @@ ausschaltbar; gemerkt werden die ausgeschalteten, damit ein neues Team sofort
 sichtbar ist). Ein Team-Termin öffnet dort eine Karte mit „Zur Gruppe“;
 bearbeitet wird er nur in der Gruppe.
 
+**13. Es gibt EIN Gruppenmodell — die Kalendergruppen sind übernommen.** Bis
+v.35.31.0 führte der Kalender eine zweite Verwaltung auf `families`
+(Mitglieder, Rollen, Beitrittsanfragen, eigene Links). Jetzt:
+
+- Eine Familie wird zur Gruppe **mit derselben Kennung**
+  (`groups/{familyId}`, Art `familie`). Darum gehören die Reisen ohne
+  Umschreiben dazu: `trips.familyId` heisst noch so, meint aber **die
+  Gruppe** — auch für Gruppen, die nie eine Familie waren.
+- Übernommen wird im Browser, beim **Kopf** der Familie, wenn er den Kalender
+  öffnet (`uebernahme.js`): Gruppe + Kopf, dann die übrigen Mitglieder
+  (Verwaltung → `staff`), dann `families.uebernommen = true`. Nichts wird
+  gelöscht, jeder Schritt ist wiederholbar. Bis dahin steht die Familie als
+  Quelle mit ihren Reisen im Kalender (`vereinigeGruppen`).
+- Die Regeln: `tripGruppe()` = alte Familie **oder** Gruppenmitglied. Und
+  eine Gruppe mit der Kennung einer Familie darf **nur deren Kopf** anlegen —
+  sonst könnte jemand über eine selbst angelegte Gruppe fremde Reisen lesen.
+  `security-model.test.mjs` hält beides.
+- Anlegen, Beitreten, Verwalten: nur im Gruppe-Tab. Alte Einladungslinks
+  (`?invite=&token=`) führen mit einem Hinweis dorthin.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -205,7 +225,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **791 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **797 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -260,7 +280,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 535 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 546 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -269,10 +289,12 @@ Zwei Dinge, die leicht übersehen werden:
 - Die älteren Seiten (`maturaarbeit*.html`, `guest.html`, `public.html`)
   sind übersetzt, halten aber die Seiten-Invariante noch nicht: `<style>`-Blöcke,
   Inline-Skripte, `confirm()` beim Zurücksetzen der Maturaarbeit.
-- **Zwei Gruppenmodelle im Kalender.** `planner.html` führt neben den Teams
-  (`groups/{gid}`) noch das alte Familienmodell (`families`, Reisen,
-  Kalendertage) mit eigener Verwaltung. Seit v.35.31.0 stehen beide als
-  Quellen nebeneinander; zusammengeführt sind sie nicht.
+- **Reste des Familienmodells.** Die E-Mail-Einladungen (`memberInvites`,
+  Admin-Bereich in `start.js`, Registrierung in `login.html`) tragen noch in
+  `families` ein, nicht in eine Gruppe — ohne Mailserver ohnehin still. Das
+  Profilfeld `users.familyId` wird nicht mehr geschrieben. Die Reisen
+  (`trips`, samt Gastzugang) bleiben eine eigene Sammlung neben den
+  Gruppenterminen (`groups/{gid}/events`).
 - **Regeln ohne Emulator.** Auf dieser Maschine gibt es kein Java; die
   Regeln werden vor dem Ausrollen nur mit `--dry-run` gegen das Projekt
   kompiliert, nicht gegen Testfaelle gefahren. Zuletzt ausgerollt mit
@@ -281,7 +303,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.31.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.32.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

@@ -236,7 +236,12 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
     try {
       const candidates = [];
       const familySnap = await getDocs(query(collection(db, 'families'), where('members','array-contains',uid)));
-      const familyIds = new Set(familySnap.docs.map(doc => doc.id));
+      /* Reisen gehoeren seit v.35.32.0 einer Gruppe (trips.familyId ist die
+         Kennung der Gruppe). Eine uebernommene Familie hat dieselbe Kennung
+         wie ihre Gruppe; wer erst ueber den Gruppe-Tab beigetreten ist, steht
+         aber nur in der Gruppe — ohne diese Zeile fehlten ihm die Reisen. */
+      const gruppenIds = await meineGruppen(uid).then(liste => liste.map(g => g.id)).catch(() => []);
+      const familyIds = new Set([...familySnap.docs.map(doc => doc.id), ...gruppenIds]);
       const daySnap = await getDocs(query(collection(db, 'calendarDays'), where('ownerUid','==',uid)));
       // Publish the raw entries for the Hinweis (§8). The birthday
       // pairing needs recurring ones; the data model has no such flag

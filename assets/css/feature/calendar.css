@@ -758,161 +758,9 @@
 .calendar-color.is-selected { border-color:var(--ink); outline:2px solid var(--surface); outline-offset:-4px; }
 .calendar-color:disabled { cursor:default; opacity:.8; }
 
-/* Group management */
-.group-management-sheet { max-width:820px; }
-.group-manager-hero {
-  display:grid;
-  grid-template-columns:minmax(220px,320px) minmax(0,1fr);
-  align-items:end;
-  gap:var(--s4);
-  padding-bottom:var(--s4);
-}
-.group-manager-hero .field { margin:0; }
-.group-manager-title { display:flex; align-items:center; gap:var(--s3); padding-bottom:var(--s1); }
-.group-manager-title .calendar-source-dot { width:13px; height:13px; }
-.group-manager-title strong { display:block; font-size:17px; }
-.group-manager-title small { display:block; margin-top:2px; color:var(--ink-soft); font-size:12px; }
-.group-manage-section { padding:var(--s4) 0; border-top:1px solid var(--border); }
-.group-manage-heading {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:var(--s3);
-  margin-bottom:var(--s3);
-}
-.group-manage-heading h3 { margin:0; font-size:13px; font-weight:800; }
-.group-manage-heading > span {
-  min-width:24px;
-  height:24px;
-  display:grid;
-  place-items:center;
-  border-radius:var(--r-pill);
-  background:var(--surface-2);
-  color:var(--ink-soft);
-  font-size:11px;
-  font-weight:800;
-}
-.group-settings-grid { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(180px,.75fr); gap:var(--s4); }
-.group-inline-control { display:flex; gap:var(--s2); }
-.group-inline-control .form-input { min-width:0; }
-.group-member-list { display:flex; flex-direction:column; }
-.group-member-row {
-  position:relative;
-  display:flex;
-  align-items:center;
-  gap:var(--s3);
-  min-height:52px;
-  padding:var(--s2) 0;
-  border-top:1px solid color-mix(in oklab, var(--border) 70%, transparent);
-}
-.group-member-row:first-child { border-top:0; }
-.group-member-avatar {
-  width:34px;
-  height:34px;
-  display:grid;
-  place-items:center;
-  flex:none;
-  border-radius:50%;
-  border:1px solid color-mix(in oklab, var(--person-ink, var(--ink)) 18%, transparent);
-  background:var(--person-bg, var(--surface-2));
-  color:var(--person-ink, var(--ink));
-  font-size:12px;
-  font-weight:800;
-}
-.group-avatar-stack {
-  display:flex;
-  flex:none;
-  align-items:center;
-  margin-left:auto;
-  padding-left:var(--s3);
-}
-.group-member-avatar--stacked,
-.group-avatar-more {
-  width:30px;
-  height:30px;
-  box-shadow:0 0 0 2px var(--surface);
-}
-.group-member-avatar--stacked + .group-member-avatar--stacked,
-.group-avatar-more { margin-left:-7px; }
-.group-avatar-more {
-  display:grid;
-  place-items:center;
-  border-radius:50%;
-  background:var(--surface-2);
-  color:var(--ink-soft);
-  font-size:10px;
-  font-weight:800;
-}
-.group-member-copy { min-width:0; flex:1; }
-.group-member-copy strong,
-.group-member-copy small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.group-member-copy strong { font-size:13px; }
-.group-member-copy small { margin-top:2px; color:var(--ink-soft); font-size:11px; }
-.group-member-menu { position:relative; flex:none; }
-.group-member-menu summary {
-  width:34px;
-  height:34px;
-  display:grid;
-  place-items:center;
-  border-radius:var(--r-icon);
-  color:var(--ink-soft);
-  cursor:pointer;
-  list-style:none;
-  letter-spacing:1px;
-}
-.group-member-menu summary::-webkit-details-marker { display:none; }
-.group-member-menu[open] summary { background:var(--surface-2); color:var(--ink); }
-.group-member-menu > div {
-  position:absolute;
-  z-index:4;
-  top:38px;
-  right:0;
-  width:210px;
-  padding:var(--s1);
-  border:1px solid var(--border);
-  border-radius:var(--r-row);
-  background:var(--surface);
-}
-.group-member-action {
-  width:100%;
-  border:0;
-  border-radius:var(--r-icon);
-  background:transparent;
-  color:var(--ink);
-  padding:var(--s2) var(--s3);
-  font:inherit;
-  font-size:12px;
-  font-weight:700;
-  text-align:left;
-  cursor:pointer;
-}
-.group-member-action:hover { background:var(--surface-2); }
-.group-member-action.is-danger { color:var(--danger); }
-.group-request-row { display:flex; align-items:center; gap:var(--s2); padding:var(--s2) 0; }
-.group-request-copy { min-width:0; flex:1; font-size:13px; font-weight:700; }
-.group-management-actions { display:flex; flex-wrap:wrap; gap:var(--s2); }
-.group-invite-output {
-  display:none;
-  margin:var(--s3) 0 0;
-  color:var(--ink-soft);
-  font-size:11px;
-  word-break:break-all;
-}
-.group-invite-output.is-visible { display:block; }
-.group-color-readonly { display:flex; align-items:center; gap:var(--s2); color:var(--ink-soft); font-size:12px; }
-.group-manager-footer { display:flex; align-items:center; gap:var(--s4); padding-top:var(--s1); }
-.group-leave-button {
-  border:0;
-  background:transparent;
-  color:var(--danger);
-  padding:var(--s2) 0;
-  font:inherit;
-  font-size:12px;
-  font-weight:800;
-  cursor:pointer;
-}
-.group-manage-status { min-width:0; flex:1; margin:0; color:var(--ink-soft); font-size:12px; text-align:right; }
-.group-manage-status.is-error { color:var(--danger); }
+/* Hier standen die Stile der Kalendergruppen-Verwaltung (Mitglieder-
+   liste, Anfragen, Einstellungen). Seit v.35.32.0 verwaltet der
+   Gruppe-Tab. */
 
 .calendar-below {
   display:grid;
@@ -1029,7 +877,6 @@
     transform:translate(-50%,-50%) scale(1);
   }
   .planner-page .calendar-setup-sheet { max-width:720px; }
-  .planner-page .group-management-sheet { max-width:820px; }
   .planner-page .grip { display:none; }
 }
 
@@ -1371,10 +1218,6 @@
     overflow:hidden;
   }
   .time-calendar-wrap { border-radius:var(--r-icon); }
-  .group-manager-hero,
-  .group-settings-grid { grid-template-columns:1fr; }
-  .group-manager-footer { align-items:flex-start; flex-direction:column; }
-  .group-manage-status { text-align:left; }
 }
 /* Reminder completion is available from both the hub and the edit sheet. */
 .reminder-complete-button {
