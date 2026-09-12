@@ -306,8 +306,8 @@ Zwei Dinge, die leicht übersehen werden:
   kompiliert, nicht gegen Testfaelle gefahren. Zuletzt ausgerollt mit
   v.35.32.0 (`tripGruppe()`, Übernahme-Marke an `families`, Schutz der
   Familienkennung beim Anlegen einer Gruppe) — Regeln VOR dem Code.
-  v.35.33.0 (Einladungen in Gruppen, `einladungsBeitritt()`) ist lokal
-  und kompiliert, aber noch nicht ausgerollt.
+  v.35.33.0 (Einladungen in Gruppen, `einladungsBeitritt()`), ebenfalls
+  Regeln vor dem Code.
 
 ## Gewohnheiten
 
