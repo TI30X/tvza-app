@@ -261,11 +261,16 @@
           const cred = await createUserWithEmailAndPassword(auth, email, pass);
           createdUser = cred.user;
           let familyId = null;
+          let gid = null;
           let inviteRef = null;
           if (inviteCode) {
             inviteRef = doc(db, 'memberInvites', inviteCode);
             const invite = await getDoc(inviteRef);
             if (!invite.exists()) throw { code: 'permission-denied' };
+            /* Seit v.35.33.0 laedt eine Einladung in eine Gruppe ein (gid).
+               familyId gibt es nur noch bei alten, offenen Einladungen in
+               eine Kalendergruppe. */
+            gid = typeof invite.data().gid === 'string' ? invite.data().gid : null;
             familyId = typeof invite.data().familyId === 'string' ? invite.data().familyId : null;
           }
 
@@ -281,6 +286,17 @@
             createdAt: serverTimestamp(),
             inviteCode: inviteCode || null
           });
+          /* In die Gruppe, im selben Stapel wie Profil und Verbrauch der
+             Einladung: alles oder nichts. Die Regel (einladungsBeitritt)
+             prueft genau diese Form — Mitglied, mit dem Code. */
+          if (gid) {
+            batch.set(doc(db, 'groups', gid, 'members', cred.user.uid), {
+              uid: cred.user.uid,
+              rolle: 'mitglied',
+              seit: serverTimestamp(),
+              code: inviteCode,
+            });
+          }
           if (familyId) {
             batch.update(doc(db, 'families', familyId), {
               members: arrayUnion(cred.user.uid)
@@ -289,6 +305,8 @@
           if (inviteRef) batch.delete(inviteRef);
           await batch.commit();
           registrationCommitted = true;
+          /* Die neue Gruppe ist die, die man nach dem Anmelden sieht. */
+          if (gid) { try { localStorage.setItem('firn.gruppe', gid); } catch {} }
 
           const tvzaConfig = await getTvzaConfig();
           if (requiresVerifiedEmail(tvzaConfig)) {

@@ -233,6 +233,31 @@ service cloud.firestore {
           == resource.data.get('members', []).size() + 1;
     }
 
+    /* Registrieren mit einer E-Mail-Einladung in eine GRUPPE (seit
+       v.35.33.0; vorher trugen Einladungen in eine Kalendergruppe ein).
+       Dasselbe Muster wie invitedAutoJoin: das Profil entsteht im selben
+       Stapel (darum existsAfter statt isMember), die Einladung ist an die
+       E-Mail gebunden, zeigt auf genau diese Gruppe und wird im selben
+       Stapel verbraucht. Immer als 'mitglied' — wer eingeladen wird,
+       ernennt sich nicht selbst zum Trainer. */
+    function einladungsBeitritt(gid, uid) {
+      return authHasEmail()
+        && request.auth.uid == uid
+        && !exists(/databases/$(database)/documents/users/$(uid))
+        && existsAfter(/databases/$(database)/documents/users/$(uid))
+        && request.resource.data.keys().hasOnly(['uid', 'rolle', 'seit', 'code'])
+        && request.resource.data.uid == uid
+        && request.resource.data.rolle == 'mitglied'
+        && request.resource.data.code is string
+        && registrationInviteCode() == request.resource.data.code
+        && exists(/databases/$(database)/documents/memberInvites/$(request.resource.data.code))
+        && get(/databases/$(database)/documents/memberInvites/$(request.resource.data.code))
+          .data.email == request.auth.token.email.lower()
+        && get(/databases/$(database)/documents/memberInvites/$(request.resource.data.code))
+          .data.get('gid', '') == gid
+        && !existsAfter(/databases/$(database)/documents/memberInvites/$(request.resource.data.code));
+    }
+
     function consumesInvite(code) {
       return authHasEmail()
         && resource.data.email == request.auth.token.email.lower()
@@ -247,6 +272,14 @@ service cloud.firestore {
             (!('familyId' in resource.data) || resource.data.familyId == null)
             && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.familyId
               == null
+            // Eine Einladung in eine Gruppe ist erst verbraucht, wenn man
+            // im selben Stapel wirklich Mitglied geworden ist.
+            && (
+              !('gid' in resource.data)
+              || existsAfter(
+                /databases/$(database)/documents/groups/$(resource.data.gid)/members/$(request.auth.uid)
+              )
+            )
           )
           || (
             resource.data.familyId is string
@@ -302,22 +335,27 @@ service cloud.firestore {
                     isMember()
                     && resource.data.createdBy == request.auth.uid
                   );
+      // Seit v.35.33.0 laden Einladungen in eine GRUPPE ein (gid), nicht
+      // mehr in eine Kalendergruppe — neue mit familyId gibt es nicht mehr.
+      // Offene alte bleiben einloesbar (inviteIsValid, invitedAutoJoin).
       allow create: if isMember()
                     && request.resource.data.createdBy == request.auth.uid
                     && request.resource.data.email is string
                     && request.resource.data.email
                       == request.resource.data.email.lower()
                     && request.resource.data.keys().hasOnly([
-                      'email', 'familyId', 'createdBy', 'createdAt'
+                      'email', 'gid', 'createdBy', 'createdAt'
                     ])
                     && (
+                      // Nur in Firn, ohne Gruppe: nur der Admin.
                       (
-                        request.resource.data.familyId == null
+                        !('gid' in request.resource.data)
                         && isAdmin()
                       )
+                      // In eine Gruppe: wer sie leitet.
                       || (
-                        request.resource.data.familyId is string
-                        && managesFamily(request.resource.data.familyId)
+                        request.resource.data.gid is string
+                        && leadsGroup(request.resource.data.gid)
                       )
                     );
       allow update: if false;
@@ -325,8 +363,12 @@ service cloud.firestore {
                     || (
                       isMember()
                       && resource.data.createdBy == request.auth.uid
-                      && resource.data.familyId is string
-                      && managesFamily(resource.data.familyId)
+                      && (
+                        (resource.data.get('familyId', null) is string
+                          && managesFamily(resource.data.familyId))
+                        || (resource.data.get('gid', null) is string
+                          && leadsGroup(resource.data.gid))
+                      )
                     )
                     || consumesInvite(code);
     }
@@ -891,7 +933,10 @@ service cloud.firestore {
       // Mitglieder sehen einander — ohne das gaebe es keine Kaderliste.
       allow get, list: if inGroup(gid);
 
-      allow create: if isMember()
+      // Zweiter Weg (hinter dem ||): registrieren mit einer E-Mail-
+      // Einladung in diese Gruppe. isMember() waere dort noch falsch — das
+      // Profil entsteht erst im selben Stapel. Siehe einladungsBeitritt().
+      allow create: if (isMember()
                     && request.resource.data.uid == uid
                     && request.resource.data.rolle is string
                     && request.resource.data.keys().hasOnly(['uid', 'rolle', 'seit', 'code'])
@@ -945,7 +990,8 @@ service cloud.firestore {
                           /databases/$(database)/documents/groupInvites/$(request.resource.data.code)
                         ).data.gid == gid
                       )
-                    );
+                    ))
+                    || einladungsBeitritt(gid, uid);
 
       // Rollen vergibt nur der Kopf — wie bei families, wo auch nur der
       // Kopf die Managerliste aendert. Duerfte die Leitung das, koennten

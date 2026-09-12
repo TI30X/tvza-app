@@ -35,6 +35,7 @@ import {
 import { ICONS, icon } from '../../shell.js?v=12';
 import { initialsOf } from '../../nav.js?v=10';
 import { frage } from '../../dialog.js';
+import { meineGruppen, leitet } from '../../groups.js';
 
 /* Modulschlüssel → Bereichsfarbe. Wie in nav.js ausgeschrieben,
    weil die beiden nicht deckungsgleich sind. */
@@ -653,7 +654,7 @@ function openSettings(section = '') {
   });
 }
 const adminHealthData = {
-  families:'checking',
+  gruppen:'checking',
   invites:'checking',
   users:'checking',
   food:'checking',
@@ -661,7 +662,7 @@ const adminHealthData = {
   foodCount:0,
 };
 function resetAdminHealth() {
-  adminHealthData.families = 'checking';
+  adminHealthData.gruppen = 'checking';
   adminHealthData.invites = 'checking';
   adminHealthData.users = 'checking';
   adminHealthData.food = 'checking';
@@ -678,7 +679,7 @@ function renderAdminHealth() {
     ['localhost', '127.0.0.1'].includes(location.hostname);
   const isOnline = navigator.onLine;
   const componentStates = [
-    adminHealthData.families,
+    adminHealthData.gruppen,
     adminHealthData.invites,
     adminHealthData.users,
     adminHealthData.food,
@@ -751,7 +752,7 @@ function openAdmin() {
   document.getElementById('memberInviteSection').style.display = '';
   document.getElementById('superAdminUserSection').style.display = '';
   document.getElementById('superAdminFoodSection').style.display = '';
-  loadInviteFamilies().then(renderMemberInvites);
+  loadInviteGroups().then(renderMemberInvites);
   loadAppUsers().then(() => {
     renderAdminUsers();
     renderFoodRequests();
@@ -1037,43 +1038,48 @@ async function renderMyShares() {
   }));
 }
 
-/* ════ Admin · family invitations ═══════════════════════════ */
+/* ════ Admin · Einladungen per E-Mail ════════════════════════ */
 function newInviteCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-let inviteFamilies = [];
-async function loadInviteFamilies() {
+/* Eingeladen wird in eine GRUPPE (seit v.35.33.0). Vorher standen hier
+   die Kalendergruppen (families), in denen man Verwaltung war — das
+   zweite Gruppenmodell, das v.35.32.0 aufgeloest hat. Zur Wahl stehen
+   die Gruppen, die man leitet: nur dort darf man laut Regel einladen. */
+let inviteGroups = [];
+async function loadInviteGroups() {
   try {
-    const snap = await getDocs(query(
-      collection(db, 'families'),
-      where('members', 'array-contains', user.uid)
-    ));
-    inviteFamilies = snap.docs
-      .map(item => ({ id:item.id, ...item.data() }))
-      .filter(item => item.headUid === user.uid || (item.managers || []).includes(user.uid))
-      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
-    adminHealthData.families = 'ok';
+    inviteGroups = (await meineGruppen(user.uid)).filter(g => leitet(g.meineRolle));
+    adminHealthData.gruppen = 'ok';
   } catch (error) {
-    reportClientError('invite-families', error);
-    inviteFamilies = [];
-    adminHealthData.families = 'error';
+    reportClientError('invite-groups', error);
+    inviteGroups = [];
+    adminHealthData.gruppen = 'error';
   }
   const picker = document.getElementById('memberInviteFamily');
   const noGroup = profile.isTimo === true
     ? '<option value="">Keine Gruppe – nur Firn</option>'
     : '<option value="" disabled>Keine Gruppe – nur für App-Admin</option>';
-  picker.innerHTML = noGroup + inviteFamilies
+  picker.innerHTML = noGroup + inviteGroups
     .map(item => `<option value="${escHtml(item.id)}">${escHtml(item.name || 'Unbenannte Gruppe')}</option>`)
     .join('');
-  if (profile.isTimo !== true && inviteFamilies.length) picker.value = inviteFamilies[0].id;
+  if (profile.isTimo !== true && inviteGroups.length) picker.value = inviteGroups[0].id;
   renderAdminHealth();
-  return inviteFamilies;
+  return inviteGroups;
+}
+
+/* Wohin eine Einladung fuehrt, fuer die Liste. Alte, noch offene
+   Einladungen in eine Kalendergruppe tragen familyId statt gid. */
+function einladungsZiel(invite) {
+  if (invite.gid) return inviteGroups.find(item => item.id === invite.gid)?.name || 'Gruppe';
+  if (invite.familyId) return 'Kalendergruppe (alt)';
+  return 'Nur Firn';
 }
 
 async function renderMemberInvites() {
-  if (profile.isTimo !== true && !inviteFamilies.length) return;
+  if (profile.isTimo !== true && !inviteGroups.length) return;
   const wrap = document.getElementById('memberInviteList');
   try {
     const inviteQuery = profile.isTimo === true
@@ -1094,11 +1100,7 @@ async function renderMemberInvites() {
         <span class="avatar avatar--ink" style="${personAvatarStyle(invite.email)}">${escHtml(initialsOf(invite.email))}</span>
         <span class="row__body">
           <span class="row__title">${escHtml(invite.email || 'Ohne E-Mail')}</span>
-          <span class="row__sub">${escHtml(
-            invite.familyId
-              ? (inviteFamilies.find(item => item.id === invite.familyId)?.name || 'Kalendergruppe')
-              : 'Nur Firn'
-          )} · ${escHtml(invite.code)}</span>
+          <span class="row__sub">${escHtml(einladungsZiel(invite))} · ${escHtml(invite.code)}</span>
         </span>
         <span class="row__end">
           <button class="b" data-invite-copy="${escHtml(invite.code)}" type="button">Kopieren</button>
@@ -1133,7 +1135,7 @@ async function renderMemberInvites() {
 document.getElementById('memberInviteCreate').addEventListener('click', async () => {
   const input = document.getElementById('memberInviteEmail');
   const email = input.value.trim().toLowerCase();
-  const familyId = document.getElementById('memberInviteFamily').value || null;
+  const gid = document.getElementById('memberInviteFamily').value || null;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     alert('Bitte eine gültige E-Mail-Adresse eingeben.');
     return;
@@ -1143,11 +1145,13 @@ document.getElementById('memberInviteCreate').addEventListener('click', async ()
   try {
     let code = newInviteCode();
     while ((await getDoc(doc(db, 'memberInvites', code))).exists()) code = newInviteCode();
-    const family = inviteFamilies.find(item => item.id === familyId);
+    const gruppe = inviteGroups.find(item => item.id === gid);
     const batch = writeBatch(db);
+    /* gid nur, wenn es eine Gruppe ist — ohne Gruppe (nur Firn) fehlt das
+       Feld ganz; so unterscheidet die Regel die beiden Faelle. */
     batch.set(doc(db, 'memberInvites', code), {
       email,
-      familyId,
+      ...(gid ? { gid } : {}),
       createdBy: user.uid,
       createdAt: serverTimestamp()
     });
@@ -1157,7 +1161,7 @@ document.getElementById('memberInviteCreate').addEventListener('click', async ()
         name: 'member-invite',
         data: {
           inviteCode: code,
-          familyName: family?.name || 'Firn'
+          familyName: gruppe?.name || 'Firn'
         }
       },
       createdAt: serverTimestamp()

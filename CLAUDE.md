@@ -12,7 +12,7 @@ Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
 **Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
 Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
 
-Version: **v.35.32.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.33.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -40,7 +40,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-53 Testdateien, **546 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+53 Testdateien, **548 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -69,7 +69,7 @@ Sonst sieht man neues Markup mit altem Stylesheet.
 
 **2. Die Regeln sind die Wahrheit, nicht die Oberfläche.** Mitgliedschaft,
 Gruppenisolation und einmalige Einladungscodes stehen in `firestore.rules`
-(1319 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
+(1365 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
 halten die Invarianten fest — Regeländerungen gehören im selben Commit dorthin.
 
 Historisch drifteten Datei und Live-Stand auseinander, weil die Regeln in die
@@ -212,6 +212,13 @@ v.35.31.0 führte der Kalender eine zweite Verwaltung auf `families`
   `security-model.test.mjs` hält beides.
 - Anlegen, Beitreten, Verwalten: nur im Gruppe-Tab. Alte Einladungslinks
   (`?invite=&token=`) führen mit einem Hinweis dorthin.
+- **E-Mail-Einladungen** (`memberInvites`, Admin-Bereich) zeigen seit
+  v.35.33.0 auf eine Gruppe (`gid`) statt auf eine Familie. Einladen darf,
+  wer die Gruppe leitet; „nur Firn“ ohne Gruppe bleibt dem Admin. Beim
+  Registrieren entstehen Profil, Mitgliedschaft (`mitglied`, mit dem Code) und
+  der Verbrauch der Einladung in EINEM Stapel — die Regel dafür ist
+  `einladungsBeitritt()`, weil `isMember()` vor dem Profil noch falsch ist.
+  Alte, offene Familien-Einladungen bleiben einlösbar.
 
 ## Ausrollen
 
@@ -225,7 +232,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **797 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **798 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -280,7 +287,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 546 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 548 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -289,10 +296,9 @@ Zwei Dinge, die leicht übersehen werden:
 - Die älteren Seiten (`maturaarbeit*.html`, `guest.html`, `public.html`)
   sind übersetzt, halten aber die Seiten-Invariante noch nicht: `<style>`-Blöcke,
   Inline-Skripte, `confirm()` beim Zurücksetzen der Maturaarbeit.
-- **Reste des Familienmodells.** Die E-Mail-Einladungen (`memberInvites`,
-  Admin-Bereich in `start.js`, Registrierung in `login.html`) tragen noch in
-  `families` ein, nicht in eine Gruppe — ohne Mailserver ohnehin still. Das
-  Profilfeld `users.familyId` wird nicht mehr geschrieben. Die Reisen
+- **Reste des Familienmodells.** Das Profilfeld `users.familyId` wird nicht
+  mehr geschrieben; alte, offene Einladungen in eine Kalendergruppe werden
+  noch eingelöst (`invitedAutoJoin`). Die Reisen
   (`trips`, samt Gastzugang) bleiben eine eigene Sammlung neben den
   Gruppenterminen (`groups/{gid}/events`).
 - **Regeln ohne Emulator.** Auf dieser Maschine gibt es kein Java; die
@@ -300,11 +306,13 @@ Zwei Dinge, die leicht übersehen werden:
   kompiliert, nicht gegen Testfaelle gefahren. Zuletzt ausgerollt mit
   v.35.32.0 (`tripGruppe()`, Übernahme-Marke an `families`, Schutz der
   Familienkennung beim Anlegen einer Gruppe) — Regeln VOR dem Code.
+  v.35.33.0 (Einladungen in Gruppen, `einladungsBeitritt()`) ist lokal
+  und kompiliert, aber noch nicht ausgerollt.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.32.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.33.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
