@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
-  <title>Gast-Zugang — Firn</title>
+  <title data-i18n="gast.seitentitel">Gast-Zugang — Firn</title>
   <style>
     .g-msgs { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px 2px; }
     .g-bubble { max-width: 80%; padding: 8px 12px; border-radius: var(--r-panel); font-size: 14px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
@@ -37,12 +37,12 @@
   <div class="app">
     <header class="header">
       <div class="header-inner">
-        <span class="page-title">Reiseplan</span>
+        <span class="page-title" data-i18n="gast.reiseplan">Reiseplan</span>
       </div>
     </header>
 
     <main class="main">
-      <div id="loading" class="spinner">Lade…</div>
+      <div id="loading" class="spinner" data-i18n="common.laden">Lade…</div>
 
       <div id="requestForm" style="display:none">
         <div class="form-card">
@@ -51,9 +51,9 @@
             Erstelle ein Konto mit E-Mail und Passwort, um den Reiseplan zu sehen.
           </p>
           <div class="login-error" id="authErr" style="background:var(--accent-bg);color:var(--accent);font-size:13px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r1);margin-bottom:14px;display:none"></div>
-          <div class="field" id="gNameField"><label class="form-label">Dein Name</label><input id="gName" class="form-input" type="text" autocomplete="name" /></div>
-          <div class="field"><label class="form-label">E-Mail-Adresse</label><input id="gEmail" class="form-input" type="email" autocomplete="username" inputmode="email" autocapitalize="none" /></div>
-          <div class="field"><label class="form-label">Passwort</label><input id="gPass" class="form-input" type="password" placeholder="mind. 6 Zeichen" autocomplete="new-password" autocapitalize="none" /></div>
+          <div class="field" id="gNameField"><label class="form-label" data-i18n="login.name">Dein Name</label><input id="gName" class="form-input" type="text" autocomplete="name" /></div>
+          <div class="field"><label class="form-label" data-i18n="gast.mail">E-Mail-Adresse</label><input id="gEmail" class="form-input" type="email" autocomplete="username" inputmode="email" autocapitalize="none" /></div>
+          <div class="field"><label class="form-label" data-i18n="login.pass">Passwort</label><input id="gPass" class="form-input" type="password" placeholder="mind. 6 Zeichen" data-i18n-attr="placeholder:gast.passPh" autocomplete="new-password" autocapitalize="none" /></div>
           <button id="requestBtn" class="btn btn-primary btn-block" style="margin-top:8px">Konto erstellen</button>
           <p class="switch-mode" style="text-align:center;font-size:13px;color:var(--ink-soft);margin-top:14px">
             <span id="switchText">Schon ein Konto? </span><a id="switchLink" style="color:var(--accent);font-weight:700;cursor:pointer">Anmelden</a>
@@ -63,29 +63,29 @@
 
       <div id="wrongAccount" style="display:none">
         <div class="empty-state">
-          Auf diesem Gerät ist gerade ein Familienkonto angemeldet — dieser Link ist für Gäste gedacht.<br>
-          <button id="signOutBtn" class="btn btn-primary" style="margin-top:12px">Ausloggen &amp; als Gast anmelden</button>
+          <span data-i18n="gast.falschesKonto">Auf diesem Gerät ist gerade ein Familienkonto angemeldet — dieser Link ist für Gäste gedacht.</span><br>
+          <button id="signOutBtn" class="btn btn-primary" style="margin-top:12px" data-i18n="gast.alsGast">Ausloggen &amp; als Gast anmelden</button>
         </div>
       </div>
 
       <div id="invalidLink" style="display:none">
-        <div class="empty-state">Dieser Link ist ungültig oder abgelaufen. Bitte frag die Familie nach einem neuen Link.</div>
+        <div class="empty-state" data-i18n="gast.ungueltig">Dieser Link ist ungültig oder abgelaufen. Bitte frag die Familie nach einem neuen Link.</div>
       </div>
 
       <div id="dashboard" style="display:none">
         <div class="form-card" id="tripCard"></div>
 
         <div class="form-card">
-          <p class="form-title">Programm</p>
+          <p class="form-title" data-i18n="gast.programm">Programm</p>
           <div id="itinList"></div>
         </div>
 
         <div class="form-card" id="chatCard" style="display:none">
-          <p class="form-title">Chat mit <span id="hostName">der Familie</span></p>
+          <p class="form-title" data-i18n="gast.chat">Chat mit der Familie</p>
           <div class="g-msgs" id="msgs"></div>
           <div class="g-compose">
-            <textarea id="msgInput" class="form-textarea" rows="1" placeholder="Nachricht schreiben…"></textarea>
-            <button id="sendBtn" class="btn btn-primary">Senden</button>
+            <textarea id="msgInput" class="form-textarea" rows="1" placeholder="Nachricht schreiben…" data-i18n-attr="placeholder:msg.schreiben"></textarea>
+            <button id="sendBtn" class="btn btn-primary" data-i18n="msg.senden">Senden</button>
           </div>
         </div>
       </div>
@@ -97,7 +97,7 @@
   </div>
 
   <div class="g-viewer" id="gViewer">
-    <div class="g-viewer-bar"><button class="icon-pill" id="gViewerClose">‹</button><span>Reiseplan</span></div>
+    <div class="g-viewer-bar"><button class="icon-pill" id="gViewerClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen">‹</button><span data-i18n="gast.reiseplan">Reiseplan</span></div>
     <iframe id="gViewerFrame" sandbox="allow-same-origin allow-popups" referrerpolicy="no-referrer"></iframe>
   </div>
 
@@ -112,6 +112,9 @@
 
     const $ = id => document.getElementById(id);
     const params = new URLSearchParams(location.search);
+    /* Beschriftungen, die der Code setzt, kommen per tOr: bis der Katalog
+       da ist, steht Deutsch, nie der Schluessel. */
+    const T = (key, deutsch) => window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch) : deutsch;
 
     // Trip/token travel via the URL on first open; stashed in localStorage so
     // a guest can come back later without the full link.
@@ -149,16 +152,15 @@
       }
     }
 
-    async function loadDashboard(user) {
-      const tripSnap = await getDoc(doc(db, 'trips', tripId));
-      if (!tripSnap.exists()) { show('invalidLink'); return; }
-      const trip = tripSnap.data();
-
+    /* Die Reise wird einmal geholt und bei jedem Sprachwechsel neu
+       gezeichnet — ohne erneutes Lesen und ohne neuen tripViews-Eintrag. */
+    let geladeneReise = null;
+    function zeichneReise(trip) {
       $('tripCard').innerHTML = `
-        <p class="form-title">${escHtml(trip.name || 'Reise')}</p>
+        <p class="form-title">${escHtml(trip.name || T('gast.reise', 'Reise'))}</p>
         ${trip.destination ? `<p style="color:var(--ink-soft);font-size:14px">${escHtml(trip.destination)}</p>` : ''}
         ${trip.notes ? `<p style="margin-top:8px;font-size:14px">${escHtml(trip.notes)}</p>` : ''}
-        ${(trip.planHtml || trip.planUrl) ? `<button class="btn btn-primary btn-block" id="gViewOriginal" style="margin-top:12px">🎨 Original-Design ansehen</button>` : ''}
+        ${(trip.planHtml || trip.planUrl) ? `<button class="btn btn-primary btn-block" id="gViewOriginal" style="margin-top:12px">${T('gast.original', 'Original-Design ansehen')}</button>` : ''}
       `;
       if ($('gViewOriginal')) $('gViewOriginal').onclick = () => {
         const f = $('gViewerFrame');
@@ -173,7 +175,7 @@
       itin.forEach(it => { (byDay[it.date || ''] = byDay[it.date || ''] || []).push(it); });
       const dayKeys = Object.keys(byDay).sort();
       $('itinList').innerHTML = dayKeys.length ? dayKeys.map(d => `
-        <div class="g-day">${d ? escHtml(d) : 'Ohne Datum'}</div>
+        <div class="g-day">${d ? escHtml(d) : T('gast.ohneDatum', 'Ohne Datum')}</div>
         ${byDay[d].map(it => `
           <div class="line">
             <span class="l-main">
@@ -181,7 +183,15 @@
               ${it.notes ? `<span class="l-sub">${escHtml(it.notes)}</span>` : ''}
             </span>
           </div>`).join('')}
-      `).join('') : '<p class="empty-hint" style="padding:10px">Noch kein Programm hinterlegt.</p>';
+      `).join('') : `<p class="empty-hint" style="padding:10px">${T('gast.keinProgramm', 'Noch kein Programm hinterlegt.')}</p>`;
+    }
+
+    async function loadDashboard(user) {
+      const tripSnap = await getDoc(doc(db, 'trips', tripId));
+      if (!tripSnap.exists()) { show('invalidLink'); return; }
+      const trip = tripSnap.data();
+      geladeneReise = trip;
+      zeichneReise(trip);
 
       // Log that this guest viewed the trip — family can see this, guest can't.
       addDoc(collection(db, 'tripViews'), { tripId, guestUid: user.uid, viewedAt: serverTimestamp() }).catch(() => {});
@@ -201,7 +211,7 @@
         box.innerHTML = snap.docs.length ? snap.docs.map(d => {
           const m = d.data(); const mine = m.sender === me;
           return `<div class="g-bubble ${mine ? 'me' : 'them'}">${escHtml(m.text)}</div>`;
-        }).join('') : '<p class="empty-hint">Noch keine Nachrichten — sag Hallo 👋</p>';
+        }).join('') : `<p class="empty-hint">${T('gast.keineNachrichten', 'Noch keine Nachrichten — sag Hallo.')}</p>`;
         box.scrollTop = box.scrollHeight;
       }, () => {});
 
@@ -227,30 +237,42 @@
     }
 
     let mode = 'register'; // or 'login'
+    /* Diese fuenf Elemente beschriftet nur der Code — darum tragen sie
+       kein data-i18n (Falle 5 in CLAUDE.md). */
+    function beschrifte() {
+      const neu = mode === 'register';
+      $('authTitle').textContent = neu ? T('gast.willkommen', 'Willkommen!') : T('gast.willkommenZurueck', 'Willkommen zurück!');
+      $('authSub').textContent = neu
+        ? T('gast.subNeu', 'Erstelle ein Konto mit E-Mail und Passwort, um den Reiseplan zu sehen.')
+        : T('gast.subLogin', 'Melde dich mit E-Mail und Passwort an.');
+      $('requestBtn').textContent = neu ? T('gast.kontoErstellen', 'Konto erstellen') : T('login.anmelden', 'Anmelden');
+      $('switchText').textContent = (neu ? T('login.schonKonto', 'Schon ein Konto?') : T('login.keinKonto', 'Noch kein Konto?')) + ' ';
+      $('switchLink').textContent = neu ? T('login.anmelden', 'Anmelden') : T('login.registrieren', 'Registrieren');
+    }
     function applyMode() {
       $('gNameField').style.display = mode === 'register' ? '' : 'none';
-      $('authTitle').textContent = mode === 'register' ? 'Willkommen!' : 'Willkommen zurück!';
-      $('authSub').textContent = mode === 'register'
-        ? 'Erstelle ein Konto mit E-Mail und Passwort, um den Reiseplan zu sehen.'
-        : 'Melde dich mit E-Mail und Passwort an.';
-      $('requestBtn').textContent = mode === 'register' ? 'Konto erstellen' : 'Anmelden';
-      $('switchText').textContent = mode === 'register' ? 'Schon ein Konto? ' : 'Noch kein Konto? ';
-      $('switchLink').textContent = mode === 'register' ? 'Anmelden' : 'Registrieren';
+      beschrifte();
       $('authErr').style.display = 'none';
     }
+    function neuBeschriften() {
+      beschrifte();
+      if (geladeneReise) zeichneReise(geladeneReise);
+    }
+    if (window.TVZAI18n) window.TVZAI18n.ready.then(neuBeschriften, () => {});
+    window.addEventListener('tvza-lang-change', neuBeschriften);
     $('switchLink').addEventListener('click', () => { mode = mode === 'register' ? 'login' : 'register'; applyMode(); });
 
     function translateAuthError(code) {
       if (code === 'auth/network-request-failed' || code === 'unavailable') {
-        return 'Keine Internetverbindung. Bitte versuche es erneut.';
+        return T('login.fehler.netz', 'Keine Internetverbindung. Bitte versuche es erneut.');
       }
       if (code === 'auth/weak-password') {
-        return 'Bitte verwende ein Passwort mit mindestens 6 Zeichen.';
+        return T('login.fehler.schwach', 'Bitte verwende ein Passwort mit mindestens 6 Zeichen.');
       }
       if (mode === 'register') {
-        return 'Gastkonto konnte nicht erstellt werden. Prüfe E-Mail und Passwort.';
+        return T('gast.fehlerRegistrieren', 'Gastkonto konnte nicht erstellt werden. Prüfe E-Mail und Passwort.');
       }
-      return 'Anmeldung nicht möglich. Prüfe E-Mail und Passwort.';
+      return T('login.fehler.anmelden', 'Anmeldung nicht möglich. Prüfe E-Mail und Passwort.');
     }
 
     // A family account has a users/{uid} profile created through an invitation.
@@ -290,8 +312,8 @@
       const name = $('gName').value.trim();
       const email = $('gEmail').value.trim();
       const pass = $('gPass').value;
-      if (!email || !pass) { $('authErr').textContent = 'Bitte E-Mail und Passwort eingeben.'; $('authErr').style.display=''; return; }
-      if (mode === 'register' && !name) { $('authErr').textContent = 'Bitte deinen Namen eingeben.'; $('authErr').style.display=''; return; }
+      if (!email || !pass) { $('authErr').textContent = T('login.fehler.leer', 'Bitte E-Mail und Passwort eingeben.'); $('authErr').style.display=''; return; }
+      if (mode === 'register' && !name) { $('authErr').textContent = T('login.fehler.name', 'Bitte deinen Namen eingeben.'); $('authErr').style.display=''; return; }
       $('requestBtn').disabled = true;
       guestAuthInProgress = true;
       try {

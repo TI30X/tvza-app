@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1A1A2E">
 <script src="../assets/js/theme.js"></script>
 <script src="../assets/js/i18n.js?v=1"></script>
-<title>Maturaarbeit — Firn</title>
+<title data-i18n="ma.seitentitel">Maturaarbeit — Firn</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
@@ -215,10 +215,10 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
 <body class="matura-page matura-overview-page" data-bereich="matura">
 <header class="appbar appbar--bereich" data-bereich="matura">
   <div class="appbar__inner">
-    <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-    <span class="appbar__title">Maturaarbeit</span>
+    <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück" data-i18n-attr="aria-label:a11y.zurueck"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="appbar__title" data-i18n="mod.matura.name">Maturaarbeit</span>
     <span class="appbar__end">
-      <button class="appbar__btn" id="themeToggle" title="Theme wechseln"></button>
+      <button class="appbar__btn" id="themeToggle" title="Theme wechseln" data-i18n-attr="title:pg.theme"></button>
     </span>
   </div>
   <div class="appbar__accent"></div>
@@ -231,39 +231,39 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
   <section class="matura-hero panel" aria-labelledby="matura-title">
     <div class="matura-hero__top">
       <div class="matura-hero__copy">
-        <div class="marke">Maturaarbeit · Status</div>
+        <div class="marke" data-i18n="ma.status">Maturaarbeit · Status</div>
         <h1 id="matura-title">Intels Verlust der technologischen Führungsposition</h1>
         <p>Herr Diriwächter · Kantonsschule Ausserschwyz · WR 2025/26</p>
       </div>
       <a class="b b--secondary matura-view-link" href="maturaarbeit-tracker.html">
-        <span>Aufgabenansicht</span>
+        <span data-i18n="ma.aufgaben">Aufgabenansicht</span>
         <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </a>
     </div>
     <div class="matura-hero__metrics">
       <div class="matura-metric">
-        <span class="matura-metric__label">Abgabe</span>
+        <span class="matura-metric__label" data-i18n="ma.abgabe">Abgabe</span>
         <strong class="matura-metric__value days" id="days-el">–</strong>
         <span class="matura-metric__meta" id="deadline-label">Tage · 17. August 2026</span>
       </div>
       <div class="matura-progress-card">
         <div class="matura-progress-card__head">
-          <span>Gesamtfortschritt</span>
+          <span data-i18n="mt.gesamt">Gesamtfortschritt</span>
           <strong id="gp-pct">0 %</strong>
         </div>
-        <div class="matura-progress-track" role="progressbar" aria-label="Gesamtfortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="matura-progress-track" role="progressbar" aria-label="Gesamtfortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-attr="aria-label:mt.gesamt">
           <i class="gp-bar-fill" id="gp-fill" style="width:0%"></i>
         </div>
         <p id="progress-summary">Fortschritt wird berechnet.</p>
       </div>
     </div>
-    <div class="cat-overview" id="cat-overview" aria-label="Fortschritt nach Bereich"></div>
+    <div class="cat-overview" id="cat-overview" aria-label="Fortschritt nach Bereich" data-i18n-attr="aria-label:ma.nachBereich"></div>
   </section>
 
   <section class="matura-section-card" aria-labelledby="timeline-title">
     <div class="matura-section-head">
       <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19V5M4 12h16M8 8l-4 4 4 4"/></svg></span>
-      <div><h2 id="timeline-title">Zeitplan nach Phasen</h2><p>Öffne eine Phase, um Meilensteine und nächste Schritte zu sehen.</p></div>
+      <div><h2 id="timeline-title" data-i18n="ma.zeitplan">Zeitplan nach Phasen</h2><p data-i18n="ma.zeitplanSub">Öffne eine Phase, um Meilensteine und nächste Schritte zu sehen.</p></div>
     </div>
     <div class="phases" id="phases-container"></div>
   </section>
@@ -271,20 +271,20 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
   <section class="matura-section-card" aria-labelledby="meetings-title">
     <div class="matura-section-head">
       <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9.5 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></span>
-      <div><h2 id="meetings-title">Besprechungen mit Herrn Diriwächter</h2><p>Vier klar dokumentierte Kontrollpunkte bis zur Abgabe.</p></div>
+      <div><h2 id="meetings-title" data-i18n="ma.besprechungenMit" data-i18n-vars='{"wer":"Diriwächter"}'>Besprechungen mit Herrn Diriwächter</h2><p data-i18n="ma.besprechungenSub">Vier klar dokumentierte Kontrollpunkte bis zur Abgabe.</p></div>
     </div>
     <div class="meetings-row" id="meetings-row"></div>
     <div class="matura-callout matura-callout--danger" id="meetings-warn"></div>
     <div class="matura-callout">
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-      <span>Zu jedem Termin: Zeitplan, Protokolle und aktuelle Ergebnisse mitbringen.</span>
+      <span data-i18n="ma.mitbringen">Zu jedem Termin: Zeitplan, Protokolle und aktuelle Ergebnisse mitbringen.</span>
     </div>
   </section>
 
   <section class="matura-section-card" aria-labelledby="journal-title">
     <div class="matura-section-head">
       <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>
-      <div><h2 id="journal-title">Arbeitsjournal</h2><p>Prozess, Entscheide und Reflexionen im Teams-Kanal.</p></div>
+      <div><h2 id="journal-title" data-i18n="ma.journal">Arbeitsjournal</h2><p data-i18n="ma.journalSub">Prozess, Entscheide und Reflexionen im Teams-Kanal.</p></div>
     </div>
     <div class="section-prog-row"><div class="sp-bar"><div class="sp-fill" id="sp-journal"></div></div><div class="sp-lbl" id="sl-journal">0/0</div></div>
     <div class="checklist" id="cl-journal"></div>
@@ -293,7 +293,7 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
   <section class="matura-section-card" aria-labelledby="requirements-title">
     <div class="matura-section-head">
       <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
-      <div><h2 id="requirements-title">Verbindlichkeiten</h2><p>Pflichten, die unabhängig vom Inhalt erfüllt sein müssen.</p></div>
+      <div><h2 id="requirements-title" data-i18n="ma.verbindlich">Verbindlichkeiten</h2><p data-i18n="ma.verbindlichSub">Pflichten, die unabhängig vom Inhalt erfüllt sein müssen.</p></div>
     </div>
     <div class="section-prog-row"><div class="sp-bar"><div class="sp-fill" id="sp-verbindlich"></div></div><div class="sp-lbl" id="sl-verbindlich">0/0</div></div>
     <div class="checklist" id="cl-verbindlich"></div>
@@ -302,7 +302,7 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
   <section class="matura-section-card" aria-labelledby="paper-title">
     <div class="matura-section-head">
       <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2zM8 7h8M8 11h8"/></svg></span>
-      <div><h2 id="paper-title">Schriftliche Arbeit</h2><p>Aufbau, Inhalt und wissenschaftliche Argumentation.</p></div>
+      <div><h2 id="paper-title" data-i18n="ma.arbeit">Schriftliche Arbeit</h2><p data-i18n="ma.arbeitSub">Aufbau, Inhalt und wissenschaftliche Argumentation.</p></div>
     </div>
     <div class="section-prog-row"><div class="sp-bar"><div class="sp-fill" id="sp-aufbau"></div></div><div class="sp-lbl" id="sl-aufbau">0/0</div></div>
     <div class="checklist" id="cl-aufbau"></div>
@@ -311,7 +311,7 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
   <section class="matura-section-card" aria-labelledby="sources-title">
     <div class="matura-section-head">
       <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M3 5h18M5 5v14h14V5M8 9h8M8 13h8M8 17h5"/></svg></span>
-      <div><h2 id="sources-title">Quellen, Sprache und Formatierung</h2><p>Lesbarkeit, Zitierung und formale Konsistenz.</p></div>
+      <div><h2 id="sources-title" data-i18n="ma.quellen">Quellen, Sprache und Formatierung</h2><p data-i18n="ma.quellenSub">Lesbarkeit, Zitierung und formale Konsistenz.</p></div>
     </div>
     <div class="section-prog-row"><div class="sp-bar"><div class="sp-fill" id="sp-quellen"></div></div><div class="sp-lbl" id="sl-quellen">0/0</div></div>
     <div class="checklist" id="cl-quellen"></div>
@@ -320,7 +320,7 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
   <section class="matura-section-card" aria-labelledby="delivery-title">
     <div class="matura-section-head">
       <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></span>
-      <div><h2 id="delivery-title">Abgabe</h2><p>Der abschliessende Paket- und Qualitätscheck.</p></div>
+      <div><h2 id="delivery-title" data-i18n="ma.abgabe">Abgabe</h2><p data-i18n="ma.abgabeSub">Der abschliessende Paket- und Qualitätscheck.</p></div>
     </div>
     <div class="section-prog-row"><div class="sp-bar"><div class="sp-fill" id="sp-abgabe"></div></div><div class="sp-lbl" id="sl-abgabe">0/0</div></div>
     <div class="checklist" id="cl-abgabe"></div>
@@ -329,11 +329,11 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
   <section class="matura-section-card" aria-labelledby="rubric-title">
     <div class="matura-section-head">
       <span class="matura-section-icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v2a4 4 0 004 4M17 6h3v2a4 4 0 01-4 4"/></svg></span>
-      <div><h2 id="rubric-title">Bewertungsraster</h2><p>100 Punkte, aufgeteilt auf Arbeit, Journal und Präsentation.</p></div>
+      <div><h2 id="rubric-title" data-i18n="ma.raster">Bewertungsraster</h2><p data-i18n="ma.rasterSub">100 Punkte, aufgeteilt auf Arbeit, Journal und Präsentation.</p></div>
     </div>
     <div class="points-grid">
       <div class="pc">
-        <div class="pc-title">Schriftliche Arbeit</div>
+        <div class="pc-title" data-i18n="ma.arbeit">Schriftliche Arbeit</div>
         <div class="pc-row"><span>Kreativität, Analyse</span><span class="pts">15P</span></div>
         <div class="pc-row"><span>Thema, Gewichtung</span><span class="pts">10P</span></div>
         <div class="pc-row"><span>Fachkompetenz</span><span class="pts">10P</span></div>
@@ -341,26 +341,26 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
         <div class="pc-row"><span>Struktur, Gliederung</span><span class="pts">5P</span></div>
         <div class="pc-row"><span>Quellenverarbeitung</span><span class="pts">5P</span></div>
         <div class="pc-row"><span>Visualisierung</span><span class="pts">5P</span></div>
-        <div class="pc-total"><span>Total</span><span>55 P</span></div>
+        <div class="pc-total"><span data-i18n="ma.total">Total</span><span>55 P</span></div>
       </div>
       <div class="pc">
-        <div class="pc-title">Arbeitsjournal</div>
+        <div class="pc-title" data-i18n="ma.journal">Arbeitsjournal</div>
         <div class="pc-row"><span>Aufbau, Konzeption, Prozess</span><span class="pts">10P</span></div>
         <div class="pc-row"><span>Reflexion, Lernziele</span><span class="pts">5P</span></div>
         <div class="pc-row"><span>Zeitplan, Visualisierung</span><span class="pts">5P</span></div>
-        <div class="pc-total"><span>Total</span><span>20 P</span></div>
+        <div class="pc-total"><span data-i18n="ma.total">Total</span><span>20 P</span></div>
       </div>
       <div class="pc">
-        <div class="pc-title">Mündliche Präsentation</div>
+        <div class="pc-title" data-i18n="ma.praesentation">Mündliche Präsentation</div>
         <div class="pc-row"><span>Thema, Kerngedanke, Struktur</span><span class="pts">5P</span></div>
         <div class="pc-row"><span>Sprache, Fragen, Gestik</span><span class="pts">15P</span></div>
         <div class="pc-row"><span>Visualisierung</span><span class="pts">5P</span></div>
-        <div class="pc-total"><span>Total</span><span>25 P</span></div>
+        <div class="pc-total"><span data-i18n="ma.total">Total</span><span>25 P</span></div>
       </div>
     </div>
   </section>
 
-  <button class="b b--danger matura-reset" type="button" onclick="resetAll()"><svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Fortschritt zurücksetzen</button>
+  <button class="b b--danger matura-reset" type="button" onclick="resetAll()"><svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> <span data-i18n="mt.zuruecksetzen">Fortschritt zurücksetzen</span></button>
 </main>
 
 <aside class="sidebar" id="sidebar"></aside>
@@ -369,6 +369,33 @@ main { display:flex; flex-direction:column; gap:20px; min-width:0; }
 <script>
 const DEADLINE = new Date('2026-08-17');
 const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+
+// ── SPRACHE ──────────────────────────────────────────────────────────────────
+// Der Rahmen kommt aus dem Katalog; die Daten darunter (Phasen, Meilensteine,
+// Checklisten) sind Timos Inhalt und bleiben deutsch. tOr statt t(): der
+// Katalog kommt asynchron, und bis dahin soll Deutsch dastehen, nicht der
+// Schluessel.
+function T(key, deutsch, vars){
+  const i18n = window.TVZAI18n;
+  if (i18n) return i18n.tOr(key, deutsch, vars);
+  return String(deutsch).replace(/\{(\w+)\}/g, (ganz, name) => vars && vars[name] !== undefined ? vars[name] : ganz);
+}
+/* Tage mit Pluralform: Polnisch hat drei, Deutsch zwei. */
+function TP(key, n, eins, mehr){
+  const i18n = window.TVZAI18n;
+  if (i18n && i18n.t(key + '.other') !== key + '.other') return i18n.format.plural(key, n);
+  return (n === 1 ? eins : mehr).replace('{n}', n);
+}
+/* Das Datum in der Sprache, die WIRKLICH dasteht. format.date folgt der
+   gewaehlten Sprache; fehlt deren Katalog (offline, erster Start), bleibt
+   der Satz deutsch — und hiesse sonst "Abgabe war am 17 August 2026". */
+function abgabeDatum(){
+  const i18n = window.TVZAI18n;
+  try {
+    if (i18n && i18n.activeLang === i18n.lang) return i18n.format.date(DEADLINE, { day:'numeric', month:'long', year:'numeric', timeZone:'UTC' });
+  } catch(e){}
+  return '17. August 2026';
+}
 
 // ── PHASENDATEN ──────────────────────────────────────────────────────────────
 // Die aktive Phase wird aus dem heutigen Datum berechnet.
@@ -575,13 +602,13 @@ const categoryIcons={
   abgabe:'<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
 };
 const categories=[
-  {id:'meilensteine',name:'Meilensteine',ids:()=>phases.flatMap(p=>p.milestones.map(m=>m.id))},
-  {id:'besprechungen',name:'Besprechungen',ids:()=>['meeting_1','meeting_2','meeting_3','meeting_4']},
-  {id:'journal',name:'Arbeitsjournal',ids:()=>checklists.journal.map(i=>i.id)},
-  {id:'verbindlich',name:'Verbindlichkeiten',ids:()=>checklists.verbindlich.map(i=>i.id)},
-  {id:'aufbau',name:'Schriftl. Arbeit',ids:()=>checklists.aufbau.map(i=>i.id)},
-  {id:'quellen',name:'Quellen & Format',ids:()=>checklists.quellen.map(i=>i.id)},
-  {id:'abgabe',name:'Abgabe',ids:()=>checklists.abgabe.map(i=>i.id)},
+  {id:'meilensteine',key:'ma.kat.meilensteine',name:'Meilensteine',ids:()=>phases.flatMap(p=>p.milestones.map(m=>m.id))},
+  {id:'besprechungen',key:'mt.besprechungen',name:'Besprechungen',ids:()=>['meeting_1','meeting_2','meeting_3','meeting_4']},
+  {id:'journal',key:'ma.journal',name:'Arbeitsjournal',ids:()=>checklists.journal.map(i=>i.id)},
+  {id:'verbindlich',key:'ma.verbindlich',name:'Verbindlichkeiten',ids:()=>checklists.verbindlich.map(i=>i.id)},
+  {id:'aufbau',key:'ma.kat.aufbau',name:'Schriftl. Arbeit',ids:()=>checklists.aufbau.map(i=>i.id)},
+  {id:'quellen',key:'ma.kat.quellen',name:'Quellen & Format',ids:()=>checklists.quellen.map(i=>i.id)},
+  {id:'abgabe',key:'ma.abgabe',name:'Abgabe',ids:()=>checklists.abgabe.map(i=>i.id)},
 ];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
@@ -622,14 +649,17 @@ function renderDeadline(){
   const label=document.getElementById('deadline-label');
   el.textContent=Math.max(0,diff);
   el.className='matura-metric__value days '+(diff<60?'urgent':diff<150?'warn':'ok');
-  label.textContent=diff<0?'Abgabe war am 17. August 2026':diff===0?'Abgabe heute · 17. August 2026':'Tage · 17. August 2026';
+  const datum=abgabeDatum();
+  label.textContent=diff<0?T('ma.abgabeWar','Abgabe war am {datum}',{datum})
+    :diff===0?T('ma.abgabeHeute','Abgabe heute · {datum}',{datum})
+    :T('ma.tageBis','Tage · {datum}',{datum});
 }
 function renderCatOverview(){
   document.getElementById('cat-overview').innerHTML=categories.map(cat=>{
     const ids=cat.ids(); const total=ids.length;
     const done=ids.filter(id=>state[id]).length;
     const pct=total?Math.round(done/total*100):0;
-    return`<div class="cat-pill"><div class="cp-icon">${categoryIcons[cat.id]}</div><div class="cp-info"><div class="cp-name">${cat.name}</div><div class="cp-count">${done}/${total}</div><div class="cp-bar"><div class="cp-fill" style="width:${pct}%"></div></div></div></div>`;
+    return`<div class="cat-pill"><div class="cp-icon">${categoryIcons[cat.id]}</div><div class="cp-info"><div class="cp-name">${T(cat.key,cat.name)}</div><div class="cp-count">${done}/${total}</div><div class="cp-bar"><div class="cp-fill" style="width:${pct}%"></div></div></div></div>`;
   }).join('');
 }
 function renderGlobalProg(){
@@ -638,7 +668,7 @@ function renderGlobalProg(){
   const pct=total?Math.round(done/total*100):0;
   document.getElementById('gp-fill').style.width=pct+'%';
   document.getElementById('gp-pct').textContent=pct+' %';
-  document.getElementById('progress-summary').textContent=`${done} von ${total} Punkten erledigt`;
+  document.getElementById('progress-summary').textContent=T('ma.punkteErledigt','{done} von {total} Punkten erledigt',{done,total});
   document.querySelector('.matura-progress-track')?.setAttribute('aria-valuenow',String(pct));
   // Persist a compact summary so the dashboard tile reflects this module's Gesamtfortschritt.
   try {
@@ -655,14 +685,15 @@ function renderPhases(){
     const isPast=p.phaseEnd<TODAY && !isCurrent;
     const mDone=p.milestones.filter(m=>state[m.id]).length;
     const mTotal=p.milestones.length;
-    const phaseLabel=isCurrent?`${p.num} · Aktuell`:isPast?`${p.num} · Vorbei`:p.num;
+    const nr=T('ma.phaseNr','Phase {n}',{n:p.id.slice(1)});
+    const phaseLabel=isCurrent?`${nr} · ${T('ma.aktuell','Aktuell')}`:isPast?`${nr} · ${T('ma.vorbei','Vorbei')}`:nr;
 
     const phaseClass=[p.cls, isCurrent?'current-phase':'', isPast?'done-phase':''].filter(Boolean).join(' ');
 
     const nextOpen=p.milestones.find(m=>!state[m.id]);
     const hereBanner=isCurrent?`<div class="here-banner">
       <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1116 0zM12 13a3 3 0 100-6 3 3 0 000 6z"/></svg>
-      <span>Du bist hier · ${p.title}${nextOpen?` · Nächster offener Schritt: ${nextOpen.title}`:' · Alle Meilensteine dieser Phase sind erledigt.'}</span>
+      <span>${T('ma.duBistHier','Du bist hier')} · ${p.title} · ${nextOpen?T('ma.naechster','Nächster offener Schritt: {titel}',{titel:nextOpen.title}):T('ma.alleErledigt','Alle Meilensteine dieser Phase sind erledigt.')}</span>
     </div>`:'';
 
     const holidayTags=p.holidays.map((h,i)=>{
@@ -676,12 +707,12 @@ function renderPhases(){
       const detailsOpen=openMilestoneDetails.has(m.id);
       return`
         <div class="pm-item${isOverdue?' overdue-item':''}">
-          <button type="button" class="pm-dot${done?' done':isOverdue?' overdue':''}" onclick="toggleMilestone('${m.id}')" aria-pressed="${done}" aria-label="${done?'Als offen markieren':'Als erledigt markieren'}"></button>
+          <button type="button" class="pm-dot${done?' done':isOverdue?' overdue':''}" onclick="toggleMilestone('${m.id}')" aria-pressed="${done}" aria-label="${done?T('ma.alsOffen','Als offen markieren'):T('ma.alsErledigt','Als erledigt markieren')}"></button>
           <div class="pm-text">
             <div class="pm-title-row">
               <span class="pm-title" onclick="toggleMilestone('${m.id}')">${m.title}</span>
-              ${m.details?`<button type="button" class="pm-info-btn${detailsOpen?' open':''}" onclick="toggleMilestoneDetails('${m.id}',event)" aria-expanded="${detailsOpen}">Details</button>`:''}
-              ${isOverdue?`<span class="overdue-tag">Überfällig</span>`:m.date?`<div class="pm-date-tag">${m.date}</div>`:''}
+              ${m.details?`<button type="button" class="pm-info-btn${detailsOpen?' open':''}" onclick="toggleMilestoneDetails('${m.id}',event)" aria-expanded="${detailsOpen}">${T('ma.details','Details')}</button>`:''}
+              ${isOverdue?`<span class="overdue-tag">${T('ma.ueberfaellig','Überfällig')}</span>`:m.date?`<div class="pm-date-tag">${m.date}</div>`:''}
             </div>
             ${m.sub?`<div class="pm-sub">${m.sub}</div>`:''}
             ${detailsOpen&&m.details?`<div class="pm-details">${m.details}</div>`:''}
@@ -695,7 +726,7 @@ function renderPhases(){
           <span class="phase-stripe"></span>
           <span class="ph-body">
             <span class="ph-top"><span class="ph-num">${phaseLabel}</span><span class="ph-title">${p.title}</span></span>
-            <span class="ph-dates">${p.kw} · ${p.dates} · ca. ${p.weeks} Wochen · ${mDone}/${mTotal} Meilensteine</span>
+            <span class="ph-dates">${p.kw} · ${p.dates} · ${T('ma.wochen','ca. {n} Wochen',{n:p.weeks})} · ${T('ma.meilensteineZahl','{done}/{total} Meilensteine',{done:mDone,total:mTotal})}</span>
             <span class="ph-desc">${p.desc}</span>
           </span>
           <span class="phase-toggle" aria-hidden="true"><svg class="ic${isOpen?' is-open':''}" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
@@ -713,28 +744,34 @@ function toggleMilestone(id){ state[id]=!state[id]; saveState(id); renderPhases(
 
 // ── MEETINGS ─────────────────────────────────────────────────────────────────
 function renderMeetings(){
-  const labels=['Thema & Konzept','Analyse & Daten','Rohtext Feedback','Abschluss-Check'];
+  const labels=[
+    T('ma.gespraech.1','Thema & Konzept'),T('ma.gespraech.2','Analyse & Daten'),
+    T('ma.gespraech.3','Rohtext Feedback'),T('ma.gespraech.4','Abschluss-Check'),
+  ];
   document.getElementById('meetings-row').innerHTML=[1,2,3,4].map(n=>{
     const key=`meeting_${n}`; const done=!!state[key];
     return`<button type="button" class="meeting-card ${done?'done':''}" onclick="toggleMeeting('${key}')" aria-pressed="${done}">
       <span class="mc-status-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${done?'<path d="M5 12l4 4L19 6"/>':'<circle cx="12" cy="12" r="8"/>'}</svg></span>
-      <span class="mc-num">Gespräch ${n}</span><span class="mc-label">${labels[n-1]}</span>
+      <span class="mc-num">${T('ma.gespraechNr','Gespräch {n}',{n})}</span><span class="mc-label">${labels[n-1]}</span>
     </button>`;
   }).join('');
   const count=[1,2,3,4].filter(n=>state[`meeting_${n}`]).length;
   const warning=document.getElementById('meetings-warn');
-  warning.innerHTML=count<4?`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.8L2.5 18a2 2 0 001.75 3h15.5a2 2 0 001.75-3L13.7 3.8a2 2 0 00-3.4 0z"/></svg><span><strong>${count} von 4 Gesprächen erledigt.</strong> ${4-count===1?'Ein Gespräch ist':'Die nächsten Gespräche sind'} noch offen; Fragen jeweils vorher per Mail schicken.</span>`:'';
+  warning.innerHTML=count<4?`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.8L2.5 18a2 2 0 001.75 3h15.5a2 2 0 001.75-3L13.7 3.8a2 2 0 00-3.4 0z"/></svg><span><strong>${T('ma.gespraecheErledigt','{n} von 4 Gesprächen erledigt.',{n:count})}</strong> ${4-count===1?T('ma.einesOffen','Ein Gespräch ist noch offen; Fragen jeweils vorher per Mail schicken.'):T('ma.mehrereOffen','Die nächsten Gespräche sind noch offen; Fragen jeweils vorher per Mail schicken.')}</span>`:'';
 }
 function toggleMeeting(key){ state[key]=!state[key]; saveState(key); renderMeetings(); renderCatOverview(); renderGlobalProg(); renderSidebar(); }
 
 // ── CHECKLISTS ───────────────────────────────────────────────────────────────
-const tagLabels={pflicht:'Pflicht',inhalt:'Inhalt',format:'Format',abgabe:'Abgabe'};
+const tagLabels={
+  pflicht:()=>T('ma.tag.pflicht','Pflicht'), inhalt:()=>T('ma.tag.inhalt','Inhalt'),
+  format:()=>T('ma.tag.format','Format'),    abgabe:()=>T('ma.abgabe','Abgabe'),
+};
 
 function renderChecklist(key,clId,spId,slId){
   const items=checklists[key];
   document.getElementById(clId).innerHTML=items.map(item=>{
     const done=!!state[item.id];
-    const tagHTML=item.tag?`<span class="ch-tag tag-${item.tag}">${tagLabels[item.tag]}</span>`:'';
+    const tagHTML=item.tag?`<span class="ch-tag tag-${item.tag}">${tagLabels[item.tag]()}</span>`:'';
     return`
       <div class="check-item${done?' checked':''}" role="checkbox" tabindex="0" aria-checked="${done}" onclick="toggleCheck('${item.id}','${key}','${clId}','${spId}','${slId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCheck('${item.id}','${key}','${clId}','${spId}','${slId}')}">
         <div class="custom-check"></div>
@@ -799,9 +836,9 @@ function renderSidebar() {
   function sbItem(w, color) {
     const daysLeft = Math.ceil((w.due - now) / 86400000);
     const timeStr  = daysLeft < 0
-      ? `${Math.abs(daysLeft)} Tage überfällig`
-      : daysLeft === 0 ? 'heute fällig'
-      : `in ${daysLeft} Tagen`;
+      ? TP('ma.sb.tageUeberfaellig', Math.abs(daysLeft), '{n} Tag überfällig', '{n} Tage überfällig')
+      : daysLeft === 0 ? T('ma.sb.heuteFaellig','heute fällig')
+      : TP('ma.sb.inTagen', daysLeft, 'in {n} Tag', 'in {n} Tagen');
     return `<div class="sb-item ${color}">
       <div class="sb-dot ${color}"></div>
       <div class="sb-text">${w.label}<span class="sb-sub">${w.sub} · ${timeStr}</span></div>
@@ -813,39 +850,39 @@ function renderSidebar() {
   // All clear banner
   if (allClear) {
     html += `<div class="sb-card">
-      <div class="sb-title green">Alles im Plan</div>
-      <div class="sb-empty">Keine überfälligen oder dringenden Aufgaben.</div>
+      <div class="sb-title green">${T('ma.sb.imPlan','Alles im Plan')}</div>
+      <div class="sb-empty">${T('ma.sb.imPlanSub','Keine überfälligen oder dringenden Aufgaben.')}</div>
     </div>`;
   }
 
   // Überfällig
   if (overdue.length > 0) {
     html += `<div class="sb-card">
-      <div class="sb-title red">Überfällig (${overdue.length})</div>
+      <div class="sb-title red">${T('ma.sb.ueberfaellig','Überfällig ({n})',{n:overdue.length})}</div>
       ${overdue.slice(0,4).map(w => sbItem(w, 'red')).join('')}
-      ${overdue.length>4?`<div class="sb-more">+ ${overdue.length-4} weitere im Zeitplan</div>`:''}
+      ${overdue.length>4?`<div class="sb-more">${T('ma.sb.weitere','+ {n} weitere im Zeitplan',{n:overdue.length-4})}</div>`:''}
     </div>`;
   }
 
   // Dringend
   if (urgent.length > 0) {
     html += `<div class="sb-card">
-      <div class="sb-title orange">Dringend · nächste 8 Wochen (${urgent.length})</div>
+      <div class="sb-title orange">${T('ma.sb.dringend','Dringend · nächste 8 Wochen ({n})',{n:urgent.length})}</div>
       ${urgent.slice(0,4).map(w => sbItem(w, 'orange')).join('')}
-      ${urgent.length>4?`<div class="sb-more">+ ${urgent.length-4} weitere im Zeitplan</div>`:''}
+      ${urgent.length>4?`<div class="sb-more">${T('ma.sb.weitere','+ {n} weitere im Zeitplan',{n:urgent.length-4})}</div>`:''}
     </div>`;
   }
 
   // Besprechungen mini-status
   html += `<div class="sb-card">
-    <div class="sb-title blue">Besprechungen ${mDone}/4</div>
+    <div class="sb-title blue">${T('ma.sb.besprechungen','Besprechungen {n}/4',{n:mDone})}</div>
     <div class="sb-meet-row">
       ${meetings.map(d => `<div class="sb-meet-pip ${d?'done':''}"></div>`).join('')}
     </div>
-    <div class="sb-meet-label">${mDone === 4 ? 'Alle 4 erledigt' : `Noch ${4-mDone} ausstehend`}</div>
+    <div class="sb-meet-label">${mDone === 4 ? T('ma.sb.alle','Alle 4 erledigt') : T('ma.sb.ausstehend','Noch {n} ausstehend',{n:4-mDone})}</div>
     ${nextMeeting > 0 ? `<div class="sb-item orange" style="margin-top:8px;">
       <div class="sb-dot orange"></div>
-      <div class="sb-text">Besprechung ${nextMeeting} bei DiD ausmachen<span class="sb-sub">Fragen vorab per Mail schicken</span></div>
+      <div class="sb-text">${T('ma.sb.ausmachen','Besprechung {n} bei {wer} ausmachen',{n:nextMeeting,wer:'DiD'})}<span class="sb-sub">${T('ma.sb.vorab','Fragen vorab per Mail schicken')}</span></div>
     </div>` : ''}
   </div>`;
 
@@ -853,14 +890,14 @@ function renderSidebar() {
   const daysToDeadline = Math.ceil((DEADLINE - now) / 86400000);
   const dlColor = daysToDeadline < 60 ? 'red' : daysToDeadline < 120 ? 'orange' : 'blue';
   const deadlineDistance = daysToDeadline < 0
-    ? `seit ${Math.abs(daysToDeadline)} Tagen vorbei`
-    : daysToDeadline === 0 ? 'heute'
-    : `noch ${daysToDeadline} Tage`;
+    ? TP('ma.sb.seitVorbei', Math.abs(daysToDeadline), 'seit {n} Tag vorbei', 'seit {n} Tagen vorbei')
+    : daysToDeadline === 0 ? T('ma.sb.heute','heute')
+    : TP('ma.sb.nochTage', daysToDeadline, 'noch {n} Tag', 'noch {n} Tage');
   html += `<div class="sb-card">
-    <div class="sb-title ${dlColor}">Abgabe</div>
+    <div class="sb-title ${dlColor}">${T('ma.abgabe','Abgabe')}</div>
     <div class="sb-item ${dlColor}">
       <div class="sb-dot ${dlColor}"></div>
-      <div class="sb-text">17. August 2026<span class="sb-sub">${deadlineDistance} · PDF + Plagiat + Journal</span></div>
+      <div class="sb-text">${abgabeDatum()}<span class="sb-sub">${deadlineDistance} · PDF + Plagiat + Journal</span></div>
     </div>
   </div>`;
 
@@ -869,7 +906,7 @@ function renderSidebar() {
 
 // ── RESET ────────────────────────────────────────────────────────────────────
 function resetAll(){
-  if(confirm('Wirklich den gesamten Fortschritt zurücksetzen?')){
+  if(confirm(T('ma.zuruecksetzenFrage','Wirklich den gesamten Fortschritt zurücksetzen?'))){
     state={};
     openMilestoneDetails.clear();
     saveState(null,{reset:true});
@@ -888,6 +925,11 @@ function init(){
   renderCatOverview(); renderGlobalProg(); renderSidebar();
 }
 init();
+// Der Katalog kommt asynchron, und die Sprache laesst sich umschalten: beide
+// Male zeichnet der Code seine eigenen Beschriftungen neu. init() liest nur
+// den Zustand, es speichert nichts.
+if(window.TVZAI18n) window.TVZAI18n.ready.then(init, ()=>{});
+window.addEventListener('tvza-lang-change', init);
 window.maturaProgressBridge={
   storageKey:()=>MATURA_STORAGE_KEY,
   useUser:uid=>{

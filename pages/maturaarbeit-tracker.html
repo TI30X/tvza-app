@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1A1A2E">
 <script src="../assets/js/theme.js"></script>
 <script src="../assets/js/i18n.js?v=1"></script>
-<title>Maturaarbeit-Tracker — Firn</title>
+<title data-i18n="mt.seitentitel">Maturaarbeit-Tracker — Firn</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
@@ -185,7 +185,7 @@ body{ font-family: var(--font-ui); background:var(--bg); color:var(--text); min-
         <div class="matura-progress-track gp-bar-bg" role="progressbar" aria-label="Gesamtfortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-attr="aria-label:mt.gesamt">
           <i class="gp-bar-fill" id="gp-fill"></i>
         </div>
-        <p id="tracker-progress-summary" data-i18n="mt.keineErledigt">Noch keine Aufgaben erledigt.</p>
+        <p id="tracker-progress-summary">Noch keine Aufgaben erledigt.</p>
       </div>
     </div>
   </section>
@@ -194,7 +194,7 @@ body{ font-family: var(--font-ui); background:var(--bg); color:var(--text); min-
     <div class="tracker-primary">
       <div class="matura-callout matura-callout--focus faden-note">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c4-1 7-4 8-8M7 5c2 0 4 2 4 4M15 3c3 2 5 5 5 9a8 8 0 01-8 8"/></svg>
-        <span><strong data-i18n="mt.roterFaden">Roter Faden:</strong> Die Leitfrage muss Einleitung, Hauptteil und Fazit verbinden. Prüfe sie bei jeder Besprechung erneut.</span>
+        <span><strong data-i18n="mt.roterFaden">Roter Faden:</strong> <span data-i18n="mt.roterFadenSub">Die Leitfrage muss Einleitung, Hauptteil und Fazit verbinden. Prüfe sie bei jeder Besprechung erneut.</span></span>
       </div>
 
       <section class="matura-section-card" aria-labelledby="tracker-phases-title">
@@ -232,11 +232,20 @@ body{ font-family: var(--font-ui); background:var(--bg); color:var(--text); min-
   </div>
 
   <div class="matura-footer-actions">
-    <button class="b b--danger matura-reset" type="button" onclick="resetAll()"><svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Fortschritt zurücksetzen</button>
+    <button class="b b--danger matura-reset" type="button" onclick="resetAll()"><svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> <span data-i18n="mt.zuruecksetzen">Fortschritt zurücksetzen</span></button>
     <div class="who-line" id="who-line">Angemeldet: …</div>
   </div>
 
 <script>
+// ── SPRACHE ────────────────────────────────────────────────────────
+// Der Rahmen kommt aus dem Katalog; die Vorgaben der Schule darunter
+// bleiben deutsch. tOr statt t(): bis der Katalog da ist, steht Deutsch.
+function T(key, deutsch, vars){
+  const i18n = window.TVZAI18n;
+  if (i18n) return i18n.tOr(key, deutsch, vars);
+  return String(deutsch).replace(/\{(\w+)\}/g, (ganz, name) => vars && vars[name] !== undefined ? vars[name] : ganz);
+}
+
 // ── STANDARD-VORGABEN (für alle gleich) ──────────────────────────────
 const phases = [
   { cls:'p1', num:'Phase 1', title:'Grundlagen & Konzept', items:[
@@ -279,7 +288,10 @@ let KEY = null;
 let state = {};
 let cloudStateWriter = null;
 const openPhases = new Set();
-const trackerTagLabels={pflicht:'Pflicht',inhalt:'Inhalt',format:'Format'};
+const trackerTagLabels={
+  pflicht:()=>T('ma.tag.pflicht','Pflicht'), inhalt:()=>T('ma.tag.inhalt','Inhalt'), format:()=>T('ma.tag.format','Format'),
+};
+let trackerLabel='';
 function storeLocalState(){
   if(!KEY) return;
   try{ localStorage.setItem(KEY, JSON.stringify(state)); }
@@ -292,16 +304,19 @@ function save(changedKey=null, options={}){
 
 // ── RENDER MEETINGS ────────────────────────────────────────────────
 function renderMeetings(){
-  const labels=['Thema & Fragestellung','Zwischenbilanz','Inhaltl. Feedback','Letzte Rückfragen'];
+  const labels=[
+    T('mt.gespraech.1','Thema & Fragestellung'),T('mt.gespraech.2','Zwischenbilanz'),
+    T('mt.gespraech.3','Inhaltl. Feedback'),T('mt.gespraech.4','Letzte Rückfragen'),
+  ];
   document.getElementById('meetings-row').innerHTML = labels.map((lab,i)=>{
     const n=i+1, done=!!state['meeting_'+n];
     const storedDate=String(state['meeting_'+n+'_d']||'');
     const safeDate=/^\d{4}-\d{2}-\d{2}$/.test(storedDate)?storedDate:'';
     return `<div class="meeting-card ${done?'done':''}" role="checkbox" tabindex="0" aria-checked="${done}" onclick="toggleMeeting(${n})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMeeting(${n})}">
       <span class="mc-status-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${done?'<path d="M5 12l4 4L19 6"/>':'<circle cx="12" cy="12" r="8"/>'}</svg></span>
-      <span class="mc-num">Gespräch ${n}</span>
+      <span class="mc-num">${T('ma.gespraechNr','Gespräch {n}',{n})}</span>
       <span class="mc-label">${lab}</span>
-      <input type="date" class="mc-date" value="${safeDate}" aria-label="Datum für Gespräch ${n}" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="setMeetDate(${n},this.value)">
+      <input type="date" class="mc-date" value="${safeDate}" aria-label="${T('mt.gespraechDatum','Datum für Gespräch {n}',{n})}" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()" onchange="setMeetDate(${n},this.value)">
     </div>`;
   }).join('');
   const md=[1,2,3,4].filter(n=>state['meeting_'+n]).length;
@@ -323,8 +338,8 @@ function renderPhases(){
     return `<div class="phase ${p.cls}">
       <button type="button" class="phase-head" onclick="togglePhase(${pi})" aria-expanded="${open}">
         <span class="phase-stripe"></span>
-        <span class="ph-body"><span class="ph-top"><span class="ph-num">${p.num}</span><span class="ph-title">${p.title}</span></span>
-          <span class="ph-count">${done}/${p.items.length} erledigt</span></span>
+        <span class="ph-body"><span class="ph-top"><span class="ph-num">${T('ma.phaseNr','Phase {n}',{n:pi+1})}</span><span class="ph-title">${p.title}</span></span>
+          <span class="ph-count">${T('mt.erledigtZahl','{done}/{total} erledigt',{done,total:p.items.length})}</span></span>
         <span class="phase-toggle" aria-hidden="true"><svg class="ic${open?' is-open':''}" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
       </button>
       <div class="phase-list ${open?'open':''}"><div class="checklist">${items}</div></div>
@@ -340,7 +355,7 @@ function renderVorgaben(){
     <div class="check-item ${state[it.id]?'checked':''}" role="checkbox" tabindex="0" aria-checked="${!!state[it.id]}" onclick="toggleItem('${it.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleItem('${it.id}')}">
       <div class="custom-check"></div>
       <div class="ch-body"><div class="ch-main">${it.text}</div>${it.desc?`<div class="ch-desc">${it.desc}</div>`:''}</div>
-      <span class="ch-tag tag-${it.tag}">${trackerTagLabels[it.tag]||it.tag}</span>
+      <span class="ch-tag tag-${it.tag}">${trackerTagLabels[it.tag]?trackerTagLabels[it.tag]():it.tag}</span>
     </div>`).join('');
   const done=vorgaben.filter(i=>state[i.id]).length;
   document.getElementById('sp-vorgaben').style.width = Math.round(done/vorgaben.length*100)+'%';
@@ -364,7 +379,9 @@ function renderGlobal(){
   const pct=Math.round(done/ids.length*100);
   document.getElementById('gp-fill').style.width=pct+'%';
   document.getElementById('gp-pct').textContent=pct+' %';
-  document.getElementById('tracker-progress-summary').textContent=`${done} von ${ids.length} Punkten erledigt`;
+  document.getElementById('tracker-progress-summary').textContent=done
+    ?T('ma.punkteErledigt','{done} von {total} Punkten erledigt',{done,total:ids.length})
+    :T('mt.keineErledigt','Noch keine Aufgaben erledigt.');
   document.querySelector('.matura-progress-track')?.setAttribute('aria-valuenow',String(pct));
   renderVorgaben();
   // Persist a compact summary so the dashboard tile can show progress + countdown.
@@ -377,14 +394,22 @@ function renderGlobal(){
 
 // ── RESET ──────────────────────────────────────────────────────────
 function resetAll(){
-  if(confirm('Alle Häkchen, Termine und das Abgabedatum zurücksetzen?')){
+  if(confirm(T('mt.zuruecksetzenFrage','Alle Häkchen, Termine und das Abgabedatum zurücksetzen?'))){
     state={}; save(null,{reset:true}); document.getElementById('deadline-input').value='';
     openPhases.clear(); openPhases.add(0);
     renderAll();
   }
 }
 
-function renderAll(){ renderMeetings(); renderPhases(); renderVorgaben(); renderDeadline(); renderGlobal(); }
+function renderWho(){
+  if(!KEY) return;
+  document.getElementById('who-line').textContent = T('mt.angemeldet','Angemeldet: {wer}',{wer:trackerLabel || T('mt.schueler','Schüler:in')});
+}
+function renderAll(){ renderMeetings(); renderPhases(); renderVorgaben(); renderDeadline(); renderGlobal(); renderWho(); }
+// Der Katalog kommt asynchron, und die Sprache laesst sich umschalten:
+// beide Male zeichnet der Code seine eigenen Beschriftungen neu.
+if(window.TVZAI18n) window.TVZAI18n.ready.then(renderAll, ()=>{});
+window.addEventListener('tvza-lang-change', renderAll);
 
 // ── START (nach Login aufgerufen, eigener Speicher pro Schüler) ─────
 function startTracker(uid, label){
@@ -403,7 +428,7 @@ function startTracker(uid, label){
   const di=document.getElementById('deadline-input');
   di.value=state.deadline||'';
   di.onchange=()=>{ state.deadline=di.value; save('deadline'); renderDeadline(); renderGlobal(); };
-  document.getElementById('who-line').textContent = 'Angemeldet: ' + (label || 'Schüler:in');
+  trackerLabel = label || '';
   renderAll();
 }
 window.startTracker = startTracker;
@@ -431,7 +456,7 @@ window.maturaTrackerBridge={
 import { requireAuth } from '../assets/js/firebase-config.js';
 import { connectMaturaProgress } from '../assets/js/matura-sync.js';
 const user = await requireAuth('../login.html');
-window.startTracker(user.uid, user.displayName || user.email || 'Schüler:in');
+window.startTracker(user.uid, user.displayName || user.email || '');
 const bridge=window.maturaTrackerBridge;
 const sync=await connectMaturaProgress({
   user,

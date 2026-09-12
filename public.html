@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
-  <title>TVZA · Projekte</title>
+  <title data-i18n="pub.titel" data-i18n-vars='{"absender":"TVZA"}'>TVZA · Projekte</title>
   <script src="assets/js/theme.js"></script>
   <script src="assets/js/i18n.js?v=1"></script>
   <style>
@@ -187,8 +187,8 @@
       </div>
       <div class="hero-divider"></div>
       <div class="hero-copy">
-        <h1>TVZA · Projekte</h1>
-        <p>Webprojekte · eine Seite von Timothy van Zanten</p>
+        <h1 data-i18n="pub.titel" data-i18n-vars='{"absender":"TVZA"}'>TVZA · Projekte</h1>
+        <p data-i18n="pub.sub" data-i18n-vars='{"wer":"Timothy van Zanten"}'>Webprojekte · eine Seite von Timothy van Zanten</p>
       </div>
       <div class="hero-actions">
         <button id="themeToggle" type="button" title="Theme wechseln" data-i18n-attr="title:pg.theme">◐</button>
@@ -198,8 +198,8 @@
   </div>
 
   <main>
-    <div class="section-label">Projekte</div>
-    <div id="list"><div class="spinner">Lade Projekte…</div></div>
+    <div class="section-label" data-i18n="pub.projekte">Projekte</div>
+    <div id="list"><div class="spinner" data-i18n="pub.laden">Lade Projekte…</div></div>
   </main>
 
   <footer>
@@ -209,9 +209,9 @@
         <span>Timothy van Zanten</span>
       </div>
       <div class="tvz-footer-copy">
-        <strong>TVZA · Webprojekte</strong>
-        <span>Eine öffentliche Projektübersicht von Timothy van Zanten.</span>
-        <p>Alle hier aufgeführten Projekte sind bewusst öffentlich freigegeben.</p>
+        <strong data-i18n="pub.fussTitel" data-i18n-vars='{"absender":"TVZA"}'>TVZA · Webprojekte</strong>
+        <span data-i18n="pub.fussSub" data-i18n-vars='{"wer":"Timothy van Zanten"}'>Eine öffentliche Projektübersicht von Timothy van Zanten.</span>
+        <p data-i18n="pub.hinweis">Alle hier aufgeführten Projekte sind bewusst öffentlich freigegeben.</p>
       </div>
     </div>
   </footer>
@@ -238,46 +238,69 @@
     const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     // Theme-Umschalter (#themeToggle) wird automatisch von theme.js verkabelt.
 
-    // Anmelden-Button: angemeldet → "Zur App", sonst → "Anmelden"
-    onAuthStateChanged(auth, u => {
+    /* Was der Code beschriftet, kommt per tOr — bis der Katalog da ist,
+       steht Deutsch, nie der Schluessel. */
+    const T = (key, deutsch) => window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch) : deutsch;
+
+    // Anmelden-Button: angemeldet → "Zur App", sonst → "Anmelden".
+    // Kein data-i18n am Knopf: den Zustand kennt nur der Code (Falle 5).
+    let angemeldet = false;
+    function beschrifteKnopf() {
       const btn = document.getElementById('authBtn');
-      if (u) { btn.textContent = 'Zur App →'; btn.href = 'index.html'; }
-      else   { btn.textContent = 'Anmelden';  btn.href = 'login.html'; }
-    });
+      if (angemeldet) { btn.textContent = T('pub.zurApp', 'Zur App →'); btn.href = 'index.html'; }
+      else            { btn.textContent = T('login.anmelden', 'Anmelden'); btn.href = 'login.html'; }
+    }
+    onAuthStateChanged(auth, u => { angemeldet = !!u; beschrifteKnopf(); });
+
+    /* Die Liste wird einmal geholt und bei jedem Sprachwechsel neu
+       gezeichnet; die Projekte selbst (Name, Besitzer) sind Inhalt. */
+    let projekte = null;
+    let ladeFehler = false;
+    function zeichne() {
+      const list = document.getElementById('list');
+      if (ladeFehler) {
+        list.innerHTML = `<div class="empty">${T('pub.fehler', 'Projekte konnten nicht geladen werden.')}</div>`;
+        return;
+      }
+      if (!projekte) return;
+      if (!projekte.length) {
+        list.innerHTML = `<div class="empty">${T('pub.keine', 'Im Moment sind keine Projekte freigegeben.')}</div>`;
+        return;
+      }
+      list.innerHTML = projekte.map(p => `
+        <button class="proj" type="button" data-id="${esc(p.id)}">
+          <span class="proj-emoji">${esc(p.emoji || '🔗')}</span>
+          <span class="proj-name">${esc(p.name)}<small class="proj-meta">${p.ownerName ? esc(p.ownerName) + ' · ' : ''}${T('pub.oeffentlich', 'Öffentlich')}</small></span>
+          <span class="proj-arrow">↗</span>
+        </button>`).join('');
+
+      list.querySelectorAll('[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const project = projekte.find(item => item.id === btn.dataset.id);
+          if (!project) return;
+          window.open(project.url, '_blank', 'noopener');
+        });
+      });
+    }
 
     async function load() {
-      const list = document.getElementById('list');
       try {
         // Gemeinsamer Feed: alle öffentlichen Projekte ALLER Nutzer (flache Sammlung).
         const snap = await getDocs(collection(db, 'publicProjects'));
-        const items = snap.docs
+        projekte = snap.docs
           .map(d => ({ id: d.id, ...d.data() }))
           .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de-CH'));
-
-        if (!items.length) {
-          list.innerHTML = '<div class="empty">Im Moment sind keine Projekte freigegeben.</div>';
-          return;
-        }
-        list.innerHTML = items.map(p => `
-          <button class="proj" type="button" data-id="${esc(p.id)}">
-            <span class="proj-emoji">${esc(p.emoji || '🔗')}</span>
-            <span class="proj-name">${esc(p.name)}<small class="proj-meta">${p.ownerName ? esc(p.ownerName) + ' · ' : ''}Öffentlich</small></span>
-            <span class="proj-arrow">↗</span>
-          </button>`).join('');
-
-        list.querySelectorAll('[data-id]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const project = items.find(item => item.id === btn.dataset.id);
-            if (!project) return;
-            window.open(project.url, '_blank', 'noopener');
-          });
-        });
       } catch (err) {
         console.warn('[public-projects] load-failed');
-        list.innerHTML = '<div class="empty">Projekte konnten nicht geladen werden.</div>';
+        ladeFehler = true;
       }
+      zeichne();
     }
     load();
+
+    function neuBeschriften() { beschrifteKnopf(); zeichne(); }
+    if (window.TVZAI18n) window.TVZAI18n.ready.then(neuBeschriften, () => {});
+    window.addEventListener('tvza-lang-change', neuBeschriften);
   </script>
 </body>
 </html>

@@ -12,7 +12,7 @@ Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
 **Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
 Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
 
-Version: **v.35.28.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.29.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -40,7 +40,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-49 Testdateien, **502 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+50 Testdateien, **512 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -105,7 +105,9 @@ Und: der Katalog kommt asynchron. Wer einem Element, das der Code selbst
 beschriftet, zusätzlich ein `data-i18n` gibt, bekommt einen Wettlauf, den der
 Katalog gewinnt — die Ansicht steht dann in einem Zustand und trägt die
 Beschriftung des anderen. Auf `pages/gruppe.html` hält ein Test sechs solche
-Elemente frei.
+Elemente frei, `dev/alte-seiten-i18n.test.mjs` die älteren Seiten — auf dem
+Tracker stand genau dieser Fehler bis v.35.29.0 („Noch keine Aufgaben
+erledigt." über dem echten Stand).
 
 **6. Gast gegen Mitglied.** Eine Firebase-Anmeldung allein ist keine
 Mitgliedschaft. `isMember()` verlangt ein `users/{uid}`-Profil, kein
@@ -182,7 +184,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **657 Schlüssel** aus zehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **781 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -201,7 +203,10 @@ Tabellen in `dev/i18n-src/`.
 - **Additiv.** Übersetzt wird nur, was ein `data-i18n` trägt. Eine halb
   umgestellte Seite kann nichts kaputt machen — was fehlt, bleibt deutsch.
 - **Inhalte werden nicht übersetzt.** Termine, Nachrichten, Projektnamen und
-  Übungsnamen gehören den Nutzern.
+  Übungsnamen gehören den Nutzern. Ebenso die Vorgaben der Schule in der
+  Maturaarbeit (Phasen, Checklisten, Bewertungsraster) — übersetzt ist dort
+  nur der Rahmen. Marken (TVZA) und Namen stehen als `data-i18n-vars`, nicht
+  im Katalog; `marke.test.mjs` hält den Katalog frei von TVZA.
 - **Formate über `Intl`,** nie über Strings: `TVZAI18n.format.date/time/
   number/relative/plural`. Polnisch hat drei Pluralformen.
 - **`dev/i18n.test.mjs`** findet die Seiten selbst, statt sie aufzuzählen.
@@ -234,14 +239,15 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 502 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 512 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
   Bequemlichkeit, **kein** Schutz gegen Brute Force.
 - Kein 2FA. SMS braucht Identity Platform (kostenpflichtig).
-- Ältere Seiten sind noch überwiegend deutsch: `maturaarbeit.html`,
-  `guest.html`, `admin.html`.
+- Die älteren Seiten (`maturaarbeit*.html`, `guest.html`, `public.html`)
+  sind übersetzt, halten aber die Seiten-Invariante noch nicht: `<style>`-Blöcke,
+  Inline-Skripte, `confirm()` beim Zurücksetzen der Maturaarbeit.
 - **Regeln ohne Emulator.** Auf dieser Maschine gibt es kein Java; die
   Regeln werden vor dem Ausrollen nur mit `--dry-run` gegen das Projekt
   kompiliert, nicht gegen Testfaelle gefahren. Zuletzt ausgerollt mit
@@ -250,7 +256,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.28.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.29.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
