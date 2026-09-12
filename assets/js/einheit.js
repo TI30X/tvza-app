@@ -125,7 +125,7 @@ export function hatInhalt(e) {
  * Sie entstehen beim Zeichnen — die Oberfläche legt für jeden Satz ein
  * Feld an —, und ohne dieses Sieb wüchse das Protokoll mit jeder
  * geöffneten Einheit, auch wenn niemand etwas gemacht hat. Dieselbe
- * Überlegung wie in cleanDay() in training-sync.js.
+ * Überlegung wie früher in cleanDay() der persönlichen Trainingsseite.
  */
 export function sauber(protokoll) {
   const raus = {};
@@ -210,6 +210,25 @@ export function saetze(item, e) {
    nur name, alt, params, lines, pause und tut. Video und Vorwochen
    lagen also im Dokument und kamen nie auf den Bildschirm.
    ══════════════════════════════════════════════════════════════════ */
+
+/**
+ * Die Bilder zu einer Übung — Dateinamen aus assets/data/training/
+ * images.json, nachgeschlagen nach Einheit und Übungsname.
+ *
+ * Die alte persönliche Trainingsseite zeigte sie (Fussgymnastik,
+ * Neuroathletik: wie steht der Fuss, wo liegt der Ball). Als der
+ * Bereich Training in v.35.26.0 auf die Gruppe umzog, kamen sie in den
+ * Player, damit beim Umzug nichts verloren geht.
+ *
+ * Nur schlichte Dateinamen: der Name wandert in ein src, und ein Pfad
+ * oder eine Adresse darin wäre ein Weg aus dem Bilderordner hinaus.
+ */
+const BILDNAME = /^[\w-]+(\.[\w-]+)*\.(webp|png|jpe?g|gif)$/i;
+
+export function bilderFuer(bilder, unitId, item) {
+  const liste = bilder?.[unitId]?.[item?.slug];
+  return Array.isArray(liste) ? liste.filter(n => typeof n === 'string' && BILDNAME.test(n)) : [];
+}
 
 /**
  * Die Kennzahlen einer Übung als { label, wert } — für die Kurzinfo

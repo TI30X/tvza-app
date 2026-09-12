@@ -293,3 +293,22 @@ test('in der echten KW 31 ergibt keine Uebung "[object Object]"', async () => {
     }
   }
 });
+
+/* ── Bilder zur Uebung ────────────────────────────────────────────
+   Beim Umzug des Bereichs Training auf die Gruppe durften sie nicht
+   verloren gehen. */
+test('die Bilder einer Uebung kommen aus images.json, nach Einheit und Uebungsname', async () => {
+  const { bilderFuer } = await import('../assets/js/einheit.js');
+  const { readFile } = await import('node:fs/promises');
+  const bilder = JSON.parse(await readFile(new URL('../assets/data/training/images.json', import.meta.url), 'utf8'));
+  const tennisball = bilderFuer(bilder, 'fussgymnastik', { slug: 'fuss-drehen-ueber-tennisball' });
+  assert.equal(tennisball.length, 4, 'die Folge von vier Bildern');
+  assert.deepEqual(bilderFuer(bilder, 'kraft-beine', { slug: 'kniebeuge-hinten' }), []);
+  assert.deepEqual(bilderFuer(null, 'x', { slug: 'y' }), []);
+});
+
+test('ein Bildname ist ein Dateiname, kein Pfad und keine Adresse', async () => {
+  const { bilderFuer } = await import('../assets/js/einheit.js');
+  const boese = { u: { s: ['ok-1.webp', '../../login.html', 'https://x.test/a.png', 'javascript:x.png', 'a/b.webp', 'gut.PNG'] } };
+  assert.deepEqual(bilderFuer(boese, 'u', { slug: 's' }), ['ok-1.webp', 'gut.PNG']);
+});

@@ -50,15 +50,22 @@ test('Router kennt die Seite als App-Seite mit Titel', async () => {
   assert.match(router, /'training\.html':'Training'/);
 });
 
-test('Service Worker legt Seite und Programmdaten in den Shell-Cache', async () => {
+test('Service Worker legt Seite, Baustein und Parser in den Shell-Cache', async () => {
   const sw = await read('sw.js');
   ['./pages/training.html',
+   './assets/js/feature/training/training.js?v=1',
+   './assets/js/feature/woche/woche.js',
+   './assets/css/feature/woche.css?v=1',
    './assets/js/training-parser.js',
-   './assets/js/training-sync.js',
-   './assets/data/training/kw31-2026.json',
    './assets/data/training/images.json'].forEach(entry => {
     assert.ok(sw.includes(`'${entry}'`), `sw.js ohne ${entry}`);
   });
+  /* Die alte Seite hatte ihren eigenen Speicher und ein mitgeliefertes
+     Programm. Beides gibt es nicht mehr — und was nicht mehr existiert,
+     darf der Service Worker nicht vorladen wollen. */
+  for (const weg of ['training-sync.js', 'kw31-2026.json']) {
+    assert.ok(!sw.includes(weg), `sw.js laedt noch ${weg}`);
+  }
 });
 
 test('Dashboard hat eine Kachel, die am Modul hängt', async () => {
@@ -72,32 +79,40 @@ test('Dashboard hat eine Kachel, die am Modul hängt', async () => {
   assert.match(html, /const anyTracker = [^;]*mods\.training/);
 });
 
-test('die Seite lädt theme.js, damit sie den Rahmen erkennt', async () => {
+test('die Seite haelt die Seiten-Invariante und laedt theme.js', async () => {
   const page = await read('pages/training.html');
   assert.match(page, /<script src="\.\.\/assets\/js\/theme\.js"><\/script>/);
-  assert.match(page, /html\.tvza-content-frame \.tr-top__title \{ display: none; \}/);
+  /* Die alte Seite trug 900 Zeilen in einem Inline-Modul und einen
+     eigenen Style-Block. */
+  assert.doesNotMatch(page, /<style/);
+  assert.doesNotMatch(page, /<script type="module">/);
+  assert.equal((page.match(/<script type="module" src=/g) || []).length, 1);
+  assert.match(page, /feature\/training\/training\.js\?v=\d+/);
 });
 
-test('Sync schreibt nur, was die Regeln erlauben', async () => {
-  const sync = await read('assets/js/training-sync.js');
-  /* Programm als Zeichenkette — Firestore kann keine Arrays in Arrays,
-     und unit.raw.rows ist genau das. */
-  assert.match(sync, /json: JSON\.stringify|const json = JSON\.stringify\(program\)/);
-  assert.match(sync, /MAX_PROGRAM_BYTES = 900000/);
-  assert.match(sync, /schema: SYNC_SCHEMA/);
-  /* Ein Dokument je Tag statt eines je Übung: der Spark-Tarif zählt
-     jeden Schreibvorgang. */
-  assert.match(sync, /doc\(logs, date\)/);
+test('der Bereich Training liest die Plaene der Gruppen, keinen eigenen Speicher', async () => {
+  const js = await read('assets/js/feature/training/training.js');
+  /* Dieselbe Woche, derselbe Baustein, derselbe Player wie die Gruppe.
+     Die alte Seite hatte ihren eigenen Import und schrieb nach
+     users/{uid}/trainingLogs — was ein Athlet dort abhakte, sah sein
+     Trainer nie. */
+  assert.match(js, /from '\.\.\/\.\.\/groups\.js'/);
+  assert.match(js, /ladePlaene\(/);
+  assert.match(js, /wochenAnsicht\(\{[\s\S]*zurueck: 'training'/);
+  assert.doesNotMatch(js, /trainingLogs|trainingPrograms|training-sync/);
+  /* Eingelesen wird in der Gruppe, nicht hier. */
+  assert.doesNotMatch(js, /gridFromFile|training-import/);
+  /* Die Leitung liest ungefiltert; hier zaehlt nur, was fuer einen
+     selbst bestimmt ist. */
+  assert.match(js, /plan\.fuer === PLAN_FUER_ALLE \|\| plan\.fuer === user\.uid/);
 });
 
-test('Seite und Sync sind sich über den Speicherort einig', async () => {
-  const page = await read('pages/training.html');
-  const sync = await read('assets/js/training-sync.js');
-  assert.match(sync, /'users', user\.uid, 'trainingPrograms'/);
-  assert.match(sync, /'users', user\.uid, 'trainingLogs'/);
+test('die alten Speicherorte bleiben lesbar, auch wenn niemand mehr hineinschreibt', async () => {
+  /* Wer auf der alten Seite trainiert hat, verliert nichts: die Regeln
+     fuer users/{uid}/trainingPrograms und trainingLogs bleiben, und die
+     Gruppe bietet frueher Eingelesenes weiter zur Auswahl an. */
   const rules = await read('firestore.rules');
   assert.ok(rules.includes('/users/{uid}/trainingPrograms/{programId}'));
   assert.ok(rules.includes('/users/{uid}/trainingLogs/{trainingDate}'));
-  /* Der Sync darf die Seite nicht blockieren: erst zeichnen, dann laden. */
-  assert.ok(page.indexOf('render();') < page.indexOf("import('../assets/js/training-sync.js')"));
+  assert.match(await read('assets/js/groups.js'), /export async function eigeneProgramme\(uid\)/);
 });

@@ -3230,3 +3230,16 @@ html.tvza-content-frame body > main {
   border-color: var(--deep, var(--accent));
   background: var(--tint, var(--accent-bg));
 }
+
+/* ── Bilder zur Uebung ─────────────────────────────────────────────
+   Unter der Kurzinfo, so breit wie die Karte. Zwei nebeneinander, wenn
+   Platz ist: bei vier Schritten einer Bewegung liest man sie als Folge. */
+.ueb-bilder {
+  display: grid; gap: var(--s2);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+.ueb-bilder img {
+  display: block; width: 100%; height: auto;
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface-2);
+}

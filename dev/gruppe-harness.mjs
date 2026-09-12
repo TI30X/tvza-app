@@ -44,7 +44,12 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const beobachteMeineGruppen = (uid, cb) => { cb(${JSON.stringify(gruppen)}); return () => {}; };
     export const beobachteTermine = () => () => {};
     export const ladeMitglieder = async () => ${JSON.stringify(mitglieder)};
-    export const ladePlaene = async () => ${JSON.stringify(plaene)};
+    /* Eine Liste gilt fuer jede Gruppe; ein Objekt { gid: [...] } je
+       Gruppe — fuer den Bereich Training, der mehrere liest. */
+    export const ladePlaene = async gid => {
+      const alle = ${JSON.stringify(plaene)};
+      return Array.isArray(alle) ? alle : (alle[gid] || []);
+    };
     export const ladeProtokolle = async () => ${JSON.stringify(protokolle)};
     export const ladeZusagen = async () => [];
     export const ladeErgebnisse = async () => [];
@@ -83,17 +88,32 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
  * @param {string} [o.heute]     ISO-Tag, auf den die Uhr gestellt wird
  * @param {Function} [o.bereit]  (document) => boolean, worauf gewartet wird
  */
-export async function starteGruppe({
+export function starteGruppe({
+  bereit = doc => !doc.getElementById('secMitglieder').hidden || !doc.getElementById('secLeer').hidden,
+  ...rest
+} = {}) {
+  return lade({ seite: 'gruppe', skript: 'assets/js/feature/gruppe/gruppe.js', bereit, ...rest });
+}
+
+/** Der Bereich Training — dieselben Attrappen, eine andere Seite. */
+export function starteTraining({
+  bereit = doc => !doc.getElementById('secWoche').hidden || !doc.getElementById('secOhne').hidden,
+  ...rest
+} = {}) {
+  return lade({ seite: 'training', skript: 'assets/js/feature/training/training.js', bereit, ...rest });
+}
+
+async function lade({
+  seite, skript, bereit,
   gruppen = [{ id: 'g1', name: 'Kader', art: 'kader', meineRolle: 'mitglied' }],
   plaene = [],
   protokolle = [],
   mitglieder = [{ uid: 'timo', name: 'Timothy', rolle: 'mitglied' }],
   heute = '2026-08-05',
-  bereit = doc => !doc.getElementById('secMitglieder').hidden || !doc.getElementById('secLeer').hidden,
-} = {}) {
-  const html = await readFile(join(root, 'pages/gruppe.html'), 'utf8');
+}) {
+  const html = await readFile(join(root, `pages/${seite}.html`), 'utf8');
   const dom = new JSDOM(html.replace(/<script\b[^>]*><\/script>/gi, ''), {
-    url: 'https://firn.test/pages/gruppe.html',
+    url: `https://firn.test/pages/${seite}.html`,
   });
   const { window } = dom;
 
@@ -118,7 +138,7 @@ export async function starteGruppe({
   globalThis.Date = FesteZeit;
   window.Date = FesteZeit;
 
-  const quelle = (await readFile(join(root, 'assets/js/feature/gruppe/gruppe.js'), 'utf8'))
+  const quelle = (await readFile(join(root, skript), 'utf8'))
     .replace(`'../../firebase-config.js'`, `'${dataUrl(FIREBASE_STUB)}'`)
     /* Mit jeder Versionsnummer: sie wandert bei jeder Aenderung der
        Huelle, und der Test soll daran nicht jedes Mal zerbrechen. */
@@ -134,6 +154,7 @@ export async function starteGruppe({
       }`)}'`)
     .replace(`'../../training-parser.js'`, `'${datei('assets/js/training-parser.js')}'`)
     .replace(`'../../wochenplan.js'`, `'${datei('assets/js/wochenplan.js')}'`)
+    .replace(`'../woche/woche.js'`, `'${datei('assets/js/feature/woche/woche.js')}'`)
     .replace(`'../../dialog.js'`, `'${datei('assets/js/dialog.js')}'`)
     .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)

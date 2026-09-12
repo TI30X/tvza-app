@@ -16,7 +16,7 @@
    Bei jeder Eingabe, verzögert. Wer mitten im Satz das Telefon
    weglegt, soll nicht "Speichern" suchen müssen — und wer bei jedem
    Tastendruck schreibt, verbrennt das Kontingent. 900 ms ist dieselbe
-   Verzögerung, die training-sync.js benutzt.
+   Verzögerung, die die frühere persönliche Trainingsseite benutzte.
    ══════════════════════════════════════════════════════════════════ */
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
@@ -28,9 +28,10 @@ import {
 import {
   einheiten, uebungen, einheitTitel,
   eintrag, mitEintrag, sauber, fortschritt, naechsteOffene, saetze,
-  videoUrl, vorwochen, zeigtSaetze, kennzahlen,
+  videoUrl, vorwochen, zeigtSaetze, kennzahlen, bilderFuer,
 } from '../../einheit.js';
 import { isoTag } from '../../termine.js';
+import { rueckweg } from '../../wochenplan.js';
 
 const $ = id => document.getElementById(id);
 
@@ -57,6 +58,7 @@ let items = [];
 let protokoll = { units: {} };
 let pos = 0;
 let timer = null;
+let bilder = {};           // images.json, einmal geladen
 
 function zeige(id, an) {
   const el = $(id);
@@ -231,6 +233,14 @@ function zeichnePlayer() {
   $('uebMeta').textContent = meta;
   $('uebMeta').hidden = !meta;
 
+  /* Bilder, wo die Vorlage welche hat. Der Name kommt aus unserer
+     eigenen images.json und ist in bilderFuer() auf einen schlichten
+     Dateinamen geprueft, bevor er in ein src wandert. */
+  const bildNamen = bilderFuer(bilder, unitId, item);
+  $('uebBilder').innerHTML = bildNamen.map(name =>
+    `<img loading="lazy" src="../assets/img/training/${escHtml(name)}" alt="${escHtml(item.name)}" />`).join('');
+  $('uebBilder').hidden = !bildNamen.length;
+
   const reihen = zeigtSaetze(item) ? saetze(item, e) : [];
   $('listSaetze').innerHTML = reihen.length
     ? reihen.map((r, i) => satzZeile(r, i, offeneSaetze.has(i))).join('')
@@ -353,16 +363,28 @@ function erledigtGeklickt() {
   planId = p.get('p') || '';
   unitId = p.get('u') || '';
   datum = p.get('d') || isoTag();
+  /* Zurueck dorthin, woher man kam — Gruppe oder Training. Nur Namen aus
+     einer festen Liste; ein freier Pfad in der Adresse waere ein Weg,
+     jemanden anderswohin zu schicken. */
+  const zurueck = rueckweg(p.get('z'));
 
   mountShell({
     variant: 'bereich',
     title: t('eh.einheit', 'Einheit'),
-    backHref: './gruppe.html',
+    backHref: zurueck,
     profile: {},
   });
 
-  $('btnZurueckGruppe')?.addEventListener('click', () => { location.href = './gruppe.html'; });
-  $('btnFertigZurueck')?.addEventListener('click', () => { location.href = './gruppe.html'; });
+  /* Die Knoepfe sagen, wohin sie fuehren. Fest "Zur Gruppe" war falsch,
+     sobald man aus dem Training kam. */
+  const rueckText = p.get('z') === 'training'
+    ? t('eh.zumTraining', 'Zum Training')
+    : t('eh.zurGruppe', 'Zur Gruppe');
+  if ($('zurueckText')) $('zurueckText').textContent = rueckText;
+  if ($('btnFertigZurueck')) $('btnFertigZurueck').textContent = rueckText;
+
+  $('btnZurueckGruppe')?.addEventListener('click', () => { location.href = zurueck; });
+  $('btnFertigZurueck')?.addEventListener('click', () => { location.href = zurueck; });
   $('btnZurWahl')?.addEventListener('click', zeichneWahl);
   $('btnNochmal')?.addEventListener('click', () => { pos = 0; zeichnePlayer(); });
   $('btnVor')?.addEventListener('click', () => { pos = Math.max(0, pos - 1); zeichnePlayer(); });
@@ -427,6 +449,12 @@ function erledigtGeklickt() {
     if (!plan) throw new Error('Plan nicht gefunden.');
 
     programm = JSON.parse(plan.json);
+
+    /* Die Bilder sind Beiwerk: fehlen sie, laeuft der Player ohne. */
+    try {
+      const antwort = await fetch('../assets/data/training/images.json');
+      bilder = antwort.ok ? await antwort.json() : {};
+    } catch { bilder = {}; }
     protokoll = await ladeProtokoll(gid, user.uid, datum);
     if (!protokoll.units) protokoll.units = {};
 

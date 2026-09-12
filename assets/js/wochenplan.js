@@ -144,11 +144,27 @@ export function wochenKopf(programm) {
  * Zeile antippt. Sonst stünde eine am Mittwoch nachgeholte
  * Dienstagseinheit für immer als offen im Dienstag.
  */
-export function einheitZiel(gid, planId, eintrag, datum) {
+export function einheitZiel(gid, planId, eintrag, datum, zurueck = '') {
   const q = new URLSearchParams({ g: gid, p: planId });
   if (eintrag?.unit) q.set('u', eintrag.unit);
   if (datum) q.set('d', datum);
+  /* Woher man kam, damit "Zurueck" im Player dorthin fuehrt. Nur ein
+     Name aus RUECKWEGE — die Adresse ist sichtbar und aenderbar, und
+     ein freier Pfad darin waere ein Weg, jemanden anderswohin zu
+     schicken. */
+  if (RUECKWEGE[zurueck]) q.set('z', zurueck);
   return `./einheit.html?${q.toString()}`;
+}
+
+/** Die Seiten, in die der Player zurueckfuehren darf. */
+export const RUECKWEGE = Object.freeze({
+  gruppe: './gruppe.html',
+  training: './training.html',
+});
+
+/** Wohin "Zurueck" im Player fuehrt — ein Unbekannter faellt auf die Gruppe. */
+export function rueckweg(z) {
+  return RUECKWEGE[z] || RUECKWEGE.gruppe;
 }
 
 /**

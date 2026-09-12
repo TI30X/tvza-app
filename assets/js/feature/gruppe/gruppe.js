@@ -34,10 +34,9 @@ import {
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
-  wochenTage, standardTag, nachDatum,
-  eintragFortschritt, tagPunkte, wochenKopf, einheitZiel,
-  planZusammenfassung, planTitelVorschlag,
+  wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag,
 } from '../../wochenplan.js';
+import { wochenAnsicht, tagName, kurzDatum } from '../woche/woche.js';
 import { frage, eingabe, meldung } from '../../dialog.js';
 import {
   kommende, zeitraum, artWort, artName, BEREICH_DER_ART, pruefe, isoTag,
@@ -183,167 +182,44 @@ function zeichneTermine() {
 
 let plaene = [];
 let planAktiv = '';          // welcher Plan gezeigt wird
-let programm = null;         // sein geparstes Wochenprogramm
-let wocheTage = [];
-let tagAktiv = '';
 let protokolle = {};         // nach Datum, fuer den Fortschritt
 
-/* Wochentag und Datum kommen aus dem DATUM, nicht aus dem deutschen
-   Namen im Programm: der Plan ist ein Import, die Oberflaeche spricht
-   sieben Sprachen. Ohne Datum bleibt der Name aus der Vorlage — besser
-   als nichts. */
-function alsDatum(iso) {
-  return new Date(`${iso}T00:00:00`);
+/* Die Woche zeichnet ein Baustein, den auch der Bereich Training
+   benutzt — feature/woche/woche.js. Hier bleibt, was nur die Gruppe
+   tut: Plaene laden, einen auswaehlen, einen neuen veroeffentlichen. */
+let woche = null;
+function wocheAnsicht() {
+  return woche ||= wochenAnsicht({
+    streifen: $('wocheStreifen'),
+    titel: $('tagTitel'),
+    liste: $('listPlaene'),
+    zeitraum: $('planZeitraum'),
+    zurueck: 'gruppe',
+  });
 }
 
-function tagName(tag) {
-  if (!tag?.datum) return tag?.name || '';
-  const d = alsDatum(tag.datum);
-  return window.TVZAI18n?.format?.date(d, { weekday: 'long' })
-    ?? d.toLocaleDateString('de-CH', { weekday: 'long' });
-}
-
-function kurzDatum(iso) {
-  if (!iso) return '';
-  const d = alsDatum(iso);
-  return window.TVZAI18n?.format?.date(d, { day: 'numeric', month: 'short' })
-    ?? d.toLocaleDateString('de-CH', { day: 'numeric', month: 'short' });
-}
-
-/* ── Der Wochenstreifen ────────────────────────────────────────────
-   Sieben Knoepfe. Heute ist markiert, auch wenn ein anderer Tag
-   gewaehlt ist — sonst verliert man beim Blaettern den Bezugspunkt. */
-function streifen(heute) {
-  return wocheTage.map(tag => {
-    const punkte = tagPunkte(programm, tag, protokolle)
-      .map(p => `<span class="woche__punkt${p.fertig ? ' ist-fertig' : ''}"></span>`)
-      .join('');
-    const kurz = tag.datum
-      ? (window.TVZAI18n?.format?.date(alsDatum(tag.datum), { weekday: 'short' })
-         ?? tag.name.slice(0, 2))
-      : tag.name.slice(0, 2);
-    return `
-      <button class="woche__tag${tag.datum === heute ? ' ist-heute' : ''}" type="button"
-              role="tab" data-tag="${escHtml(tag.key)}"
-              aria-selected="${tag.key === tagAktiv ? 'true' : 'false'}">
-        <span class="woche__name">${escHtml(kurz)}</span>
-        <span class="woche__datum">${escHtml(tag.datum ? String(Number(tag.datum.slice(8, 10))) : '')}</span>
-        <span class="woche__punkte">${punkte}</span>
-      </button>`;
-  }).join('');
-}
-
-/* ── Eine Einheit des Tages ────────────────────────────────────────
-   Sie fuehrt direkt in den Player, mit dem GEPLANTEN Datum. Ein
-   Eintrag ohne Blatt ("evtl. Spiel") bleibt stehen, aber ohne Weg
-   hinein: das ist eine Ansage des Trainers, kein Trainingsblatt. */
-function eintragZeile(eintrag, tag) {
-  const slot = eintrag.slot
-    ? `<span class="eintrag__slot">${escHtml(eintrag.slot)}</span> · `
-    : '';
-
-  if (!eintrag.unit) {
-    return `
-      <div class="row row--ohneBlatt" data-bereich="t-training">
-        <span class="row__icon">·</span>
-        <span class="row__body">
-          <span class="row__title">${escHtml(eintrag.titel)}</span>
-          <span class="row__sub">${slot}${escHtml(t('grp.keinBlatt', 'kein Blatt hinterlegt'))}</span>
-        </span>
-      </div>`;
+/* Den gewaehlten Plan zeigen. Ein Plan aus einer kaputten oder
+   kuenftigen Fassung darf die Gruppenseite nicht mitreissen. */
+function zeigePlan() {
+  const plan = plaene.find(p => p.id === planAktiv);
+  let programm = null;
+  if (plan) {
+    try { programm = JSON.parse(plan.json); }
+    catch (e) { reportClientError('gruppe/planLesen', e); }
   }
-
-  const f = eintragFortschritt(programm, eintrag, tag.datum, protokolle);
-  const fertig = Boolean(f?.fertig && f.gesamt > 0);
-
-  return `
-    <a class="row" href="${escHtml(einheitZiel(aktiv.id, planAktiv, eintrag, tag.datum))}"
-       data-bereich="t-training">
-      <span class="row__icon">${escHtml(eintrag.titel.slice(0, 1).toUpperCase())}</span>
-      <span class="row__body">
-        <span class="row__title">${escHtml(eintrag.titel)}</span>
-        <span class="row__sub">${slot}${escHtml(f
-          ? tPlural('eh.uebungen', f.gesamt, 'Übung', 'Übungen')
-          : t('grp.keinBlatt', 'kein Blatt hinterlegt'))}</span>
-        ${f && f.gesamt
-          ? `<span class="row__bar"><i class="${fertig ? 'ist-fertig' : ''}" style="width:${f.anteil}%"></i></span>`
-          : ''}
-      </span>
-      <span class="row__end">
-        <span class="row__zaehler${fertig ? ' ist-fertig' : ''}">${escHtml(f ? `${f.erledigt}/${f.gesamt}` : '')}</span>
-        <svg class="ic row__chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-      </span>
-    </a>`;
-}
-
-/* ── Die Woche zeichnen ────────────────────────────────────────────*/
-function zeichneWoche() {
-  const liste = $('listPlaene');
-  const heute = isoTag();
-
-  if (!programm || !wocheTage.length) {
-    zeige('wocheStreifen', false);
-    zeige('tagTitel', false);
-    zeige('planZeitraum', false);
-    liste.innerHTML = `<p class="empty-hint">${escHtml(leitet(aktiv?.meineRolle)
+  if (!programm || !wochenTage(programm).length) {
+    wocheAnsicht().leer(leitet(aktiv?.meineRolle)
       ? t('grp.keinPlan', 'Noch kein Plan veröffentlicht.')
-      : t('grp.keinPlanFuerDich', 'Für dich liegt noch kein Plan bereit.'))}</p>`;
+      : t('grp.keinPlanFuerDich', 'Für dich liegt noch kein Plan bereit.'));
     return;
   }
-
-  /* Der Kopf nennt die Woche, nicht den Titel, den der Trainer beim
-     Veroeffentlichen getippt hat: "KW 31 · 3.–9. Aug." sagt einem
-     Athleten mehr als "Woche 31 — Kraft". Der Titel steht in der
-     Auswahl, sobald es mehrere Plaene gibt. */
-  const kopf = wochenKopf(programm);
-  const plan = plaene.find(p => p.id === planAktiv);
-  const teile = [
-    kopf.kw ? `KW ${kopf.kw}` : kopf.label,
-    kopf.von && kopf.bis ? `${kurzDatum(kopf.von)} – ${kurzDatum(kopf.bis)}` : '',
-    /* Dass ein Plan nur fuer einen selbst gilt, ist keine Kleinigkeit
-       — der Athlet soll wissen, dass der Kader etwas anderes macht. */
-    plan && plan.fuer !== PLAN_FUER_ALLE ? t('grp.nurFuerDich', 'nur für dich') : '',
-  ].filter(Boolean);
-  $('planZeitraum').textContent = teile.join(' · ');
-  zeige('planZeitraum', teile.length > 0);
-
-  $('wocheStreifen').innerHTML = streifen(heute);
-  zeige('wocheStreifen', true);
-
-  const tag = wocheTage.find(x => x.key === tagAktiv) || wocheTage[0];
-  const istHeute = Boolean(tag.datum) && tag.datum === heute;
-  $('tagTitel').innerHTML = [
-    `<span>${escHtml(istHeute ? t('grp.heute', 'Heute') : tagName(tag))}</span>`,
-    tag.datum
-      ? `<span class="tag__datum">${escHtml(istHeute
-          ? `${tagName(tag)}, ${kurzDatum(tag.datum)}`
-          : kurzDatum(tag.datum))}</span>`
-      : '',
-  ].filter(Boolean).join('');
-  zeige('tagTitel', true);
-
-  liste.innerHTML = tag.eintraege.length
-    ? tag.eintraege.map(e => eintragZeile(e, tag)).join('')
-    : `<p class="empty-hint">${escHtml(t('grp.ruhetag', 'Ruhetag — nichts geplant.'))}</p>`;
-}
-
-/* Den gewaehlten Plan einlesen. Ein Plan aus einer kaputten oder
-   kuenftigen Fassung darf die Gruppenseite nicht mitreissen. */
-function setzePlan(id) {
-  planAktiv = id;
-  programm = null;
-  wocheTage = [];
-  const plan = plaene.find(p => p.id === id);
-  if (!plan) return;
-  try {
-    programm = JSON.parse(plan.json);
-    wocheTage = wochenTage(programm);
-  } catch (e) {
-    reportClientError('gruppe/planLesen', e);
-    programm = null;
-    wocheTage = [];
-  }
-  tagAktiv = standardTag(wocheTage, isoTag());
+  wocheAnsicht().setze({
+    gid: aktiv.id,
+    planId: planAktiv,
+    programm,
+    protokolle,
+    nurFuerMich: plan.fuer !== PLAN_FUER_ALLE,
+  });
 }
 
 async function zeichnePlaene() {
@@ -383,16 +259,9 @@ async function zeichnePlaene() {
     }).join('');
   }
 
-  if (plaene.length) {
-    setzePlan(plaene.some(p => p.id === planAktiv) ? planAktiv : plaene[0].id);
-    if (mehrere) $('planWahl').value = planAktiv;
-  } else {
-    planAktiv = '';
-    programm = null;
-    wocheTage = [];
-  }
-
-  zeichneWoche();
+  planAktiv = plaene.some(p => p.id === planAktiv) ? planAktiv : (plaene[0]?.id || '');
+  if (mehrere) $('planWahl').value = planAktiv;
+  zeigePlan();
 }
 
 /* ── Die Excel einlesen ─────────────────────────────────────────────
@@ -1612,15 +1481,9 @@ async function einladen() {
   $('btnErgebnisNeu')?.addEventListener('click', ergFormOeffnen);
   $('btnErgAbbrechen')?.addEventListener('click', ergFormSchliessen);
   $('btnErgSpeichern')?.addEventListener('click', ergSpeichern);
-  $('wocheStreifen')?.addEventListener('click', event => {
-    const key = event.target.closest('[data-tag]')?.dataset.tag;
-    if (!key || key === tagAktiv) return;
-    tagAktiv = key;
-    zeichneWoche();
-  });
   $('planWahl')?.addEventListener('change', () => {
-    setzePlan($('planWahl').value);
-    zeichneWoche();
+    planAktiv = $('planWahl').value;
+    zeigePlan();
   });
   $('btnPlanNeu')?.addEventListener('click', planFormOeffnen);
   $('planDatei')?.addEventListener('change', event => planDateiGewaehlt(event.target.files?.[0]));

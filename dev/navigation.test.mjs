@@ -449,8 +449,10 @@ test('ein Tab hat keinen Zurueck-Pfeil, und kein Winkel steht neben einem andere
      verschiedene Bedeutungen. */
   assert.match(gruppe, /mountShell\(\{\s*variant: 'tab'/);
   assert.doesNotMatch(gruppe, /backHref/);
-  /* Eine Einheit ist eine Unterseite der Gruppe: die hat einen. */
-  assert.match(einheit, /variant: 'bereich'[\s\S]{0,120}backHref: '\.\/gruppe\.html'/);
+  /* Eine Einheit ist eine Unterseite — der Gruppe oder des Trainings.
+     Sie hat einen Pfeil, und er fuehrt dorthin zurueck, woher man kam. */
+  assert.match(einheit, /variant: 'bereich'[\s\S]{0,120}backHref: zurueck/);
+  assert.match(einheit, /const zurueck = rueckweg\(p\.get\('z'\)\)/);
   /* Den Pfeil gibt es nur in der Unterseiten-Fassung. */
   assert.match(shell, /variant === 'bereich'\s*\?\s*`<button class="appbar__btn" id="shellBack"/);
 

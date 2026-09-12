@@ -187,3 +187,20 @@ test('der Titel kommt aus der Woche, nicht von der Tastatur', () => {
   assert.equal(planTitelVorschlag({ weekLabel: 'Aufbauwoche' }), 'Aufbauwoche');
   assert.equal(planTitelVorschlag(null), '');
 });
+
+test('der Player fuehrt zurueck, woher man kam — aber nur an bekannte Orte', async () => {
+  const { rueckweg, RUECKWEGE } = await import('../assets/js/wochenplan.js');
+  assert.equal(rueckweg('training'), './training.html');
+  assert.equal(rueckweg('gruppe'), './gruppe.html');
+  /* Die Adresse ist sichtbar und aenderbar. Ein freier Pfad darin waere
+     ein Weg, jemanden anderswohin zu schicken. */
+  for (const fremd of ['https://boese.example', '../../login.html', 'javascript:alert(1)', '', null, undefined]) {
+    assert.equal(rueckweg(fremd), './gruppe.html', String(fremd));
+  }
+  assert.equal(Object.isFrozen(RUECKWEGE), true);
+
+  const ziel = new URLSearchParams(einheitZiel('g', 'p', { unit: 'u' }, '2026-08-04', 'training').split('?')[1]);
+  assert.equal(ziel.get('z'), 'training');
+  const fremdZiel = new URLSearchParams(einheitZiel('g', 'p', { unit: 'u' }, '2026-08-04', 'https://x').split('?')[1]);
+  assert.equal(fremdZiel.has('z'), false, 'ein unbekannter Rueckweg kommt gar nicht erst in die Adresse');
+});

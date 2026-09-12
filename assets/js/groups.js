@@ -480,7 +480,7 @@ export async function planVeroeffentlichen(gid, uid, { titel, json, fuer, notiz 
   const sauber = String(titel ?? '').trim();
   if (!sauber) throw new Error('Der Plan braucht einen Titel.');
   if (typeof json !== 'string' || !json) throw new Error('Der Plan ist leer.');
-  /* Dieselbe Grenze wie in den Regeln und in training-sync.js — ein
+  /* Dieselbe Grenze wie in den Regeln — ein
      Dokument darf 1 MiB, wir bleiben darunter. */
   if (json.length > 900000) throw new Error('Der Plan ist zu gross.');
 
