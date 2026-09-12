@@ -158,8 +158,9 @@ test('die Anmeldeseite rechnet in Stufen, nicht in erfundenen Zahlen', async () 
 
    Er gilt fuer kit.css, das Bauteil jeder Seite. Die Seiten-Stile in
    feature/ sind der naechste Schritt. */
-test('jeder Abstand in kit.css kommt aus der Skala', async () => {
-  const roh = await readFile(join(WURZEL, 'assets', 'css', 'kit.css'), 'utf8');
+/* Freie Pixel in padding, margin und gap — ab 4 Pixeln, ausserhalb von
+   clamp() und var(). */
+function freiePixel(roh) {
   const code = roh.replace(/\/\*[\s\S]*?\*\//g, '');
   const funde = [];
   const re = /(?:^|[;{\s])((?:padding|margin|gap|row-gap|column-gap)(?:-[a-z-]+)?)\s*:\s*([^;}]+)/g;
@@ -168,6 +169,26 @@ test('jeder Abstand in kit.css kommt aus der Skala', async () => {
     for (const px of frei.matchAll(/(^|[^\w.-])(\d+(?:\.\d+)?)px\b/g)) {
       if (Number(px[2]) > 3) funde.push(`${m[1]}: ${m[2].trim()}`);
     }
+  }
+  return funde;
+}
+
+test('jeder Abstand in kit.css kommt aus der Skala', async () => {
+  const funde = freiePixel(await readFile(join(WURZEL, 'assets', 'css', 'kit.css'), 'utf8'));
+  assert.deepEqual(funde, [], `Abstaende mit freien Pixeln:\n  ${funde.join('\n  ')}`);
+});
+
+/* Seit v.35.28.0 auch die Seiten-Stile. Dort standen noch 273 freie
+   Werte, fast alle im Kalender und in der Maturaarbeit. Nachgemessen,
+   Element fuer Element: der Kalender-Monat verschob sich am Handy an drei
+   Stellen um hoechstens 3 Pixel, die Monatszellen blieben gleich hoch;
+   die Maturaarbeit wurde um 2,4 % luftiger, weil Werte wie 10 und 20 bei
+   Gleichstand auf die groessere Stufe gehen. */
+test('jeder Abstand in den Seiten-Stilen kommt aus der Skala', async () => {
+  const funde = [];
+  for (const [datei, roh] of await alleStile()) {
+    if (!datei.startsWith('assets/css/feature/')) continue;
+    for (const f of freiePixel(roh)) funde.push(`${datei} — ${f}`);
   }
   assert.deepEqual(funde, [], `Abstaende mit freien Pixeln:\n  ${funde.join('\n  ')}`);
 });

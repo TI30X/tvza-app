@@ -61,7 +61,7 @@ html.admin-embed #adminSection {
     "health health"
     "users invites"
     "users food";
-  gap: 16px;
+  gap: var(--s4);
   align-items: start;
 }
 html.admin-embed #adminSection > .settings-divider { display: none !important; }
@@ -70,7 +70,7 @@ html.admin-embed #memberInviteSection { grid-area: invites; }
 html.admin-embed #superAdminUserSection { grid-area: users; }
 html.admin-embed #superAdminFoodSection { grid-area: food; }
 html.admin-embed #adminSection > .settings-section {
-  padding: 20px;
+  padding: var(--s5);
   border: 1px solid var(--border);
   border-radius: var(--r-panel);
   background: var(--surface);
@@ -78,12 +78,12 @@ html.admin-embed #adminSection > .settings-section {
 }
 .admin-health {
   display: grid;
-  gap: 12px;
+  gap: var(--s3);
 }
 .admin-health__head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--s3);
 }
 .admin-health__icon {
   width: 38px;
@@ -112,7 +112,7 @@ html.admin-embed #adminSection > .settings-section {
 }
 .admin-health__state {
   flex: none;
-  padding: 5px 10px;
+  padding: var(--s1) var(--s3);
   border-radius: var(--r-pill);
   background: var(--accent-bg);
   color: var(--accent);
@@ -134,13 +134,13 @@ html.admin-embed #adminSection > .settings-section {
 .admin-health__checks {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: var(--s2);
 }
 .admin-health-check {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 9px;
+  gap: var(--s2);
+  padding: var(--s2) var(--s2);
   border: 1px solid var(--border);
   border-radius: var(--r-pill);
   background: var(--surface-2);
@@ -174,13 +174,13 @@ html.admin-embed #adminSection > .settings-section {
 @keyframes adminHealthPulse { to { opacity: .38; } }
 .admin-health__alerts {
   display: grid;
-  gap: 7px;
+  gap: var(--s2);
 }
 .admin-health-alert {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 9px 11px;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
   border-radius: var(--r-row);
   background: var(--surface-2);
   color: var(--ink-soft);
@@ -229,7 +229,7 @@ html.admin-embed #adminSection > .settings-section {
    trugen ein Personensymbol statt der Initialen, die überall sonst für
    eine Person stehen. */
 .admin-user { border-radius: var(--r-row); }
-.admin-user + .admin-user { margin-top: 8px; }
+.admin-user + .admin-user { margin-top: var(--s2); }
 .admin-user__head { list-style: none; }
 .admin-user__head::-webkit-details-marker { display: none; }
 .avatar.avatar--ink {
@@ -261,23 +261,23 @@ html.admin-embed #adminSection > .settings-section {
   box-shadow: 0 1px 3px rgba(15,23,42,0.18);
   font-size: 9px;
 }
-.admin-user__body { padding: 4px 14px 14px; }
+.admin-user__body { padding: var(--s1) var(--s4) var(--s4); }
 @media (min-width: 900px) {
   html.admin-embed #adminUsers {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: var(--s2);
   }
   html.admin-embed #adminUsers .admin-user + .admin-user { margin-top: 0; }
   html.admin-embed #adminUsers .admin-user[open] { grid-column: 1 / -1; }
 }
 .admin-mods {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 6px; margin: 10px 0 14px;
+  gap: var(--s2); margin: var(--s3) 0 var(--s4);
 }
 .admin-mod {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 10px; min-height: 40px;
+  display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s2) var(--s3); min-height: 40px;
   border: 1px solid var(--border); border-radius: var(--r-icon);
   background: var(--surface);
   font-size: 13px; font-weight: 600; cursor: pointer;

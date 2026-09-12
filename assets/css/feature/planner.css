@@ -6,5 +6,5 @@
    ================================ */
 
 /* Day groups in the Planer programme list. */
-.itin-day + .itin-day { margin-top: 20px; }
-@media (min-width: 900px) { .itin-day + .itin-day { margin-top: 26px; } }
+.itin-day + .itin-day { margin-top: var(--s5); }
+@media (min-width: 900px) { .itin-day + .itin-day { margin-top: var(--s5); } }
