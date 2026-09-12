@@ -74,6 +74,11 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const anhangUmbenennen = ${merke('anhangUmbenennen')};
     export const anhangLoeschen = ${merke('anhangLoeschen')};
     export const alsBlob = () => null;
+    /* Kontakte: globalThis.__kontakte = { uid: {...} } legt der Test an. */
+    export const ladeKontakt = async (gid, uid) => ({ ...(globalThis.__kontakte?.[uid] || {}), uid });
+    export const ladeKontakte = async () =>
+      Object.entries(globalThis.__kontakte || {}).map(([uid, k]) => ({ ...k, uid }));
+    export const kontaktSpeichern = ${merke('kontaktSpeichern')};
   `;
 }
 
@@ -156,6 +161,7 @@ async function lade({
     .replace(`'../../wochenplan.js'`, `'${datei('assets/js/wochenplan.js')}'`)
     .replace(`'../woche/woche.js'`, `'${datei('assets/js/feature/woche/woche.js')}'`)
     .replace(`'../../dialog.js'`, `'${datei('assets/js/dialog.js')}'`)
+    .replace(`'../../kontakte.js'`, `'${datei('assets/js/kontakte.js')}'`)
     .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)
     .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`);

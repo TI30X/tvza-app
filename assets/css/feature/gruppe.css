@@ -16,3 +16,24 @@
 .plan-vorschau__name { font-weight: 800; color: var(--ink); }
 .plan-vorschau__was  { color: var(--ink-soft); }
 .plan-vorschau__hinweis { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
+
+/* ── Kontakt ───────────────────────────────────────────────────────
+   Eine Zeile, die nichts oeffnet (Geburtsdatum, Adresse, Notiz), sieht
+   aus wie die anderen, reagiert aber nicht auf den Zeiger. */
+.row--still { cursor: default; }
+.row--still:hover { border-color: var(--border); }
+/* Die Notiz behaelt ihre Zeilen — "Allergie: Nuesse / Notfall: …". */
+#kontaktAnzeige .row__title { white-space: pre-line; }
+
+.eltern { display: flex; flex-direction: column; gap: var(--s2); }
+.eltern__karte {
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+.eltern__weg { align-self: flex-end; color: var(--danger); }
+
+/* Ein Verteiler ohne Adressen: der Knopf steht da, sagt aber, dass es
+   nichts zu schreiben gibt. */
+#lnkVerteiler.is-leer { opacity: 0.5; pointer-events: none; }

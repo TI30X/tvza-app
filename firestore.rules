@@ -935,6 +935,49 @@ service cloud.firestore {
                     );
     }
 
+    /* Kontakte — die Karte einer Person: Geburtsdatum, Telefon, E-Mail,
+       Adresse, eine Notiz fuer die Trainer, bis zu vier Eltern.
+
+       LESEN darf die Leitung und die Person selbst. Sonst niemand: ein
+       Athlet sieht nie die Nummer der Mutter eines anderen Athleten, und
+       in einem Kader sind die meisten minderjaehrig. 'list' nur fuer die
+       Leitung — sie baut daraus den Verteiler.
+
+       SCHREIBEN dieselben: die Leitung traegt fuer ein Kind ein, der
+       Athlet fuer sich selbst. Eine Karte gibt es nur fuer ein Mitglied
+       DIESER Gruppe — fuer Fremde legt niemand eine an.
+
+       LOESCHEN die Leitung oder die Person selbst. Wer die Gruppe
+       verlaesst oder entfernt wird, dessen Karte geht im selben Batch mit
+       (groups.js). exists() sieht dabei den Stand VOR dem Batch, also ist
+       man beim Loeschen der eigenen Karte noch Mitglied. */
+    match /groups/{gid}/kontakte/{uid} {
+      function eigene() {
+        return inGroup(gid) && request.auth.uid == uid;
+      }
+      function kontaktGueltig(d) {
+        return d.keys().hasOnly([
+                 'uid', 'geburt', 'telefon', 'email', 'adresse', 'notiz', 'eltern',
+                 'geaendertVon', 'geaendertAm'
+               ])
+          && d.uid == uid
+          && d.geaendertVon == request.auth.uid
+          && (!('geburt' in d) || (d.geburt is string && d.geburt.matches('\\d{4}-\\d{2}-\\d{2}')))
+          && (!('telefon' in d) || (d.telefon is string && d.telefon.size() <= 30))
+          && (!('email' in d) || (d.email is string && d.email.size() <= 120))
+          && (!('adresse' in d) || (d.adresse is string && d.adresse.size() <= 160))
+          && (!('notiz' in d) || (d.notiz is string && d.notiz.size() <= 500))
+          && (!('eltern' in d) || (d.eltern is list && d.eltern.size() <= 4));
+      }
+
+      allow get: if leadsGroup(gid) || eigene();
+      allow list: if leadsGroup(gid);
+      allow create, update: if (leadsGroup(gid) || eigene())
+                            && exists(/databases/$(database)/documents/groups/$(gid)/members/$(uid))
+                            && kontaktGueltig(request.resource.data);
+      allow delete: if leadsGroup(gid) || eigene();
+    }
+
     /* Einladungscodes. Ein Code zeigt auf genau eine Gruppe und gilt
        fuer beliebig viele Beitritte — anders als memberInvites, die
        an eine E-Mail gebunden und einmalig sind. Ein Kader laedt zehn

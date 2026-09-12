@@ -27,7 +27,7 @@ import {
   einladungErzeugen, beitreten,
   ladeErgebnisse, ergebnisSpeichern,
   ladePlaene, planVeroeffentlichen, eigeneProgramme, PLAN_FUER_ALLE,
-  ladeProtokolle,
+  ladeProtokolle, ladeKontakt, ladeKontakte, kontaktSpeichern,
   abonnementErneuern, abonnementAdresse,
   terminAbsagen, absageZuruecknehmen,
   ladeAnhaenge, anhangSpeichern, anhangUmbenennen, anhangLoeschen, alsBlob,
@@ -38,6 +38,9 @@ import {
 } from '../../wochenplan.js';
 import { wochenAnsicht, tagName, kurzDatum } from '../woche/woche.js';
 import { frage, eingabe, meldung } from '../../dialog.js';
+import {
+  kontaktSauber, pruefeKontakt, verteiler, ohneAdresse, mailtoAdresse, istEmail, ELTERN_MAX,
+} from '../../kontakte.js';
 import {
   kommende, zeitraum, artWort, artName, BEREICH_DER_ART, pruefe, isoTag,
   artenFuer, kenntDisziplinen, istAbgesagt,
@@ -488,6 +491,8 @@ function zeichne() {
      scheitert, ist schlechter als keiner. */
   const knopf = $('btnTermin');
   if (knopf) knopf.hidden = !darfFuehren;
+  const verteilerKnopf = $('btnVerteiler');
+  if (verteilerKnopf) verteilerKnopf.hidden = !darfFuehren;
 
   /* Ohne Worker gibt es keine Adresse, die man abonnieren könnte —
      eine statische Seite kann kein text/calendar ausliefern. */
@@ -1139,6 +1144,258 @@ function personOeffnen(uid) {
   zeige('secPlaene', false);
 
   zeichneErgebnisse();
+
+  /* Den Kontakt sehen die Leitung und die Person selbst — sonst
+     niemand. Die Regeln lehnen jede andere Abfrage ab; hier wird sie
+     gar nicht erst gestellt. */
+  const darfKontakt = darfErfassen || ichSelbst;
+  zeige('secKontakt', darfKontakt);
+  if (darfKontakt) zeichneKontakt();
+}
+
+/* ── Kontakt ───────────────────────────────────────────────────────
+   Alles, was ein Trainer ueber eine Person wissen muss: Geburtsdatum,
+   Telefon, Adresse, eine Notiz (Allergie, Medikamente), Eltern. */
+let kontakt = null;       // die Karte der gerade geoeffneten Person
+
+/* Eine Nummer wird zu einem tel:-Link nur aus Ziffern, Plus und
+   Leerzeichen; eine Adresse zu mailto: nur, wenn sie eine ist. Beides
+   kommt aus einem Formular, das jemand anders ausgefuellt hat. */
+const telLink = nr => {
+  const sauber = String(nr || '').replace(/[^\d+]/g, '');
+  return sauber.length >= 3 ? `tel:${sauber}` : '';
+};
+const mailLink = adr => (istEmail(adr) ? `mailto:${encodeURIComponent(String(adr).trim())}` : '');
+
+/* Gezeichnete Symbole wie in jeder anderen Zeile der App — kein
+   Sternchen fuer den Geburtstag. Eltern tragen ihren Anfangsbuchstaben. */
+const KONTAKT_SYMBOLE = {
+  telefon: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+  mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/>',
+  geburt: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  adresse: '<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+  notiz: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+};
+
+function kontaktZeile({ icon, titel, sub = '', link = '' }) {
+  const bild = KONTAKT_SYMBOLE[icon]
+    ? `<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">${KONTAKT_SYMBOLE[icon]}</svg>`
+    : escHtml(icon);
+  const innen = `
+    <span class="row__icon">${bild}</span>
+    <span class="row__body">
+      <span class="row__title">${escHtml(titel)}</span>
+      ${sub ? `<span class="row__sub">${escHtml(sub)}</span>` : ''}
+    </span>`;
+  return link
+    ? `<a class="row" href="${escHtml(link)}" data-bereich="msg">${innen}</a>`
+    : `<div class="row row--still" data-bereich="msg">${innen}</div>`;
+}
+
+async function zeichneKontakt() {
+  const liste = $('kontaktAnzeige');
+  const fuer = person;
+  liste.innerHTML = '';
+  try {
+    kontakt = await ladeKontakt(aktiv.id, fuer.uid);
+  } catch (e) {
+    reportClientError('gruppe/kontakt', e);
+    kontakt = { uid: fuer.uid };
+  }
+  /* Wer inzwischen jemand anderen geoeffnet hat, bekommt nicht die
+     Karte des Vorigen. */
+  if (person?.uid !== fuer.uid) return;
+
+  const zeilen = [];
+  if (kontakt.telefon) zeilen.push(kontaktZeile({ icon: 'telefon', titel: kontakt.telefon, sub: t('grp.kTelefon', 'Telefon'), link: telLink(kontakt.telefon) }));
+  if (kontakt.email) zeilen.push(kontaktZeile({ icon: 'mail', titel: kontakt.email, sub: t('grp.kEmail', 'E-Mail'), link: mailLink(kontakt.email) }));
+  if (kontakt.geburt) {
+    const d = new Date(`${kontakt.geburt}T00:00:00`);
+    const datum = window.TVZAI18n?.format?.date(d) ?? d.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric' });
+    zeilen.push(kontaktZeile({ icon: 'geburt', titel: datum, sub: t('grp.kGeburt', 'Geburtsdatum') }));
+  }
+  if (kontakt.adresse) zeilen.push(kontaktZeile({ icon: 'adresse', titel: kontakt.adresse, sub: t('grp.kAdresse', 'Adresse') }));
+  if (kontakt.notiz) zeilen.push(kontaktZeile({ icon: 'notiz', titel: kontakt.notiz, sub: t('grp.kNotiz', 'Wichtig für die Trainer') }));
+  for (const e of kontakt.eltern || []) {
+    const wer = [e.name, e.beziehung].filter(Boolean).join(' · ') || t('grp.elternteil', 'Elternteil');
+    const wie = [e.email, e.telefon].filter(Boolean).join(' · ');
+    zeilen.push(kontaktZeile({
+      icon: (e.name || '·').slice(0, 1).toUpperCase(),
+      titel: wer,
+      sub: wie,
+      link: mailLink(e.email) || telLink(e.telefon),
+    }));
+  }
+
+  liste.innerHTML = zeilen.length
+    ? zeilen.join('')
+    : `<p class="empty-hint">${escHtml(t('grp.kontaktLeer', 'Noch keine Kontaktdaten.'))}</p>`;
+}
+
+/* ── Das Formular ──────────────────────────────────────────────────*/
+function elternZeile(e = {}, i = 0) {
+  return `
+    <div class="eltern__karte" data-eltern="${i}">
+      <div class="form-row">
+        <input class="form-input" data-feld="name" type="text" maxlength="80" autocomplete="off"
+               value="${escHtml(e.name || '')}" placeholder="${escHtml(t('grp.elternName', 'Name'))}"
+               aria-label="${escHtml(t('grp.elternName', 'Name'))}" />
+        <input class="form-input" data-feld="beziehung" type="text" maxlength="40" autocomplete="off"
+               value="${escHtml(e.beziehung || '')}" placeholder="${escHtml(t('grp.elternBeziehung', 'Mutter, Vater …'))}"
+               aria-label="${escHtml(t('grp.elternBeziehungLabel', 'Beziehung'))}" />
+      </div>
+      <div class="form-row">
+        <input class="form-input" data-feld="email" type="email" maxlength="120" autocomplete="off"
+               value="${escHtml(e.email || '')}" placeholder="${escHtml(t('grp.kEmail', 'E-Mail'))}"
+               aria-label="${escHtml(t('grp.kEmail', 'E-Mail'))}" />
+        <input class="form-input" data-feld="telefon" type="tel" maxlength="30" autocomplete="off"
+               value="${escHtml(e.telefon || '')}" placeholder="${escHtml(t('grp.kTelefon', 'Telefon'))}"
+               aria-label="${escHtml(t('grp.kTelefon', 'Telefon'))}" />
+      </div>
+      <button class="backlink eltern__weg" type="button" data-eltern-weg="${i}">${escHtml(t('grp.elternWeg', 'Entfernen'))}</button>
+    </div>`;
+}
+
+function elternLesen() {
+  return [...document.querySelectorAll('#kEltern [data-eltern]')].map(karte => {
+    const feld = name => karte.querySelector(`[data-feld="${name}"]`)?.value || '';
+    return { name: feld('name'), beziehung: feld('beziehung'), email: feld('email'), telefon: feld('telefon') };
+  });
+}
+
+function elternZeichnen(liste) {
+  $('kEltern').innerHTML = liste.map((e, i) => elternZeile(e, i)).join('');
+  $('btnElternNeu').hidden = liste.length >= ELTERN_MAX;
+}
+
+function kontaktFormOeffnen() {
+  if (!person || !kontakt) return;
+  const k = kontakt;
+  $('kontaktTitel').textContent = `${t('grp.kontakt', 'Kontakt')} · ${person.name || ''}`;
+  $('kGeburt').value = k.geburt || '';
+  $('kTelefon').value = k.telefon || '';
+  $('kEmail').value = k.email || '';
+  $('kAdresse').value = k.adresse || '';
+  $('kNotiz').value = k.notiz || '';
+  /* Ein leeres Elternteil steht schon da, wenn noch keins erfasst ist —
+     der haeufigste Grund, das Formular zu oeffnen. */
+  elternZeichnen(k.eltern?.length ? k.eltern : [{}]);
+  $('kontaktFehler').hidden = true;
+  zeige('secPerson', false);
+  zeige('secKontaktForm', true);
+}
+
+function kontaktFormSchliessen() {
+  zeige('secKontaktForm', false);
+  zeige('secPerson', !!person);
+}
+
+async function kontaktFormSpeichern(event) {
+  event?.preventDefault();
+  if (!person || !aktiv) return;
+  const neu = kontaktSauber({
+    geburt: $('kGeburt').value,
+    telefon: $('kTelefon').value,
+    email: $('kEmail').value,
+    adresse: $('kAdresse').value,
+    notiz: $('kNotiz').value,
+    eltern: elternLesen(),
+  });
+
+  const fehler = pruefeKontakt(neu);
+  const feld = $('kontaktFehler');
+  if (fehler.length) {
+    feld.textContent = fehler[0];
+    feld.hidden = false;
+    return;
+  }
+
+  const btn = $('btnKontaktSpeichern');
+  btn.disabled = true;
+  try {
+    await kontaktSpeichern(aktiv.id, person.uid, neu, user.uid);
+    kontakt = { ...neu, uid: person.uid };
+    kontaktFormSchliessen();
+    zeichneKontakt();
+  } catch (e) {
+    reportClientError('gruppe/kontakt-speichern', e);
+    feld.textContent = t('grp.f.kontakt', 'Der Kontakt konnte nicht gespeichert werden.');
+    feld.hidden = false;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ── Der Verteiler ─────────────────────────────────────────────────
+   Eine Mail an alle, nur an die Eltern oder ohne sie — ueber das
+   eigene Mailprogramm, alle Adressen im BCC. Wer keine gueltige
+   Adresse hat, wird genannt, damit man sie nachtraegt. */
+let verteilerKontakte = [];
+let verteilerWer = 'alle';
+
+function verteilerZeichnen() {
+  const adressen = verteiler(verteilerKontakte, verteilerWer);
+  document.querySelectorAll('#verteilerWahl [data-wer]').forEach(k => {
+    k.setAttribute('aria-checked', k.dataset.wer === verteilerWer ? 'true' : 'false');
+  });
+
+  $('verteilerZahl').textContent = adressen.length
+    ? tPlural('grp.adressen', adressen.length, 'Adresse', 'Adressen')
+    : t('grp.keineAdressen', 'Noch keine E-Mail-Adressen hinterlegt. Sie stehen in der Kontaktkarte jeder Person.');
+
+  const fehlen = ohneAdresse(mitglieder, verteilerKontakte, verteilerWer);
+  const fehlt = $('verteilerFehlt');
+  fehlt.textContent = fehlen.length && adressen.length
+    ? t('grp.ohneAdresse', 'Ohne Adresse: {wer}', { wer: fehlen.map(m => m.name || m.uid).join(', ') })
+    : '';
+  fehlt.hidden = !fehlt.textContent;
+
+  const link = $('lnkVerteiler');
+  link.href = mailtoAdresse(adressen, { betreff: $('verteilerBetreff').value.trim() });
+  link.classList.toggle('is-leer', !adressen.length);
+  link.setAttribute('aria-disabled', adressen.length ? 'false' : 'true');
+  $('btnVerteilerKopieren').disabled = !adressen.length;
+}
+
+async function verteilerOeffnen() {
+  if (!aktiv || !leitet(aktiv.meineRolle)) return;
+  $('btnVerteilerKopieren').textContent = t('grp.adressenKopieren', 'Adressen kopieren');
+  $('verteilerBetreff').value = aktiv.name || '';
+  try {
+    verteilerKontakte = await ladeKontakte(aktiv.id);
+  } catch (e) {
+    reportClientError('gruppe/verteiler', e);
+    verteilerKontakte = [];
+  }
+  verteilerZeichnen();
+  zeige('secMitglieder', false);
+  zeige('secTermine', false);
+  zeige('secPlaene', false);
+  zeige('secAktionen', false);
+  zeige('secVerteiler', true);
+}
+
+function verteilerSchliessen() {
+  zeige('secVerteiler', false);
+  zeige('secMitglieder', !!aktiv);
+  zeige('secTermine', !!aktiv);
+  zeige('secPlaene', !!aktiv);
+  zeige('secAktionen', !!aktiv && leitet(aktiv.meineRolle));
+}
+
+async function verteilerKopieren() {
+  const adressen = verteiler(verteilerKontakte, verteilerWer);
+  if (!adressen.length) return;
+  const btn = $('btnVerteilerKopieren');
+  try {
+    await navigator.clipboard.writeText(adressen.join(', '));
+    btn.textContent = t('grp.kopiert', 'Kopiert');
+    setTimeout(() => { btn.textContent = t('grp.adressenKopieren', 'Adressen kopieren'); }, 1600);
+  } catch {
+    /* Ohne Zwischenablage (aelteres iOS, kein sicherer Kontext): die
+       Adressen stehen dann im Dialog zum Markieren. */
+    await meldung({ titel: t('grp.adressen.other', '{n} Adressen', { n: adressen.length }), text: adressen.join(', ') });
+  }
 }
 
 function personSchliessen() {
@@ -1435,6 +1692,33 @@ async function einladen() {
     if (art) setzeNeueArt(art);
   });
   $('formGruppeNeu')?.addEventListener('submit', gruppeErstellen);
+  $('btnKontaktBearbeiten')?.addEventListener('click', kontaktFormOeffnen);
+  $('btnKontaktZurueck')?.addEventListener('click', kontaktFormSchliessen);
+  $('formKontakt')?.addEventListener('submit', kontaktFormSpeichern);
+  $('btnElternNeu')?.addEventListener('click', () => {
+    const liste = elternLesen();
+    if (liste.length >= ELTERN_MAX) return;
+    elternZeichnen([...liste, {}]);
+    document.querySelector('#kEltern [data-eltern]:last-child [data-feld="name"]')?.focus();
+  });
+  $('kEltern')?.addEventListener('click', event => {
+    const weg = event.target.closest('[data-eltern-weg]');
+    if (!weg) return;
+    const i = Number(weg.dataset.elternWeg);
+    elternZeichnen(elternLesen().filter((_, n) => n !== i));
+  });
+  $('btnVerteiler')?.addEventListener('click', verteilerOeffnen);
+  $('btnVerteilerZurueck')?.addEventListener('click', verteilerSchliessen);
+  $('verteilerWahl')?.addEventListener('click', event => {
+    const wer = event.target.closest('[data-wer]')?.dataset.wer;
+    if (wer) { verteilerWer = wer; verteilerZeichnen(); }
+  });
+  $('verteilerBetreff')?.addEventListener('input', verteilerZeichnen);
+  $('btnVerteilerKopieren')?.addEventListener('click', verteilerKopieren);
+  /* Ein leerer Verteiler oeffnet kein leeres Mailprogramm. */
+  $('lnkVerteiler')?.addEventListener('click', event => {
+    if ($('lnkVerteiler').getAttribute('aria-disabled') === 'true') event.preventDefault();
+  });
   $('btnGruppeNeuZurueck')?.addEventListener('click', neueGruppeSchliessen);
 
   /* Ein Zuhörer auf der Liste statt einer pro Zeile: die Zeilen werden

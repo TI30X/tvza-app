@@ -253,14 +253,56 @@ export function rolleSetzen(gid, uid, rolle) {
   return updateDoc(mitgliedRef(gid, uid), { rolle });
 }
 
+/* Mit der Mitgliedschaft geht die Kontaktkarte — im selben Batch, damit
+   keine Telefonnummer von jemandem liegen bleibt, der nicht mehr dabei
+   ist. Die Regel fuer kontakte sieht beim Batch den Stand davor. */
 export function mitgliedEntfernen(gid, uid) {
-  return deleteDoc(mitgliedRef(gid, uid));
+  return writeBatch(db)
+    .delete(kontaktRef(gid, uid))
+    .delete(mitgliedRef(gid, uid))
+    .commit();
 }
 
 /* Der Kopf geht nicht einfach — sonst bliebe eine Gruppe zurück, die
    niemand mehr verwalten kann. Er übergibt zuerst. */
 export function gruppeVerlassen(gid, uid) {
-  return deleteDoc(mitgliedRef(gid, uid));
+  return writeBatch(db)
+    .delete(kontaktRef(gid, uid))
+    .delete(mitgliedRef(gid, uid))
+    .commit();
+}
+
+/* ── Kontakte ──────────────────────────────────────────────────────
+   Die Karte einer Person. Lesen und schreiben duerfen die Leitung und
+   die Person selbst — firestore.rules, match /groups/{gid}/kontakte.
+   Was hineinkommt, bereinigt kontakte.js; hier wird nur gespeichert. */
+export function kontaktRef(gid, uid) {
+  return doc(db, 'groups', gid, 'kontakte', uid);
+}
+
+export async function ladeKontakt(gid, uid) {
+  const snap = await getDoc(kontaktRef(gid, uid));
+  return snap.exists() ? { ...snap.data(), uid } : { uid };
+}
+
+/** Alle Karten der Gruppe — nur fuer die Leitung, fuer den Verteiler. */
+export async function ladeKontakte(gid) {
+  const snap = await getDocs(collection(db, 'groups', gid, 'kontakte'));
+  return snap.docs.map(d => ({ ...d.data(), uid: d.id }));
+}
+
+/* Die ganze Karte wird geschrieben, nicht einzelne Felder: wer im
+   Formular ein Feld leert, will es weg haben, und ein merge liesse es
+   stehen. */
+export function kontaktSpeichern(gid, uid, kontakt, vonUid) {
+  return writeBatch(db)
+    .set(kontaktRef(gid, uid), {
+      ...kontakt,
+      uid,
+      geaendertVon: vonUid,
+      geaendertAm: serverTimestamp(),
+    })
+    .commit();
 }
 
 export function uebergeben(gid, neuerKopfUid) {

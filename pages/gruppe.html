@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../assets/css/kit.css?v=11" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=3" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=4" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
   <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
@@ -292,6 +292,15 @@
         <div class="form-title" id="pName">—</div>
         <p class="empty-hint" id="pMeta"></p>
 
+        <!-- Kontakt: Telefon, Adresse, Notiz fuer die Trainer, Eltern.
+             Sichtbar fuer die Leitung und die Person selbst — sonst
+             niemand; das setzen die Regeln durch, nicht dieses Markup. -->
+        <div id="secKontakt" hidden>
+          <div class="marke" data-i18n="grp.kontakt">Kontakt</div>
+          <div class="rows" id="kontaktAnzeige"></div>
+          <button class="b b--secondary b--block" id="btnKontaktBearbeiten" type="button" data-i18n="grp.kontaktBearbeiten">Kontakt bearbeiten</button>
+        </div>
+
         <!-- FIS-Punkte je Disziplin. Ein Athlet hat keinen einzelnen
              Stand: im Slalom stark und in der Abfahrt schwach zu sein
              ist der Normalfall. -->
@@ -368,6 +377,81 @@
       <div class="rows" id="listMitglieder">
         <div class="spinner" data-fx-rows="3" data-i18n="common.laden">Lade…</div>
       </div>
+      <!-- Der Verteiler: eine Mail an alle, nur an die Eltern oder ohne
+           sie. Nur fuer die Leitung. -->
+      <button class="b b--secondary b--block" id="btnVerteiler" type="button" hidden data-i18n="grp.verteiler">E-Mail an alle</button>
+    </section>
+
+    <!-- Die Kontaktkarte bearbeiten. Ein Formular auf der Seite, wie beim
+         Termin — sechs Felder und bis zu vier Eltern passen in keinen
+         Dialog, der am Handy die halbe Hoehe frisst. -->
+    <section class="section" id="secKontaktForm" hidden>
+      <form class="form-card" id="formKontakt" novalidate>
+        <button class="backlink" id="btnKontaktZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" id="kontaktTitel">Kontakt</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="kGeburt" data-i18n="grp.kGeburt">Geburtsdatum</label>
+            <input class="form-input" id="kGeburt" type="date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="kTelefon" data-i18n="grp.kTelefon">Telefon</label>
+            <input class="form-input" id="kTelefon" type="tel" maxlength="30" autocomplete="tel" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="kEmail" data-i18n="grp.kEmail">E-Mail</label>
+          <input class="form-input" id="kEmail" type="email" maxlength="120" autocomplete="email" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="kAdresse" data-i18n="grp.kAdresse">Adresse</label>
+          <input class="form-input" id="kAdresse" type="text" maxlength="160" autocomplete="street-address" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="kNotiz" data-i18n="grp.kNotiz">Wichtig für die Trainer</label>
+          <textarea class="form-input" id="kNotiz" rows="3" maxlength="500" placeholder="z.B. Allergie, Medikamente, Notfallnummer" data-i18n-attr="placeholder:grp.kNotizPh"></textarea>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label" data-i18n="grp.kEltern">Eltern / Erziehungsberechtigte</div>
+          <div class="eltern" id="kEltern"></div>
+          <button class="b b--secondary b--block" id="btnElternNeu" type="button" data-i18n="grp.elternNeu">Elternteil hinzufügen</button>
+        </div>
+
+        <p class="empty-hint" id="kontaktFehler" hidden></p>
+        <button class="b b--primary b--block" id="btnKontaktSpeichern" type="submit" data-i18n="common.speichern">Speichern</button>
+      </form>
+    </section>
+
+    <!-- Der Verteiler. Er oeffnet das eigene Mailprogramm, weil es noch
+         keinen Server gibt, der verschicken koennte — mit allen Adressen
+         im BCC, damit die Eltern einander nicht sehen. -->
+    <section class="section" id="secVerteiler" hidden>
+      <div class="form-card">
+        <button class="backlink" id="btnVerteilerZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" data-i18n="grp.verteiler">E-Mail an alle</div>
+
+        <div class="wahl" id="verteilerWahl" role="radiogroup" aria-label="Empfänger" data-i18n-attr="aria-label:grp.verteilerWer">
+          <button class="wahl__knopf" type="button" role="radio" aria-checked="true" data-wer="alle" data-i18n="grp.verteilerAlle">Alle</button>
+          <button class="wahl__knopf" type="button" role="radio" aria-checked="false" data-wer="eltern" data-i18n="grp.verteilerEltern">Nur Eltern</button>
+          <button class="wahl__knopf" type="button" role="radio" aria-checked="false" data-wer="athleten" data-i18n="grp.verteilerOhneEltern">Ohne Eltern</button>
+        </div>
+
+        <p class="empty-hint" id="verteilerZahl"></p>
+        <p class="empty-hint" id="verteilerFehlt" hidden></p>
+
+        <div class="form-group">
+          <label class="form-label" for="verteilerBetreff" data-i18n="grp.betreff">Betreff</label>
+          <input class="form-input" id="verteilerBetreff" type="text" maxlength="120" />
+        </div>
+
+        <a class="b b--primary b--block" id="lnkVerteiler" href="mailto:" data-i18n="grp.verteilerSchreiben">E-Mail schreiben</a>
+        <button class="b b--secondary b--block" id="btnVerteilerKopieren" type="button">Adressen kopieren</button>
+      </div>
     </section>
 
     <!-- Ein Code gilt fuer beliebig viele Beitritte — ein Kader laedt
@@ -382,6 +466,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=6"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=7"></script>
 </body>
 </html>
