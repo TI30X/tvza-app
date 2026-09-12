@@ -12,7 +12,7 @@ Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
 **Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
 Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
 
-Version: **v.35.20.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.27.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -40,7 +40,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-41 Testdateien, **425 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+49 Testdateien, **501 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -69,7 +69,7 @@ Sonst sieht man neues Markup mit altem Stylesheet.
 
 **2. Die Regeln sind die Wahrheit, nicht die Oberfläche.** Mitgliedschaft,
 Gruppenisolation und einmalige Einladungscodes stehen in `firestore.rules`
-(1229 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
+(1284 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
 halten die Invarianten fest — Regeländerungen gehören im selben Commit dorthin.
 
 Historisch drifteten Datei und Live-Stand auseinander, weil die Regeln in die
@@ -113,12 +113,27 @@ Mitgliedschaft. `isMember()` verlangt ein `users/{uid}`-Profil, kein
 gesetzt ist — eine bestätigte Adresse. Bewusst **fail-open**: ohne
 `config/tvza` wird nicht verlangt. Das ist die Beta-Vorgabe.
 
-**7. Die Hülle ist zwei Spalten, nicht ein Balken.** Seit v.35.20.0 trägt
-am Laptop die Leiste das Navy (Wortzeichen, Navigation, Einstellungen), und
-der helle Kopf steht nur noch über dem Inhalt. Vorher lief ein dunkler Balken
-über die ganze Breite; die senkrechte Kante brach mitten durch die Marke.
+**7. Die Hülle ist zwei Spalten, nicht ein Balken — und EIN Baustein.**
+Am Laptop trägt die Leiste das Navy (Zeichen, Wortmarke, Tabs, am Fuss das
+Konto und der Klappknopf), der helle Kopf steht nur über dem Inhalt und
+beginnt an derselben Kante (`--kopf-breite`, `--kopf-rand`; Kalender und
+Matura setzen sie selbst).
 
-Die Leiste lässt sich auf 64 Pixel einklappen. Der Zustand hängt am **Gerät**
+Die Leiste baut **nur** `mountRail()` in `shell.js`. Bis v.35.23.0 baute
+`nav.js` für alle Seiten ausser Gruppe/Einheit/Video eine zweite, magere —
+Start sah anders aus als Gruppe. `nav.js` ruft jetzt `mountRail()`.
+
+**Ein Weg zu den Einstellungen:** `kontoKnopf()` — am Handy im Kopf, am
+Laptop am Fuss der Leiste, nie beide sichtbar. Kein Zahnrad, kein zweites
+Menü. Tabs haben keinen Zurück-Pfeil; Unterseiten (Einheit, Video) schon.
+Alle Importe von `shell.js` und `router.js` müssen dieselbe `?v=` tragen —
+zwei Nummern sind für den Browser zwei Module mit getrenntem Zustand.
+
+**Keine Browserfenster.** `prompt()`, `confirm()` und `alert()` sind
+ersetzt durch `frage()`, `eingabe()`, `meldung()` aus `dialog.js`.
+`gruppe-erstellen.test.mjs` hält die Gruppenseite frei davon.
+
+Die Leiste lässt sich auf 72 Pixel einklappen (eine Zahl: `--leiste`). Der Zustand hängt am **Gerät**
 (`localStorage['firn.leiste']`), nicht am Konto — wer am grossen Bildschirm
 aufgeklappt arbeitet und am kleinen zu, will genau das.
 
@@ -128,6 +143,31 @@ sind bei kurzem Fenster die unteren Einträge unerreichbar. Ein
 ragen soll — überschreibt das lautlos: kein Fehler, nur kein Scrollen mehr.
 Genau das ist einmal passiert. Deshalb sitzt der Klappknopf **in** der
 Leiste. `dev/navigation.test.mjs` hält beide Hälften fest.
+
+**8. Jeder Abstand im Kit kommt aus der Skala.** padding, margin und gap ab
+4 Pixeln nehmen `--s1`…`--s7`; `clamp()` bleibt frei, unter 4 Pixeln ist
+Geometrie. Bis v.35.23.0 standen 137 freie Pixelwerte in `kit.css`.
+`dev/css-token.test.mjs` hält es fest. Die Seiten-Stile in `feature/` sind
+der nächste Schritt.
+
+**9. Ein Aufruf ins Leere ist gültiges JavaScript.** Dreimal durchgerutscht:
+`refreshAreaNavigation` (ein Test *verlangte* den Aufruf), `syncPublicFeed`
+(jedes Umschalten eines Bereichs meldete „Nicht gespeichert"), `TABS` aus
+einem Import gefallen. `dev/aufrufe.test.mjs` sucht die ganze Klasse.
+Ein Test, der einen Aufruf wörtlich verlangt, schützt keinen Code — er
+friert ihn ein.
+
+**10. Training lebt in der Gruppe.** Eingelesen wird die Excel in der Gruppe
+(„Plan veröffentlichen"), gezeichnet wird die Woche von `feature/woche/woche.js`
+auf der Gruppenseite und im Bereich Training, geübt wird in `einheit.html`.
+Der Bereich Training hat keinen eigenen Import und keinen eigenen Speicher
+mehr; die alten Daten unter `users/{uid}/trainingLogs` bleiben in Firestore.
+
+**11. Kontaktkarten sehen nur die Leitung und die Person selbst.** Kontakte
+von Minderjährigen und ihren Eltern. Die Regel (`get`: Leitung oder man
+selbst, `list`: nur Leitung) ist die Sicherung; die Oberfläche fragt gar
+nicht erst, wo sie nichts bekommen darf. `gruppe-kontakte.test.mjs` prüft
+beides und ist gegengeprüft.
 
 ## Ausrollen
 
@@ -141,7 +181,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **576 Schlüssel** aus zehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **657 Schlüssel** aus zehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -193,19 +233,24 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 425 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 501 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
   Bequemlichkeit, **kein** Schutz gegen Brute Force.
 - Kein 2FA. SMS braucht Identity Platform (kostenpflichtig).
 - Ältere Seiten sind noch überwiegend deutsch: `maturaarbeit.html`,
-  `guest.html`, `training.html`, `admin.html`.
+  `guest.html`, `admin.html`.
+- **Regeln ausrollen.** Seit v.35.24.0 (`bezeichnung` an Terminen) und
+  v.35.27.0 (`groups/{gid}/kontakte`) hat `firestore.rules` Aenderungen,
+  die nicht live sind. Bis `firebase deploy --only firestore:rules` scheitert
+  das Speichern eines Termins mit eigenem Wort und jeder Kontaktkarte.
+  Lokal ungeprueft: auf dieser Maschine gibt es kein Java fuer den Emulator.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.20.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.27.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
