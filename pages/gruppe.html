@@ -13,9 +13,9 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=10" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=2" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
   <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
@@ -203,8 +203,24 @@
         <button class="backlink" id="btnPlanAbbrechen" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
         <div class="form-title" data-i18n="grp.planNeu">Plan veröffentlichen</div>
 
+        <!-- Die Kader-Excel wird HIER eingelesen. Bis v.35.25.0 stand an
+             dieser Stelle nur ein Auswahlfeld mit dem, was man auf der
+             alten persoenlichen Trainingsseite eingelesen hatte — fuer
+             jeden, der die nie geoeffnet hatte, leer: "man kann nichts
+             einlesen". Der Knopf traegt kein data-i18n, weil der Code ihn
+             nach dem Lesen umbeschriftet. -->
         <div class="form-group">
-          <label class="form-label" for="planQuelle" data-i18n="grp.planQuelle">Aus deinen Programmen</label>
+          <div class="form-label" data-i18n="grp.planDatei">Wochenplan (Excel)</div>
+          <label class="b b--secondary b--block" for="planDatei" id="planDateiKnopf">Excel-Datei wählen</label>
+          <input class="datei-feld" id="planDatei" type="file" accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+          <p class="empty-hint" id="planDateiStatus" hidden></p>
+          <div class="plan-vorschau" id="planVorschau" hidden></div>
+        </div>
+
+        <!-- Was man frueher auf der persoenlichen Seite eingelesen hat,
+             bleibt waehlbar — aber nur, wenn es das gibt. -->
+        <div class="form-group" id="grpPlanQuelle" hidden>
+          <label class="form-label" for="planQuelle" data-i18n="grp.planQuelleOder">Oder aus deinen Programmen</label>
           <select class="form-select" id="planQuelle"></select>
         </div>
 
@@ -365,6 +381,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=4"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=5"></script>
 </body>
 </html>

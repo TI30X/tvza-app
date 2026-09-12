@@ -19,7 +19,10 @@
    er unten, wo der Daumen ist; am Laptop in der Mitte.
    ══════════════════════════════════════════════════════════════════ */
 
-const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
+/* Ohne i18n.js fehlte hier das Einsetzen der Platzhalter: aus
+   "{grund}" wurde kein Grund, sondern das Wort {grund} selbst. */
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars)
+  ?? String(fallback).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz));
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c =>

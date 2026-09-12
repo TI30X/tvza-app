@@ -150,3 +150,36 @@ export function einheitZiel(gid, planId, eintrag, datum) {
   if (datum) q.set('d', datum);
   return `./einheit.html?${q.toString()}`;
 }
+
+/**
+ * Was eine eingelesene Datei enthaelt — fuer die Vorschau, bevor ein
+ * Trainer sie veroeffentlicht. Er soll sehen, dass die Woche richtig
+ * gelesen wurde, BEVOR der Kader sie bekommt: sieben Tage, welche
+ * Einheiten, wie viele Uebungen.
+ */
+export function planZusammenfassung(programm) {
+  const units = programm?.units && typeof programm.units === 'object' ? programm.units : {};
+  const einheiten = Object.values(units).filter(u => u?.id);
+  const tage = wochenTage(programm);
+  return {
+    ...wochenKopf(programm),
+    einheiten: einheiten.length,
+    uebungen: einheiten.reduce((n, u) => n + uebungen(programm, u.id).length, 0),
+    tage: tage.map(t => ({
+      key: t.key,
+      name: t.name,
+      datum: t.datum,
+      titel: t.eintraege.map(e => e.titel),
+    })),
+    /* Eintraege ohne Blatt zaehlen — ein Tippfehler im Wochenplan
+       ("Kraft Bein" statt "Kraft Beine") zeigt sich genau hier. */
+    ohneBlatt: tage.flatMap(t => t.eintraege.filter(e => !e.unit).map(e => e.titel)),
+  };
+}
+
+/** Der Titel, den der Trainer nicht tippen muss: die Woche selbst. */
+export function planTitelVorschlag(programm) {
+  const kopf = wochenKopf(programm);
+  if (kopf.kw) return kopf.tw ? `KW ${kopf.kw} · TW ${kopf.tw}` : `KW ${kopf.kw}`;
+  return kopf.label || '';
+}

@@ -17,6 +17,7 @@ import { parseProgram } from '../assets/js/training-parser.js';
 import {
   wochenTage, tagFuer, standardTag, nachDatum,
   eintragFortschritt, tagPunkte, wochenKopf, einheitZiel,
+  planZusammenfassung, planTitelVorschlag,
 } from '../assets/js/wochenplan.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -163,4 +164,26 @@ test('ein leeres oder kaputtes Programm ergibt eine leere Woche, keinen Fehler',
   assert.deepEqual(wochenKopf(null), {
     kw: null, tw: null, von: '', bis: '', athlet: '', label: '',
   });
+});
+
+
+test('die Vorschau zeigt, was die Datei enthaelt, bevor der Kader sie bekommt', () => {
+  const z = planZusammenfassung(programm);
+  assert.equal(z.kw, 31);
+  assert.equal(z.einheiten, 8);
+  assert.ok(z.uebungen > 20, `nur ${z.uebungen} Uebungen gezaehlt`);
+  assert.equal(z.tage.length, 7);
+  assert.deepEqual(z.tage[1].titel, ['Kraft Beine', 'Fußgymnastik', 'Mobi']);
+  assert.deepEqual(z.tage[6].titel, [], 'der Sonntag ist frei');
+  /* Was im Wochenplan steht, aber kein Blatt hat — die Stelle, an der
+     sich ein Tippfehler in der Vorlage zeigt. */
+  assert.ok(z.ohneBlatt.includes('Koordination'));
+  assert.ok(z.ohneBlatt.some(t => t.startsWith('evtl. Spiel')));
+});
+
+test('der Titel kommt aus der Woche, nicht von der Tastatur', () => {
+  assert.equal(planTitelVorschlag(programm), 'KW 31 · TW 12');
+  assert.equal(planTitelVorschlag({ kw: 36 }), 'KW 36');
+  assert.equal(planTitelVorschlag({ weekLabel: 'Aufbauwoche' }), 'Aufbauwoche');
+  assert.equal(planTitelVorschlag(null), '');
 });

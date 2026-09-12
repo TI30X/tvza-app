@@ -202,3 +202,79 @@ test('gruppe.js ruft weder prompt noch confirm noch alert', async () => {
     'ein Browserfenster ist zurueck auf der Gruppenseite');
   assert.match(js, /from '\.\.\/\.\.\/dialog\.js'/);
 });
+
+/* ── Die Excel in der Gruppe einlesen ──────────────────────────────
+   "Erstens kann man nichts einlesen." Die Gruppe hatte nur ein
+   Auswahlfeld mit dem, was man auf der alten persoenlichen Seite
+   eingelesen hatte. Hier wird eine Datei gewaehlt — die echte KW 31
+   als Raster, mit dem echten Parser dahinter. */
+
+async function waehleDatei(doc, name = 'Van Zanten Timothy KW 31.xlsx') {
+  const feld = doc.getElementById('planDatei');
+  const win = doc.defaultView;
+  const datei = new win.File(['x'], name, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  Object.defineProperty(feld, 'files', { value: [datei], configurable: true });
+  feld.dispatchEvent(new win.Event('change', { bubbles: true }));
+}
+
+test('ein Trainer liest die Excel direkt in der Gruppe ein und sieht die Woche, bevor er sie veroeffentlicht', async () => {
+  globalThis.__raster = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
+  const { doc, zurueck } = await starteGruppe(leitung('kader'));
+  try {
+    klick(doc.getElementById('btnPlanNeu'));
+    /* Das Formular oeffnet, sobald die frueheren Programme gefragt sind. */
+    await warte(() => !doc.getElementById('secPlanForm').hidden);
+    assert.equal(doc.getElementById('secPlanForm').hidden, false);
+    /* Ohne frueher eingelesene Programme gibt es keine zweite Auswahl. */
+    assert.equal(doc.getElementById('grpPlanQuelle').hidden, true);
+
+    await waehleDatei(doc);
+    await warte(() => !doc.getElementById('planVorschau').hidden);
+
+    const vorschau = doc.getElementById('planVorschau');
+    assert.equal(vorschau.hidden, false, 'keine Vorschau nach dem Einlesen');
+    assert.match(vorschau.querySelector('.row__title').textContent, /KW 31/);
+    assert.match(vorschau.querySelector('.row__sub').textContent, /8 Einheiten/);
+    assert.equal(vorschau.querySelectorAll('.plan-vorschau__tag').length, 7);
+    assert.match(vorschau.textContent, /Kraft Beine/);
+    assert.match(vorschau.textContent, /Ohne Übungsblatt:.*Koordination/);
+
+    /* Der Titel steht schon da: die Woche selbst. */
+    assert.equal(doc.getElementById('planTitel').value, 'KW 31 · TW 12');
+    assert.match(doc.getElementById('planDateiKnopf').textContent, /Andere Datei/);
+
+    klick(doc.getElementById('btnPlanSpeichern'));
+    await warte(() => aufrufe('planVeroeffentlichen').length > 0);
+    const [[, gid, uid, plan]] = aufrufe('planVeroeffentlichen');
+    assert.equal(gid, 'g1');
+    assert.equal(uid, 'timo');
+    assert.equal(plan.titel, 'KW 31 · TW 12');
+    assert.equal(plan.fuer, 'alle');
+    /* Veroeffentlicht wird das geparste Programm — dasselbe Format, das
+       der Wochenplan und der Player lesen. */
+    const programm = JSON.parse(plan.json);
+    assert.equal(programm.kw, 31);
+    assert.equal(Object.keys(programm.units).length, 8);
+  } finally { zurueck(); delete globalThis.__raster; }
+});
+
+test('eine Datei ohne Wochenplan sagt, was fehlt, statt still nichts zu tun', async () => {
+  delete globalThis.__raster;
+  const { doc, zurueck } = await starteGruppe(leitung('kader'));
+  try {
+    klick(doc.getElementById('btnPlanNeu'));
+    await warte(() => !doc.getElementById('secPlanForm').hidden);
+    await waehleDatei(doc, 'Einkaufsliste.xlsx');
+    await warte(() => /nicht lesen/.test(doc.getElementById('planDateiStatus').textContent));
+    const status = doc.getElementById('planDateiStatus');
+    assert.equal(status.hidden, false);
+    assert.match(status.textContent, /Wochenplan-Blatt/, 'der Grund des Parsers soll zu lesen sein');
+    assert.equal(doc.getElementById('planVorschau').hidden, true);
+
+    /* Ohne Datei laesst sich nichts veroeffentlichen — mit einem Satz. */
+    klick(doc.getElementById('btnPlanSpeichern'));
+    assert.equal(doc.getElementById('planFehler').hidden, false);
+    assert.match(doc.getElementById('planFehler').textContent, /Excel/);
+    assert.equal(aufrufe('planVeroeffentlichen').length, 0);
+  } finally { zurueck(); }
+});

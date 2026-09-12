@@ -11,7 +11,7 @@ import {
   einheiten, uebungen, einheitTitel,
   eintrag, mitEintrag, hatInhalt, sauber,
   fortschritt, naechsteOffene, saetze,
-  videoUrl, vorwochen, zeigtSaetze,
+  videoUrl, vorwochen, zeigtSaetze, kennzahlen,
 } from '../assets/js/einheit.js';
 
 /* Ein Programm in der Form, die training-parser.js liefert. */
@@ -266,4 +266,30 @@ test('alte Plaene ohne mode verhalten sich wie bisher', () => {
   assert.equal(zeigtSaetze({ sets: [{ reps: '5' }] }), true);
   assert.equal(zeigtSaetze({ sets: [] }), false);
   assert.equal(zeigtSaetze({}), false);
+});
+
+/* ── Die Kurzinfo unter dem Namen ─────────────────────────────────
+   Bis v.35.25.0 stand bei 44 Uebungen der echten KW 31 "[object
+   Object]" im Player, und TUT doppelt. */
+
+test('Kennzahlen werden gelesen, nicht als Objekt in einen Text geschoben', () => {
+  const item = { tut: '2010', params: [{ label: 'TUT', value: '2010' }, { label: 'Einheit', value: 'Sek' }] };
+  assert.deepEqual(kennzahlen(item), [{ label: 'Einheit', wert: 'Sek' }], 'TUT nur einmal');
+  assert.deepEqual(kennzahlen({ params: ['3 Runden', { label: 'Zone', value: '' }] }),
+    [{ label: '', wert: '3 Runden' }], 'Text bleibt, Leeres faellt weg');
+  assert.deepEqual(kennzahlen({}), []);
+  assert.deepEqual(kennzahlen(null), []);
+});
+
+test('in der echten KW 31 ergibt keine Uebung "[object Object]"', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { parseProgram } = await import('../assets/js/training-parser.js');
+  const grid = JSON.parse(await readFile(new URL('./fixtures/kw31-grid.json', import.meta.url), 'utf8'));
+  const programm = parseProgram(grid);
+  for (const unit of Object.values(programm.units)) {
+    for (const item of unit.items) {
+      const text = kennzahlen(item).map(k => (k.label ? `${k.label} ${k.wert}` : k.wert)).join(' · ');
+      assert.doesNotMatch(text, /\[object/, `${unit.id} / ${item.name}`);
+    }
+  }
 });

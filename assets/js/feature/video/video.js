@@ -40,7 +40,10 @@ import {
 const $ = id => document.getElementById(id);
 
 /* Siehe einheit.js: tOr statt t() mit ??. */
-const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
+/* Ohne i18n.js fehlte hier das Einsetzen der Platzhalter: aus
+   "{grund}" wurde kein Grund, sondern das Wort {grund} selbst. */
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars)
+  ?? String(fallback).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz));
 
 /* Genau die Verbindungen, die pose.js auch benutzt. Ein vollständiges
    Skelett mit Fingern und Gesicht sähe beeindruckender aus und würde

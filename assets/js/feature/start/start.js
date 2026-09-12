@@ -21,7 +21,10 @@ import {
 /* tOr und nicht t() mit ??: t() gibt bei unbekanntem Schluessel den
    SCHLUESSEL zurueck, nie undefined. Solange der Katalog laedt, bleibt
    es deutsch. */
-const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
+/* Ohne i18n.js fehlte hier das Einsetzen der Platzhalter: aus
+   "{grund}" wurde kein Grund, sondern das Wort {grund} selbst. */
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars)
+  ?? String(fallback).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz));
 import {
   signOut, sendEmailVerification
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';

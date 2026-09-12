@@ -36,6 +36,7 @@ import {
 import {
   wochenTage, standardTag, nachDatum,
   eintragFortschritt, tagPunkte, wochenKopf, einheitZiel,
+  planZusammenfassung, planTitelVorschlag,
 } from '../../wochenplan.js';
 import { frage, eingabe, meldung } from '../../dialog.js';
 import {
@@ -48,7 +49,10 @@ import {
 import { WORKER_BASIS } from '../../worker-config.js';
 
 const $ = id => document.getElementById(id);
-const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
+/* Ohne i18n.js fehlte hier das Einsetzen der Platzhalter: aus
+   "{grund}" wurde kein Grund, sondern das Wort {grund} selbst. */
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars)
+  ?? String(fallback).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz));
 
 /* Plural ueber Intl, nicht ueber ein Fragezeichen: Polnisch hat drei
    Formen, und "1 Person / 2 Personen" trifft nur zwei davon. Ohne
@@ -391,22 +395,139 @@ async function zeichnePlaene() {
   zeichneWoche();
 }
 
+/* ── Die Excel einlesen ─────────────────────────────────────────────
+   Die Kader-Vorlage wird HIER gelesen, im Browser — der Spark-Tarif
+   hat keinen Server, der das koennte. training-import.js laedt SheetJS
+   erst beim ersten Einlesen nach, training-parser.js macht daraus das
+   Programm. Beides dynamisch: wer die Gruppe nur ansieht, laedt keins
+   von beiden.
+
+   Bis v.35.25.0 ging das nur ueber die alte persoenliche Trainingsseite.
+   Die Gruppe hatte ein Auswahlfeld mit dem, was man DORT eingelesen
+   hatte — fuer jeden, der die Seite nie geoeffnet hatte, leer. */
+let eingelesen = null;          // { programm, json, datei }
+let bilder = null;
+
+/* Die Bilder zu den Uebungen der Kadervorlage (Fussgymnastik,
+   Neuroathletik) entscheiden im Parser mit, was eine Uebung und was nur
+   eine Ueberschrift ist. Fehlen sie, liest er trotzdem — nur ohne. */
+async function bilderLaden() {
+  if (bilder) return bilder;
+  try {
+    const antwort = await fetch(new URL('../assets/data/training/images.json', location.href));
+    bilder = antwort.ok ? await antwort.json() : {};
+  } catch { bilder = {}; }
+  return bilder;
+}
+
+function planVorschau(programm) {
+  const z = planZusammenfassung(programm);
+  const kurz = iso => (iso ? kurzDatum(iso) : '');
+  const kopf = [
+    z.kw ? `KW ${z.kw}` : z.label,
+    z.von && z.bis ? `${kurz(z.von)} – ${kurz(z.bis)}` : '',
+  ].filter(Boolean).join(' · ');
+  const zahlen = [
+    tPlural('grp.planEinheiten', z.einheiten, 'Einheit', 'Einheiten'),
+    tPlural('eh.uebungen', z.uebungen, 'Übung', 'Übungen'),
+    z.athlet,
+  ].filter(Boolean).join(' · ');
+
+  /* Die Woche, wie sie gelesen wurde — damit ein Trainer sieht, dass
+     es seine ist, BEVOR der Kader sie bekommt. */
+  const tage = z.tage.map(tag => `
+    <li class="plan-vorschau__tag">
+      <span class="plan-vorschau__name">${escHtml(tag.datum ? tagName({ datum: tag.datum }).slice(0, 2) : tag.name.slice(0, 2))}</span>
+      <span class="plan-vorschau__was">${escHtml(tag.titel.join(', ') || t('grp.frei', 'frei'))}</span>
+    </li>`).join('');
+
+  /* Was im Wochenplan steht, aber kein Blatt hat. Meist gewollt
+     ("evtl. Spiel"), manchmal ein Tippfehler in der Vorlage ("Kraft
+     Bein") — beides soll man sehen. */
+  const ohne = z.ohneBlatt.length
+    ? `<p class="plan-vorschau__hinweis">${escHtml(t('grp.planOhneBlatt',
+        'Ohne Übungsblatt: {was}. Diese Einträge stehen im Plan, haben aber nichts zum Abhaken.',
+        { was: [...new Set(z.ohneBlatt)].join(', ') }))}</p>`
+    : '';
+
+  $('planVorschau').innerHTML = `
+    <div class="row" data-bereich="t-training">
+      <span class="row__icon">${escHtml(z.kw ? String(z.kw) : '·')}</span>
+      <span class="row__body">
+        <span class="row__title">${escHtml(kopf || t('grp.planOhneWoche', 'Woche ohne Datum'))}</span>
+        <span class="row__sub">${escHtml(zahlen)}</span>
+      </span>
+    </div>
+    <ul class="plan-vorschau__woche">${tage}</ul>
+    ${ohne}`;
+  zeige('planVorschau', true);
+}
+
+async function planDateiGewaehlt(datei) {
+  if (!datei) return;
+  const status = $('planDateiStatus');
+  status.textContent = t('grp.planLiest', 'Datei wird gelesen …');
+  status.hidden = false;
+  zeige('planVorschau', false);
+  $('planFehler').hidden = true;
+
+  try {
+    const [{ gridFromFile }, { parseProgram }, bildTabelle] = await Promise.all([
+      import('../../training-import.js'),
+      import('../../training-parser.js'),
+      bilderLaden(),
+    ]);
+    const programm = parseProgram(await gridFromFile(datei), { images: bildTabelle });
+    eingelesen = { programm, json: JSON.stringify(programm), datei: datei.name || '' };
+    status.hidden = true;
+    planVorschau(programm);
+
+    /* Der Titel ist die Woche. Wer schon einen eigenen getippt hat,
+       behaelt ihn. */
+    const titel = $('planTitel');
+    if (!titel.value.trim()) titel.value = planTitelVorschlag(programm);
+    $('planDateiKnopf').textContent = t('grp.planAndereDatei', 'Andere Datei wählen');
+    zeige('grpPlanQuelle', false);
+  } catch (e) {
+    reportClientError('gruppe/plan-einlesen', e);
+    eingelesen = null;
+    /* Der Parser sagt, was fehlt ("Kein Wochenplan-Blatt gefunden.") —
+       das hilft mehr als ein Ersatzsatz. */
+    status.textContent = t('grp.f.einlesen', 'Die Datei liess sich nicht lesen. {grund}',
+      { grund: e?.message || '' });
+  } finally {
+    $('planDatei').value = '';
+  }
+}
+
 async function planFormOeffnen() {
   if (!aktiv) return;
 
+  eingelesen = null;
+  $('planDateiKnopf').textContent = t('grp.planDateiWaehlen', 'Excel-Datei wählen');
+  $('planDateiStatus').hidden = true;
+  zeige('planVorschau', false);
+
+  /* Frueher Eingelesenes als zweiter Weg — nur, wenn es das gibt. Ein
+     Auswahlfeld mit "Du hast noch kein Programm eingelesen" als
+     einzigem Eintrag war die ganze Oberflaeche dieses Formulars. */
   const quelle = $('planQuelle');
   try {
     const programme = await eigeneProgramme(user.uid);
-    quelle.innerHTML = programme.length
-      ? programme.map(p => `<option value="${escHtml(p.id)}">${escHtml(p.id)}</option>`).join('')
-      : `<option value="">${escHtml(t('grp.keinProgramm', 'Du hast noch kein Programm eingelesen'))}</option>`;
+    quelle.innerHTML = [
+      `<option value="">—</option>`,
+      ...programme.map(p => `<option value="${escHtml(p.id)}">${escHtml(p.id)}</option>`),
+    ].join('');
     /* Der Rohtext wird am Element gemerkt, damit das Speichern nicht
        noch einmal lesen muss. */
     quelle.dataset.json = JSON.stringify(
       Object.fromEntries(programme.map(p => [p.id, p.json])));
+    zeige('grpPlanQuelle', programme.length > 0);
   } catch (e) {
     reportClientError('gruppe/programme', e);
-    quelle.innerHTML = `<option value="">${escHtml(t('grp.programmeUnlesbar', 'Programme nicht lesbar'))}</option>`;
+    quelle.innerHTML = '';
+    quelle.dataset.json = '{}';
+    zeige('grpPlanQuelle', false);
   }
 
   /* "Alle" zuerst — der Normalfall ist ein Plan für den ganzen Kader.
@@ -436,15 +557,19 @@ function planFormSchliessen() {
 async function planSpeichern() {
   if (!aktiv) return;
   const quelle = $('planQuelle');
-  const programmId = quelle.value;
   const fehler = $('planFehler');
 
-  let json = '';
-  try { json = JSON.parse(quelle.dataset.json || '{}')[programmId] || ''; }
-  catch { json = ''; }
+  /* Die eben eingelesene Datei zuerst; sonst ein frueheres Programm. */
+  let json = eingelesen?.json || '';
+  let programmId = eingelesen ? planTitelVorschlag(eingelesen.programm) || eingelesen.datei : '';
+  if (!json && quelle.value) {
+    programmId = quelle.value;
+    try { json = JSON.parse(quelle.dataset.json || '{}')[programmId] || ''; }
+    catch { json = ''; }
+  }
 
   if (!json) {
-    fehler.textContent = t('grp.f.keinProgramm', 'Es ist kein Programm ausgewählt, das sich veröffentlichen liesse.');
+    fehler.textContent = t('grp.f.keineDatei', 'Wähle zuerst die Excel mit dem Wochenplan.');
     fehler.hidden = false;
     return;
   }
@@ -457,6 +582,7 @@ async function planSpeichern() {
       json,
       fuer: $('planFuer').value,
     });
+    eingelesen = null;
     planFormSchliessen();
     await zeichnePlaene();
   } catch (e) {
@@ -1497,6 +1623,16 @@ async function einladen() {
     zeichneWoche();
   });
   $('btnPlanNeu')?.addEventListener('click', planFormOeffnen);
+  $('planDatei')?.addEventListener('change', event => planDateiGewaehlt(event.target.files?.[0]));
+  $('planQuelle')?.addEventListener('change', () => {
+    /* Wer ein frueheres Programm waehlt, will die eingelesene Datei
+       nicht mehr — sonst gewaenne sie still beim Speichern. */
+    if ($('planQuelle').value) {
+      eingelesen = null;
+      zeige('planVorschau', false);
+      $('planDateiKnopf').textContent = t('grp.planDateiWaehlen', 'Excel-Datei wählen');
+    }
+  });
   $('btnPlanAbbrechen')?.addEventListener('click', planFormSchliessen);
   $('btnPlanSpeichern')?.addEventListener('click', planSpeichern);
   for (const id of ['ergRennen', 'ergZeit', 'ergSieger', 'ergZuschlag']) {

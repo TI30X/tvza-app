@@ -212,6 +212,27 @@ export function saetze(item, e) {
    ══════════════════════════════════════════════════════════════════ */
 
 /**
+ * Die Kennzahlen einer Übung als { label, wert } — für die Kurzinfo
+ * unter dem Namen.
+ *
+ * Der Parser liefert params als Objekte { label, value }. Der Player
+ * reihte sie bis v.35.25.0 direkt in einen Text ein, und bei 44 Übungen
+ * der echten KW 31 stand dort "[object Object]". Dazu stand TUT doppelt
+ * da: einmal aus item.tut, einmal als Kennzahl. Hier werden beide Formen
+ * gelesen (auch ein blosser Text), leere Werte fallen weg, und TUT
+ * erscheint nur einmal.
+ */
+export function kennzahlen(item) {
+  const tut = String(item?.tut ?? '').trim();
+  return (Array.isArray(item?.params) ? item.params : [])
+    .map(p => (typeof p === 'string'
+      ? { label: '', wert: p.trim() }
+      : { label: String(p?.label ?? '').trim(), wert: String(p?.value ?? '').trim() }))
+    .filter(p => p.wert)
+    .filter(p => !(tut && p.label.toLowerCase() === 'tut' && p.wert === tut));
+}
+
+/**
  * Die Adresse des Übungsvideos, oder ''.
  *
  * In der Vorlage steht sie eine Zeile unter dem Übungsnamen. Geprüft

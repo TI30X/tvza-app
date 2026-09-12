@@ -28,7 +28,7 @@ import {
 import {
   einheiten, uebungen, einheitTitel,
   eintrag, mitEintrag, sauber, fortschritt, naechsteOffene, saetze,
-  videoUrl, vorwochen, zeigtSaetze,
+  videoUrl, vorwochen, zeigtSaetze, kennzahlen,
 } from '../../einheit.js';
 import { isoTag } from '../../termine.js';
 
@@ -37,7 +37,10 @@ const $ = id => document.getElementById(id);
 /* tOr und nicht t() mit ??: t() gibt bei unbekanntem Schluessel den
    SCHLUESSEL zurueck, nie undefined. Solange der Katalog laedt, bleibt
    es deutsch. */
-const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars) ?? fallback;
+/* Ohne i18n.js fehlte hier das Einsetzen der Platzhalter: aus
+   "{grund}" wurde kein Grund, sondern das Wort {grund} selbst. */
+const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars)
+  ?? String(fallback).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz));
 const tPlural = (key, n, eins, mehr) => {
   const wert = window.TVZAI18n?.format?.plural(key, n);
   return (!wert || String(wert).startsWith(key)) ? `${n} ${n === 1 ? eins : mehr}` : wert;
@@ -222,7 +225,8 @@ function zeichnePlayer() {
   /* Alternativname, Pause und TUT stehen im Plan und sind beim Machen
      genau das, was man wissen will. */
   const meta = [item.alt, item.pause && t('eh.pause', 'Pause {wert}', { wert: item.pause }), item.tut && `TUT ${item.tut}`,
-                ...(item.params || []), ...(item.lines || [])]
+                ...kennzahlen(item).map(k => (k.label ? `${k.label} ${k.wert}` : k.wert)),
+                ...(item.lines || [])]
     .filter(Boolean).join(' · ');
   $('uebMeta').textContent = meta;
   $('uebMeta').hidden = !meta;

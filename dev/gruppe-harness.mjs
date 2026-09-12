@@ -124,6 +124,15 @@ export async function starteGruppe({
        Huelle, und der Test soll daran nicht jedes Mal zerbrechen. */
     .replace(/'\.\.\/\.\.\/shell\.js\?v=\d+'/, `'${dataUrl(SHELL_STUB)}'`)
     .replace(`'../../groups.js'`, `'${dataUrl(groupsStub({ gruppen, plaene, protokolle, mitglieder }))}'`)
+    /* Das Einlesen: SheetJS kommt aus dem Netz und ist im Test nicht da.
+       gridFromFile liefert darum das Raster, das der Test in
+       globalThis.__raster legt — der Parser dahinter ist der echte. */
+    .replace(`'../../training-import.js'`, `'${dataUrl(`
+      export async function gridFromFile(file) {
+        if (!globalThis.__raster) throw new Error('Kein Wochenplan-Blatt gefunden.');
+        return { file: file?.name || 'Import.xlsx', ...globalThis.__raster };
+      }`)}'`)
+    .replace(`'../../training-parser.js'`, `'${datei('assets/js/training-parser.js')}'`)
     .replace(`'../../wochenplan.js'`, `'${datei('assets/js/wochenplan.js')}'`)
     .replace(`'../../dialog.js'`, `'${datei('assets/js/dialog.js')}'`)
     .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
