@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.35.30.0';
+const CACHE = 'tvza-v.35.31.0';
 // Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
@@ -39,9 +39,9 @@ const SHELL = [
   './assets/icons/firn-192.png',
   './assets/js/theme.js',
   // Der Start traegt seinen Code seit v.35.19.0 in eigenen Dateien.
-  './assets/js/feature/start/start.js?v=5',
-  './assets/js/feature/start/wetter-chip.js?v=2',
-  './assets/js/feature/start/heute.js?v=2',
+  './assets/js/feature/start/start.js?v=6',
+  './assets/js/feature/start/wetter-chip.js?v=3',
+  './assets/js/feature/start/heute.js?v=3',
   './assets/js/i18n.js?v=1',
   // Sprachdateien gehoeren in den Vorrat: sonst laesst sich offline
   // zwar umschalten, aber der Katalog fehlt und alles bleibt deutsch.
@@ -65,7 +65,7 @@ const SHELL = [
   './assets/js/calendar-interop.js',
   './assets/js/calendar-view.js',
   './assets/js/matura-sync.js',
-  './assets/js/shell.js?v=11',
+  './assets/js/shell.js?v=12',
   './assets/js/router.js?v=8',
   './assets/js/reminders-overlay.js',
   './assets/js/settings-layer.js',
@@ -76,16 +76,18 @@ const SHELL = [
   './assets/js/wochenplan.js',
   './assets/js/dialog.js',
   './assets/js/kontakte.js',
+  './assets/js/kalender-teams.js',
+  './assets/js/gruppenwahl.js',
   './assets/js/worker-config.js',
   './assets/js/pose.js',
-  './assets/js/feature/video/video.js?v=3',
+  './assets/js/feature/video/video.js?v=4',
   './assets/css/feature/video.css?v=1',
-  './assets/js/feature/einheit/einheit.js?v=4',
+  './assets/js/feature/einheit/einheit.js?v=5',
   './assets/js/briefing.js',
-  './assets/js/nav.js?v=9',
+  './assets/js/nav.js?v=10',
   './assets/js/groups.js',
-  './assets/js/feature/gruppe/gruppe.js?v=7',
-  './assets/css/feature/gruppe.css?v=4',
+  './assets/js/feature/gruppe/gruppe.js?v=8',
+  './assets/css/feature/gruppe.css?v=5',
   './assets/js/feature/ski/ski.js?v=1',
   './pages/gruppe.html',
   './pages/einheit.html',
@@ -102,7 +104,7 @@ const SHELL = [
   './pages/training.html',
   './assets/js/training-parser.js',
   './assets/data/training/images.json',
-  './assets/js/feature/training/training.js?v=1',
+  './assets/js/feature/training/training.js?v=2',
   './assets/js/feature/woche/woche.js',
   './assets/css/feature/woche.css?v=1',
   './pages/admin.html',

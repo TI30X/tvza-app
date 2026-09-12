@@ -634,6 +634,12 @@
       collection, addDoc, getDocs, getDoc, query, where, doc, setDoc, updateDoc, deleteDoc,
       onSnapshot, serverTimestamp, arrayUnion, arrayRemove
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    /* Die Gruppen (groups/{gid}) mit ihren Terminen — neben den alten
+       Familien-Kalendern eine eigene Quelle je Team. */
+    import { beobachteMeineGruppen, beobachteTermine, aktiveGruppeSetzen } from '../assets/js/groups.js';
+    import { teamEintraege, teamTerminText, teamFarben } from '../assets/js/kalender-teams.js';
+    import { frage } from '../assets/js/dialog.js';
+    const tt = (key, deutsch, vars) => window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch, vars) : deutsch;
 
     const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
     const WD = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -690,6 +696,10 @@
     let user, profile, group = null, groups = [], groupsUnsub = null, reminderUnsub = null, tripUnsubs = [];
     let trips = [], allTrips = [], days = [], reminders = [];
     let visibleGroupIds = new Set(), showPersonal = true;
+    /* Teams: gespeichert werden die AUSGESCHALTETEN. Wer einem neuen Team
+       beitritt, sieht dessen Termine sofort, statt sie erst suchen und
+       einschalten zu muessen. */
+    let teams = [], teamTermine = new Map(), teamAbos = new Map(), versteckteTeams = new Set();
     let anchorKey = todayKey, curView = 'month';
     let calendarPreference = {
       style:'google',
@@ -711,6 +721,7 @@
       loadCalendarPreference();
       wireUI();
       watchReminders();
+      watchTeams();
       await resolveGroups();
       const requestedAction = new URLSearchParams(location.search).get('open');
       if (!calendarPreferenceExists && !requestedAction) setTimeout(() => openCalendarSetup(true), 180);
@@ -837,9 +848,53 @@
         localStorage.setItem(sourceKey(), JSON.stringify({
           personal:showPersonal,
           groups:[...visibleGroupIds],
+          teamsAus:[...versteckteTeams],
           active:group?.id || ''
         }));
       } catch {}
+    }
+
+    /* ── Teams: die Gruppen mit ihren Terminen ──
+       Eine Quelle je Gruppe, live: wer im Gruppe-Tab einen Termin
+       eintraegt, sieht ihn hier ohne Neuladen. Die Abos werden je Gruppe
+       gefuehrt, damit ein Beitritt oder Austritt nur die eine Gruppe
+       an- oder abmeldet. */
+    function watchTeams() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(sourceKey()) || 'null');
+        versteckteTeams = new Set(Array.isArray(saved?.teamsAus) ? saved.teamsAus : []);
+      } catch {}
+      beobachteMeineGruppen(user.uid, liste => {
+        teams = liste;
+        const ids = new Set(liste.map(item => item.id));
+        for (const [gid, abmelden] of teamAbos) {
+          if (ids.has(gid)) continue;
+          abmelden();
+          teamAbos.delete(gid);
+          teamTermine.delete(gid);
+        }
+        for (const gid of ids) {
+          if (teamAbos.has(gid)) continue;
+          teamAbos.set(gid, beobachteTermine(gid, termine => {
+            teamTermine.set(gid, termine);
+            renderCurrentView();
+          }));
+        }
+        renderCalendarSources();
+        renderCurrentView();
+      });
+    }
+    const teamMap = () => teamEintraege(teams, teamTermine, { versteckt:versteckteTeams, palette:GROUP_COLORS });
+    async function zeigeTeamTermin(event) {
+      const zurGruppe = await frage({
+        titel:event.title,
+        text:teamTerminText(event),
+        ja:tt('kal.zurGruppe','Zur Gruppe'),
+        nein:tt('a11y.schliessen','Schliessen'),
+      });
+      if (!zurGruppe) return;
+      aktiveGruppeSetzen(event.ref.gid);
+      location.href = './gruppe.html';
     }
     function watchGroups() {
       if (groupsUnsub) groupsUnsub();
@@ -976,6 +1031,7 @@
 
     function renderCalendarSources() {
       const personalColor = personalCalendarColor();
+      const farbenDerTeams = teamFarben(teams, GROUP_COLORS);
       const personal = `
         <button class="calendar-source-row${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:${personalColor}">
           <span class="calendar-source-dot"></span><span>Persönlich &amp; Erinnerungen</span>
@@ -985,6 +1041,10 @@
           data-source-group="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
           <span class="calendar-source-dot"></span><span>${esc(item.name||'Gruppe')}</span>
           ${item.id===group?.id?'<small>Standard</small>':''}
+        </button>`).join('') + teams.map(item => `
+        <button class="calendar-source-row${versteckteTeams.has(item.id)?'':' is-visible'}" type="button"
+          data-source-team="${esc(item.id)}" style="--source-color:${farbenDerTeams.get(item.id)}">
+          <span class="calendar-source-dot"></span><span>${esc(item.name||tt('nav.gruppe','Gruppe'))}</span>
         </button>`).join('');
       $('calendarMobileSources').innerHTML = `
         <button class="calendar-source-chip${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:${personalColor}">
@@ -993,6 +1053,10 @@
         <button class="calendar-source-chip${visibleGroupIds.has(item.id)?' is-visible':''}" type="button"
           data-source-group="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
           <span class="calendar-source-dot"></span>${esc(item.name||'Gruppe')}
+        </button>`).join('') + teams.map(item => `
+        <button class="calendar-source-chip${versteckteTeams.has(item.id)?'':' is-visible'}" type="button"
+          data-source-team="${esc(item.id)}" style="--source-color:${farbenDerTeams.get(item.id)}">
+          <span class="calendar-source-dot"></span>${esc(item.name||tt('nav.gruppe','Gruppe'))}
         </button>`).join('') + (groups.length ? `
         <button class="calendar-source-chip is-visible" id="mobileManageGroupsBtn" type="button" style="--source-color:var(--ink-soft)">
           <svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
@@ -1013,6 +1077,13 @@
         const id = button.dataset.sourceGroup;
         if (visibleGroupIds.has(id)) visibleGroupIds.delete(id); else visibleGroupIds.add(id);
         trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
+        saveVisibleSources();
+        renderCalendarSources();
+        renderCurrentView();
+      });
+      document.querySelectorAll('[data-source-team]').forEach(button => button.onclick = () => {
+        const id = button.dataset.sourceTeam;
+        if (versteckteTeams.has(id)) versteckteTeams.delete(id); else versteckteTeams.add(id);
         saveVisibleSources();
         renderCalendarSources();
         renderCurrentView();
@@ -1515,6 +1586,7 @@
         (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
         keys.forEach(k=>push(k,{kind:'trip',color:groupColor(tr.familyId),title:tr.name||'Termin',time:tr.startTime||'',sourceName:groupName(tr.familyId),ref:tr}));
       });
+      Object.entries(teamMap()).forEach(([k, list]) => list.forEach(e => push(k, e)));
       return map;
     }
 
@@ -1554,6 +1626,7 @@
           push(k,{kind:'trip',color:groupColor(tr.familyId),title:tr.name||'Termin',time:tr.startTime||'',sourceName:groupName(tr.familyId),ref:tr,stops});
         });
       });
+      Object.entries(teamMap()).forEach(([k, list]) => list.forEach(e => push(k, e)));
       return map;
     }
 
@@ -1618,6 +1691,7 @@
       return Number.isFinite(hours) ? Math.max(0, Math.min(1439, hours*60+(minutes||0))) : 0;
     }
     function openCalendarEvent(event) {
+      if(event.kind==='team') { zeigeTeamTermin(event); return; }
       if(event.kind==='trip') { openTrip(event.ref.id); return; }
       if(event.kind==='reminder') { openReminderForm(event.ref); return; }
       openDayForm(event.ref);
@@ -1829,7 +1903,7 @@
               ${fullBtn}
             </div>`;
           }
-          const typeLabel = e.kind==='trip' ? 'Termin' : e.kind==='reminder' ? 'Erinnerung' : 'Persönlicher Termin';
+          const typeLabel = e.kind==='team' ? e.art : e.kind==='trip' ? 'Termin' : e.kind==='reminder' ? 'Erinnerung' : 'Persönlicher Termin';
           const importNote = hasPage && e.kind==='trip'
             ? `<div class="plan-import-note">ⓘ Originalseite vorhanden${(e.ref.itinerary||[]).some(item=>item.autoImported)?' · erkannte Punkte werden nach Uhrzeit gezeigt':' · keine einzelnen Programmpunkte erkannt'}</div>`
             : '';
@@ -1873,6 +1947,7 @@
       });
       box.querySelectorAll('.item-card').forEach(c=>c.onclick=()=>{
         const e=(map[c.dataset.k]||[])[+c.dataset.i]; if(!e)return;
+        if(e.kind==='team') { zeigeTeamTermin(e); return; }
         if(e.kind==='trip') { openTrip(e.ref.id); return; }
         if(e.kind==='reminder') { openReminderForm(e.ref); return; }
         // Open the same read-only day sheet the calendar cell uses,
@@ -1892,15 +1967,19 @@
         const hasPage=(e.ref.planHtml||e.ref.planUrl||(e.ref.itinerary||[]).length);
         const fullBtn = hasPage ? `<button class="pill primary" data-full="${i}" title="Plan/Programm öffnen">Programm öffnen</button>` : '';
         let act='';
-        if(e.kind==='trip'){ act=fullBtn+`<button class="pill" data-open-trip="${esc(e.ref.id)}">Bearbeiten</button>`; }
+        /* Team-Termine gehoeren der Gruppe: hier nur ansehen, geaendert
+           wird im Gruppe-Tab — dort, wo die Leitung die Rechte hat. */
+        if(e.kind==='team'){ act=`<button class="pill" data-team="${i}">${esc(tt('kal.ansehen','Ansehen'))}</button>`; }
+        else if(e.kind==='trip'){ act=fullBtn+`<button class="pill" data-open-trip="${esc(e.ref.id)}">Bearbeiten</button>`; }
         else if(e.kind==='reminder'){ act=`<button class="pill" data-edit-reminder="${i}">Bearbeiten</button>`; }
         else { act=fullBtn+`<button class="pill" data-edit="${i}">Bearbeiten</button>`; }
-        const typeLabel=e.kind==='trip'?'Termin':e.kind==='reminder'?'Erinnerung':'Persönlicher Termin';
+        const typeLabel=e.kind==='team'?e.art:e.kind==='trip'?'Termin':e.kind==='reminder'?'Erinnerung':'Persönlicher Termin';
         return `<div class="item-card"><div class="item-bar" style="background:${e.color}"></div>
           <div class="item-body"><div class="item-title">${esc(e.title)}</div>
           <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}</div>
           <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${act}</div></div></div>`;
       }).join('') : `<p class="empty-hint">Keine Einträge an diesem Tag.</p>`;
+      box.querySelectorAll('[data-team]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.team];closeDay();zeigeTeamTermin(e);});
       box.querySelectorAll('[data-open-trip]').forEach(b=>b.onclick=()=>{closeDay();openTrip(b.dataset.openTrip);});
       box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.edit];closeDay();openDayForm(e.ref);});
       box.querySelectorAll('[data-edit-reminder]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.editReminder];closeDay();openReminderForm(e.ref);});
@@ -2717,6 +2796,6 @@
     }
 
   </script>
-  <script type="module" src="../assets/js/nav.js?v=9"></script>
+  <script type="module" src="../assets/js/nav.js?v=10"></script>
 </body>
 </html>

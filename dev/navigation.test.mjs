@@ -48,11 +48,16 @@ test('die vier Orte stehen an genau einer Stelle', async () => {
 });
 
 test('der dritte Tab heisst wie die Gruppe und übersteht einen fehlenden Index', async () => {
-  const nav = await read('assets/js/nav.js');
+  /* Seit v.35.31.0 in shell.js: in nav.js lief die Beschriftung nur auf
+     Seiten, die nav.js laden — auf der Gruppenseite selbst hiess der Tab
+     darum "Gruppe", anderswo "BSV Kader". */
+  const [shell, nav] = await Promise.all([read('assets/js/shell.js'), read('assets/js/nav.js')]);
+  assert.doesNotMatch(nav, /beobachteMeineGruppen/, 'nav.js beschriftet den Tab ein zweites Mal');
+  assert.match(shell, /verkabelLeiste\(\);\s*gruppeInDerLeiste\(nav\);/, 'mountRail ruft gruppeInDerLeiste nicht');
 
-  const start = nav.indexOf('async function beschrifteGruppenTab');
+  const start = shell.indexOf('function gruppeInDerLeiste');
   assert.notEqual(start, -1, 'die dynamische Beschriftung fehlt');
-  const fn = nav.slice(start, nav.indexOf('\n}', start) + 2);
+  const fn = shell.slice(start, shell.indexOf('\n}', start) + 2);
 
   // Der Name der Gruppe ersetzt die Rückfallbeschriftung …
   assert.match(fn, /feld\.textContent = aktiv\.name/);

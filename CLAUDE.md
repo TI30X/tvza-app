@@ -12,7 +12,7 @@ Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
 **Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
 Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
 
-Version: **v.35.30.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.31.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -40,7 +40,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-50 Testdateien, **514 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+52 Testdateien, **535 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -177,6 +177,22 @@ selbst, `list`: nur Leitung) ist die Sicherung; die Oberfläche fragt gar
 nicht erst, wo sie nichts bekommen darf. `gruppe-kontakte.test.mjs` prüft
 beides und ist gegengeprüft.
 
+**12. Mehrere Gruppen: ein Merker, ein Ereignis, eine Farbe.** Wer in Kader
+und Verein ist, hat EINE aktive Gruppe (`localStorage['firn.gruppe']`, gesetzt
+nur über `aktiveGruppeSetzen()`), und die meldet `firn-gruppe` — Leiste und
+Gruppenseite schalten darauf um. Gewählt wird über `gruppenwahl.js` (Karten aus
+`waehle()` in `dialog.js`): am Laptop „Gruppe wechseln“ unter dem Gruppe-Tab,
+am Handy die Karte oben auf der Gruppenseite. Den Tab beschriftet
+`gruppeInDerLeiste()` in `shell.js`, nicht mehr `nav.js` — das lief auf der
+Gruppenseite gar nicht. Die Farbe einer Gruppe kommt aus `teamFarben()`
+(`kalender-teams.js`): im Kalender und im Wechsler dieselbe, und zwei Gruppen
+einer Person bekommen nie dieselbe.
+
+Der Kalender zeigt die Termine ALLER Gruppen als eigene Quellen (einzeln
+ausschaltbar; gemerkt werden die ausgeschalteten, damit ein neues Team sofort
+sichtbar ist). Ein Team-Termin öffnet dort eine Karte mit „Zur Gruppe“;
+bearbeitet wird er nur in der Gruppe.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -189,7 +205,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **781 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **791 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -244,7 +260,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 514 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 535 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -253,6 +269,10 @@ Zwei Dinge, die leicht übersehen werden:
 - Die älteren Seiten (`maturaarbeit*.html`, `guest.html`, `public.html`)
   sind übersetzt, halten aber die Seiten-Invariante noch nicht: `<style>`-Blöcke,
   Inline-Skripte, `confirm()` beim Zurücksetzen der Maturaarbeit.
+- **Zwei Gruppenmodelle im Kalender.** `planner.html` führt neben den Teams
+  (`groups/{gid}`) noch das alte Familienmodell (`families`, Reisen,
+  Kalendertage) mit eigener Verwaltung. Seit v.35.31.0 stehen beide als
+  Quellen nebeneinander; zusammengeführt sind sie nicht.
 - **Regeln ohne Emulator.** Auf dieser Maschine gibt es kein Java; die
   Regeln werden vor dem Ausrollen nur mit `--dry-run` gegen das Projekt
   kompiliert, nicht gegen Testfaelle gefahren. Zuletzt ausgerollt mit
@@ -261,7 +281,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.30.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.31.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

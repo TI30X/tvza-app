@@ -8,11 +8,12 @@
    man sogar eine Ziffer tippen — "1 — Rennkader, 2 — Verein …" —,
    weil drei Antworten fuer confirm() zu viele sind.
 
-   Drei Formen, alle mit einem Promise:
+   Vier Formen, alle mit einem Promise:
 
      await frage({ titel, text, ja, gefahr })     → true | false
      await eingabe({ titel, text, wert, … })       → String | null
      await meldung({ titel, text })               → undefined
+     await waehle({ titel, optionen })            → wert | null
 
    Gebaut auf <dialog>: Escape schliesst, der Fokus bleibt im Dialog,
    und der Bildschirmleser weiss, dass es ein Dialog ist. Am Handy steht
@@ -54,6 +55,9 @@ function oeffne(bauen) {
        Klick in die Karte hinein, der zufaellig auf dem Rand endet. */
     d.addEventListener('click', event => { if (event.target === d) zu(null); });
     d.querySelector('[data-frage="nein"]')?.addEventListener('click', () => zu(null));
+    /* waehle(): eine Karte antwortet mit ihrer Stelle in der Liste. */
+    d.querySelectorAll('[data-wahl]').forEach(karte =>
+      karte.addEventListener('click', () => zu(karte.dataset.wahl)));
     d.querySelector('form').addEventListener('submit', event => {
       event.preventDefault();
       const feld = d.querySelector('input, textarea');
@@ -66,7 +70,8 @@ function oeffne(bauen) {
       try { d.showModal(); } catch { d.setAttribute('open', ''); }
     } else d.setAttribute('open', '');
 
-    const fokus = d.querySelector('input, textarea') || d.querySelector('[data-frage="ja"]');
+    const fokus = d.querySelector('input, textarea') || d.querySelector('[data-frage="ja"]')
+      || d.querySelector('[data-wahl][aria-checked="true"]') || d.querySelector('[data-wahl]');
     fokus?.focus();
     if (fokus && 'select' in fokus && fokus.value) fokus.select();
   }));
@@ -80,6 +85,39 @@ function knoepfe({ ja, nein, gefahr, einzeln }) {
       ${einzeln ? '' : `<button class="b b--secondary" type="button" data-frage="nein">${esc(nein)}</button>`}
       <button class="b ${gefahr ? 'b--danger' : 'b--primary'}" type="submit" data-frage="ja">${esc(ja)}</button>
     </div>`;
+}
+
+/**
+ * Eine Wahl zwischen Karten — die vierte Form. Fuer "welche Gruppe":
+ * ein Auswahlfeld zeigt nur Namen, eine Karte zeigt das Plaettchen, den
+ * Namen und die eigene Rolle darin, und die aktive ist markiert.
+ *
+ * optionen: [{ wert, titel, text, kuerzel, stil, aktiv }]
+ *   kuerzel  steht im Bild der Karte (zwei Buchstaben)
+ *   stil     setzt --tint und --deep des Bildes (die Farbe der Gruppe)
+ * Ergebnis: der wert der gewaehlten Karte, bei Abbruch null.
+ */
+export async function waehle({ titel, text = '', optionen = [], nein } = {}) {
+  const antwort = await oeffne(() => `
+    <form method="dialog" class="frage__karte">
+      <h2 class="frage__titel">${esc(titel)}</h2>
+      ${text ? `<p class="frage__text">${esc(text)}</p>` : ''}
+      <div class="wahlkarten" role="radiogroup" aria-label="${esc(titel)}">
+        ${optionen.map((o, i) => `
+          <button class="wahlkarte" type="button" role="radio" data-wahl="${i}"
+                  aria-checked="${o.aktiv ? 'true' : 'false'}">
+            <span class="wahlkarte__bild wahlkarte__bild--kuerzel"${o.stil ? ` style="${esc(o.stil)}"` : ''}
+                  aria-hidden="true">${esc(o.kuerzel || '')}</span>
+            <span class="wahlkarte__titel">${esc(o.titel)}</span>
+            <span class="wahlkarte__text">${esc(o.text || '')}</span>
+          </button>`).join('')}
+      </div>
+      <div class="frage__knoepfe">
+        <button class="b b--secondary" type="button" data-frage="nein">${esc(nein || t('common.abbrechen', 'Abbrechen'))}</button>
+      </div>
+    </form>`);
+  if (typeof antwort !== 'string') return null;
+  return optionen[Number(antwort)]?.wert ?? null;
 }
 
 /** Ja oder nein. Ein Abbruch (Escape, Rand, "Abbrechen") ist nein. */

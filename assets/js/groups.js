@@ -323,8 +323,15 @@ export function aktiveGruppeId() {
 }
 
 export function aktiveGruppeSetzen(gid) {
+  const vorher = aktiveGruppeId();
   try { localStorage.setItem(SCHLUESSEL, gid || ''); }
   catch { /* privater Modus — dann eben jedes Mal die erste Gruppe */ }
+  /* EIN Merker, und wer ihn zeigt, erfaehrt vom Wechsel: die Leiste
+     schreibt den neuen Namen, die Gruppenseite zeichnet die neue Gruppe.
+     Vorher wusste die Leiste davon erst beim naechsten Seitenwechsel. */
+  if ((gid || '') !== vorher) {
+    globalThis.window?.dispatchEvent?.(new CustomEvent('firn-gruppe', { detail: { gid: gid || '' } }));
+  }
 }
 
 /* Die gemerkte Gruppe kann verschwunden sein: verlassen, entfernt,

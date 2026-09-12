@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle } from '../../shell.js?v=11';
+import { mountShell, setShellTitle } from '../../shell.js?v=12';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -38,6 +38,7 @@ import {
 } from '../../wochenplan.js';
 import { wochenAnsicht, tagName, kurzDatum } from '../woche/woche.js';
 import { frage, eingabe, meldung } from '../../dialog.js';
+import { gruppeWaehlen, gruppenStil, kuerzel } from '../../gruppenwahl.js';
 import {
   kontaktSauber, pruefeKontakt, verteiler, ohneAdresse, mailtoAdresse, istEmail, ELTERN_MAX,
 } from '../../kontakte.js';
@@ -466,14 +467,36 @@ async function planSpeichern() {
   }
 }
 
+/* Die Karte oben: wo man gerade ist, in der Farbe der Gruppe (dieselbe
+   wie im Kalender), mit der eigenen Rolle und wie viele Gruppen es
+   noch gibt. Ein Tipp oeffnet die Wahl. */
 function zeichneWechsel() {
   const mehrere = gruppen.length > 1;
   zeige('secWechsel', mehrere);
-  if (!mehrere) return;
+  if (!mehrere || !aktiv) return;
 
-  $('grpWahl').innerHTML = gruppen
-    .map(g => `<option value="${escHtml(g.id)}"${g.id === aktiv?.id ? ' selected' : ''}>${escHtml(g.name)}</option>`)
-    .join('');
+  const bild = $('wechselBild');
+  bild.textContent = kuerzel(aktiv.name);
+  bild.setAttribute('style', gruppenStil(gruppen)(aktiv.id));
+  $('wechselName').textContent = aktiv.name || t('nav.gruppe', 'Gruppe');
+  const weitere = gruppen.length - 1;
+  const mehr = window.TVZAI18n?.format?.plural && window.TVZAI18n.t('grp.weitere.other') !== 'grp.weitere.other'
+    ? window.TVZAI18n.format.plural('grp.weitere', weitere)
+    : (weitere === 1 ? '1 weitere Gruppe' : `${weitere} weitere Gruppen`);
+  $('wechselMehr').textContent = [wort(aktiv.art, aktiv.meineRolle), mehr].filter(Boolean).join(' · ');
+}
+
+/* Der Wechsel kommt von der Karte hier ODER von der Leiste. Beide gehen
+   ueber aktiveGruppeSetzen, und das meldet 'firn-gruppe' — hier wird
+   also nur an einer Stelle umgeschaltet. Eine Gruppe, die noch nicht in
+   der Liste steht (gerade angelegt, der Snapshot kommt gleich), bleibt
+   dem naechsten Snapshot ueberlassen. */
+function wechsleZu(gid) {
+  const neu = gruppen.find(g => g.id === gid);
+  if (!neu || neu.id === aktiv?.id) return;
+  aktiv = neu;
+  hoereAufTermine();
+  zeichne();
 }
 
 function zeichne() {
@@ -1789,12 +1812,9 @@ async function einladen() {
   $('btnEntfernen')?.addEventListener('click', personEntfernen);
   $('btnUebergeben')?.addEventListener('click', leitungUebergeben);
 
-  $('grpWahl')?.addEventListener('change', event => {
-    aktiveGruppeSetzen(event.target.value);
-    aktiv = gruppen.find(g => g.id === event.target.value) || aktiv;
-    hoereAufTermine();
-    zeichne();
-  });
+  $('btnWechsel')?.addEventListener('click', () =>
+    gruppeWaehlen(gruppen, aktiv?.id, { rolleWort: wort, setzen: aktiveGruppeSetzen }));
+  window.addEventListener('firn-gruppe', event => wechsleZu(event.detail?.gid));
 
   beobachteMeineGruppen(user.uid, liste => {
     gruppen = liste;

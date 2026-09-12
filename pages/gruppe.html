@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../assets/css/kit.css?v=12" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=4" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=5" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
   <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
@@ -88,11 +88,23 @@
       </form>
     </section>
 
-    <!-- Der Umschalter steht nur da, wenn es wirklich etwas zu wechseln
-         gibt. Ein Auswahlfeld mit einem einzigen Eintrag ist eine Lüge. -->
+    <!-- Wer in mehr als einer Gruppe ist, sieht hier, wo er gerade ist,
+         und wechselt mit einem Tipp; mit nur einer Gruppe steht hier
+         nichts. Bis v.35.30.0 ein Auswahlfeld des Browsers. Plaettchen,
+         Name und die Zeile darunter beschriftet der Code — darum dort
+         kein data-i18n (Falle 5). -->
     <section class="section" id="secWechsel" hidden>
-      <div class="marke" data-i18n="grp.aktive">Aktive Gruppe</div>
-      <select class="form-select" id="grpWahl" aria-label="Gruppe wechseln" data-i18n-attr="aria-label:grp.wechseln"></select>
+      <button class="wechsler" id="btnWechsel" type="button" aria-haspopup="dialog">
+        <span class="wechsler__bild" id="wechselBild" aria-hidden="true"></span>
+        <span class="wechsler__text">
+          <span class="wechsler__name" id="wechselName"></span>
+          <span class="wechsler__mehr" id="wechselMehr"></span>
+        </span>
+        <span class="wechsler__aktion">
+          <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 4v14"/><path d="m3 14 4 4 4-4"/><path d="M17 20V6"/><path d="m13 10 4-4 4 4"/></svg>
+          <span data-i18n="grp.wechselnKurz">Wechseln</span>
+        </span>
+      </button>
     </section>
 
     <!-- Termine. Training, Lager, Rennen — drei Arten, weil sie sich
@@ -466,6 +478,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=7"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=8"></script>
 </body>
 </html>

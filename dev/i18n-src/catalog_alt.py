@@ -342,4 +342,26 @@ KEYS = {
 'pub.fehler':       ('Projekte konnten nicht geladen werden.', 'Projects could not be loaded.', 'Impossible de charger les projets.',
                      'Impossibile caricare i progetti.', 'Nie udało się wczytać projektów.', 'Projecten konden niet worden geladen.',
                      'No se pudieron cargar los proyectos.'),
+
+# ── Kalender: die Termine der Teams (v.35.31.0) ───────────────────
+'kal.abgesagt':     ('Abgesagt: {titel}', 'Cancelled: {titel}', 'Annulé : {titel}', 'Annullato: {titel}',
+                     'Odwołane: {titel}', 'Afgelast: {titel}', 'Cancelado: {titel}'),
+'kal.abgesagtGrund':('Abgesagt: {grund}', 'Cancelled: {grund}', 'Annulé : {grund}', 'Annullato: {grund}',
+                     'Odwołane: {grund}', 'Afgelast: {grund}', 'Cancelado: {grund}'),
+'kal.abgesagtHinweis':('Dieser Termin ist abgesagt.', 'This event has been cancelled.', 'Cet événement est annulé.',
+                     'Questo evento è stato annullato.', 'To wydarzenie zostało odwołane.', 'Deze afspraak is afgelast.',
+                     'Este evento está cancelado.'),
+'kal.zurGruppe':    ('Zur Gruppe', 'Go to group', 'Voir le groupe', 'Vai al gruppo', 'Przejdź do grupy', 'Naar de groep', 'Ir al grupo'),
+'kal.ansehen':      ('Ansehen', 'View', 'Voir', 'Apri', 'Pokaż', 'Bekijken', 'Ver'),
+
+# ── Gruppe wechseln (v.35.31.0) ───────────────────────────────────
+'grp.wechselnKurz': ('Wechseln', 'Switch', 'Changer', 'Cambia', 'Zmień', 'Wisselen', 'Cambiar'),
+'grp.weitere.one':  ('1 weitere Gruppe', '1 more group', '1 autre groupe', '1 altro gruppo',
+                     '1 inna grupa', '1 andere groep', '1 grupo más'),
+'grp.weitere.few':  ('{n} weitere Gruppen', '{n} more groups', '{n} autres groupes', 'altri {n} gruppi',
+                     '{n} inne grupy', '{n} andere groepen', '{n} grupos más'),
+'grp.weitere.many': ('{n} weitere Gruppen', '{n} more groups', '{n} autres groupes', 'altri {n} gruppi',
+                     '{n} innych grup', '{n} andere groepen', '{n} grupos más'),
+'grp.weitere.other':('{n} weitere Gruppen', '{n} more groups', '{n} autres groupes', 'altri {n} gruppi',
+                     '{n} innych grup', '{n} andere groepen', '{n} grupos más'),
 }

@@ -62,6 +62,8 @@ export const ICONS = {
      die zwei verschiedene Dinge taten. */
   leiste:  '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
   abmelden: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+  /* Zwei Pfeile gegeneinander: zwischen Gruppen wechseln. */
+  wechsel: '<path d="M7 4v14"/><path d="m3 14 4 4 4-4"/><path d="M17 20V6"/><path d="m13 10 4-4 4 4"/>',
 };
 
 /* Weather glyphs, keyed off WMO codes. index.html needed these in two
@@ -310,7 +312,13 @@ export function mountRail({ profile = null } = {}) {
       ${icon(t.icon, 20)}
       <span class="nav__wort" data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
       ${t.id === 'chat' ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>' : ''}
-    </a>`).join('');
+    </a>${t.id === 'gruppe' ? `
+    <button class="nav__wechsel" type="button" data-gruppe-wechsel hidden
+            title="${label('grp.wechseln', 'Gruppe wechseln')}"
+            data-i18n-attr="title:grp.wechseln;aria-label:grp.wechseln" aria-label="${label('grp.wechseln', 'Gruppe wechseln')}">
+      ${icon('wechsel', 16)}
+      <span class="nav__wort" data-i18n="grp.wechseln">${label('grp.wechseln', 'Gruppe wechseln')}</span>
+    </button>` : ''}`).join('');
 
   /* Das Zeichen steht links vom Wort und bleibt stehen, wenn die
      Leiste zuklappt — in 64 Pixeln bricht "Firn" um, das Zeichen
@@ -343,7 +351,67 @@ export function mountRail({ profile = null } = {}) {
   });
   mountAppRouter(nav);
   verkabelLeiste();
+  gruppeInDerLeiste(nav);
   return nav;
+}
+
+/* ══ Die Gruppe in der Leiste ═══════════════════════════════════════
+   Der Gruppe-Tab traegt den Namen der aktiven Gruppe, und wer in mehr
+   als einer ist, bekommt darunter "Gruppe wechseln".
+
+   Das stand bis v.35.30.0 in nav.js — und nav.js laeuft auf der
+   Gruppenseite, im Training, in Einheit und Video gar nicht. Dort hiess
+   der Tab darum "Gruppe", anderswo "BSV Kader". Jetzt baut die Leiste
+   es selbst, auf jeder Seite gleich.
+
+   Alles in try/catch, das im Fehlerfall NICHTS tut: fehlt der Index
+   fuer die Mitgliedschaften noch, bleibt der Tab bei "Gruppe" und
+   funktioniert weiter. */
+function gruppeInDerLeiste(nav) {
+  const tab = nav.querySelector('[data-nav-tab="gruppe"]');
+  const wechsel = nav.querySelector('[data-gruppe-wechsel]');
+  if (!tab || !wechsel || typeof auth?.onAuthStateChanged !== 'function') return;
+
+  let gruppen = [];
+  let abo = null;
+  let zeichne = () => {};
+  /* Einmal angebunden, nicht bei jeder Anmeldung ein weiteres Mal. */
+  window.addEventListener('firn-gruppe', () => zeichne());
+  auth.onAuthStateChanged(async user => {
+    abo?.(); abo = null;
+    if (!user) return;
+    try {
+      const groups = await import('./groups.js');
+      zeichne = () => {
+        const aktiv = groups.waehleAktive(gruppen);
+        const feld = tab.querySelector('.nav__wort');
+        wechsel.hidden = gruppen.length < 2;
+        if (!feld) return;
+        if (!aktiv) {
+          /* Ohne Gruppe bleibt die Rueckfallbeschriftung — der Tab fuehrt
+             trotzdem hin, denn dort steht, wie man eine anlegt. */
+          feld.textContent = label('nav.gruppe', 'Gruppe');
+          feld.dataset.i18n = 'nav.gruppe';
+          return;
+        }
+        /* Ein eigener Name wird nicht uebersetzt: data-i18n muss weg,
+           sonst schreibt der naechste Sprachwechsel "Gruppe" darueber. */
+        delete feld.dataset.i18n;
+        feld.textContent = aktiv.name;
+        tab.title = aktiv.name;
+      };
+      abo = groups.beobachteMeineGruppen(user.uid, liste => { gruppen = liste; zeichne(); });
+      wechsel.onclick = async () => {
+        const { gruppeWaehlen } = await import('./gruppenwahl.js');
+        const gid = await gruppeWaehlen(gruppen, groups.waehleAktive(gruppen)?.id, {
+          rolleWort: groups.wort, setzen: groups.aktiveGruppeSetzen,
+        });
+        /* Auf der Gruppenseite zeichnet die Seite selbst neu (sie hoert
+           auf firn-gruppe); von anderswo fuehrt die Wahl dorthin. */
+        if (gid && activeTab() !== 'gruppe') location.href = tab.href;
+      };
+    } catch { /* siehe oben: der Tab bleibt, wie er ist */ }
+  });
 }
 
 /* Einstellungen muessen sich von jeder Seite oeffnen lassen. Bisher

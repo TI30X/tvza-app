@@ -40,7 +40,13 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const fuehrt = r => r === 'head';
     export const wort = (art, was) => was;
     export const waehleAktive = liste => liste?.[0] ?? null;
-    export const aktiveGruppeSetzen = id => { (globalThis.__aufrufe ||= []).push(['aktiveGruppeSetzen', id]); };
+    /* Wie das echte: merken UND 'firn-gruppe' melden — darauf schaltet
+       die Gruppenseite um, egal ob die Wahl von ihr oder der Leiste kam. */
+    export const aktiveGruppeSetzen = id => {
+      (globalThis.__aufrufe ||= []).push(['aktiveGruppeSetzen', id]);
+      const w = globalThis.window;
+      w?.dispatchEvent(new w.CustomEvent('firn-gruppe', { detail: { gid: id } }));
+    };
     export const beobachteMeineGruppen = (uid, cb) => { cb(${JSON.stringify(gruppen)}); return () => {}; };
     export const beobachteTermine = () => () => {};
     export const ladeMitglieder = async () => ${JSON.stringify(mitglieder)};
@@ -161,6 +167,7 @@ async function lade({
     .replace(`'../../wochenplan.js'`, `'${datei('assets/js/wochenplan.js')}'`)
     .replace(`'../woche/woche.js'`, `'${datei('assets/js/feature/woche/woche.js')}'`)
     .replace(`'../../dialog.js'`, `'${datei('assets/js/dialog.js')}'`)
+    .replace(`'../../gruppenwahl.js'`, `'${datei('assets/js/gruppenwahl.js')}'`)
     .replace(`'../../kontakte.js'`, `'${datei('assets/js/kontakte.js')}'`)
     .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)

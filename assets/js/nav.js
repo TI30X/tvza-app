@@ -23,7 +23,7 @@
 import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=11';
+import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=12';
 import { mountAppRouter } from './router.js?v=8';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 
@@ -50,7 +50,7 @@ const relabel = root => window.TVZAI18n?.applyTo(root);
    Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
    weitergereicht, damit index.html sie wie bisher
    von nav.js beziehen können. */
-export { ownsTab } from './shell.js?v=11';
+export { ownsTab } from './shell.js?v=12';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');
@@ -96,55 +96,9 @@ function mount(profile) {
   primeNavigation(profile, nav);
 }
 
-/* ══ Der dritte Tab heisst wie die Gruppe ═══════════════════════════
-   Er ist nicht "Training" und nicht "Gruppen" — er IST die Gruppe, und
-   trägt darum ihren Namen: "Ski Team Malbun", "Familie van Zanten".
-   Wer in mehreren ist, schaltet auf der Seite selbst um; die Leiste
-   zeigt immer die aktive.
-
-   Zwei Dinge sind hier bewusst so gebaut:
-
-   Der Import ist dynamisch. Die Leiste steht damit sofort, und die
-   Gruppenabfrage läuft erst danach — sie ist das Einzige in der
-   Navigation, das einen Firestore-Index braucht.
-
-   Und alles liegt in einem try/catch, das im Fehlerfall NICHTS tut.
-   Fehlt der COLLECTION_GROUP-Index noch, scheitert die Abfrage mit
-   failed-precondition; dann bleibt der Tab bei "Gruppe" stehen und
-   funktioniert weiter. Eine Navigation, die an einer fehlenden
-   Datenbankeinstellung zerbricht, wäre der schlechteste Tausch. */
-async function beschrifteGruppenTab(uid) {
-  const tab = document.querySelector('[data-nav-tab="gruppe"]');
-  if (!tab) return;
-
-  try {
-    const { beobachteMeineGruppen, waehleAktive, aktiveGruppeSetzen } =
-      await import('./groups.js');
-
-    beobachteMeineGruppen(uid, gruppen => {
-      const aktiv = waehleAktive(gruppen);
-      const feld = tab.querySelector('span');
-      if (!feld) return;
-
-      if (!aktiv) {
-        /* Ohne Gruppe bleibt die Rückfallbeschriftung stehen — und der
-           Tab führt trotzdem auf die Seite, denn dort steht, wie man
-           eine Gruppe anlegt oder einer beitritt. */
-        feld.textContent = label('nav.gruppe', 'Gruppe');
-        feld.dataset.i18n = 'nav.gruppe';
-        return;
-      }
-
-      aktiveGruppeSetzen(aktiv.id);
-      /* Ein eigener Name wird nicht übersetzt — darum fliegt data-i18n
-         hier raus, sonst überschreibt der nächste Sprachwechsel ihn
-         wieder mit "Gruppe". */
-      delete feld.dataset.i18n;
-      feld.textContent = aktiv.name;
-      feld.title = aktiv.name;
-    });
-  } catch { /* siehe oben: der Tab bleibt, wie er ist */ }
-}
+/* Der dritte Tab (Name der aktiven Gruppe, "Gruppe wechseln") steht seit
+   v.35.31.0 in shell.js, gruppeInDerLeiste() — hier lief er nur auf den
+   Seiten, die nav.js laden, und die Gruppenseite gehoert nicht dazu. */
 
 /* Initialen wie auf der Startseite: erster Buchstabe des Vornamens und
    des letzten Namensteils. Vorher lief hier eine eigene Regel, die bei
@@ -273,7 +227,6 @@ if (!SKIP.includes(file)) {
     try { profile = await getProfile(user); } catch { /* rail just stays empty */ }
     mount(profile);
     mountAccountMenu(user, profile);
-    beschrifteGruppenTab(user.uid);
     watchUnread(user);
     watchKeyboard();
     /* Hier stand zweimal refreshAreaNavigation(profile) — eine

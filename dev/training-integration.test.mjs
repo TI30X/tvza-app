@@ -51,9 +51,14 @@ test('Router kennt die Seite als App-Seite mit Titel', async () => {
 });
 
 test('Service Worker legt Seite, Baustein und Parser in den Shell-Cache', async () => {
-  const sw = await read('sw.js');
+  const [sw, seite] = await Promise.all([read('sw.js'), read('pages/training.html')]);
+  /* Die Fassung, die die Seite laedt — nicht eine hier festgeschriebene
+     Zahl. Bis v.35.31.0 stand hier ?v=1 woertlich; jeder Bump brach den
+     Test, ohne dass etwas falsch war. */
+  const modul = seite.match(/feature\/training\/training\.js\?v=\d+/)?.[0];
+  assert.ok(modul, 'training.html laedt kein versioniertes Modul');
   ['./pages/training.html',
-   './assets/js/feature/training/training.js?v=1',
+   `./assets/js/${modul}`,
    './assets/js/feature/woche/woche.js',
    './assets/css/feature/woche.css?v=1',
    './assets/js/training-parser.js',
