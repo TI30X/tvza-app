@@ -14,6 +14,7 @@
 import {
   auth, db, requireAuth, wireOfflineBanner, escHtml,
   MODULES, CORE_MODULE_KEYS, allowedModules, enabledModules, getProfile, sharesForEmail,
+  projekteReparatur,
   sharesByOwner, reportClientError
 } from '../../firebase-config.js';
 
@@ -87,6 +88,19 @@ if (Object.keys(profile).length) {
     if (guest.exists()) await deleteDoc(guest.ref);
   } catch (e) { reportClientError('guest-self-heal', e); }
 }
+/* Die Projekte, die ein Fehler von v.35.3.0 ausgeblendet hat — siehe
+   projekteReparatur in firebase-config.js. Scheitert das Schreiben,
+   gilt die Reparatur trotzdem fuer diese Sitzung; beim naechsten
+   Laden wird es erneut versucht. */
+{
+  const repariert = projekteReparatur(profile);
+  if (repariert) {
+    profile = { ...profile, modules: repariert };
+    setDoc(doc(db, 'users', user.uid), { modules: repariert }, { merge: true })
+      .catch(e => reportClientError('projekte-reparatur', e));
+  }
+}
+
 if (!Object.keys(profile).length) {
   await signOut(auth).catch(() => {});
   window.location.replace('login.html?reason=membership');
@@ -825,21 +839,27 @@ function renderModuleToggles() {
 
 let modulesSaveQueue = Promise.resolve();
 let modulesSaveVersion = 0;
-function selectedPersonalModules() {
-  const modules = {};
-  document.querySelectorAll('#moduleToggles [data-mod]').forEach(cb => modules[cb.dataset.mod] = cb.checked);
-  return modules;
-}
-function savePersonalModules() {
-  const modules = selectedPersonalModules();
+/* Gespeichert wird NUR der Schalter, der sich bewegt hat.
+   Bis v.35.22.0 stand hier der Zustand ALLER Schalter — auch die
+   Vorgaben, die niemand angefasst hatte. Damit fror jede Vorgabe im
+   Profil ein, und als Projekte am 3. September fuer ein paar Stunden
+   per Vorgabe aus war, blieb es fuer immer aus. Ein gespeicherter Wert
+   ist eine Entscheidung; eine Vorgabe ist keine.
+
+   Das Profil wird sofort nachgezogen und nicht erst nach dem Speichern:
+   wer zwei Schalter schnell hintereinander umlegt, wuerde sonst beim
+   zweiten den ersten verlieren. Scheitert es, geht der Schalter zurueck. */
+function savePersonalModules(key, an) {
+  const vorher = profile.modules || {};
+  const modules = { ...vorher, [key]: an };
+  profile = { ...profile, modules };
   const version = ++modulesSaveVersion;
   const status = document.getElementById('modulesSaveStatus');
   status.dataset.state = 'saving';
   status.textContent = 'Speichert';
   modulesSaveQueue = modulesSaveQueue.then(async () => {
     try {
-      await setDoc(doc(db, 'users', user.uid), { modules }, { merge:true });
-      profile = { ...profile, modules };
+      await setDoc(doc(db, 'users', user.uid), { modules: { [key]: an } }, { merge:true });
       applyModules();
       syncPublicFeed();
       window.dispatchEvent(new CustomEvent('tvza-modules-change', { detail:modules }));
@@ -850,6 +870,13 @@ function savePersonalModules() {
       }
     } catch (error) {
       reportClientError('personal-modules-save', error);
+      /* Zurueck auf den alten Stand — und hatte der Schalter keinen
+         gespeicherten Wert, dann auf KEINEN. Ein undefined im Profil
+         ueberdeckte die Vorgabe genauso wie ein false. */
+      const zurueck = { ...(profile.modules || {}) };
+      if (Object.prototype.hasOwnProperty.call(vorher, key)) zurueck[key] = vorher[key];
+      else delete zurueck[key];
+      profile = { ...profile, modules: zurueck };
       if (version === modulesSaveVersion) {
         status.dataset.state = 'error';
         status.textContent = 'Nicht gespeichert';
@@ -864,7 +891,7 @@ document.getElementById('moduleToggles').addEventListener('change', event => {
   row?.classList.toggle('is-checked', event.target.checked);
   const state = row?.querySelector('.module-toggle-state');
   if (state) state.textContent = event.target.checked ? 'Sichtbar' : 'Ausgeblendet';
-  savePersonalModules();
+  savePersonalModules(event.target.dataset.mod, event.target.checked);
 });
 
 /* ════ Bereich-specific settings, inside the one Settings surface ════ */

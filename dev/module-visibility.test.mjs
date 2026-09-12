@@ -118,7 +118,12 @@ test('eine gespeicherte Auswahl erreicht Start und die Huelle', () => {
   assert.match(dashboard, />Meine Bereiche</);
   assert.match(dashboard, /id="modulesSaveStatus"[\s\S]*id="moduleToggles"/);
   assert.match(dashboard, /moduleToggles'\)\.addEventListener\('change'/);
-  assert.match(dashboard, /setDoc\(doc\(db, 'users', user\.uid\), \{ modules \}, \{ merge:true \}\)/);
+  /* Bis v.35.22.0 stand hier { modules } — der Zustand ALLER Schalter.
+     Genau das hat die Projekte ausgeblendet: jede Vorgabe fror beim
+     naechsten Umschalten im Profil ein. Der Test hielt den Fehler fest,
+     statt ihn zu verhindern; gespeichert wird jetzt nur der eine
+     Schluessel (siehe "ein Schalter speichert nur sich selbst"). */
+  assert.match(dashboard, /setDoc\(doc\(db, 'users', user\.uid\), \{ modules: \{ \[key\]: an \} \}, \{ merge:true \}\)/);
   assert.match(
     dashboard,
     /window\.dispatchEvent\(new CustomEvent\('tvza-modules-change'/
@@ -228,4 +233,68 @@ test('die oeffentliche Seite bleibt und behaelt ihren Speicher', async () => {
     'index.html schreibt nicht mehr hinein — dann fuellt sich die Seite nie');
   assert.match(dashboard, /id="publicPageLink"/,
     'der Knopf zum Teilen des Links fehlt');
+});
+
+/* ── Die verschwundenen Projekte ───────────────────────────────────
+   Bis v.35.22.0 schrieb das Umlegen EINES Schalters den Zustand ALLER
+   Schalter ins Profil. Als Projekte am 3. September fuer ein paar
+   Stunden per Vorgabe aus war, fror dieses "aus" bei jedem ein, der in
+   dem Fenster irgendetwas umschaltete — und blieb, obwohl die Vorgabe
+   laengst wieder stimmte. */
+
+function reparatur() {
+  const quelle = firebase.match(/export function projekteReparatur\(profile\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(quelle, 'projekteReparatur nicht gefunden');
+  return vm.runInNewContext(`(${quelle.replace('export ', '')})`);
+}
+
+test('die Reparatur holt die Projekte fuer TvZ zurueck, genau einmal', () => {
+  const repariere = reparatur();
+
+  const kaputt = { isTimo: true, modules: { projects: false, food: true } };
+  const heil = repariere(kaputt);
+  assert.equal(heil.projects, true);
+  assert.equal(heil.food, true, 'die anderen Schalter bleiben, wie sie sind');
+  assert.equal(heil.projekteRepariert, true);
+
+  /* Wer Projekte nach der Reparatur bewusst ausblendet, bleibt
+     ausgeblendet. Sonst waere der Schalter eine Attrappe. */
+  assert.equal(repariere({ isTimo: true, modules: { ...heil, projects: false } }), null);
+});
+
+test('die Reparatur fasst niemanden sonst an', () => {
+  const repariere = reparatur();
+  /* Fuer andere Konten ist Projekte gar nicht freigegeben — ein
+     gespeichertes false ist dort richtig. */
+  assert.equal(repariere({ isTimo: false, modules: { projects: false } }), null);
+  assert.equal(repariere({ modules: { projects: false } }), null);
+  /* Nichts gespeichert, oder schon an: nichts zu reparieren. */
+  assert.equal(repariere({ isTimo: true }), null);
+  assert.equal(repariere({ isTimo: true, modules: { projects: true } }), null);
+  assert.equal(repariere({ isTimo: true, modules: {} }), null);
+});
+
+test('die Marke der Reparatur macht keinen Bereich sichtbar', () => {
+  /* Sie steht IN modules, weil die Regeln am eigenen Profil kein
+     neues Feld erlauben. enabledModules darf sie darum nicht als
+     Modul lesen. */
+  const { enabledModules } = visibilityHelpers();
+  const sichtbar = enabledModules({ modules: { projekteRepariert: true } });
+  assert.equal('projekteRepariert' in sichtbar, false);
+});
+
+test('ein Schalter speichert nur sich selbst, nicht alle', async () => {
+  const start = await readFile(join(wurzel, 'assets/js/feature/start/start.js'), 'utf8');
+  const speichern = start.match(/function savePersonalModules\(key, an\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(speichern, 'savePersonalModules(key, an) nicht gefunden');
+
+  /* Geschrieben wird genau der eine Schluessel. Eine Vorgabe ist keine
+     Entscheidung und gehoert nicht ins Profil. */
+  assert.match(speichern, /setDoc\(doc\(db, 'users', user\.uid\), \{ modules: \{ \[key\]: an \} \}, \{ merge:true \}\)/);
+  assert.doesNotMatch(start, /selectedPersonalModules/,
+    'die Funktion, die alle Schalter einsammelte, ist weg');
+  assert.match(start, /savePersonalModules\(event\.target\.dataset\.mod, event\.target\.checked\)/);
+
+  /* Die Reparatur laeuft beim Laden des Profils. */
+  assert.match(start, /projekteReparatur\(profile\)/);
 });

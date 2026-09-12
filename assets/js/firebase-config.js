@@ -160,6 +160,33 @@ export const DEFAULT_VISIBLE_MODULES = {
 };
 export const CORE_MODULE_KEYS = Object.freeze(['trip', 'dm']);
 
+/* Die Reparatur fuer die verschwundenen Projekte.
+ *
+ * Bis v.35.22.0 schrieb das Umlegen EINES Bereichsschalters den Zustand
+ * ALLER Schalter ins Profil — auch die Vorgaben, die niemand angefasst
+ * hatte. Am 3. September stand Projekte fuer ein paar Stunden per
+ * Vorgabe auf "aus" (v.35.3.0, am selben Abend in v.35.4.0 korrigiert).
+ * Wer in diesem Fenster irgendeinen Bereich umschaltete, bekam
+ * projects:false mitgeschrieben — und ein gespeicherter Wert schlaegt
+ * die Vorgabe fuer immer.
+ *
+ * Darum einmal zuruecksetzen, fuer das Konto, dem die Projekte
+ * gehoeren. Die Marke steht IN modules und nicht als eigenes Feld: die
+ * Regeln erlauben am eigenen Profil nur displayName, modules,
+ * projectsSeeded, familyId und role. enabledModules liest ohnehin nur
+ * die Schluessel aus MODULES, die Marke stoert dort nicht.
+ *
+ * Einmal heisst einmal: wer Projekte danach bewusst ausblendet, bleibt
+ * ausgeblendet.
+ */
+export function projekteReparatur(profile) {
+  if (profile?.isTimo !== true) return null;
+  const modules = profile?.modules;
+  if (!modules || modules.projects !== false) return null;
+  if (modules.projekteRepariert === true) return null;
+  return { ...modules, projects: true, projekteRepariert: true };
+}
+
 export async function getProfile(user) {
   try {
     const snap = await getDoc(doc(db, 'users', user.uid));
