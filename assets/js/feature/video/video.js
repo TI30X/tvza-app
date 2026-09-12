@@ -32,7 +32,7 @@
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell } from '../../shell.js?v=9';
+import { mountShell } from '../../shell.js?v=10';
 import {
   PUNKT, gelenkwinkel, seitenunterschied, hueftversatz, befund,
 } from '../../pose.js';
@@ -317,7 +317,6 @@ function zeigeBefund(b) {
     title: t('vid.videoanalyse', 'Videoanalyse'),
     backHref: '../index.html',
     profile: {},
-    onSettings: () => window.tvzaOpenSettings?.(),
   });
 
   const video = $('video');

@@ -80,15 +80,20 @@ function wireContentBridge() {
   }, { capture:true });
 }
 
+/* Dieselbe Zuordnung wie activeTab() in shell.js. Hier stand noch die
+   alte mit 'nachrichten' und 'bereiche' — Tabs, die es seit dem Umbau
+   auf Start/Kalender/Gruppe/Chat nicht mehr gibt. Wer ueber den Router
+   zur Gruppe oder zum Chat wechselte, sah danach KEINEN Tab leuchten.
+   Eine Bereichsseite gehoert zu Start, wie in shell.js. */
 function tabFor(url) {
   const file = fileOf(url);
-  if (file === 'index.html') return 'start';
   if (file === 'planner.html') return 'kalender';
-  if (file === 'messages.html') return 'nachrichten';
-  return 'bereiche';
+  if (file === 'gruppe.html') return 'gruppe';
+  if (file === 'messages.html') return 'chat';
+  return 'start';
 }
 
-const TAB_ORDER = ['start', 'kalender', 'nachrichten', 'bereiche'];
+const TAB_ORDER = ['start', 'kalender', 'gruppe', 'chat'];
 function routeDirection(from, to) {
   const fromIndex = TAB_ORDER.indexOf(tabFor(from));
   const toIndex = TAB_ORDER.indexOf(tabFor(to));
@@ -123,7 +128,7 @@ function routeLabel(nav, target) {
       'messages.html':'Nachrichten',
       'skitracker.html':'Ski Tracker',
       'foodtracker.html':'Food Tracker',
-      'watchlist.html':'TVZA Watchlist',
+      'watchlist.html':'Watchlist',
       'weather.html':'Wetter',
       'maturaarbeit.html':'Maturaarbeit',
       'maturaarbeit-tracker.html':'Maturaarbeit Tracker',

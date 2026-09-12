@@ -106,7 +106,7 @@
   const el = document.createElement('div');
   el.id = 'tvza-welcome';
   el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-label', 'Willkommen bei TVZA');
+  el.setAttribute('aria-label', 'Willkommen bei Firn');
   el.innerHTML = `
     <div class="tvza-grad"></div>
     <div class="blob b1"></div>

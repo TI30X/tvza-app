@@ -35,8 +35,16 @@ test('die vier Orte stehen an genau einer Stelle', async () => {
   assert.doesNotMatch(css, /\.nav__item\[data-nav-tab="bereiche"\]/,
     'die Regel blendete einen Tab aus, den es nicht mehr gibt');
 
-  assert.match(nav, /data-nav-tab="\$\{t\.id\}"/);
+  /* EINE Leiste, EIN Baustein. Bis v.35.23.0 bauten nav.js und
+     shell.js je eine eigene: shell.js die volle mit Marke, Einklappen
+     und Einstellungen fuer drei Seiten, nav.js eine magere mit nur den
+     vier Tabs fuer alle anderen. Auf Start sah die Leiste darum anders
+     aus als auf Gruppe. */
   assert.match(shell, /data-nav-tab="\$\{t\.id\}"/);
+  assert.match(shell, /export function mountRail\(/);
+  assert.doesNotMatch(nav, /data-nav-tab="\$\{t\.id\}"/,
+    'nav.js baut wieder eine eigene Leiste');
+  assert.match(nav, /mountRail\(\{ profile \}\)/);
 });
 
 test('der dritte Tab heisst wie die Gruppe und übersteht einen fehlenden Index', async () => {
@@ -65,16 +73,19 @@ test('der Zähler sitzt am Chat-Tab, nicht mehr an "nachrichten"', async () => {
     read('assets/js/shell.js'),
   ]);
 
+  /* Die Tabs entstehen nur noch in shell.js — dort muss der Zaehler
+     sitzen, und nav.js darf keinen eigenen mehr bauen. */
+  assert.match(shell, /t\.id === 'chat'/, 'shell.js: der Zähler hängt am falschen Tab');
   for (const [datei, quelle] of [['nav.js', nav], ['shell.js', shell]]) {
-    assert.match(quelle, /t\.id === 'chat'/, `${datei}: der Zähler hängt am falschen Tab`);
     assert.doesNotMatch(quelle, /t\.id === 'nachrichten'/, `${datei}: alter Tab-Name übrig`);
   }
 });
 
 
 test('app destinations are prefetched and use a progressive page transition', async () => {
-  const [nav, router, theme, css, sw] = await Promise.all([
+  const [nav, shell, router, theme, css, sw] = await Promise.all([
     read('assets/js/nav.js'),
+    read('assets/js/shell.js'),
     read('assets/js/router.js'),
     read('assets/js/theme.js'),
     read('assets/css/kit.css'),
@@ -83,7 +94,8 @@ test('app destinations are prefetched and use a progressive page transition', as
 
   assert.match(nav, /link\.rel\s*=\s*'prefetch'/);
   assert.match(nav, /link\.as\s*=\s*'document'/);
-  assert.match(nav, /mountAppRouter\(nav\)/);
+  /* Der Router haengt an der Leiste, und die Leiste baut shell.js. */
+  assert.match(shell, /mountAppRouter\(nav\)/);
   assert.match(router, /className = `tvza-route-frame is-entering/);
   assert.doesNotMatch(router, /tvza-route-(?:loader|skeleton)/);
   assert.match(router, /waitForCompleteContent/);
@@ -98,7 +110,12 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(router, /const PAGE_ACTIONS = \{\};/);
   assert.match(router, /type:'tvza-open-settings'/);
   assert.match(router, /document\.addEventListener\('click'[\s\S]*\{ capture:true \}\)/);
-  assert.match(nav, /refreshAreaNavigation\(profile\)/);
+  /* Hier stand assert.match(nav, /refreshAreaNavigation\(profile\)/).
+     Der Test VERLANGTE den Aufruf — und als v.35.19.0 die Funktion
+     loeschte, blieb der Aufruf deshalb stehen und warf bei jedem
+     Laden einer Seite. Jetzt das Gegenteil, und aufrufe.test.mjs
+     sucht nach der ganzen Fehlerklasse. */
+  assert.doesNotMatch(nav.replace(/\/\*[\s\S]*?\*\//g, ''), /refreshAreaNavigation/);
   assert.doesNotMatch(nav, /document\.querySelector\('\.nav'\)\?\.remove\(\)/);
   assert.match(theme, /classList\.add\('tvza-content-frame'\)/);
   assert.match(css, /\.tvza-route-frame\.is-entering/);
@@ -106,7 +123,13 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(sw, /assets\/js\/router\.js/);
   assert.match(css, /@view-transition\s*\{\s*navigation:\s*auto/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.match(router, /const TAB_ORDER = \['start', 'kalender', 'nachrichten', 'bereiche'\]/);
+  /* Die Tabs heissen seit dem Umbau Start/Kalender/Gruppe/Chat. Mit
+     den alten Namen leuchtete nach einem Wechsel zur Gruppe oder zum
+     Chat ueber den Router gar kein Tab. */
+  assert.match(router, /const TAB_ORDER = \['start', 'kalender', 'gruppe', 'chat'\]/);
+  assert.match(router, /if \(file === 'gruppe\.html'\) return 'gruppe';/);
+  assert.match(router, /if \(file === 'messages\.html'\) return 'chat';/);
+  assert.doesNotMatch(router, /return 'nachrichten'|return 'bereiche'/);
   assert.match(router, /function routeDirection\(from, to\)/);
   assert.match(router, /direction < 0 \? 'from-left' : 'from-right'/);
   assert.match(css, /\.tvza-route-frame\.is-entering\.from-right/);
@@ -166,7 +189,8 @@ test('mobile reminders stay thumb-reachable across routes without exposing the b
   assert.doesNotMatch(css, /\.global-reminder-backdrop \{[\s\S]{0,260}backdrop-filter/);
   assert.match(overlay, /function setContext[\s\S]*closeOverlay\(\);[\s\S]*trigger\.hidden/);
   assert.match(css, /\.global-reminder-fab__count\.has-open/);
-  assert.match(css, /\.global-reminder-add,[\s\S]*margin-top:12px/);
+  /* 12px, seit v.35.23.0 als Stufe geschrieben (css-token.test.mjs). */
+  assert.match(css, /\.global-reminder-add,[\s\S]*margin-top:var\(--s3\)/);
   assert.doesNotMatch(css, /\.global-reminder-list-view \{[\s\S]{0,180}min-height:min\(58dvh/);
   assert.match(css, /html\.tvza-content-frame \.global-reminder-fab/);
   assert.match(sw, /assets\/js\/reminders-overlay\.js/);
@@ -334,17 +358,29 @@ test('die Leiste laesst sich einklappen und behaelt dabei ihr Scrollen', async (
     'der Klappknopf gehoert in die Leiste, nicht an ihren Rand');
 
   /* Zugeklappt bleibt eine Symbolspalte stehen — der Weg zurueck
-     darf nicht verschwinden. Die Breite steht an beiden Stellen: an
-     der Leiste selbst und am Platz, den der Inhalt freilaesst. */
-  assert.match(css, /body\.nav-schmal \.nav \{[^}]*width:\s*64px/);
-  assert.match(css, /body\.nav-schmal\.has-nav \{[^}]*padding-left:\s*64px/);
-  assert.match(css, /body\.nav-schmal \.nav__marke\s*\{\s*display:\s*none/,
-    'in 64 Pixeln bricht das Wortzeichen um');
-  assert.match(css, /body\.nav-schmal \.nav__zeichen\s*\{\s*display:\s*block/,
-    'zugeklappt traegt der Kopf das App-Zeichen');
+     darf nicht verschwinden.
 
-  /* Am Handy gibt es nichts einzuklappen: die Leiste liegt unten. */
-  assert.match(css, /\.appbar__marke,\s*\.nav__kopf\s*\{\s*display:\s*none/);
+     Die Breite ist EINE Zahl, --leiste. Sie stand bis v.35.23.0 als
+     216px an fuenf Stellen und zugeklappt als 64px an drei weiteren;
+     wer eine vergass, bekam Inhalt unter der Leiste oder eine Luecke
+     daneben. Jetzt benutzen Leiste, Rumpf und Router-Rahmen dieselbe
+     Variable, und nur sie aendert sich beim Zuklappen. */
+  assert.match(css, /body \{ --leiste: \d+px; \}/);
+  assert.match(css, /body\.nav-schmal \{ --leiste: \d+px; \}/);
+  assert.match(css, /\n {2}\.nav \{[^}]*width: var\(--leiste\)/);
+  assert.match(css, /\.has-nav\s*\{[^}]*padding-left: var\(--leiste\)/);
+  assert.match(css, /\.tvza-route-frame \{\s*left: var\(--leiste\)/);
+  assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ''), /216px/,
+    'die alte Leistenbreite steht noch irgendwo als Zahl');
+
+  assert.match(css, /body\.nav-schmal \.nav__marke,[^{]*\{\s*display:\s*none/,
+    'in 72 Pixeln bricht das Wortzeichen um');
+  assert.match(css, /\.nav__zeichen \{ display: block;/,
+    'das Zeichen steht immer da, auf- wie zugeklappt');
+
+  /* Am Handy gibt es nichts einzuklappen: die Leiste liegt unten, und
+     Kopf und Fuss der Leiste verschwinden. */
+  assert.match(css, /\.appbar__marke, \.nav__kopf, \.nav__fuss \{ display: none; \}/);
 
   /* Die Wahl haengt am Geraet, nicht am Konto — wer am grossen
      Bildschirm aufgeklappt arbeitet und am kleinen zu, will genau
@@ -361,4 +397,106 @@ test('die Leiste laesst sich einklappen und behaelt dabei ihr Scrollen', async (
     assert.ok(worte[k], `${k} fehlt im Katalog`);
   }
   assert.match(shell, /knopf\.dataset\.i18nAttr = schmal/);
+});
+
+test('es gibt genau einen Weg zu den Einstellungen, am Handy wie am Laptop', async () => {
+  const [css, shell, nav, gruppe, einheit, video] = await Promise.all([
+    read('assets/css/kit.css'),
+    read('assets/js/shell.js'),
+    read('assets/js/nav.js'),
+    read('assets/js/feature/gruppe/gruppe.js'),
+    read('assets/js/feature/einheit/einheit.js'),
+    read('assets/js/feature/video/video.js'),
+  ]);
+
+  /* Bis v.35.23.0 waren es drei: ein Zahnrad im Kopf der Gruppe, der
+     Avatar im Kopf von Start und den Bereichen, und "Einstellungen"
+     unten in der Leiste — die es nur auf drei Seiten gab. */
+  assert.doesNotMatch(shell, /shellGear|nav__settings|shellNavSettings/,
+    'ein zweiter Einstellungs-Knopf ist zurueck');
+  for (const [datei, quelle] of [['gruppe.js', gruppe], ['einheit.js', einheit], ['video.js', video]]) {
+    assert.doesNotMatch(quelle, /onSettings/, `${datei}: reicht wieder ein eigenes Zahnrad herein`);
+  }
+
+  /* Das Konto ist EIN Bauteil an zwei Orten: im Kopf (Handy) und am
+     Fuss der Leiste (Laptop). Nie beide sichtbar. */
+  assert.match(shell, /export function kontoKnopf\(ort\)/);
+  assert.match(shell, /kontoKnopf\('kopf'\)/);
+  assert.match(shell, /kontoKnopf\('leiste'\)/);
+  assert.match(nav, /kontoKnopf\('kopf'\)/, 'die Bereichsseiten bauen ihr Menue selbst');
+  assert.match(css, /\.appbar__marke, \.nav__kopf, \.nav__fuss \{ display: none; \}/,
+    'am Handy steht der Leistenfuss mit dem Konto nicht da');
+  assert.match(css, /\n {2}\.appbar \.acct \{ display: none; \}/,
+    'am Laptop steht das Konto im Kopf nicht da');
+
+  /* Die Einstellungen muessen sich auch auf einer Seite oeffnen, die
+     ohne nav.js und ausserhalb des Routers geladen wird — sonst tut
+     der Menuepunkt nichts. */
+  assert.match(shell, /function sichereEinstellungen\(\)/);
+  assert.match(shell, /mountSettingsLayer\(\)/);
+});
+
+test('ein Tab hat keinen Zurueck-Pfeil, und kein Winkel steht neben einem anderen', async () => {
+  const [shell, gruppe, einheit, css] = await Promise.all([
+    read('assets/js/shell.js'),
+    read('assets/js/feature/gruppe/gruppe.js'),
+    read('assets/js/feature/einheit/einheit.js'),
+    read('assets/css/kit.css'),
+  ]);
+
+  /* Die Gruppe ist ein Tab. Ihr Zurueck-Pfeil stand am Laptop direkt
+     neben dem Klappknopf der Leiste — zwei gleiche Winkel, zwei
+     verschiedene Bedeutungen. */
+  assert.match(gruppe, /mountShell\(\{\s*variant: 'tab'/);
+  assert.doesNotMatch(gruppe, /backHref/);
+  /* Eine Einheit ist eine Unterseite der Gruppe: die hat einen. */
+  assert.match(einheit, /variant: 'bereich'[\s\S]{0,120}backHref: '\.\/gruppe\.html'/);
+  /* Den Pfeil gibt es nur in der Unterseiten-Fassung. */
+  assert.match(shell, /variant === 'bereich'\s*\?\s*`<button class="appbar__btn" id="shellBack"/);
+
+  /* Der Klappknopf ist kein Winkel mehr, sondern ein Rechteck mit
+     Trennstrich. */
+  assert.match(shell, /icon\('leiste', 18\)/);
+  assert.doesNotMatch(shell.slice(shell.indexOf('export function mountRail')),
+    /<path d="M15 18l-6-6 6-6"\/>/, 'in der Leiste steht wieder ein Winkel');
+  assert.match(css, /body\.nav-schmal \.nav__klapp svg \{ transform: scaleX\(-1\); \}/);
+});
+
+test('der Kopf beginnt an derselben Kante wie der Inhalt', async () => {
+  const [css, kalender, matura] = await Promise.all([
+    read('assets/css/kit.css'),
+    read('assets/css/feature/calendar.css'),
+    read('assets/css/feature/matura.css'),
+  ]);
+  /* Vorher begann der Titel am linken Rand des Kopfs und der Inhalt
+     rund 100 Pixel weiter rechts. Jetzt teilen sich beide Breite und
+     Rand; Seiten mit breiterem Inhalt setzen die zwei Variablen. */
+  assert.match(css, /max-width: var\(--kopf-breite, var\(--max-width\)\);/);
+  assert.match(css, /\.main \{\s*max-width: var\(--max-width\);/,
+    'der Inhalt hat eine andere Breite als der Kopf');
+
+  /* Der Rand muss derselbe sein wie der des Inhalts AM LAPTOP — dort
+     gilt der ausgerichtete Kopf. .main hat dort eine eigene Regel;
+     ihr seitlicher Wert und der Rand des Kopfs werden verglichen,
+     statt beide als Zahl in den Test zu schreiben. */
+  const kopfRand = css.match(/padding: 0 var\(--kopf-rand, (var\(--s\d\))\);/)?.[1];
+  const mainLaptop = css.match(/@media \(min-width: 900px\) \{\s*\.main \{ padding: \S+ (var\(--s\d\)) /)?.[1];
+  assert.ok(kopfRand, 'Rand des Kopfs nicht gefunden');
+  assert.ok(mainLaptop, 'Rand von .main am Laptop nicht gefunden');
+  assert.equal(kopfRand, mainLaptop, 'Kopf und Inhalt haben am Laptop verschiedene Raender');
+  assert.match(kalender, /--kopf-breite:1440px;/);
+  assert.match(matura, /--kopf-breite: none;/);
+});
+
+test('das n im Wortzeichen ist auf Navy sichtbar', async () => {
+  const css = await read('assets/css/kit.css');
+  /* .firn--hell > b stand VOR .firn > b und war gleich spezifisch —
+     die spaetere Regel gewann, und das n war Marken-Blau auf Navy.
+     Die helle Fassung muss spezifischer sein UND danach stehen. */
+  const hell = css.indexOf('.firn.firn--hell > b');
+  const normal = css.indexOf('.firn > b {');
+  assert.ok(hell > 0, '.firn.firn--hell > b fehlt');
+  assert.ok(hell > normal, 'die helle Regel steht vor der normalen');
+  assert.match(css, /\.firn\.firn--hell > b \{ color: var\(--alpenglut\); \}/);
+  assert.match(css, /--alpenglut: #F6A183;/);
 });

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="theme-color" content="#1A1A2E" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="TVZA" />
+  <meta name="apple-mobile-web-app-title" content="Firn" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="assets/icons/firn.svg" />
   <link rel="apple-touch-icon" href="assets/icons/firn-192.png" />
@@ -22,7 +22,7 @@
   </script>
   <script src="assets/js/theme.js?v=3"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=7" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=8" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="assets/css/feature/access.css?v=1" />
   <title data-i18n="home.seitentitel">Firn</title>
@@ -30,7 +30,7 @@
   <script src="assets/js/ui-fx.js?v=26" defer></script>
 </head>
 <body>
-  <script src="assets/js/welcome.js?v=5"></script>
+  <script src="assets/js/welcome.js?v=6"></script>
   <div class="app">
 
     <div class="offline-banner" id="offlineBanner">
@@ -168,7 +168,7 @@
             <a class="row" href="pages/watchlist.html" id="cardWatch" data-bereich="watch" draggable="false" hidden>
               <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
               <span class="row__body">
-                <span class="row__title" data-i18n="mod.watch.name">TVZA Watchlist</span>
+                <span class="row__title" data-i18n="mod.watch.name">Watchlist</span>
                 <span class="row__sub" data-i18n="mod.watch.sub">Kurse, Märkte &amp; News</span>
               </span>
               <span class="row__end">
@@ -319,7 +319,7 @@
     <div class="modal">
       <div class="modal-head">
         <div>
-          <div class="modal-kicker">TVZA</div>
+          <div class="modal-kicker">Firn</div>
           <div class="modal-title" data-i18n="set.titel">Einstellungen</div>
           <p class="modal-subtitle" data-i18n="set.untertitel">Passe deine Ansicht und deine Tracker an.</p>
         </div>
@@ -383,7 +383,7 @@
       <hr class="settings-divider" id="watchSettingsDivider" />
 
       <section class="settings-section" id="watchSettingsSection" data-settings-section="watch">
-        <p class="settings-section-title" data-i18n="mod.watch.name">TVZA Watchlist</p>
+        <p class="settings-section-title" data-i18n="mod.watch.name">Watchlist</p>
         <div class="form-group">
           <label class="form-label" for="settingsWatchApiKey">Eigener Finnhub API-Key <small>(optional)</small></label>
           <input class="form-input" id="settingsWatchApiKey" type="text" placeholder="Gemeinsamer Schlüssel ist aktiv" autocomplete="off" />
@@ -476,13 +476,13 @@
     </div>
   </div>
 
-  <script type="module" src="./assets/js/feature/start/start.js?v=2"></script>
+  <script type="module" src="./assets/js/feature/start/start.js?v=3"></script>
 
   <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
-  <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=1"></script>
+  <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=2"></script>
 
   <!-- ═══ Live dashboard tile content (weather, watchlist, matura, food, calendar) ═══ -->
-  <script type="module" src="./assets/js/feature/start/heute.js?v=1"></script>
-  <script type="module" src="./assets/js/nav.js?v=8"></script>
+  <script type="module" src="./assets/js/feature/start/heute.js?v=2"></script>
+  <script type="module" src="./assets/js/nav.js?v=9"></script>
 </body>
 </html>

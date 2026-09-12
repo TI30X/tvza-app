@@ -21,7 +21,7 @@
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell } from '../../shell.js?v=9';
+import { mountShell } from '../../shell.js?v=10';
 import {
   ladeGruppe, ladePlaene, ladeProtokoll, protokollSpeichern,
 } from '../../groups.js';
@@ -355,7 +355,6 @@ function erledigtGeklickt() {
     title: t('eh.einheit', 'Einheit'),
     backHref: './gruppe.html',
     profile: {},
-    onSettings: () => window.tvzaOpenSettings?.(),
   });
 
   $('btnZurueckGruppe')?.addEventListener('click', () => { location.href = './gruppe.html'; });

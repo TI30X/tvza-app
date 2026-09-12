@@ -141,3 +141,33 @@ test('die Anmeldeseite rechnet in Stufen, nicht in erfundenen Zahlen', async () 
   assert.deepEqual(treffer.map(m => `${m[1]}: ${m[2].trim()}`), [],
     'harte px-Werte im Stil der Anmeldeseite — dafuer gibt es --s1 bis --s7');
 });
+
+/* ── Jeder Abstand im Kit kommt aus der Skala ─────────────────────
+   Bis v.35.23.0 standen in kit.css 137 Abstaende mit freien Pixeln —
+   6, 10, 13, 14 … — neben 125 aus der Skala. Mehr als die Haelfte. Das
+   Auge sieht das nicht als einzelnen Fehler, sondern als Unruhe: der
+   Leertext beginnt woanders als die Ueberschrift, eine Zeile hat 13
+   Pixel Luft, die naechste 12, der Knopf darunter 20.
+
+   Die Regel, die dieser Test haelt:
+   - padding, margin und gap ab 4 Pixeln nehmen eine Stufe --s1…--s7
+     (oder rechnen mit ihnen in calc);
+   - clamp(…) bleibt frei — das ist absichtlich fliessend;
+   - unter 4 Pixeln und negative Werte sind Geometrie, keine Abstaende
+     (ein Haarstrich, ein Punkt, der ueber einer Ecke sitzt).
+
+   Er gilt fuer kit.css, das Bauteil jeder Seite. Die Seiten-Stile in
+   feature/ sind der naechste Schritt. */
+test('jeder Abstand in kit.css kommt aus der Skala', async () => {
+  const roh = await readFile(join(WURZEL, 'assets', 'css', 'kit.css'), 'utf8');
+  const code = roh.replace(/\/\*[\s\S]*?\*\//g, '');
+  const funde = [];
+  const re = /(?:^|[;{\s])((?:padding|margin|gap|row-gap|column-gap)(?:-[a-z-]+)?)\s*:\s*([^;}]+)/g;
+  for (const m of code.matchAll(re)) {
+    const frei = m[2].replace(/clamp\((?:[^()]|\([^()]*\))*\)|var\([^()]*\)/g, '');
+    for (const px of frei.matchAll(/(^|[^\w.-])(\d+(?:\.\d+)?)px\b/g)) {
+      if (Number(px[2]) > 3) funde.push(`${m[1]}: ${m[2].trim()}`);
+    }
+  }
+  assert.deepEqual(funde, [], `Abstaende mit freien Pixeln:\n  ${funde.join('\n  ')}`);
+});

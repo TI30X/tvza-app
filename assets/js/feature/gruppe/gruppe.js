@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle } from '../../shell.js?v=9';
+import { mountShell, setShellTitle } from '../../shell.js?v=10';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -1322,12 +1322,14 @@ async function einladen() {
   let profile = {};
   try { profile = await getProfile(user); } catch { /* Kopf bleibt schlicht */ }
 
+  /* Die Gruppe ist ein TAB, keine Unterseite: kein Zurueck-Pfeil. Er
+     stand hier bis v.35.23.0 und am Laptop direkt neben dem
+     Klappknopf der Leiste — zwei gleiche Winkel, zwei Bedeutungen.
+     Die Einstellungen stehen im Konto, nicht als eigenes Zahnrad. */
   mountShell({
-    variant: 'bereich',
+    variant: 'tab',
     title: t('nav.gruppe', 'Gruppe'),
-    backHref: '../index.html',
     profile,
-    onSettings: () => window.tvzaOpenSettings?.(),
   });
 
   $('btnNeu')?.addEventListener('click', neueGruppe);

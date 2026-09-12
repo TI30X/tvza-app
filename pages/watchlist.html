@@ -13,9 +13,9 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=7" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=8" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
-  <title>TVZA Watchlist</title>
+  <title>Watchlist — Firn</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
 
@@ -194,7 +194,7 @@
     F.forEach(([cx,cy,r,dur,delay]) => { flakes += `<circle class="flake" cx="${cx}" cy="${cy}" r="${r}" style="animation-duration:${dur}s;animation-delay:${delay}s"></circle>`; });
     const el = document.createElement('div');
     el.id = 'wl-splash';
-    el.setAttribute('role','dialog'); el.setAttribute('aria-label','TVZA Watchlist');
+    el.setAttribute('role','dialog'); el.setAttribute('aria-label','Watchlist');
     el.innerHTML = `
       <div class="glow"></div>
       <div class="chip c1">SMI <span class="u">▲</span></div>
@@ -221,7 +221,7 @@
           <path class="line" pathLength="1" d="M10,196 L64,150 L112,174 L172,134 L222,162 L285,104"/>
           <circle class="dot" cx="285" cy="104" r="5"/>
         </svg>
-        <div class="mark">TVZA <span class="accent">Watchlist</span></div>
+        <div class="mark">Firn <span class="accent">Watchlist</span></div>
         <div class="sub">Märkte · Kurse · News</div>
       </div>
       <div class="skip-hint">Tippen zum Überspringen</div>`;
@@ -244,7 +244,7 @@
     <header class="appbar appbar--bereich" data-bereich="watch">
       <div class="appbar__inner">
         <a href="../index.html" class="appbar__btn back-btn" aria-label="Zurück" data-i18n-attr="aria-label:a11y.zurueck"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-        <span class="appbar__title" data-i18n="mod.watch.name">TVZA Watchlist</span>
+        <span class="appbar__title" data-i18n="mod.watch.name">Watchlist</span>
         <span class="appbar__end">
         <button class="appbar__btn" id="themeToggle" title="Theme wechseln" data-i18n-attr="title:pg.theme"></button>
         </span>
@@ -865,6 +865,6 @@
     renderKeyHint();
     loadNews();
   </script>
-  <script type="module" src="../assets/js/nav.js?v=8"></script>
+  <script type="module" src="../assets/js/nav.js?v=9"></script>
 </body>
 </html>

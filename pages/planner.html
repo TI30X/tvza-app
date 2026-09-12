@@ -12,11 +12,11 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=7" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=8" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=12" />
+  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=13" />
   <link rel="stylesheet" href="../assets/css/feature/planner.css?v=1" />
-  <title>Kalender &amp; Erinnerungen — TVZA</title>
+  <title>Kalender &amp; Erinnerungen — Firn</title>
   <style>
     .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
     .seg button { border:0; background:transparent; color:var(--ink-soft); font:inherit; font-weight:700; font-size:13px;
@@ -386,7 +386,7 @@
           <p class="sync-copy" data-i18n="cal.icsHinweis">ICS funktioniert mit Google, Outlook/Exchange, Apple und Samsung.</p>
           <div class="sync-actions">
             <button class="pill primary" id="calendarImportBtn" type="button" data-i18n="cal.icsImport">ICS importieren</button>
-            <button class="pill" id="calendarExportBtn" type="button" data-i18n="cal.tvzaExport">TVZA exportieren</button>
+            <button class="pill" id="calendarExportBtn" type="button" data-i18n="cal.tvzaExport">Kalender exportieren</button>
             <input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden />
           </div>
           <p class="sync-status" id="calendarSyncStatus"></p>
@@ -2533,7 +2533,7 @@
       const body = buildCalendarIcs({
         events,
         reminders:showPersonal ? reminders : [],
-        calendarName:'TVZA · Sichtbare Kalender'
+        calendarName:'Firn · Sichtbare Kalender'
       });
       const blob = new Blob([body], { type:'text/calendar;charset=utf-8' });
       const url = URL.createObjectURL(blob);
@@ -2542,7 +2542,7 @@
       anchor.download = 'tvza-kalender.ics';
       anchor.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      $('calendarSyncStatus').textContent = 'TVZA-Kalender wurde exportiert.';
+      $('calendarSyncStatus').textContent = 'Firn-Kalender wurde exportiert.';
     }
     async function importCalendarFile(file) {
       const status = $('calendarSyncStatus');
@@ -2717,6 +2717,6 @@
     }
 
   </script>
-  <script type="module" src="../assets/js/nav.js?v=8"></script>
+  <script type="module" src="../assets/js/nav.js?v=9"></script>
 </body>
 </html>

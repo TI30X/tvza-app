@@ -131,7 +131,7 @@ export function reportClientError(context, error) {
 export const MODULES = {
   ski:  { key:'ski',  name:'Ski Tracker',    sub:'Schliff & Wachs',        emoji:'🎿', page:'pages/skitracker.html',  perUser:true,  shareable:true  },
   food: { key:'food', name:'Food Tracker',   sub:'Kalorien & Nährstoffe',  emoji:'🍎', page:'pages/foodtracker.html', perUser:true,  shareable:true  },
-  watch:{ key:'watch',name:'TVZA Watchlist', sub:'Kurse, Märkte & News',   emoji:'📈', page:'pages/watchlist.html',  perUser:true,  shareable:true  },
+  watch:{ key:'watch',name:'Watchlist', sub:'Kurse, Märkte & News',   emoji:'📈', page:'pages/watchlist.html',  perUser:true,  shareable:true  },
   trip: { key:'trip', name:'Kalender & Erinnerungen', sub:'Termine, Reisen & Erinnerungen', emoji:'🗓️', page:'pages/planner.html', perUser:false, shareable:false },
   weather:{ key:'weather', name:'Wetter',      sub:'Wetter & Bergprognose',  emoji:'⛅', page:'pages/weather.html',    perUser:false, shareable:false },
   dm:    { key:'dm',   name:'Nachrichten',     sub:'Direktnachrichten',      emoji:'💬', page:'pages/messages.html',   perUser:false, shareable:false },

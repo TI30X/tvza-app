@@ -17,8 +17,9 @@
    Loaded as a module, because it reads MODULES from firebase-config.
    ══════════════════════════════════════════════════════════════════ */
 
-import { MODULES, enabledModules } from './firebase-config.js';
-import { mountAppRouter } from './router.js?v=7';
+import { auth, MODULES, enabledModules } from './firebase-config.js';
+import { mountSettingsLayer } from './settings-layer.js';
+import { mountAppRouter } from './router.js?v=8';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
 // The module skips content frames, so routed pages mount exactly one bell.
@@ -55,6 +56,11 @@ export const ICONS = {
   close:   '<path d="M18 6L6 18M6 6l12 12"/>',
   trash:   '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
   sun:     '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>',
+  /* Die Leiste ein- und ausklappen. Absichtlich KEIN Pfeil: neben dem
+     Zurueck-Pfeil im Kopf standen sonst zwei gleiche Winkel nebeneinander,
+     die zwei verschiedene Dinge taten. */
+  leiste:  '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
+  abmelden: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
 };
 
 /* Weather glyphs, keyed off WMO codes. index.html needed these in two
@@ -193,7 +199,6 @@ let shellState = { unread: 0, profile: null };
  * @param {string} [o.date]      Start: the date under the greeting
  * @param {string} [o.backHref]  Bereich pages: where the back arrow goes
  * @param {object} [o.profile]   for the avatar initials and the rail
- * @param {Function} [o.onSettings] gear handler; omit to hide the gear
  */
 export function mountShell(o = {}) {
   const variant = o.variant || 'tab';
@@ -202,103 +207,57 @@ export function mountShell(o = {}) {
 
   document.querySelectorAll('.appbar, .nav').forEach(el => el.remove());
 
-  /* ── Header ─────────────────────────────────────────────────── */
+  /* ── Kopf ───────────────────────────────────────────────────────
+     Auf jeder Seite dasselbe: links der Titel, rechts das, was nur
+     diese Seite braucht, und — nur am Handy — das Konto. Am Laptop
+     traegt die Leiste das Konto; zwei Wege zu den Einstellungen auf
+     einem Bildschirm waren einer zu viel.
+
+     Einen Zurueck-Pfeil haben nur Unterseiten (eine Einheit, eine
+     Videoanalyse). Ein Tab ist kein Ort, von dem man zurueckgeht. */
   const bar = document.createElement('header');
-  bar.className = 'appbar';
+  bar.className = variant === 'bereich' ? 'appbar appbar--unter' : 'appbar';
   if (o.bereich) bar.dataset.bereich = o.bereich;
 
-  const initials = initialsOf(o.profile);
+  const titel = o.greeting
+    ? `<div class="appbar__greet">${esc(o.greeting)}</div>
+       ${o.date ? `<div class="appbar__date">${esc(o.date)}</div>` : ''}`
+    : `<span class="appbar__title">${esc(o.title || '')}</span>`;
 
-  if (variant === 'bereich') {
-    bar.innerHTML = `
-      <div class="appbar__inner">
-        <button class="appbar__btn" id="shellBack" data-i18n-attr="aria-label:a11y.zurueck" aria-label="Zurück">${icon('back')}</button>
-        <span class="appbar__title">${esc(o.title || '')}</span>
-        ${o.onSettings
-          ? `<button class="appbar__btn" id="shellGear" data-i18n-attr="aria-label:nav.einstellungen" aria-label="Einstellungen">${icon('gear')}</button>`
-          : '<span class="appbar__btn" style="visibility:hidden"></span>'}
-      </div>
-      <div class="appbar__accent"></div>`;
-  } else {
-    const heading = o.greeting
-      ? `<div class="appbar__greet">${esc(o.greeting)}</div>
-         ${o.date ? `<div class="appbar__date">${esc(o.date)}</div>` : ''}`
-      : `<div class="appbar__greet">${esc(o.title || '')}</div>`;
-    bar.innerHTML = `
-      <div class="appbar__inner">
-        <div class="appbar__spacer">${heading}</div>
-        <a class="wx-pill" id="shellWx" href="${b}pages/weather.html" style="display:none"></a>
-        <button class="avatar" id="shellAvatar" data-i18n-attr="aria-label:a11y.konto" aria-label="Konto">${esc(initials)}</button>
-      </div>`;
-  }
+  bar.innerHTML = `
+    <div class="appbar__inner">
+      ${variant === 'bereich'
+        ? `<button class="appbar__btn" id="shellBack" type="button" data-i18n-attr="aria-label:a11y.zurueck" aria-label="Zurück">${icon('back')}</button>`
+        : ''}
+      <div class="appbar__spacer">${titel}</div>
+      <span class="appbar__end">
+        ${variant === 'tab' ? `<a class="wx-pill" id="shellWx" href="${b}pages/weather.html" style="display:none"></a>` : ''}
+      </span>
+    </div>`;
   document.body.insertBefore(bar, document.body.firstChild);
+  const ende = bar.querySelector('.appbar__end');
+  ende.appendChild(kontoKnopf('kopf'));
+  /* Die Glocke legt notifications.js an, sobald die Anmeldung steht.
+     Auf einer Seite mit mountShell ist der Kopf dann manchmal noch nicht
+     gebaut, und die Glocke schwebte mit position:fixed ueber allem — am
+     Handy genau ueber dem Konto-Kreis, der dadurch nicht mehr zu
+     treffen war. Der Kopf gehoert shell.js, also holt shell.js sie
+     herein. Kommt sie spaeter, findet notifications.js .appbar__end. */
+  const schwebend = document.querySelector('.tvzn-bell.tvzn-float');
+  if (schwebend) {
+    schwebend.classList.remove('tvzn-float');
+    ende.insertBefore(schwebend, ende.querySelector('.acct'));
+  }
   relabel(bar);
 
-  /* ── Navigation ─────────────────────────────────────────────── */
-  const active = activeTab();
-  const nav = document.createElement('nav');
-  nav.className = 'nav';
-  nav.setAttribute('aria-label', label('nav.haupt', 'Hauptnavigation'));
-  nav.dataset.i18nAttr = 'aria-label:nav.haupt';
+  mountRail({ profile: o.profile });
 
-  const tabs = TABS.map(t => `
-    <a class="nav__item${t.id === active ? ' is-active' : ''}" href="${b}${t.href}"
-       data-nav-tab="${t.id}"
-       ${t.id === active ? 'aria-current="page"' : ''}>
-      ${icon(t.icon, 21)}
-      <span data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
-      ${t.id === 'chat' ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>' : ''}
-    </a>`).join('');
-
-  /* Die Leiste traegt die vier Tabs und die Einstellungen. Die
-     Bereiche stehen auf Start — auf einem Laptop standen sie sonst
-     zweimal auf demselben Bildschirm. */
-  const currentFile = location.pathname.split('/').pop() || 'index.html';
-
-  /* Der Kopf der Leiste: Wortzeichen und der Knopf zum Einklappen.
-     Auf dem Navy traegt das Marken-Blau nicht, darum firn--hell.
-
-     Zugeklappt steht dort das App-Symbol — in 64 Pixeln bricht "Firn"
-     um und sieht aus wie ein Fehler. */
-  const marke = `
-    <div class="nav__kopf">
-      <span class="nav__marke firn firn--hell" aria-hidden="true">Fir<b>n</b></span>
-      <img class="nav__zeichen" src="${b}assets/icons/firn.svg" alt="" aria-hidden="true" />
-      <button class="nav__klapp" id="shellNavKlapp" type="button"
-              data-i18n-attr="title:nav.einklappen;aria-label:nav.einklappen"
-              title="Leiste einklappen" aria-expanded="true">
-        <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-    </div>`;
-
-  nav.innerHTML = marke + tabs + (o.onSettings
-    ? `<a class="nav__item nav__settings" id="shellNavSettings" href="#">${icon('gear', 21)}<span data-i18n="nav.einstellungen">Einstellungen</span></a>`
-    : '');
-
-  document.body.appendChild(nav);
-  relabel(nav);
-  mountGlobalReminderOverlay({ activeFile:currentFile });
-  document.body.classList.add('has-nav');
-  nav.addEventListener('click', event => {
-    if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
-  });
-  mountAppRouter(nav);
-
-  /* ── Wiring ─────────────────────────────────────────────────── */
   const backBtn = document.getElementById('shellBack');
   if (backBtn) backBtn.onclick = () => {
     if (o.backHref) location.href = o.backHref;
     else if (history.length > 1) history.back();
     else location.href = b + 'index.html';
   };
-  const gear = document.getElementById('shellGear');
-  if (gear && o.onSettings) gear.onclick = o.onSettings;
-  const navSettings = document.getElementById('shellNavSettings');
-  if (navSettings && o.onSettings) navSettings.onclick = e => { e.preventDefault(); o.onSettings(); };
-  const avatar = document.getElementById('shellAvatar');
-  if (avatar) avatar.onclick = o.onAccount || o.onSettings || null;
-
-  verkabelLeiste();
 
   if (window.tvzaShellModulesHandler) {
     window.removeEventListener('tvza-modules-change', window.tvzaShellModulesHandler);
@@ -314,6 +273,163 @@ export function mountShell(o = {}) {
 
   setUnread(shellState.unread);
   return bar;
+}
+
+/* ══ Die Leiste ═════════════════════════════════════════════════════
+   EIN Baustein fuer alle Seiten. Bis v.35.23.0 bauten zwei Dateien je
+   eine eigene: shell.js die volle (Marke, Einklappen, Einstellungen)
+   fuer drei Seiten, nav.js eine magere mit nur den vier Tabs fuer alle
+   anderen. Auf Start sah die Leiste darum anders aus als auf Gruppe.
+
+   Aufbau am Laptop, von oben nach unten: Zeichen und Wortmarke, die
+   vier Tabs, und am Fuss das Konto und der Klappknopf. Das Konto am
+   Fuss ist der EINE Weg zu den Einstellungen auf diesem Bildschirm.
+   Am Handy liegt die Leiste unten, und Kopf und Fuss der Leiste
+   verschwinden — dort traegt der Kopf der Seite das Konto. */
+export function mountRail({ profile = null } = {}) {
+  sichereEinstellungen();
+
+  const vorhanden = document.querySelector('.nav');
+  if (vorhanden) {
+    setzeKonto(profile);
+    return vorhanden;
+  }
+
+  const b = base();
+  const active = activeTab();
+  const nav = document.createElement('nav');
+  nav.className = 'nav';
+  nav.setAttribute('aria-label', label('nav.haupt', 'Hauptnavigation'));
+  nav.dataset.i18nAttr = 'aria-label:nav.haupt';
+
+  const tabs = TABS.map(t => `
+    <a class="nav__item${t.id === active ? ' is-active' : ''}" href="${b}${t.href}"
+       data-nav-tab="${t.id}" title="${t.label}" data-i18n-attr="title:${TAB_I18N[t.id]}"
+       ${t.id === active ? 'aria-current="page"' : ''}>
+      ${icon(t.icon, 20)}
+      <span class="nav__wort" data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
+      ${t.id === 'chat' ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>' : ''}
+    </a>`).join('');
+
+  /* Das Zeichen steht links vom Wort und bleibt stehen, wenn die
+     Leiste zuklappt — in 64 Pixeln bricht "Firn" um, das Zeichen
+     nicht. */
+  nav.innerHTML = `
+    <a class="nav__kopf" href="${b}index.html" aria-label="Firn — Start">
+      <img class="nav__zeichen" src="${b}assets/icons/firn.svg" alt="" width="28" height="28" />
+      <span class="nav__marke firn firn--hell" aria-hidden="true">Fir<b>n</b></span>
+    </a>
+    ${tabs}
+    <div class="nav__fuss">
+      <button class="nav__klapp" id="shellNavKlapp" type="button"
+              data-i18n-attr="title:nav.einklappen;aria-label:nav.einklappen"
+              title="Leiste einklappen" aria-label="Leiste einklappen" aria-expanded="true">
+        ${icon('leiste', 18)}
+        <span class="nav__wort" data-i18n="nav.einklappen">Leiste einklappen</span>
+      </button>
+    </div>`;
+  nav.querySelector('.nav__fuss').prepend(kontoKnopf('leiste'));
+
+  document.body.appendChild(nav);
+  relabel(nav);
+  setzeKonto(profile);
+
+  const currentFile = location.pathname.split('/').pop() || 'index.html';
+  mountGlobalReminderOverlay({ activeFile:currentFile });
+  document.body.classList.add('has-nav');
+  nav.addEventListener('click', event => {
+    if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
+  });
+  mountAppRouter(nav);
+  verkabelLeiste();
+  return nav;
+}
+
+/* Einstellungen muessen sich von jeder Seite oeffnen lassen. Bisher
+   tat das nur nav.js — eine Seite mit mountShell und ohne nav.js
+   (gruppe.html direkt geoeffnet) hatte ein Zahnrad, das nichts tat.
+   Im Rahmen des Routers leitet router.js die Anfrage nach oben
+   weiter; dort darf hier nichts ueberschrieben werden. */
+function sichereEinstellungen() {
+  if (typeof window.tvzaOpenSettings === 'function') return;
+  const imRahmen = window.parent !== window &&
+    new URLSearchParams(location.search).get('tvzaFrame') === '1';
+  if (imRahmen) return;
+  const ebene = mountSettingsLayer();
+  window.tvzaOpenSettings = section => ebene.open(section || '');
+}
+
+/* ══ Das Konto ══════════════════════════════════════════════════════
+   Ein Knopf mit einem Menue: Einstellungen und Abmelden. Er steht an
+   zwei Stellen, aber nie zweimal sichtbar — 'kopf' nur am Handy,
+   'leiste' nur am Laptop. Beide sind dasselbe Bauteil, damit sie nicht
+   auseinanderlaufen. */
+let konto = { name: '', mail: '', kuerzel: '·' };
+
+export function kontoKnopf(ort) {
+  const wrap = document.createElement('div');
+  wrap.className = `acct acct--${ort}`;
+  wrap.dataset.konto = ort;
+  wrap.innerHTML = `
+    <button class="${ort === 'leiste' ? 'nav__konto' : 'avatar'}" type="button"
+            aria-haspopup="menu" aria-expanded="false"
+            data-i18n-attr="title:a11y.konto" title="Konto">
+      ${ort === 'leiste'
+        ? `<span class="avatar avatar--leiste" data-konto-kuerzel>${esc(konto.kuerzel)}</span>
+           <span class="nav__kontoText">
+             <span class="nav__kontoName" data-konto-name>${esc(konto.name)}</span>
+             <span class="nav__kontoSub" data-i18n="acct.einstellungen">Einstellungen</span>
+           </span>`
+        : `<span data-konto-kuerzel>${esc(konto.kuerzel)}</span>`}
+    </button>
+    <div class="acct__menu" role="menu" hidden>
+      <div class="acct__head">
+        <span class="acct__who" data-konto-name>${esc(konto.name)}</span>
+        <span class="acct__mail" data-konto-mail>${esc(konto.mail)}</span>
+      </div>
+      <button class="acct__item" data-act="settings" type="button" role="menuitem">
+        ${icon('gear', 17)}<span data-i18n="acct.einstellungen">Einstellungen</span></button>
+      <button class="acct__item acct__item--danger" data-act="logout" type="button" role="menuitem">
+        ${icon('abmelden', 17)}<span data-i18n="acct.abmelden">Abmelden</span></button>
+    </div>`;
+
+  const knopf = wrap.querySelector('button');
+  const menu = wrap.querySelector('.acct__menu');
+  const zu = () => { menu.hidden = true; knopf.setAttribute('aria-expanded', 'false'); };
+
+  knopf.addEventListener('click', event => {
+    event.stopPropagation();
+    menu.hidden = !menu.hidden;
+    knopf.setAttribute('aria-expanded', String(!menu.hidden));
+  });
+  document.addEventListener('click', event => { if (!wrap.contains(event.target)) zu(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') zu(); });
+
+  menu.addEventListener('click', async event => {
+    const act = event.target.closest('[data-act]')?.dataset.act;
+    if (!act) return;
+    zu();
+    if (act === 'settings') window.tvzaOpenSettings?.();
+    if (act === 'logout' && confirm(label('acct.abmeldenFrage', 'Abmelden?'))) {
+      try { localStorage.removeItem('tvza-name'); } catch {}
+      const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      await signOut(auth);
+      location.href = base() + 'login.html';
+    }
+  });
+  return wrap;
+}
+
+/* Name und Kuerzel nachtragen, sobald das Profil da ist. Die Leiste
+   steht vorher schon — sie wartet nicht auf Firestore. */
+export function setzeKonto(profile, mail) {
+  const name = String(profile?.displayName || profile?.name || '').trim()
+    || (() => { try { return localStorage.getItem('tvza-name') || ''; } catch { return ''; } })();
+  const adresse = mail || auth?.currentUser?.email || konto.mail || '';
+  konto = { name, mail: adresse, kuerzel: initialsOf({ displayName: name || adresse }) };
+  document.querySelectorAll('[data-konto-name]').forEach(el => { el.textContent = konto.name; });
+  document.querySelectorAll('[data-konto-mail]').forEach(el => { el.textContent = konto.mail; });
+  document.querySelectorAll('[data-konto-kuerzel]').forEach(el => { el.textContent = konto.kuerzel; });
 }
 
 /** Unread messages: a dot on the phone, a number in the laptop rail. */
@@ -362,6 +478,11 @@ function setzeLeiste(schmal) {
     knopf.dataset.i18nAttr = schmal
       ? 'title:nav.ausklappen;aria-label:nav.ausklappen'
       : 'title:nav.einklappen;aria-label:nav.einklappen';
+    const text = knopf.querySelector('.nav__wort');
+    if (text) {
+      text.textContent = wort;
+      text.dataset.i18n = schmal ? 'nav.ausklappen' : 'nav.einklappen';
+    }
   }
   try { localStorage.setItem(LEISTE, schmal ? 'schmal' : 'breit'); } catch {}
 }

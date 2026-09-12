@@ -53,6 +53,9 @@ body.matura-page {
   gap: 24px;
 }
 
+/* Die Matura-Seiten laufen ueber die volle Breite; der Kopf auch. */
+.matura-page { --kopf-breite: none; }
+
 .matura-page .matura-main,
 .matura-page .tracker-main {
   max-width: none;

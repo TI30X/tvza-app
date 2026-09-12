@@ -177,14 +177,14 @@ function reminderLines(reminder, index) {
 export function buildCalendarIcs({
   events = [],
   reminders = [],
-  calendarName = 'TVZA'
+  calendarName = 'Firn'
 } = {}) {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'PRODID:-//TVZA//Kalender und Erinnerungen//DE',
+    'PRODID:-//Firn//Kalender und Erinnerungen//DE',
     `X-WR-CALNAME:${escapeText(calendarName)}`,
     ...events.flatMap(eventLines),
     ...reminders.flatMap(reminderLines),

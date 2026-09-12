@@ -23,9 +23,8 @@
 import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon, areaModuleKeys, TABS, TAB_I18N, activeTab } from './shell.js?v=9';
-import { mountSettingsLayer } from './settings-layer.js';
-import { mountAppRouter } from './router.js?v=7';
+import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=10';
+import { mountAppRouter } from './router.js?v=8';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 
 const BEREICH_OF = {
@@ -51,7 +50,7 @@ const relabel = root => window.TVZAI18n?.applyTo(root);
    Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
    weitergereicht, damit index.html sie wie bisher
    von nav.js beziehen können. */
-export { ownsTab } from './shell.js?v=9';
+export { ownsTab } from './shell.js?v=10';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');
@@ -80,41 +79,21 @@ function mount(profile) {
   if (profileName) {
     try { localStorage.setItem('tvza-name', profileName); } catch {}
   }
+  /* Eine Seite, die ihre Leiste schon hat (mountShell), bekommt nur
+     noch Router und Erinnerungen — sonst stuende sie zweimal da. */
   const existingNav = document.querySelector('.nav');
   if (existingNav) {
+    setzeKonto(profile);
     mountGlobalReminderOverlay();
     mountAppRouter(existingNav);
     return;
   }
-  const b = base();
-  const active = activeTab();
-
-  const tabs = TABS.map(t => `
-    <a class="nav__item${t.id === active ? ' is-active' : ''}" href="${b}${t.href}"
-       data-nav-tab="${t.id}"
-       ${t.id === active ? 'aria-current="page"' : ''}>
-      ${icon(t.icon, 21)}
-      <span data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
-      ${t.id === 'chat'
-        ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>'
-        : ''}
-    </a>`).join('');
-
-  const nav = document.createElement('nav');
-  nav.className = 'nav';
-  nav.setAttribute('aria-label', label('nav.haupt', 'Hauptnavigation'));
-  nav.dataset.i18nAttr = 'aria-label:nav.haupt';
-  nav.innerHTML = tabs;
-
-  document.body.appendChild(nav);
-  relabel(nav);
-  mountGlobalReminderOverlay({ activeFile:location.pathname.split('/').pop() || 'index.html' });
-  document.body.classList.add('has-nav');
-  nav.addEventListener('click', event => {
-    if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
-  });
+  /* Bis v.35.23.0 baute nav.js hier eine eigene, magere Leiste: nur
+     die vier Tabs, ohne Marke, ohne Einklappen, ohne Konto. Auf Start
+     sah die Leiste darum anders aus als auf Gruppe. Jetzt ist es
+     derselbe Baustein. */
+  const nav = mountRail({ profile });
   primeNavigation(profile, nav);
-  mountAppRouter(nav);
 }
 
 /* ══ Der dritte Tab heisst wie die Gruppe ═══════════════════════════
@@ -217,60 +196,21 @@ function primeNavigation(profile, nav) {
    Bereichsoptionen liegen inzwischen ebenfalls in dieser einen
    Einstellungsoberfläche. */
 function mountAccountMenu(user, profile) {
-  const bar = document.querySelector('.appbar--bereich .appbar__end');
-  if (!bar || bar.querySelector('.acct')) return;
+  setzeKonto(profile, user?.email);
+  /* Start traegt sein Konto-Menue im eigenen Markup (index.html,
+     #acct); die Bereichsseiten bekommen es hier. Ein Kopf, der schon
+     eins hat, bekommt kein zweites. */
+  const bar = document.querySelector('.appbar__end');
+  if (!bar || document.querySelector('.appbar .acct')) return;
 
   /* Der Sonne/Mond-Knopf verschwindet: Erscheinungsbild und alle
      Bereichsoptionen stehen gemeinsam im einen Einstellungsdialog. */
   const theme = bar.querySelector('#themeToggle, [data-theme-toggle]');
   if (theme) theme.hidden = true;
 
-  const name = profile?.displayName || user.displayName || user.email || 'Konto';
-  const ini = initialsOf(name);
-
-  const wrap = document.createElement('div');
-  wrap.className = 'acct';
-  wrap.innerHTML = `
-    <button class="avatar" type="button" aria-haspopup="menu" aria-expanded="false" data-i18n-attr="title:a11y.konto" title="Konto"><span>${esc(ini)}</span></button>
-    <div class="acct__menu" role="menu" hidden>
-      <div class="acct__head">
-        <span class="acct__who">${esc(name)}</span>
-        <span class="acct__mail">${esc(user.email || '')}</span>
-      </div>
-      <button class="acct__item" data-act="settings" type="button" role="menuitem">
-        <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span data-i18n="acct.einstellungen">Einstellungen</span></button>
-      <button class="acct__item acct__item--danger" data-act="logout" type="button" role="menuitem">
-        <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-        <span data-i18n="acct.abmelden">Abmelden</span></button>
-    </div>`;
+  const wrap = kontoKnopf('kopf');
   bar.appendChild(wrap);
   relabel(wrap);
-
-  const btn = wrap.querySelector('.avatar');
-  const menu = wrap.querySelector('.acct__menu');
-  const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
-
-  btn.addEventListener('click', e => {
-    e.stopPropagation();
-    menu.hidden = !menu.hidden;
-    btn.setAttribute('aria-expanded', String(!menu.hidden));
-  });
-  document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
-
-  menu.addEventListener('click', async e => {
-    const act = e.target.closest('[data-act]')?.dataset.act;
-    if (!act) return;
-    close();
-    if (act === 'settings') window.tvzaOpenSettings?.();
-    if (act === 'logout' && confirm(label('acct.abmeldenFrage', 'Abmelden?'))) {
-      try { localStorage.removeItem('tvza-name'); } catch {}
-      const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-      await signOut(auth);
-      location.href = base() + 'login.html';
-    }
-  });
 }
 
 /* ══ Bildschirmtastatur ═════════════════════════════════════════════
@@ -331,26 +271,25 @@ if (!SKIP.includes(file)) {
     if (!user) return;                       // signed out: requireAuth redirects
     let profile = null;
     try { profile = await getProfile(user); } catch { /* rail just stays empty */ }
-    const framed = window.parent !== window &&
-      new URLSearchParams(location.search).get('tvzaFrame') === '1';
-    if (!framed) {
-      const settingsLayer = mountSettingsLayer();
-      window.tvzaOpenSettings = section => settingsLayer.open(section || '');
-    }
     mount(profile);
     mountAccountMenu(user, profile);
     beschrifteGruppenTab(user.uid);
     watchUnread(user);
     watchKeyboard();
+    /* Hier stand zweimal refreshAreaNavigation(profile) — eine
+       Funktion, die v.35.19.0 geloescht hatte. Der Aufruf ins Leere war
+       syntaktisch gueltig und warf erst zur Laufzeit, bei JEDEM Laden
+       einer Seite: der erste Snapshot kommt immer. Die Leiste zeichnet
+       keine Bereiche mehr; es bleibt, das Profil nachzufuehren, damit
+       das Vorladen die aktuelle Auswahl kennt. */
     window.addEventListener('tvza-modules-change', event => {
       if (!event.detail || typeof event.detail !== 'object') return;
       profile = { ...(profile || {}), modules:event.detail };
-      refreshAreaNavigation(profile);
     });
     onSnapshot(doc(db, 'users', user.uid), snapshot => {
       if (!snapshot.exists()) return;
       profile = snapshot.data();
-      refreshAreaNavigation(profile);
+      setzeKonto(profile, user.email);
     }, () => { /* preference events still provide an immediate fallback */ });
   });
 }

@@ -8,6 +8,12 @@
 .planner-page[data-calendar-style="outlook"] {
   --cal-hour:42px;
 }
+/* Der Kopf der Seite folgt der Breite des Kalenders — sonst begaenne
+   der Titel an einer anderen Kante als das Raster darunter. */
+.planner-page {
+  --kopf-breite:1440px;
+  --kopf-rand:clamp(12px, 2.5vw, 34px);
+}
 .planner-page .main {
   max-width:1440px;
   padding-left:clamp(12px, 2.5vw, 34px);

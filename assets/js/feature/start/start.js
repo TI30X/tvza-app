@@ -29,8 +29,8 @@ import {
   doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from '../../shell.js?v=9';
-import { initialsOf } from '../../nav.js?v=8';
+import { ICONS, icon } from '../../shell.js?v=10';
+import { initialsOf } from '../../nav.js?v=9';
 
 /* Modulschlüssel → Bereichsfarbe. Wie in nav.js ausgeschrieben,
    weil die beiden nicht deckungsgleich sind. */
@@ -256,7 +256,7 @@ function startDmBadge() {
     }
     // Foreground ping when new messages arrive (skip the first snapshot).
     if (dmPrevTotal != null && total > dmPrevTotal && 'Notification' in window && Notification.permission === 'granted') {
-      try { new Notification('💬 Neue Nachricht', { body: 'Du hast neue Nachrichten in TVZA.', icon: 'assets/icons/firn-192.png', tag: 'firn-dm' }); } catch (e) {}
+      try { new Notification('💬 Neue Nachricht', { body: 'Du hast neue Nachrichten in Firn.', icon: 'assets/icons/firn-192.png', tag: 'firn-dm' }); } catch (e) {}
     }
     dmPrevTotal = total;
   }, err => reportClientError('dm-badge', err));
@@ -861,7 +861,10 @@ function savePersonalModules(key, an) {
     try {
       await setDoc(doc(db, 'users', user.uid), { modules: { [key]: an } }, { merge:true });
       applyModules();
-      syncPublicFeed();
+      /* Hier stand syncPublicFeed() — seit v.35.4.0 ohne Definition. Der
+         Aufruf warf NACH dem erfolgreichen Speichern: die Oberflaeche
+         meldete "Nicht gespeichert", und das Ereignis darunter, das
+         Start und Huelle nachzieht, kam nie an. */
       window.dispatchEvent(new CustomEvent('tvza-modules-change', { detail:modules }));
       tellSettingsParent({ type:'tvza-settings-modules', modules });
       if (version === modulesSaveVersion) {
@@ -1052,7 +1055,7 @@ async function loadInviteFamilies() {
   }
   const picker = document.getElementById('memberInviteFamily');
   const noGroup = profile.isTimo === true
-    ? '<option value="">Keine Gruppe – nur TVZA</option>'
+    ? '<option value="">Keine Gruppe – nur Firn</option>'
     : '<option value="" disabled>Keine Gruppe – nur für App-Admin</option>';
   picker.innerHTML = noGroup + inviteFamilies
     .map(item => `<option value="${escHtml(item.id)}">${escHtml(item.name || 'Unbenannte Gruppe')}</option>`)
@@ -1087,7 +1090,7 @@ async function renderMemberInvites() {
           <span class="row__sub">${escHtml(
             invite.familyId
               ? (inviteFamilies.find(item => item.id === invite.familyId)?.name || 'Kalendergruppe')
-              : 'Nur TVZA'
+              : 'Nur Firn'
           )} · ${escHtml(invite.code)}</span>
         </span>
         <span class="row__end">
@@ -1099,7 +1102,7 @@ async function renderMemberInvites() {
       const invite = invites.find(x => x.code === btn.dataset.inviteCopy);
       if (!invite) return;
       const link = `${location.origin}${location.pathname.replace(/index\.html$/, 'login.html')}?invite=${encodeURIComponent(invite.code)}`;
-      const text = `TVZA-Einladung\nE-Mail: ${invite.email}\n${link}`;
+      const text = `Firn-Einladung\nE-Mail: ${invite.email}\n${link}`;
       try {
         await navigator.clipboard.writeText(text);
         btn.textContent = 'Kopiert';
@@ -1147,7 +1150,7 @@ document.getElementById('memberInviteCreate').addEventListener('click', async ()
         name: 'member-invite',
         data: {
           inviteCode: code,
-          familyName: family?.name || 'TVZA'
+          familyName: family?.name || 'Firn'
         }
       },
       createdAt: serverTimestamp()
@@ -1242,7 +1245,6 @@ async function renderAdminUsers() {
       if (uid === user.uid) {
         profile = { ...profile, allowedModules: allowedModulesNext, isTimo };
         applyModules();
-        syncPublicFeed();
       }
       await loadAppUsers(true);
       renderUserSuggestions();

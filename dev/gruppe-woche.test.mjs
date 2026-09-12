@@ -120,7 +120,9 @@ async function starteSeite({ plaene, protokolle = [] }) {
 
   const quelle = (await readFile(join(root, 'assets/js/feature/gruppe/gruppe.js'), 'utf8'))
     .replace(`'../../firebase-config.js'`, `'${dataUrl(FIREBASE_STUB)}'`)
-    .replace(`'../../shell.js?v=9'`, `'${dataUrl(SHELL_STUB)}'`)
+    /* Mit jeder Versionsnummer: sie wandert bei jeder Aenderung der
+       Huelle, und der Test soll daran nicht jedes Mal zerbrechen. */
+    .replace(/'\.\.\/\.\.\/shell\.js\?v=\d+'/, `'${dataUrl(SHELL_STUB)}'`)
     .replace(`'../../groups.js'`, `'${dataUrl(groupsStub(plaene, protokolle))}'`)
     .replace(`'../../wochenplan.js'`, `'${datei('assets/js/wochenplan.js')}'`)
     .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
