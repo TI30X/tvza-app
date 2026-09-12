@@ -17,8 +17,9 @@
   --ink:       #12293F;
   --ink-soft:  #546C86;   /* AA gegen --bg: 4.91 — #5A748F lag mit 4.39 knapp darunter */
 
-  /* Das Markenblau gehoert ALLEIN dem Wortzeichen (das "n" in Firn),
-     dem App-Symbol und dem Gruppenplaettchen. Es ist kraeftiger als
+  /* Das Markenblau gehoert ALLEIN dem App-Symbol und den Plaettchen
+     (seit v.35.30.0 nicht mehr dem n im Wortzeichen, siehe --firn-n).
+     Es ist kraeftiger als
      der Bedienakzent, weil es einmal und klein erscheint — waehrend
      der Akzent ueberall ist und darum leise bleiben muss. Nie fuer
      Knoepfe oder Zustaende verwenden. */
@@ -34,6 +35,9 @@
   --brand-navy-deep: #2C63A4;
   /* Das Alpengluehen aus dem Zeichen: der einzige warme Ton der Marke. */
   --alpenglut: #F6A183;
+  /* Das n im Wortzeichen: ein tieferes Alpengluehen, das auf JEDEM Grund
+     traegt — hell, Navy, Dunkelmodus. Darum ohne Dunkel-Fassung. */
+  --firn-n: #DC6538;
   --brand-gradient: linear-gradient(135deg, var(--brand-navy), var(--brand-navy-mid), var(--brand-navy-deep));
 
   /* Der Akzent markiert, er fuellt nicht: eine Kante, ein Plaettchen,
@@ -1771,37 +1775,32 @@ body.reorder-editing .module-tile::after {
 
 /* ── Bereichsmarke — the small uppercase section label ─────────────*/
 /* ── Das Wortzeichen ───────────────────────────────────────────────
-   Fir + n. Das "n" ist das Erkennungszeichen und wird spaeter das
-   App-Symbol und das Gruppenplaettchen — es muss deshalb auch dann
-   noch als eigenes Zeichen lesbar sein, wenn vom Rest nichts mehr da
-   ist. Darum traegt es nicht nur die Farbe, sondern auch das Gewicht.
+   Fir + n. Das "n" ist das Erkennungszeichen — es muss auch dann noch
+   als eigenes Zeichen lesbar sein, wenn vom Rest nichts mehr da ist.
+   Darum traegt es nicht nur die Farbe, sondern auch das Gewicht.
 
-   --brand kommt in der ganzen App NUR hier vor. Das ist der Grund,
-   warum die Navigation auf --brand-navy-deep zeigt und nicht hierhin:
-   waere das Blau ueberall, waere es kein Zeichen mehr. */
+   EINE Farbe, auf jedem Grund. Bis v.35.29.0 waren es zwei: Marken-Blau
+   auf hellem Grund, Alpengluehen auf Navy — weil das Blau gegen Navy
+   zusammenfaellt (2,5 : 1) und das helle Gluehen auf Weiss (2,0 : 1).
+   Das sah aus wie zwei Marken. --firn-n ist ein tieferes Alpengluehen,
+   derselbe warme Ton wie der Gipfel im App-Symbol, und traegt auf allen
+   Gruenden: mind. 3,3 : 1 auf Hell, 4,7 : 1 auf Navy und im Dunkelmodus.
+   Darum hat es keine Dunkel-Fassung. dev/marke.test.mjs rechnet nach. */
 .firn {
   font-weight: 800;
   letter-spacing: -0.01em;
   color: var(--ink);
   white-space: nowrap;
 }
-/* Auf dunklem Grund traegt das Marken-Blau nicht — es faellt gegen
-   Navy zusammen. Das n bekommt dort das Alpengluehen aus dem Zeichen:
-   derselbe warme Ton, der im Logo auf dem Gipfel liegt.
-
-   Die Regel steht NACH .firn > b und ist spezifischer. Vorher stand
-   sie davor und war gleich spezifisch — die spaetere Regel gewann,
-   und das n war Marken-Blau auf Navy, also fast unsichtbar. */
 .firn--hell { color: #FFFFFF; }
 
 .firn > b {
   font-weight: 900;
-  color: var(--brand);
+  color: var(--firn-n);
   /* Optisch traegt das n sonst zu wenig: es ist der kuerzeste
      Buchstabe im Wort und verliert gegen das grosse F. */
   letter-spacing: 0;
 }
-.firn.firn--hell > b { color: var(--alpenglut); }
 
 .marke {
   font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em;

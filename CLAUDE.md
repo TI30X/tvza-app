@@ -12,7 +12,7 @@ Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
 **Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
 Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
 
-Version: **v.35.29.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.30.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -40,7 +40,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-50 Testdateien, **512 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+50 Testdateien, **514 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -134,6 +134,11 @@ zwei Nummern sind für den Browser zwei Module mit getrenntem Zustand.
 **Keine Browserfenster.** `prompt()`, `confirm()` und `alert()` sind
 ersetzt durch `frage()`, `eingabe()`, `meldung()` aus `dialog.js`.
 `gruppe-erstellen.test.mjs` hält die Gruppenseite frei davon.
+
+**Das n im Wortzeichen hat eine Farbe,** `--firn-n`, auf jedem Grund —
+keine Fassung für die Leiste, keine für Dunkel. Bis v.35.29.0 waren es drei
+(Blau, Alpenglühen, Weiss), weil Blau gegen Navy und helles Glühen gegen
+Weiss nicht trägt. `marke.test.mjs` rechnet die Kontraste nach.
 
 Die Leiste lässt sich auf 72 Pixel einklappen (eine Zahl: `--leiste`). Der Zustand hängt am **Gerät**
 (`localStorage['firn.leiste']`), nicht am Konto — wer am grossen Bildschirm
@@ -239,7 +244,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 512 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 514 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -256,7 +261,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.29.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.30.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

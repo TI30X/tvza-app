@@ -59,6 +59,13 @@
       min-height: 100vh; display: flex; flex-direction: column;
     }
     h1 { text-wrap: balance; }
+    /* Das Wortzeichen wie in kit.css — diese Seite laedt das Kit nicht,
+       und ohne diese Regeln war das n hier weiss: eine dritte Fassung.
+       --firn-n muss dem Wert in kit.css gleichen; marke.test.mjs prueft es. */
+    :root { --firn-n: #DC6538; }
+    .firn { font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+    .firn--hell { color: #FFFFFF; }
+    .firn > b { font-weight: 900; color: var(--firn-n); letter-spacing: 0; }
     .hero {
       background: var(--brand-gradient); color: white; padding: 22px 24px; text-align: left;
       border-bottom: 0; position: relative; overflow: hidden;

@@ -492,13 +492,12 @@ test('der Kopf beginnt an derselben Kante wie der Inhalt', async () => {
 
 test('das n im Wortzeichen ist auf Navy sichtbar', async () => {
   const css = await read('assets/css/kit.css');
-  /* .firn--hell > b stand VOR .firn > b und war gleich spezifisch —
-     die spaetere Regel gewann, und das n war Marken-Blau auf Navy.
-     Die helle Fassung muss spezifischer sein UND danach stehen. */
-  const hell = css.indexOf('.firn.firn--hell > b');
-  const normal = css.indexOf('.firn > b {');
-  assert.ok(hell > 0, '.firn.firn--hell > b fehlt');
-  assert.ok(hell > normal, 'die helle Regel steht vor der normalen');
-  assert.match(css, /\.firn\.firn--hell > b \{ color: var\(--alpenglut\); \}/);
-  assert.match(css, /--alpenglut: #F6A183;/);
+  /* Bis v.35.29.0 hing das an einer zweiten Regel (.firn.firn--hell > b),
+     die spezifischer sein UND danach stehen musste — einmal stand sie
+     davor, und das n war Marken-Blau auf Navy. Seit v.35.30.0 gibt es
+     nur noch eine Farbe, die auf jedem Grund traegt; die Kontraste
+     rechnet dev/marke.test.mjs nach. Hier: die Leiste bekommt keine
+     eigene Fassung mehr. */
+  assert.match(css, /\.firn > b \{[^}]*color: var\(--firn-n\);/);
+  assert.doesNotMatch(css, /\.firn--hell > b/);
 });

@@ -215,10 +215,9 @@
   color: color-mix(in oklab, var(--surface) 78%, var(--firn-tief));
 }
 
-/* Auf dunklem Grund traegt das Marken-Blau nicht mehr — es faellt
-   gegen Navy zusammen. Das n bleibt das Zeichen, also wird es hell. */
+/* Auf dunklem Grund wird das Wort hell. Das n bleibt, wie es ist:
+   --firn-n traegt auf jedem Grund (kit.css, Das Wortzeichen). */
 .wk-dunkel .firn { color: var(--surface); }
-.wk-dunkel .firn > b { color: var(--firn-glut-hell); }
 
 /* ── Beta ──────────────────────────────────────────────────────────
    Der ehrliche Kasten. Hier stuende sonst ein Preis, den es noch
