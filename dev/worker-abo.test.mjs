@@ -107,7 +107,10 @@ test('ein neues Abo zieht das alte zurück, und das wird gesagt', async () => {
   // Neu setzen heisst gleichzeitig zurückziehen — das ist der Weg,
   // wenn jemand den Verein verlässt. Aber wer nur die Adresse noch
   // einmal sehen will, soll nicht versehentlich alle Abos brechen.
-  assert.match(js, /if \(aktiv\.icsToken && !confirm\(/);
+  // Seit v.35.24.0 als gestalteter Dialog statt confirm() — die
+  // Rueckfrage selbst ist dieselbe, und sie ist als gefaehrlich markiert.
+  assert.match(js, /if \(aktiv\.icsToken && !await frage\(\{/);
+  assert.match(js, /ja: t\('grp\.aboNeuKurz', 'Neu erzeugen'\), gefahr: true/);
   assert.match(js, /macht die alte Adresse ungültig/);
 });
 

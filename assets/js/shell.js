@@ -19,6 +19,7 @@
 
 import { auth, MODULES, enabledModules } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
+import { frage } from './dialog.js';
 import { mountAppRouter } from './router.js?v=8';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
@@ -410,7 +411,10 @@ export function kontoKnopf(ort) {
     if (!act) return;
     zu();
     if (act === 'settings') window.tvzaOpenSettings?.();
-    if (act === 'logout' && confirm(label('acct.abmeldenFrage', 'Abmelden?'))) {
+    if (act === 'logout' && await frage({
+      titel: label('acct.abmeldenFrage', 'Abmelden?'),
+      ja: label('acct.abmelden', 'Abmelden'),
+    })) {
       try { localStorage.removeItem('tvza-name'); } catch {}
       const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
       await signOut(auth);

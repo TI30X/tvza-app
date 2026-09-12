@@ -11,6 +11,7 @@ import {
   ARTEN, DISZIPLINEN, BEREICH_DER_ART,
   isoTag, istIsoTag, istMehrtaegig, laeuftAm,
   sortiere, kommende, zeitraum, alsBriefingTermine, pruefe,
+  artName, artWort, BEZEICHNUNG_MAX,
 } from '../assets/js/termine.js';
 
 const training = { art: 'training', titel: 'Kraft Beine', von: '2026-09-08', zeit: '14:00' };
@@ -217,4 +218,25 @@ test('isoTag rechnet in lokaler Zeit, nicht in UTC', () => {
   assert.ok(istIsoTag('2026-09-08'));
   assert.ok(!istIsoTag('2026-9-8'));
   assert.ok(!istIsoTag(20260908));
+});
+
+
+/* ── Ein eigenes Wort ──────────────────────────────────────────────
+   Nicht alles ist Training, Lager oder Rennen. Die Art bleibt das
+   Verhalten; das Wort ist, wie der Termin heisst. */
+
+test('artName nimmt das eigene Wort, sonst das der Art in der Sprache der Gruppe', () => {
+  assert.equal(artName({ art: 'training', bezeichnung: 'Elternabend' }, 'kader'), 'Elternabend');
+  assert.equal(artName({ art: 'training', bezeichnung: '   ' }, 'kader'), artWort('training', 'kader'));
+  assert.equal(artName({ art: 'lager' }, 'familie'), artWort('lager', 'familie'));
+  /* Ein Gym-Kurs heisst weiter so, wie das Gym ihn nennt. */
+  assert.notEqual(artName({ art: 'training' }, 'organisation'), '');
+});
+
+test('pruefe laesst ein eigenes Wort zu und haelt seine Grenze', () => {
+  assert.deepEqual(pruefe({ ...training, bezeichnung: 'Physio' }), []);
+  assert.deepEqual(pruefe({ ...training, bezeichnung: '' }), [], 'leer heisst: keins');
+  assert.deepEqual(pruefe({ ...training, bezeichnung: null }), []);
+  assert.equal(pruefe({ ...training, bezeichnung: 'x'.repeat(BEZEICHNUNG_MAX + 1) }).length, 1);
+  assert.equal(pruefe({ ...training, bezeichnung: 42 }).length, 1, 'nur Text');
 });

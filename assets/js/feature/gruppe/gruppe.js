@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle } from '../../shell.js?v=10';
+import { mountShell, setShellTitle } from '../../shell.js?v=11';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -37,8 +37,9 @@ import {
   wochenTage, standardTag, nachDatum,
   eintragFortschritt, tagPunkte, wochenKopf, einheitZiel,
 } from '../../wochenplan.js';
+import { frage, eingabe, meldung } from '../../dialog.js';
 import {
-  kommende, zeitraum, artWort, BEREICH_DER_ART, pruefe, isoTag,
+  kommende, zeitraum, artWort, artName, BEREICH_DER_ART, pruefe, isoTag,
   artenFuer, kenntDisziplinen, istAbgesagt,
 } from '../../termine.js';
 import {
@@ -147,12 +148,12 @@ function terminZeile(t) {
   const ab = istAbgesagt(t);
   return `
     <button class="row" type="button" data-termin="${escHtml(t.id)}" data-bereich="${escHtml(bereich)}">
-      <span class="row__icon">${escHtml(artWort(t.art, aktiv?.art).slice(0, 1))}</span>
+      <span class="row__icon">${escHtml(artName(t, aktiv?.art).slice(0, 1))}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(ab ? `${t.titel} — abgesagt` : t.titel)}</span>
         <span class="row__sub">${escHtml(wann + ort)}</span>
       </span>
-      <span class="row__end">${escHtml(ab ? t('grp.abgesagt', 'Abgesagt') : artWort(t.art, aktiv?.art))}</span>
+      <span class="row__end">${escHtml(ab ? t('grp.abgesagt', 'Abgesagt') : artName(t, aktiv?.art))}</span>
     </button>`;
 }
 
@@ -513,37 +514,69 @@ function zeichne() {
 
 /* ── Handlungen ────────────────────────────────────────────────────*/
 
-async function neueGruppe() {
-  const name = prompt(t('grp.frageName', 'Wie soll die Gruppe heissen?'));
-  if (name === null) return;
-  const sauber = name.trim();
-  if (!sauber) return;
+/* Eine Gruppe anlegen: ein Formular auf der Seite, mit drei Karten
+   fuer die Art. Hier standen zwei prompt() — der Name, dann eine
+   ZIFFER fuer die Art, weil drei Antworten fuer confirm() zu viele
+   sind. Die Art entscheidet ueber Wortwahl und Rollennamen, nicht ueber
+   den Ablauf; darum steht der Rennkader vorn, aber nichts ist falsch. */
+let neueArt = 'kader';
 
-  /* Die Art entscheidet nur über Wortwahl und Vorgabe-Bereiche, nicht
-     über den Ablauf. Drei Möglichkeiten sind für ein confirm zu viele,
-     also eine Ziffer — bis das Anlegen ein eigenes Formular bekommt. */
-  const wahl = prompt(
-    t('grp.frageArt',
-      'Was für eine Gruppe ist das?\n\n'
-      + '1 — Rennkader: Haupttrainer, Trainer, Athleten\n'
-      + '2 — Verein oder Gym: Leitung, Trainer, Mitglieder\n'
-      + '3 — Familie oder Freundeskreis'), '1');
-  if (wahl === null) return;
-  const art = { 1: 'kader', 2: 'organisation', 3: 'familie' }[wahl.trim()] || 'kader';
+function setzeNeueArt(art) {
+  neueArt = art;
+  document.querySelectorAll('#neuArt [data-art]').forEach(karte => {
+    karte.setAttribute('aria-checked', karte.dataset.art === art ? 'true' : 'false');
+  });
+}
 
-  const btn = $('btnNeu');
+function neueGruppe() {
+  setzeNeueArt('kader');
+  $('neuName').value = '';
+  $('neuFehler').hidden = true;
+  zeige('secLeer', false);
+  zeige('secGruppeNeu', true);
+  $('neuName').focus();
+}
+
+function neueGruppeSchliessen() {
+  zeige('secGruppeNeu', false);
+  zeige('secLeer', !aktiv);
+}
+
+async function gruppeErstellen(event) {
+  event?.preventDefault();
+  const name = $('neuName').value.trim();
+  const fehler = $('neuFehler');
+  if (!name) {
+    fehler.textContent = t('grp.f.nameFehlt', 'Die Gruppe braucht einen Namen.');
+    fehler.hidden = false;
+    $('neuName').focus();
+    return;
+  }
+
+  const btn = $('btnGruppeAnlegen');
   btn.disabled = true;
   try {
-    const gid = await gruppeAnlegen(user.uid, { name: sauber, art });
+    const gid = await gruppeAnlegen(user.uid, { name, art: neueArt });
     aktiveGruppeSetzen(gid);
+    zeige('secGruppeNeu', false);
     /* Kein reload: beobachteMeineGruppen meldet die neue Gruppe von
        selbst, und der Umschalter steht dann schon richtig. */
   } catch (e) {
     reportClientError('gruppe/anlegen', e);
-    alert(t('grp.f.gruppe', 'Die Gruppe konnte nicht erstellt werden.'));
+    fehler.textContent = t('grp.f.gruppe', 'Die Gruppe konnte nicht erstellt werden.');
+    fehler.hidden = false;
   } finally {
     btn.disabled = false;
   }
+}
+
+/* Die vorhandenen Texte tragen Frage und Erklaerung in EINEM String,
+   getrennt durch eine Leerzeile — so waren sie fuer confirm() gebaut.
+   Der gestaltete Dialog hat einen Titel und einen Text; die Leerzeile
+   ist die Naht. Alle sieben Sprachen bleiben, ohne neue Schluessel. */
+function geteilt(s) {
+  const [titel, ...rest] = String(s).split('\n\n');
+  return { titel, text: rest.join('\n\n') };
 }
 
 /* ── Ein Termin von nahem ──────────────────────────────────────────
@@ -607,7 +640,7 @@ function detailOeffnen(eid) {
      nicht erst im dritten Absatz finden. */
   const teile = [
     abgesagt ? 'ABGESAGT' : '',
-    artWort(offen.art, aktiv?.art),
+    artName(offen, aktiv?.art),
     zeitraum(offen),
   ];
   if (offen.ort) teile.push(offen.ort);
@@ -724,15 +757,20 @@ async function anhangVerwalten(id) {
   const a = anhaenge.find(x => x.id === id);
   if (!a) return;
 
-  const name = prompt(
-    t('grp.frageAnhangName',
-      'Neuer Name für die Unterlage.\n\nLeer lassen und OK drücken, um sie zu entfernen.'),
-    a.name);
+  const name = await eingabe({
+    ...geteilt(t('grp.frageAnhangName',
+      'Neuer Name für die Unterlage.\n\nLeer lassen und OK drücken, um sie zu entfernen.')),
+    wert: a.name,
+    maxlength: 120,
+  });
   if (name === null) return;
 
   try {
     if (!name.trim()) {
-      if (!confirm(t('grp.frageAnhangWeg', '"{was}" wirklich entfernen?', { was: a.name }))) return;
+      if (!await frage({
+        titel: t('grp.frageAnhangWeg', '"{was}" wirklich entfernen?', { was: a.name }),
+        ja: t('grp.entfernenKurz', 'Entfernen'), gefahr: true,
+      })) return;
       await anhangLoeschen(aktiv.id, offen.id, id);
     } else {
       await anhangUmbenennen(aktiv.id, offen.id, id, name, user.uid);
@@ -740,7 +778,7 @@ async function anhangVerwalten(id) {
     await zeichneAnhaenge();
   } catch (e) {
     reportClientError('gruppe/anhang-verwalten', e);
-    alert(t('grp.f.allgemein', 'Das hat nicht geklappt.'));
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
   }
 }
 
@@ -768,15 +806,19 @@ async function absageUmschalten() {
 
   try {
     if (istAbgesagt(offen)) {
-      if (!confirm(t('grp.frageFindetStatt', '"{was}" findet doch statt?', { was: offen.titel }))) return;
+      if (!await frage({ titel: t('grp.frageFindetStatt', '"{was}" findet doch statt?', { was: offen.titel }) })) return;
       await absageZuruecknehmen(aktiv.id, offen.id);
     } else {
       /* Der Grund ist freiwillig, aber er ist das, was die Leute
          wirklich wissen wollen — "zu wenig Schnee" beantwortet die
          Rückfragen, bevor sie kommen. */
-      const grund = prompt(
-        t('grp.frageAbsagen', '"{was}" absagen.\n\nGrund (optional, wird allen angezeigt):',
-          { was: offen.titel }), '');
+      const grund = await eingabe({
+        ...geteilt(t('grp.frageAbsagen', '"{was}" absagen.\n\nGrund (optional, wird allen angezeigt):',
+          { was: offen.titel })),
+        platzhalter: t('grp.absageGrundPh', 'z.B. zu wenig Schnee'),
+        ja: t('grp.absagenKurz', 'Absagen'),
+        mehrzeilig: true, maxlength: 200,
+      });
       if (grund === null) return;
       await terminAbsagen(aktiv.id, offen.id, grund);
     }
@@ -784,19 +826,22 @@ async function absageUmschalten() {
        ihren eigenen Stand nachziehen. */
   } catch (e) {
     reportClientError('gruppe/absagen', e);
-    alert(t('grp.f.allgemein', 'Das hat nicht geklappt.'));
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
   }
 }
 
 async function terminEntfernen() {
   if (!offen || !aktiv) return;
-  if (!confirm(t('grp.frageTerminWeg', '"{was}" wirklich löschen?', { was: offen.titel }))) return;
+  if (!await frage({
+    titel: t('grp.frageTerminWeg', '"{was}" wirklich löschen?', { was: offen.titel }),
+    ja: t('grp.loeschenKurz', 'Löschen'), gefahr: true,
+  })) return;
   try {
     await terminLoeschen(aktiv.id, offen.id);
     detailSchliessen();
   } catch (e) {
     reportClientError('gruppe/termin-loeschen', e);
-    alert(t('grp.f.terminLoeschen', 'Der Termin konnte nicht gelöscht werden.'));
+    await meldung({ titel: t('grp.f.terminLoeschen', 'Der Termin konnte nicht gelöscht werden.') });
   }
 }
 
@@ -816,14 +861,35 @@ function formAnpassen() {
   zeige('grpDisziplin', art === 'rennen' && kenntDisziplinen(aktiv?.art));
 }
 
+/* Welche Art gewaehlt ist: eine der drei, oder 'eigene'. Die eigene
+   verhaelt sich wie ein Training — ein Tag, eine Uhrzeit — und traegt
+   ihr eigenes Wort. fArt haelt immer die Art fuer den Rest des Codes. */
+let artWahl = 'training';
+
+function setzeArtWahl(wahl) {
+  artWahl = wahl;
+  $('fArt').value = wahl === 'eigene' ? 'training' : wahl;
+  document.querySelectorAll('#fArtWahl [data-art-wahl]').forEach(k => {
+    k.setAttribute('aria-checked', k.dataset.artWahl === wahl ? 'true' : 'false');
+  });
+  zeige('grpBezeichnung', wahl === 'eigene');
+  formAnpassen();
+}
+
 function formOeffnen() {
   /* Was die Gruppe anbietet, entscheidet die Gruppenart: eine Familie
-     braucht keinen Wettkampf-Eintrag. Die Liste entsteht darum im
-     Code und nicht im Markup. */
-  $('fArt').innerHTML = artenFuer(aktiv?.art)
-    .map(a => `<option value="${a}">${escHtml(artWort(a, aktiv?.art))}</option>`)
-    .join('');
-  $('fArt').value = artenFuer(aktiv?.art)[0] || 'training';
+     braucht keinen Wettkampf-Eintrag. Die Knoepfe entstehen darum im
+     Code und nicht im Markup — mit der Farbe ihrer Art, damit man sie
+     in der Liste wiedererkennt. */
+  $('fArtWahl').innerHTML = [
+    ...artenFuer(aktiv?.art).map(a => `
+      <button class="wahl__knopf" type="button" role="radio" aria-checked="false"
+              data-art-wahl="${a}" data-bereich="${BEREICH_DER_ART[a] || ''}">${escHtml(artWort(a, aktiv?.art))}</button>`),
+    `<button class="wahl__knopf" type="button" role="radio" aria-checked="false"
+             data-art-wahl="eigene">${escHtml(t('grp.artEigene', 'Eigene …'))}</button>`,
+  ].join('');
+  $('fBezeichnung').value = '';
+  setzeArtWahl(artenFuer(aktiv?.art)[0] || 'training');
   $('fTitel').value = '';
   $('fVon').value = isoTag();
   $('fBis').value = '';
@@ -846,6 +912,7 @@ function formLesen() {
   const art = $('fArt').value;
   return {
     art,
+    bezeichnung: artWahl === 'eigene' ? $('fBezeichnung').value.trim() : null,
     titel: $('fTitel').value.trim(),
     von: $('fVon').value,
     /* Bis und Zeit nur dort, wo das Feld auch sichtbar war — sonst
@@ -861,6 +928,16 @@ function formLesen() {
 async function terminSpeichern() {
   if (!aktiv) return;
   const entwurf = formLesen();
+
+  /* "Eigene" ohne Wort waere ein Training, das so tut, als sei es etwas
+     anderes. Das Feld steht offen da — also danach fragen. */
+  if (artWahl === 'eigene' && !entwurf.bezeichnung) {
+    const feld = $('formFehler');
+    feld.textContent = t('grp.f.bezeichnung', 'Wie heisst diese Art von Termin?');
+    feld.hidden = false;
+    $('fBezeichnung').focus();
+    return;
+  }
 
   const fehler = pruefe(entwurf);
   if (fehler.length) {
@@ -1087,21 +1164,24 @@ async function rolleAendern(rolle) {
     personOeffnen(person.uid);
   } catch (e) {
     reportClientError('gruppe/rolle', e);
-    alert(t('grp.f.rolle', 'Die Rolle konnte nicht geändert werden.'));
+    await meldung({ titel: t('grp.f.rolle', 'Die Rolle konnte nicht geändert werden.') });
   }
 }
 
 async function personEntfernen() {
   if (!person || !aktiv) return;
   const name = person.name || person.uid;
-  if (!confirm(t('grp.frageMitgliedWeg', '{wer} wirklich aus der Gruppe entfernen?', { wer: name }))) return;
+  if (!await frage({
+    titel: t('grp.frageMitgliedWeg', '{wer} wirklich aus der Gruppe entfernen?', { wer: name }),
+    ja: t('grp.entfernenKurz', 'Entfernen'), gefahr: true,
+  })) return;
   try {
     await mitgliedEntfernen(aktiv.id, person.uid);
     personSchliessen();
     await zeichneMitglieder();
   } catch (e) {
     reportClientError('gruppe/entfernen', e);
-    alert(t('grp.f.entfernen', 'Das Mitglied konnte nicht entfernt werden.'));
+    await meldung({ titel: t('grp.f.entfernen', 'Das Mitglied konnte nicht entfernt werden.') });
   }
 }
 
@@ -1111,11 +1191,13 @@ async function leitungUebergeben() {
   /* Eine Übergabe ist nicht rückgängig zu machen: danach bist du nicht
      mehr der Kopf und kannst sie nicht zurückholen. Das gehört gesagt,
      bevor jemand tippt. */
-  if (!confirm(
-    t('grp.frageUebergabe',
+  if (!await frage({
+    ...geteilt(t('grp.frageUebergabe',
       'Die Leitung an {wer} übergeben?\n\n'
       + 'Danach bist du nur noch Trainer und kannst die Leitung nicht '
-      + 'selbst zurückholen.', { wer: name }))) return;
+      + 'selbst zurückholen.', { wer: name })),
+    ja: t('grp.uebergebenKurz', 'Übergeben'), gefahr: true,
+  })) return;
 
   try {
     await uebergeben(aktiv.id, person.uid);
@@ -1124,7 +1206,7 @@ async function leitungUebergeben() {
        zeichnet sich daraufhin mit den passenden Rechten neu. */
   } catch (e) {
     reportClientError('gruppe/uebergeben', e);
-    alert(t('grp.f.uebergabe', 'Die Übergabe hat nicht geklappt.'));
+    await meldung({ titel: t('grp.f.uebergabe', 'Die Übergabe hat nicht geklappt.') });
   }
 }
 
@@ -1227,9 +1309,15 @@ async function ergSpeichern() {
 /* ── Beitreten ─────────────────────────────────────────────────────*/
 
 async function codeEinloesen() {
-  const eingabe = prompt(t('grp.frageCode', 'Einladungscode eingeben:'));
-  if (eingabe === null) return;
-  const sauber = eingabe.trim();
+  const code = await eingabe({
+    titel: t('grp.beitretenTitel', 'Einer Gruppe beitreten'),
+    text: t('grp.beitretenText', 'Den Code bekommst du von deinem Trainer oder aus der Einladung.'),
+    platzhalter: 'ABC123',
+    ja: t('grp.beitretenKurz', 'Beitreten'),
+    maxlength: 32, gross: true,
+  });
+  if (code === null) return;
+  const sauber = code.trim();
   if (!sauber) return;
 
   const btn = $('btnBeitreten');
@@ -1239,7 +1327,10 @@ async function codeEinloesen() {
     aktiveGruppeSetzen(gid);
   } catch (e) {
     reportClientError('gruppe/beitreten', e);
-    alert(e?.message || t('grp.f.beitritt', 'Der Beitritt hat nicht geklappt.'));
+    await meldung({
+      titel: t('grp.f.beitritt', 'Der Beitritt hat nicht geklappt.'),
+      text: e?.message || '',
+    });
   } finally {
     btn.disabled = false;
   }
@@ -1261,11 +1352,13 @@ async function aboErzeugen() {
     /* Neu setzen heisst gleichzeitig zurückziehen: die alte Adresse
        trägt danach ins Leere. Das ist der Weg, wenn jemand den Verein
        verlässt. Darum die Rückfrage, wenn es schon eine gibt. */
-    if (aktiv.icsToken && !confirm(
-      t('grp.frageAboNeu',
+    if (aktiv.icsToken && !await frage({
+      ...geteilt(t('grp.frageAboNeu',
         'Es gibt schon ein Abo für diese Gruppe.\n\n'
         + 'Ein neues zu erzeugen macht die alte Adresse ungültig — wer sie '
-        + 'abonniert hat, sieht die Termine nicht mehr.'))) {
+        + 'abonniert hat, sieht die Termine nicht mehr.')),
+      ja: t('grp.aboNeuKurz', 'Neu erzeugen'), gefahr: true,
+    })) {
       return;
     }
 
@@ -1305,7 +1398,7 @@ async function einladen() {
     }
   } catch (e) {
     reportClientError('gruppe/einladen', e);
-    alert(t('grp.f.code', 'Der Code konnte nicht erzeugt werden.'));
+    await meldung({ titel: t('grp.f.code', 'Der Code konnte nicht erzeugt werden.') });
   } finally {
     btn.disabled = false;
   }
@@ -1338,7 +1431,16 @@ async function einladen() {
   $('btnTermin')?.addEventListener('click', formOeffnen);
   $('btnAbbrechen')?.addEventListener('click', formSchliessen);
   $('btnSpeichern')?.addEventListener('click', terminSpeichern);
-  $('fArt')?.addEventListener('change', formAnpassen);
+  $('fArtWahl')?.addEventListener('click', event => {
+    const wahl = event.target.closest('[data-art-wahl]')?.dataset.artWahl;
+    if (wahl) setzeArtWahl(wahl);
+  });
+  $('neuArt')?.addEventListener('click', event => {
+    const art = event.target.closest('[data-art]')?.dataset.art;
+    if (art) setzeNeueArt(art);
+  });
+  $('formGruppeNeu')?.addEventListener('submit', gruppeErstellen);
+  $('btnGruppeNeuZurueck')?.addEventListener('click', neueGruppeSchliessen);
 
   /* Ein Zuhörer auf der Liste statt einer pro Zeile: die Zeilen werden
      bei jeder Änderung neu gezeichnet, einzeln gebundene Zuhörer wären

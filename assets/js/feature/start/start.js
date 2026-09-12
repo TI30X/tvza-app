@@ -29,8 +29,9 @@ import {
   doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from '../../shell.js?v=10';
+import { ICONS, icon } from '../../shell.js?v=11';
 import { initialsOf } from '../../nav.js?v=9';
+import { frage } from '../../dialog.js';
 
 /* Modulschlüssel → Bereichsfarbe. Wie in nav.js ausgeschrieben,
    weil die beiden nicht deckungsgleich sind. */
@@ -542,7 +543,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAcct();
 
 document.getElementById('acctLogout').addEventListener('click', async () => {
   closeAcct();
-  if (confirm('Abmelden?')) {
+  if (await frage({
+    titel: t('acct.abmeldenFrage', 'Abmelden?'),
+    ja: t('acct.abmelden', 'Abmelden'),
+  })) {
     try { localStorage.removeItem('tvza-name'); } catch (e) {}
     await signOut(auth);
     window.location.href = 'login.html';

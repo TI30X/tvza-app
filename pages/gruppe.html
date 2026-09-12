@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=8" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=9" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
@@ -47,6 +47,46 @@
       </div>
     </section>
 
+    <!-- Eine Gruppe anlegen. Bis v.35.24.0 war das zweimal prompt():
+         erst der Name, dann eine ZIFFER fuer die Art — "1 — Rennkader,
+         2 — Verein …" —, weil drei Antworten fuer confirm() zu viele
+         sind. Jetzt drei Karten, die man sieht, bevor man waehlt. -->
+    <section class="section" id="secGruppeNeu" hidden>
+      <form class="form-card" id="formGruppeNeu" novalidate>
+        <button class="backlink" id="btnGruppeNeuZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" data-i18n="grp.neuTitel">Neue Gruppe</div>
+
+        <div class="form-group">
+          <div class="form-label" id="neuArtLabel" data-i18n="grp.artFrage">Was für eine Gruppe?</div>
+          <div class="wahlkarten wahlkarten--drei" id="neuArt" role="radiogroup" aria-labelledby="neuArtLabel">
+            <button class="wahlkarte" type="button" role="radio" aria-checked="true" data-art="kader">
+              <span class="wahlkarte__bild" data-bereich="t-rennen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3"/><path d="M6 4h12l-3.5 4L18 12H6"/></svg></span>
+              <span class="wahlkarte__titel" data-i18n="grp.art.kader.titel">Rennkader</span>
+              <span class="wahlkarte__text" data-i18n="grp.art.kader.text">Haupttrainer, Trainer, Athleten. Wochenplan, Rennen, FIS-Punkte.</span>
+            </button>
+            <button class="wahlkarte" type="button" role="radio" aria-checked="false" data-art="organisation">
+              <span class="wahlkarte__bild" data-bereich="t-training"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></span>
+              <span class="wahlkarte__titel" data-i18n="grp.art.organisation.titel">Verein oder Gym</span>
+              <span class="wahlkarte__text" data-i18n="grp.art.organisation.text">Leitung, Trainer, Mitglieder. Kurse, Workshops, Wettkämpfe.</span>
+            </button>
+            <button class="wahlkarte" type="button" role="radio" aria-checked="false" data-art="familie">
+              <span class="wahlkarte__bild" data-bereich="kalender"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M12 17.5s-3.2-1.9-3.2-4a1.8 1.8 0 0 1 3.2-1.1 1.8 1.8 0 0 1 3.2 1.1c0 2.1-3.2 4-3.2 4z"/></svg></span>
+              <span class="wahlkarte__titel" data-i18n="grp.art.familie.titel">Familie oder Freunde</span>
+              <span class="wahlkarte__text" data-i18n="grp.art.familie.text">Termine, Reisen und Nachrichten für euch.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="neuName" data-i18n="grp.nameLabel">Name</label>
+          <input class="form-input" id="neuName" type="text" maxlength="60" autocomplete="off" placeholder="z.B. BSV Perspektivkader" data-i18n-attr="placeholder:grp.namePh" />
+        </div>
+
+        <p class="empty-hint" id="neuFehler" hidden></p>
+        <button class="b b--primary b--block" id="btnGruppeAnlegen" type="submit" data-i18n="grp.neu">Gruppe erstellen</button>
+      </form>
+    </section>
+
     <!-- Der Umschalter steht nur da, wenn es wirklich etwas zu wechseln
          gibt. Ein Auswahlfeld mit einem einzigen Eintrag ist eine Lüge. -->
     <section class="section" id="secWechsel" hidden>
@@ -70,13 +110,20 @@
       <div class="form-card">
         <div class="form-title" data-i18n="grp.terminTitel">Neuer Termin</div>
 
+        <!-- Die Art als Knoepfe, nicht als Auswahlfeld — man soll sehen,
+             was es gibt. "Eigene" deckt, was keines der drei ist:
+             Elternabend, Physio, Materialtest. Es verhaelt sich wie ein
+             Training (ein Tag, eine Uhrzeit) und traegt sein eigenes Wort.
+             fArt haelt die Art fuer den Rest des Codes. -->
         <div class="form-group">
-          <label class="form-label" for="fArt" data-i18n="grp.art">Art</label>
-          <select class="form-select" id="fArt">
-            <option value="training">Training</option>
-            <option value="lager">Trainingslager</option>
-            <option value="rennen">Rennen</option>
-          </select>
+          <div class="form-label" id="fArtLabel" data-i18n="grp.art">Art</div>
+          <input type="hidden" id="fArt" value="training" />
+          <div class="wahl" id="fArtWahl" role="radiogroup" aria-labelledby="fArtLabel"></div>
+        </div>
+
+        <div class="form-group" id="grpBezeichnung" hidden>
+          <label class="form-label" for="fBezeichnung" data-i18n="grp.bezeichnung">Was ist es?</label>
+          <input class="form-input" id="fBezeichnung" type="text" maxlength="40" autocomplete="off" placeholder="z.B. Elternabend, Physio, Materialtest" data-i18n-attr="placeholder:grp.bezeichnungPh" />
         </div>
 
         <div class="form-group">
@@ -84,6 +131,10 @@
           <input class="form-input" id="fTitel" type="text" maxlength="120" placeholder="z.B. Kraft Beine" data-i18n-attr="placeholder:grp.titelPh" />
         </div>
 
+        <!-- Von und daneben entweder Bis (Lager) oder Uhrzeit (alles
+             andere) — es ist nie beides sichtbar. Standen sie in zwei
+             Reihen, blieb neben "Von" eine leere Haelfte, und die
+             Uhrzeit rutschte eine Zeile tiefer. -->
         <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="fVon" data-i18n="grp.von">Von</label>
@@ -93,23 +144,21 @@
             <label class="form-label" for="fBis" data-i18n="grp.bis">Bis</label>
             <input class="form-input" id="fBis" type="date" />
           </div>
-        </div>
-
-        <div class="form-row">
           <div class="form-group" id="grpZeit">
             <label class="form-label" for="fZeit" data-i18n="grp.zeit">Uhrzeit</label>
             <input class="form-input" id="fZeit" type="time" />
           </div>
-          <div class="form-group" id="grpDisziplin" hidden>
-            <label class="form-label" for="fDisziplin" data-i18n="grp.disziplin">Disziplin</label>
-            <select class="form-select" id="fDisziplin">
-              <option value="">—</option>
-              <option value="SL" data-i18n="disziplin.SL">Slalom</option>
-              <option value="RS" data-i18n="disziplin.RS">Riesenslalom</option>
-              <option value="SG" data-i18n="disziplin.SG">Super-G</option>
-              <option value="DH" data-i18n="disziplin.DH">Abfahrt</option>
-            </select>
-          </div>
+        </div>
+
+        <div class="form-group" id="grpDisziplin" hidden>
+          <label class="form-label" for="fDisziplin" data-i18n="grp.disziplin">Disziplin</label>
+          <select class="form-select" id="fDisziplin">
+            <option value="">—</option>
+            <option value="SL" data-i18n="disziplin.SL">Slalom</option>
+            <option value="RS" data-i18n="disziplin.RS">Riesenslalom</option>
+            <option value="SG" data-i18n="disziplin.SG">Super-G</option>
+            <option value="DH" data-i18n="disziplin.DH">Abfahrt</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -316,6 +365,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=3"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=4"></script>
 </body>
 </html>

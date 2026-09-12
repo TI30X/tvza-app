@@ -974,6 +974,15 @@ service cloud.firestore {
        schreibt, alle Mitglieder lesen. Ein Athlet traegt kein Rennen
        ein — aber er sagt zu, und das steht eine Ebene tiefer. */
     match /groups/{gid}/events/{eid} {
+      /* Das eigene Wort eines Termins: "Elternabend", "Physio". Die Art
+         bleibt das Verhalten (training/lager/rennen); das Wort ist nur,
+         wie er heisst. Fehlt es, gilt das Wort der Art. Dieselbe Grenze
+         wie BEZEICHNUNG_MAX in termine.js. */
+      function bezeichnungGueltig(d) {
+        return !('bezeichnung' in d)
+          || (d.bezeichnung is string && d.bezeichnung.size() > 0 && d.bezeichnung.size() <= 40);
+      }
+
       allow get, list: if inGroup(gid);
 
       allow create: if leadsGroup(gid)
@@ -984,8 +993,9 @@ service cloud.firestore {
                     && request.resource.data.von is string
                     && request.resource.data.von.matches('\\d{4}-\\d{2}-\\d{2}')
                     && request.resource.data.createdBy == request.auth.uid
+                    && bezeichnungGueltig(request.resource.data)
                     && request.resource.data.keys().hasOnly([
-                      'art', 'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
+                      'art', 'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
                       'disziplin', 'startnummer', 'ergebnis',
                       'abgesagt', 'absageGrund',
                       'createdBy', 'createdAt'
@@ -998,15 +1008,17 @@ service cloud.firestore {
       allow update: if leadsGroup(gid)
                     && request.resource.data.diff(resource.data).affectedKeys()
                       .hasOnly([
-                        'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
+                        'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
                         'disziplin', 'startnummer', 'ergebnis',
                         'abgesagt', 'absageGrund'
                       ])
+                    && bezeichnungGueltig(request.resource.data)
                     && request.resource.data.titel is string
                     && request.resource.data.titel.size() > 0
                     && request.resource.data.titel.size() <= 120;
 
       allow delete: if leadsGroup(gid);
+
     }
 
     /* Trainingsplaene einer Gruppe.

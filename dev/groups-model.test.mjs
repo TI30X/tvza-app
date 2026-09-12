@@ -444,3 +444,25 @@ test('die Grössengrenze steht im Client und in der Regel', async () => {
   // Base64 bläht um ein Drittel auf, und ein Dokument darf 1 MiB.
   assert.match(groups, /size: laenge/);
 });
+
+test('ein Termin darf ein eigenes Wort tragen, kurz und nur als Text', async () => {
+  const regeln = await readRules();
+  const block = matchBlock(regeln, '/groups/{gid}/events/{eid}');
+
+  /* "Elternabend", "Physio": die Art bleibt das Verhalten, das Wort ist
+     nur, wie der Termin heisst. Anlegen UND aendern pruefen es. */
+  for (const verb of ['create', 'update']) {
+    const klausel = allowClause(block, verb);
+    assert.match(klausel, /'bezeichnung'/, `${verb}: bezeichnung fehlt in der Schluesselliste`);
+    assert.match(klausel, /bezeichnungGueltig\(request\.resource\.data\)/, `${verb}: ungeprueft`);
+  }
+  assert.match(block, /function bezeichnungGueltig\(d\) \{/);
+  assert.match(block, /d\.bezeichnung is string && d\.bezeichnung\.size\(\) > 0 && d\.bezeichnung\.size\(\) <= (\d+)/);
+
+  /* Dieselbe Grenze wie im Client — sonst lehnt die Regel ab, was das
+     Formular durchgelassen hat, und der Trainer sieht nur "hat nicht
+     geklappt". */
+  const grenze = Number(block.match(/d\.bezeichnung\.size\(\) <= (\d+)/)[1]);
+  const { BEZEICHNUNG_MAX } = await import('../assets/js/termine.js');
+  assert.equal(grenze, BEZEICHNUNG_MAX);
+});

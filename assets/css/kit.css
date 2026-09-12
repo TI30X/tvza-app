@@ -3122,3 +3122,111 @@ html.tvza-content-frame body > main {
 }
 .vorwoche__werte { flex: 1; min-width: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
 .vorwoche__notiz { flex: none; color: var(--ink-soft); font-style: italic; }
+
+/* ══ Frage, Eingabe, Meldung ═══════════════════════════════════════
+   Der gestaltete Ersatz fuer prompt(), confirm() und alert() —
+   assets/js/dialog.js. Am Handy ein Blatt von unten, wo der Daumen
+   ist; am Laptop eine Karte in der Mitte. */
+.frage {
+  border: 0; padding: 0; margin: 0;
+  max-width: none; max-height: none;
+  width: 100%; height: 100%;
+  background: transparent;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.frage:not([open]) { display: none; }
+.frage::backdrop { background: oklch(0.2 0.03 250 / 0.45); }
+.frage__karte {
+  width: 100%; max-width: 440px;
+  display: flex; flex-direction: column; gap: var(--s3);
+  margin: 0;
+  padding: var(--s5) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom));
+  background: var(--surface); color: var(--ink);
+  border-radius: var(--r-panel) var(--r-panel) 0 0;
+  box-shadow: var(--sh-lift);
+  animation: frageAuf 180ms cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+.frage__titel { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.3; }
+.frage__text  { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+.frage__feld  { width: 100%; }
+/* Ein Einladungscode wird abgelesen und abgetippt — gross und gesperrt,
+   damit man ihn Zeichen fuer Zeichen vergleichen kann. */
+.frage__feld--gross {
+  font-size: 22px; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; text-align: center;
+}
+.frage__knoepfe { display: flex; gap: var(--s2); margin-top: var(--s2); }
+.frage__knoepfe .b { flex: 1; }
+/* Im Dialog ist "Loeschen" die Antwort, nicht ein Nebenknopf: gefuellt. */
+.frage .b--danger { background: var(--danger); color: #fff; }
+.frage .b--danger:hover { background: color-mix(in oklab, var(--danger) 88%, black); }
+@keyframes frageAuf { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (min-width: 900px) {
+  .frage { align-items: center; }
+  .frage__karte { border-radius: var(--r-panel); padding: var(--s5); }
+}
+@media (prefers-reduced-motion: reduce) { .frage__karte { animation: none; } }
+
+/* ══ Wahlkarten ════════════════════════════════════════════════════
+   Eine Frage mit wenigen Antworten, die man SEHEN soll, bevor man
+   waehlt: was fuer eine Gruppe, welche Art von Termin. Vorher war das
+   ein Auswahlfeld oder — beim Anlegen einer Gruppe — eine Ziffer, die
+   man in ein Browserfenster tippte. */
+.wahlkarten { display: grid; gap: var(--s2); }
+.wahlkarte {
+  display: grid; grid-template-columns: auto 1fr; align-items: center;
+  column-gap: var(--s3); row-gap: var(--s1);
+  padding: var(--s3) var(--s4);
+  border: 1.5px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface); color: var(--ink);
+  font: inherit; text-align: left; cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.wahlkarte:hover { border-color: var(--ink-soft); }
+.wahlkarte[aria-checked="true"] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent-bg) 60%, var(--surface));
+}
+.wahlkarte__bild {
+  grid-row: span 2;
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: var(--r-icon);
+  background: var(--tint, var(--surface-2)); color: var(--deep, var(--ink));
+}
+.wahlkarte__bild svg { width: 24px; height: 24px; fill: none; stroke: currentColor;
+                       stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.wahlkarte__titel { font-size: 15px; font-weight: 800; }
+.wahlkarte__text  { font-size: 13px; line-height: 1.4; color: var(--ink-soft); }
+@media (min-width: 900px) {
+  .wahlkarten--drei { grid-template-columns: repeat(3, 1fr); }
+  .wahlkarten--drei .wahlkarte {
+    grid-template-columns: 1fr; align-content: start; row-gap: var(--s2);
+    padding: var(--s4);
+  }
+  .wahlkarten--drei .wahlkarte__bild { grid-row: auto; }
+}
+
+/* ══ Wahlknoepfe ═══════════════════════════════════════════════════
+   Die kleine Form derselben Idee: eine Reihe Pillen, eine davon
+   gewaehlt. Fuer die Art eines Termins — Training, Lager, Rennen, und
+   "Eigene", wenn es nichts davon ist. Die Farbe ist die der Art, damit
+   man in der Liste spaeter wiedererkennt, was man hier gewaehlt hat. */
+.wahl { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.wahl__knopf {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  min-height: 40px; padding: 0 var(--s4);
+  border: 1.5px solid var(--border); border-radius: var(--r-pill);
+  background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.wahl__knopf::before {
+  content: ''; width: 8px; height: 8px; border-radius: var(--r-pill);
+  background: var(--deep, var(--ink-soft));
+}
+.wahl__knopf:hover { border-color: var(--ink-soft); }
+.wahl__knopf[aria-checked="true"] {
+  border-color: var(--deep, var(--accent));
+  background: var(--tint, var(--accent-bg));
+}

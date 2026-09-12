@@ -384,6 +384,9 @@ export async function terminAnlegen(gid, uid, termin) {
   await writeBatch(db)
     .set(ref, ohneLeere({
       art: termin.art,
+      /* Das eigene Wort — nur, wenn es eins gibt; ohneLeere laesst ein
+         leeres weg, damit die Regel es nicht pruefen muss. */
+      bezeichnung: String(termin.bezeichnung ?? '').trim(),
       titel: String(termin.titel ?? '').trim(),
       von: termin.von,
       bis: termin.bis,

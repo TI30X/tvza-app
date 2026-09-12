@@ -86,6 +86,22 @@ export function kenntDisziplinen(gruppenart) {
   return gruppenart === 'kader';
 }
 
+/* ── Ein eigenes Wort ──────────────────────────────────────────────
+   Nicht alles ist Training, Lager oder Rennen: Elternabend, Physio,
+   Materialtest. Die drei Arten bleiben das VERHALTEN — ein Tag mit
+   Uhrzeit, mehrere Tage, ein Ergebnis —, und ein Termin kann dazu sein
+   eigenes Wort tragen. Ein vierter Typ waere ein vierter Satz Regeln,
+   Farben und Sonderfaelle fuer etwas, das sich wie ein Training
+   verhaelt. */
+export const BEZEICHNUNG_MAX = 40;
+
+/** Das Wort, unter dem ein Termin erscheint: sein eigenes, sonst das
+    seiner Art in der Sprache der Gruppe. */
+export function artName(termin, gruppenart = 'kader') {
+  const eigen = String(termin?.bezeichnung ?? '').trim();
+  return eigen || artWort(termin?.art, gruppenart);
+}
+
 export function artWort(art, gruppenart = 'kader') {
   const tabelle = WORTE_JE_GRUPPE[gruppenart] || WORTE_JE_GRUPPE.kader;
   const eintrag = tabelle[art];
@@ -259,6 +275,11 @@ export function alsVorschauTermine(termine, vonTag, bisTag) {
 export function pruefe(termin) {
   const fehler = [];
   if (!ARTEN.includes(termin?.art)) fehler.push('Unbekannte Terminart.');
+
+  if (termin?.bezeichnung != null && termin.bezeichnung !== '') {
+    if (typeof termin.bezeichnung !== 'string') fehler.push('Die Bezeichnung ist unlesbar.');
+    else if (termin.bezeichnung.trim().length > BEZEICHNUNG_MAX) fehler.push('Die Bezeichnung ist zu lang.');
+  }
 
   const titel = String(termin?.titel ?? '').trim();
   if (!titel) fehler.push('Der Termin braucht einen Titel.');

@@ -14,15 +14,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { JSDOM } from 'jsdom';
+import { starteGruppe } from './gruppe-harness.mjs';
 
 import { parseProgram } from '../assets/js/training-parser.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const datei = p => pathToFileURL(join(root, p)).href;
-const dataUrl = quelle => 'data:text/javascript;base64,' + Buffer.from(quelle).toString('base64');
 
 const grid = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
 const programm = parseProgram(grid);
@@ -32,112 +30,15 @@ const programm = parseProgram(grid);
    termine.js und liest die Systemuhr — also wird sie gestellt. */
 const HEUTE = '2026-08-05';
 
-const FIREBASE_STUB = `
-  export const escHtml = s => String(s ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  export const requireAuth = () => Promise.resolve({ uid: 'timo', email: 't@example.test' });
-  export const getProfile = () => Promise.resolve({ displayName: 'Timothy' });
-  export const wireOfflineBanner = () => {};
-  export const reportClientError = (wo, e) => { (globalThis.__fehler ||= []).push([wo, String(e)]); };
-`;
-
-const SHELL_STUB = `
-  export const mountShell = () => {};
-  export const setShellTitle = () => {};
-`;
-
-/* Nur was die Seite beim Zeichnen wirklich anfasst. Alles andere ist
-   ein Platzhalter — ein Stub, der mehr kann als nötig, verschleiert,
-   wovon die Ansicht wirklich abhängt. */
-function groupsStub(plaene, protokolle) {
-  return `
-    export const PLAN_FUER_ALLE = 'alle';
-    export const leitet = r => r === 'head' || r === 'staff';
-    export const fuehrt = r => r === 'head';
-    export const wort = (art, was) => was;
-    export const waehleAktive = liste => liste?.[0] ?? null;
-    export const aktiveGruppeSetzen = () => {};
-    export const beobachteMeineGruppen = (uid, cb) => {
-      cb([{ id: 'g1', name: 'Kader', art: 'kader', meineRolle: 'mitglied' }]);
-      return () => {};
-    };
-    export const beobachteTermine = () => () => {};
-    export const ladeMitglieder = async () => [{ uid: 'timo', name: 'Timothy', rolle: 'mitglied' }];
-    export const ladePlaene = async () => ${JSON.stringify(plaene)};
-    export const ladeProtokolle = async () => ${JSON.stringify(protokolle)};
-    export const ladeZusagen = async () => [];
-    export const ladeErgebnisse = async () => [];
-    export const ladeAnhaenge = async () => [];
-    export const eigeneProgramme = async () => [];
-    export const gruppeAnlegen = async () => 'g1';
-    export const terminAnlegen = async () => {};
-    export const terminLoeschen = async () => {};
-    export const terminAbsagen = async () => {};
-    export const absageZuruecknehmen = async () => {};
-    export const zusagen = async () => {};
-    export const rolleSetzen = async () => {};
-    export const mitgliedEntfernen = async () => {};
-    export const uebergeben = async () => {};
-    export const einladungErzeugen = async () => 'CODE';
-    export const beitreten = async () => {};
-    export const ergebnisSpeichern = async () => {};
-    export const planVeroeffentlichen = async () => 'p1';
-    export const abonnementErneuern = async () => '';
-    export const abonnementAdresse = () => '';
-    export const anhangSpeichern = async () => {};
-    export const anhangUmbenennen = async () => {};
-    export const anhangLoeschen = async () => {};
-    export const alsBlob = () => null;
-  `;
-}
-
+/* Der jsdom-Aufbau liegt seit v.35.24.0 in gruppe-harness.mjs — ihn
+   brauchen mehrere Tests, und zwei Kopien laufen auseinander. */
 async function starteSeite({ plaene, protokolle = [] }) {
-  const html = await readFile(join(root, 'pages/gruppe.html'), 'utf8');
-  const dom = new JSDOM(html.replace(/<script\b[^>]*><\/script>/gi, ''), {
-    url: 'https://firn.test/pages/gruppe.html',
+  const { doc, zurueck } = await starteGruppe({
+    plaene, protokolle, heute: HEUTE,
+    bereit: d => !d.getElementById('secPlaene').hidden && d.getElementById('listPlaene').innerHTML,
   });
-  const { window } = dom;
-
-  globalThis.window = window;
-  globalThis.document = window.document;
-  globalThis.localStorage = window.localStorage;
-  globalThis.location = window.location;
-  globalThis.__fehler = [];
-
-  /* termine.js liest die Systemuhr. Ohne gestellte Uhr hinge der Test
-     davon ab, an welchem Tag er läuft. */
-  const echtesDate = Date;
-  class FesteZeit extends echtesDate {
-    constructor(...args) {
-      if (args.length === 0) super(`${HEUTE}T09:00:00`);
-      else super(...args);
-    }
-    static now() { return new echtesDate(`${HEUTE}T09:00:00`).getTime(); }
-  }
-  globalThis.Date = FesteZeit;
-  window.Date = FesteZeit;
-
-  const quelle = (await readFile(join(root, 'assets/js/feature/gruppe/gruppe.js'), 'utf8'))
-    .replace(`'../../firebase-config.js'`, `'${dataUrl(FIREBASE_STUB)}'`)
-    /* Mit jeder Versionsnummer: sie wandert bei jeder Aenderung der
-       Huelle, und der Test soll daran nicht jedes Mal zerbrechen. */
-    .replace(/'\.\.\/\.\.\/shell\.js\?v=\d+'/, `'${dataUrl(SHELL_STUB)}'`)
-    .replace(`'../../groups.js'`, `'${dataUrl(groupsStub(plaene, protokolle))}'`)
-    .replace(`'../../wochenplan.js'`, `'${datei('assets/js/wochenplan.js')}'`)
-    .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
-    .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)
-    .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`);
-
-  await import(dataUrl(quelle));
-
-  for (let i = 0; i < 100; i++) {
-    if (!window.document.getElementById('secPlaene').hidden
-        && window.document.getElementById('listPlaene').innerHTML) break;
-    await new Promise(r => setTimeout(r, 10));
-  }
-  globalThis.Date = echtesDate;
-  return window.document;
+  zurueck();
+  return doc;
 }
 
 const planFuerAlle = {

@@ -228,7 +228,11 @@ export function alsKalender({ name = 'Firn', gid = '', termine = [], artWort, je
   ];
 
   const koerper = (Array.isArray(termine) ? termine : [])
-    .map(t => alsVEvent(t, { gid, artWort: artWort?.(t.art) || '', jetzt }))
+    /* Ein eigenes Wort ("Elternabend") steht im Abo wie in der App. */
+    .map(t => alsVEvent(t, {
+      gid, jetzt,
+      artWort: String(t.bezeichnung ?? '').trim() || artWort?.(t.art) || '',
+    }))
     .filter(Boolean)
     .flat();
 
