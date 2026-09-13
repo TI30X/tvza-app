@@ -31,7 +31,7 @@ import {
   abonnementErneuern, abonnementAdresse,
   terminAbsagen, absageZuruecknehmen,
   ladeAnhaenge, anhangSpeichern, anhangUmbenennen, anhangLoeschen, alsBlob,
-  waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
+  waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet, eigeneKarte,
 } from '../../groups.js';
 import {
   wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag, planTageMitDatum, ersetztePlaene,
@@ -1929,6 +1929,9 @@ async function einladen() {
 
   let profile = {};
   try { profile = await getProfile(user); } catch { /* Kopf bleibt schlicht */ }
+  /* Wer nur je die Gruppe öffnet, soll in der Kaderliste trotzdem mit
+     Namen stehen (personen.js). Still und im Hintergrund. */
+  void eigeneKarte(user.uid, profile);
 
   /* Die Gruppe ist ein TAB, keine Unterseite: kein Zurueck-Pfeil. Er
      stand hier bis v.35.23.0 und am Laptop direkt neben dem

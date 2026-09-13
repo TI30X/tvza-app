@@ -27,6 +27,9 @@
 
 ## Datenmodell (Firestore)
 - `users/{uid}` — Profil inkl. `modules` (welche Module aktiv sind), `isTimo`, `isParent`.
+  Seit v.35.47.0 privat: lesen nur die Person selbst und der Admin.
+- `personen/{uid}` — Namenskarte `{ name, aktualisiert }`, sonst nichts. Jedes Mitglied
+  darf eine Karte lesen, deren uid es kennt; auflisten nur der Admin (`personen.js`).
 - `projects/{uid}/items/{id}` — eigene Projekte (privat + öffentlich-Flag).
 - `publicProjects/{ownerUid__projectId}` — **flacher**, von allen lesbarer Feed.
   Felder: `ownerUid, ownerName, emoji, name, url, updatedAt`.

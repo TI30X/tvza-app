@@ -137,7 +137,7 @@ export const MODULES = {
   dm:    { key:'dm',   name:'Nachrichten',     sub:'Direktnachrichten',      emoji:'💬', page:'pages/messages.html',   perUser:false, shareable:false },
   matura: { key:'matura', name:'Maturaarbeit', sub:'Status & Fortschritt', emoji:'📊', page:'pages/maturaarbeit.html', perUser:false, shareable:false },
   maturatracker: { key:'maturatracker', name:'Maturaarbeit-Tracker', sub:'To-dos & Countdown', emoji:'🧵', page:'pages/maturaarbeit-tracker.html', perUser:true, shareable:false },
-  training: { key:'training', name:'Training', sub:'Wochenplan & Übungen', emoji:'🏋️', page:'pages/training.html', perUser:true, shareable:true },
+  training: { key:'training', name:'Training', sub:'Wochenplan & Übungen', emoji:'🏋️', page:'pages/training.html', perUser:true, shareable:false },
   projects: { key:'projects', name:'Projekte', sub:'Eigene Webprojekte', emoji:'🗂️', perUser:false, shareable:false },
   admin: { key:'admin', name:'Admin', sub:'Benutzer, Einladungen & Food-Anfragen', emoji:'🛡️', page:'pages/admin.html', perUser:false, shareable:false },
 };

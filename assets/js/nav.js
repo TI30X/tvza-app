@@ -26,6 +26,7 @@ import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.c
 import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=15';
 import { mountAppRouter } from './router.js?v=11';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
+import { eigeneKarte, kartenNachtragen } from './personen.js';
 
 const BEREICH_OF = {
   ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
@@ -227,6 +228,15 @@ if (!SKIP.includes(file)) {
     try { profile = await getProfile(user); } catch { /* rail just stays empty */ }
     mount(profile);
     mountAccountMenu(user, profile);
+    /* Die Namenskarte (personen.js, seit v.35.47.0): hier, weil nav.js
+       auf jeder Seite läuft — wer nur je die Gruppe öffnet, bekommt sie
+       genauso. Der Admin trägt dabei einmal am Tag die fehlenden Karten
+       der anderen nach. Beides still: scheitert es, bleibt die Seite,
+       wie sie ist. */
+    if (profile && Object.keys(profile).length) {
+      void eigeneKarte(user.uid, profile);
+      if (profile.isTimo === true) kartenNachtragen().catch(() => {});
+    }
     watchUnread(user);
     watchKeyboard();
     /* Hier stand zweimal refreshAreaNavigation(profile) — eine

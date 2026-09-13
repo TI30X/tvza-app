@@ -150,7 +150,7 @@
   <div class="modal-backdrop" id="userModal">
     <div class="modal">
       <div class="modal-title" data-i18n="msg.wem">Wem schreiben?</div>
-      <input class="form-input" id="userSearch" type="text" placeholder="Name oder E-Mail suchen…" autocomplete="off" data-i18n-attr="placeholder:msg.suchen" />
+      <input class="form-input" id="userSearch" type="text" placeholder="Name oder Gruppe suchen…" autocomplete="off" data-i18n-attr="placeholder:msg.suchen" />
       <div class="dm-userlist" id="userList"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" id="userCancel" data-i18n="a11y.schliessen">Schliessen</button>
@@ -160,8 +160,11 @@
 
   <script type="module">
     import { db, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError } from '../assets/js/firebase-config.js';
+    import { kontakte } from '../assets/js/groups.js';
+    import { nameVon } from '../assets/js/personen.js';
+    import { sucheBekannte } from '../assets/js/bekannte.js';
     import {
-      collection, doc, addDoc, setDoc, updateDoc, getDocs, onSnapshot,
+      collection, doc, addDoc, setDoc, updateDoc, onSnapshot,
       query, orderBy, where, serverTimestamp, increment
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -435,29 +438,43 @@
       }
     }
 
-    /* ════ New-chat user picker ════ */
+    /* ════ New-chat user picker ════
+       Bis v.35.46.0 lud die Auswahl ALLE Konten der App und zeigte bei
+       jedem die E-Mail — jedes Konto sah jedes andere, auch Kinder aus
+       fremden Kadern. Jetzt stehen hier die Leute aus den eigenen Gruppen
+       und die, mit denen man schon schreibt; nur Namen, darunter die
+       Gruppe. Den Namen liefert die Namenskarte (personen.js). */
     const userModal = $('userModal');
-    let allUsers = [];
+    let allUsers = null;
     async function loadUsers() {
-      if (allUsers.length) return allUsers;
-      try {
-        const qs = await getDocs(collection(db, 'users'));
-        allUsers = qs.docs.map(d => ({ uid: d.id, ...d.data() }))
-          .filter(u => u.uid !== me)
-          .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
-      } catch (e) { reportClientError('messages-users-load', e); allUsers = []; }
+      if (allUsers) return allUsers;
+      let liste = [];
+      try { liste = await kontakte(me); }
+      catch (e) { reportClientError('messages-contacts-load', e); }
+      const bekannt = new Set(liste.map(b => b.uid));
+      for (const c of convs) {
+        const other = otherOf(c);
+        const name = String(c.participantNames?.[other] || '').trim();
+        if (!other || bekannt.has(other) || !name) continue;
+        bekannt.add(other);
+        liste.push({ uid: other, name, gruppen: [] });
+      }
+      allUsers = liste.sort((a, b) => a.name.localeCompare(b.name, 'de'));
       return allUsers;
     }
     function renderUsers(filter = '') {
-      const f = filter.toLowerCase();
-      const list = allUsers.filter(u =>
-        (u.displayName || '').toLowerCase().includes(f) || (u.email || '').toLowerCase().includes(f));
+      const list = sucheBekannte(allUsers || [], filter);
       const box = $('userList');
-      if (!list.length) { box.innerHTML = `<div class="dm-empty" style="border:0">Keine Personen gefunden.</div>`; return; }
+      if (!list.length) {
+        box.innerHTML = (allUsers || []).length
+          ? `<div class="dm-empty" style="border:0">Keine Personen gefunden.</div>`
+          : `<div class="dm-empty" style="border:0">Hier stehen die Leute aus deinen Gruppen. Tritt einer Gruppe bei, dann kannst du ihnen schreiben.</div>`;
+        return;
+      }
       box.innerHTML = list.map(u => `
-        <button class="dm-user" data-uid="${escHtml(u.uid)}" data-name="${escHtml(u.displayName || u.email || 'Unbekannt')}">
-          <span class="dm-ava" style="width:36px;height:36px;font-size:13px">${escHtml(initials(u.displayName || u.email))}</span>
-          <span><span style="font-weight:700">${escHtml(u.displayName || 'Ohne Name')}</span><small>${escHtml(u.email || '')}</small></span>
+        <button class="dm-user" data-uid="${escHtml(u.uid)}" data-name="${escHtml(u.name)}">
+          <span class="dm-ava" style="width:36px;height:36px;font-size:13px">${escHtml(initials(u.name))}</span>
+          <span><span style="font-weight:700">${escHtml(u.name)}</span><small>${escHtml(u.gruppen.length ? u.gruppen.join(' · ') : 'Schon geschrieben')}</small></span>
         </button>`).join('');
       box.querySelectorAll('.dm-user').forEach(b => b.addEventListener('click', () => {
         userModal.classList.remove('visible');
@@ -486,12 +503,14 @@
       if (toName) {
         openThread(toUid, toName);
       } else {
-        const us = await loadUsers();
-        const u = us.find(x => x.uid === toUid);
-        if (u) openThread(u.uid, u.displayName || u.email || 'Unbekannt');
+        /* Die Namenskarte statt der Liste aller Konten — die gibt es
+           nicht mehr. Ohne Karte kein Name — und ohne Namen keine
+           Unterhaltung, sonst stünde 'Unbekannt' für immer darin. */
+        const name = await nameVon(toUid);
+        if (name) openThread(toUid, name);
       }
     }
   </script>
-  <script type="module" src="../assets/js/nav.js?v=13"></script>
+  <script type="module" src="../assets/js/nav.js?v=14"></script>
 </body>
 </html>

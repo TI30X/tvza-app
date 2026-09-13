@@ -78,6 +78,8 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
       return () => {};
     };
     export const ladeMitglieder = async () => ${JSON.stringify(mitglieder)};
+    /* Die Namenskarte schreibt die Seite im Hintergrund; hier gemerkt. */
+    export const eigeneKarte = ${merke('eigeneKarte')};
     /* Eine Liste gilt fuer jede Gruppe; ein Objekt { gid: [...] } je
        Gruppe — fuer den Bereich Training, der mehrere liest. */
     export const ladePlaene = async gid => {

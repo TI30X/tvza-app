@@ -14,7 +14,7 @@
    und Einstellungsrahmen dieselben Daten sehen), Zuhörer, die auch
    zwischen den Rahmen melden (BroadcastChannel), und genau die
    Funktionen, die die App importiert. Regeln prüft die Attrappe nicht
-   — dafür gibt es security-model.test.mjs.
+   — dafür gibt es security-model.test.mjs —, bis auf zwei (unten).
 
    Nichts hiervon wird ausgeliefert: dev/ gehört nicht zur App.
    ══════════════════════════════════════════════════════════════════ */
@@ -237,9 +237,28 @@ function treffer(q) {
   return liste;
 }
 
-export async function getDoc(ref) { await bereit; lesen(); return new DocumentSnapshot(ref, speicher[ref.path]); }
+/* ── Zwei Regeln, nachgestellt ─────────────────────────────────────
+   Sonst prüft die Attrappe keine Regeln. Diese doch, weil sonst nie zu
+   sehen wäre, was ein Athlet nach dem Ausrollen von v.35.47.0 sieht:
+   ein fremdes Profil (users/{uid}) liest nur der Admin, und auflisten
+   dürfen die Profile und die Namenskarten (personen) nur er. Sonst läse
+   die Attrappe munter weiter, und ein vergessener Lesezugriff fiele erst
+   gegen das echte Firestore auf. */
+const ich = () => { try { return localStorage.getItem('firn.attrappe.uid') ?? 'michel'; } catch { return 'michel'; } };
+const istAdmin = () => speicher['users/' + ich()]?.isTimo === true;
+const abgelehnt = () => fehler('permission-denied', 'Missing or insufficient permissions.');
+function darfLesen(ref) {
+  const t = ref.path.split('/');
+  if (t.length === 2 && t[0] === 'users' && t[1] !== ich() && !istAdmin()) throw abgelehnt();
+}
+function darfListen(q) {
+  const basis = q.type === 'query' ? q.basis : q;
+  if (basis.type === 'collection' && ['users', 'personen'].includes(basis.path) && !istAdmin()) throw abgelehnt();
+}
+
+export async function getDoc(ref) { await bereit; lesen(); darfLesen(ref); return new DocumentSnapshot(ref, speicher[ref.path]); }
 export const getDocFromServer = getDoc;
-export async function getDocs(q) { await bereit; lesen(); return querySnap(treffer(q)); }
+export async function getDocs(q) { await bereit; lesen(); darfListen(q); return querySnap(treffer(q)); }
 
 /* ── Schreiben ─────────────────────────────────────────────────────*/
 
@@ -281,6 +300,7 @@ const hoerer = new Set();
 function feuern(h) {
   let snap, stand;
   try {
+    if (h.q instanceof DocumentReference) darfLesen(h.q); else darfListen(h.q);
     if (h.q instanceof DocumentReference) {
       stand = JSON.stringify(speicher[h.q.path] ?? null);
       snap = new DocumentSnapshot(h.q, speicher[h.q.path]);

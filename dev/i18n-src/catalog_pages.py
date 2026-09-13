@@ -43,9 +43,10 @@ KEYS = {
 'msg.schreiben':    ('Nachricht schreiben…', 'Write a message…', 'Écrire un message…', 'Scrivi un messaggio…',
                      'Napisz wiadomość…', 'Bericht schrijven…', 'Escribe un mensaje…'),
 'msg.senden':       ('Senden', 'Send', 'Envoyer', 'Invia', 'Wyślij', 'Versturen', 'Enviar'),
-'msg.suchen':       ('Name oder E-Mail suchen…', 'Search name or email…', 'Rechercher un nom ou un e-mail…',
-                     'Cerca nome o e-mail…', 'Szukaj nazwiska lub e-maila…',
-                     'Zoek op naam of e-mail…', 'Buscar nombre o correo…'),
+# Seit v.35.47.0 ohne E-Mail: die Auswahl zeigt nur noch Namen und Gruppen.
+'msg.suchen':       ('Name oder Gruppe suchen…', 'Search name or group…', 'Rechercher un nom ou un groupe…',
+                     'Cerca nome o gruppo…', 'Szukaj osoby lub grupy…',
+                     'Zoek op naam of groep…', 'Buscar nombre o grupo…'),
 
 # ── Wetter ────────────────────────────────────────────────────────
 'wt.offline':       ('Offline – Wetterdaten evtl. nicht aktuell',

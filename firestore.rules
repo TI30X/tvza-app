@@ -412,10 +412,14 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      // A guest may check whether their own family profile exists. Listing
-      // profiles remains family-only.
-      allow get: if signedIn() && request.auth.uid == uid || isMember();
-      allow list: if isMember();
+      // Ein Profil traegt E-Mail, Freigaben, Sprache. Bis v.35.46.0 durfte
+      // jedes Mitglied jedes Profil lesen UND alle auflisten — die Auswahl
+      // im Chat zeigte darum jedem Konto die Adressen aller Konten. Jetzt:
+      // lesen nur die Person selbst (auch ein Gast, der prueft, ob er ein
+      // Konto hat) und der Admin; auflisten nur der Admin. Namen anderer
+      // kommen aus der Namenskarte darunter.
+      allow get: if (signedIn() && request.auth.uid == uid) || isAdmin();
+      allow list: if isAdmin();
 
       // A profile may be created without an invite. A supplied invite is
       // email-bound, consumed atomically and, if linked, joins one family.
@@ -454,6 +458,24 @@ service cloud.firestore {
                         .hasOnly(['familyId', 'role'])
                       && managesFamily(request.resource.data.familyId)
                     );
+      allow delete: if isAdmin();
+    }
+
+    // ── Namenskarten (v.35.47.0) ──────────────────────────────────
+    // Nichts als der Name. Jedes Mitglied darf eine Karte lesen, deren
+    // uid es kennt (aus einer Gruppe, einer Unterhaltung) — auflisten
+    // darf nur der Admin, sonst waere es wieder die Liste aller Konten.
+    // Schreiben: die Person selbst, und der Admin fuer die, die seit der
+    // Umstellung nicht da waren (personen.js, kartenNachtragen).
+    match /personen/{uid} {
+      allow get: if isMember();
+      allow list: if isAdmin();
+      allow create, update: if isMember()
+                            && (request.auth.uid == uid || isAdmin())
+                            && request.resource.data.keys().hasOnly(['name', 'aktualisiert'])
+                            && request.resource.data.name is string
+                            && request.resource.data.name.size() > 0
+                            && request.resource.data.name.size() <= 80;
       allow delete: if isAdmin();
     }
 

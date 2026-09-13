@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.35.46.0';
+const CACHE = 'tvza-v.35.47.0';
 // Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
@@ -39,7 +39,7 @@ const SHELL = [
   './assets/icons/firn-192.png',
   './assets/js/theme.js',
   // Der Start traegt seinen Code seit v.35.19.0 in eigenen Dateien.
-  './assets/js/feature/start/start.js?v=11',
+  './assets/js/feature/start/start.js?v=12',
   './assets/js/feature/start/wetter-chip.js?v=6',
   './assets/js/feature/start/heute.js?v=8',
   './assets/js/i18n.js?v=1',
@@ -78,6 +78,8 @@ const SHELL = [
   './assets/js/dialog.js',
   './assets/js/kontakte.js',
   './assets/js/zuordnung.js',
+  './assets/js/personen.js',
+  './assets/js/bekannte.js',
   './assets/js/kalender-teams.js',
   './assets/js/gruppenwahl.js',
   './assets/js/uebernahme.js',
@@ -87,9 +89,9 @@ const SHELL = [
   './assets/css/feature/video.css?v=1',
   './assets/js/feature/einheit/einheit.js?v=9',
   './assets/js/briefing.js',
-  './assets/js/nav.js?v=13',
+  './assets/js/nav.js?v=14',
   './assets/js/groups.js',
-  './assets/js/feature/gruppe/gruppe.js?v=14',
+  './assets/js/feature/gruppe/gruppe.js?v=15',
   './assets/css/feature/gruppe.css?v=6',
   './assets/js/feature/ski/ski.js?v=1',
   './pages/gruppe.html',
@@ -106,9 +108,9 @@ const SHELL = [
   './assets/css/feature/gast.css?v=1',
   './pages/maturaarbeit.html',
   './pages/maturaarbeit-tracker.html',
-  './assets/js/feature/matura/uebersicht.js?v=4',
+  './assets/js/feature/matura/uebersicht.js?v=5',
   './assets/js/feature/matura/uebersicht-ansicht.js',
-  './assets/js/feature/matura/tracker.js?v=4',
+  './assets/js/feature/matura/tracker.js?v=5',
   './assets/js/feature/matura/tracker-ansicht.js',
   './pages/training.html',
   './assets/js/training-parser.js',

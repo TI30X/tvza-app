@@ -33,9 +33,10 @@ import {
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ICONS, icon } from '../../shell.js?v=15';
-import { initialsOf } from '../../nav.js?v=13';
+import { initialsOf } from '../../nav.js?v=14';
 import { frage } from '../../dialog.js';
-import { meineGruppen, leitet } from '../../groups.js';
+import { meineGruppen, leitet, kontakte } from '../../groups.js';
+import { nameAus } from '../../bekannte.js';
 
 /* Modulschlüssel → Bereichsfarbe. Wie in nav.js ausgeschrieben,
    weil die beiden nicht deckungsgleich sind. */
@@ -669,9 +670,7 @@ function openSettings(section = '') {
   document.getElementById('adminSection').style.display = 'none';
   settingsModal.classList.add('visible');
   focusSettingsSection(section);
-  loadAppUsers().then(() => {
-    renderUserSuggestions();
-  });
+  renderShareTargets();
 }
 const adminHealthData = {
   gruppen:'checking',
@@ -828,25 +827,37 @@ async function loadAppUsers(force = false) {
   return appUsers;
 }
 
-function userOptionLabel(u) {
-  return `${u.displayName || u.email} <${u.email}>`;
+/* Teilen mit wem? Bis v.35.46.0 lud hier JEDES Konto alle Profile der
+   App und bot sie mit E-Mail als Vorschlag an ("Name <adresse>"). Jetzt
+   stehen zur Wahl die Leute aus den eigenen Gruppen, nur mit Namen; wer
+   denselben Namen trägt, bekommt seine Gruppe dazu. Nur der Admin sieht
+   alle — er darf die Profile ohnehin lesen. */
+let shareTargets = [];
+async function loadShareTargets() {
+  try {
+    if (profile.isTimo === true) {
+      await loadAppUsers();
+      shareTargets = appUsers.filter(u => u.uid !== user.uid)
+        .map(u => ({ uid: u.uid, name: nameAus(u) || u.email, gruppen: [] }));
+    } else {
+      shareTargets = await kontakte(user.uid);
+    }
+  } catch (e) {
+    reportClientError('share-targets', e);
+    shareTargets = [];
+  }
+  return shareTargets;
 }
 
-function renderUserSuggestions() {
-  document.getElementById('appUserSuggestions').innerHTML = appUsers
-    .filter(u => u.uid !== user.uid)
-    .map(u => `<option value="${escHtml(userOptionLabel(u))}"></option>`)
-    .join('');
-}
-
-function resolveShareUser(raw) {
-  const val = raw.trim().toLowerCase();
-  if (!val) return null;
-  return appUsers.find(u => {
-    const email = String(u.email || '').toLowerCase();
-    const name = String(u.displayName || '').toLowerCase();
-    return email === val || name === val || userOptionLabel(u).toLowerCase() === val;
-  }) || null;
+async function renderShareTargets() {
+  const sel = document.getElementById('shareUser');
+  await loadShareTargets();
+  const gleichnamig = name => shareTargets.filter(b => b.name === name).length > 1;
+  sel.innerHTML = `<option value="">${shareTargets.length ? 'Person wählen' : 'Noch niemand aus deinen Gruppen'}</option>`
+    + shareTargets.map(b => {
+      const zusatz = gleichnamig(b.name) && b.gruppen.length ? ` · ${b.gruppen.join(', ')}` : '';
+      return `<option value="${escHtml(b.uid)}">${escHtml(b.name + zusatz)}</option>`;
+    }).join('');
 }
 
 function renderModuleToggles() {
@@ -1036,15 +1047,17 @@ function renderShareModuleOptions() {
 document.getElementById('shareCreate').addEventListener('click', async () => {
   const moduleKey = document.getElementById('shareModule').value;
   if (!moduleKey) { alert('Du hast kein teilbares Modul freigeschaltet.'); return; }
-  await loadAppUsers();
-  const target = resolveShareUser(document.getElementById('shareUser').value);
+  const target = shareTargets.find(b => b.uid === document.getElementById('shareUser').value);
   const role = document.querySelector('input[name="shareRole"]:checked').value;
-  if (!target) { alert('Bitte eine Person aus den Vorschlägen auswählen.'); return; }
+  if (!target) { alert('Bitte eine Person auswählen.'); return; }
   if (target.uid === user.uid) { alert('Du kannst nicht mit dir selbst teilen.'); return; }
   const shareId = `${user.uid}__${target.uid}__${moduleKey}`;
   await setDoc(doc(db, 'shares', shareId), {
     ownerUid: user.uid, ownerName, module: moduleKey,
-    targetUid: target.uid, targetEmail: target.email.toLowerCase(), targetName: target.displayName || '',
+    /* Keine targetEmail mehr (v.35.47.0): gefunden wird eine Freigabe
+       über targetUid, und die Adresse gehört nicht in ein Dokument, das
+       auch die teilende Person liest. */
+    targetUid: target.uid, targetName: target.name,
     role,
     createdAt: serverTimestamp()
   });
@@ -1298,7 +1311,6 @@ async function renderAdminUsers() {
         applyModules();
       }
       await loadAppUsers(true);
-      renderUserSuggestions();
       await renderAdminUsers();
     } catch (error) {
       reportClientError('member-modules-save', error);

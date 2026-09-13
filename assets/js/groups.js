@@ -38,6 +38,12 @@ import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
   onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { nameVon } from './personen.js';
+import { bekannteAus } from './bekannte.js';
+
+/* Die Gruppenseite lädt nav.js nicht, schreibt ihre Namenskarte also
+   selbst — über diesen Weg, damit sie bei groups.js bleibt. */
+export { eigeneKarte } from './personen.js';
 
 /* ── Rollen ────────────────────────────────────────────────────────
    Dieselben drei in beiden Gruppenarten. Nur die Wörter wechseln. */
@@ -113,39 +119,32 @@ export async function ladeGruppe(gid) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-/* Namen stehen nicht am Mitgliedsdokument, sondern im Profil. Sie dort
-   zu spiegeln hiesse, sie bei jeder Namensänderung in jeder Gruppe
-   nachziehen zu müssen — und irgendwann stünde in einer Gruppe ein
-   Name, den es nicht mehr gibt.
+/* Namen stehen nicht am Mitgliedsdokument. Sie dort zu spiegeln hiesse,
+   sie bei jeder Namensänderung in jeder Gruppe nachziehen zu müssen —
+   und irgendwann stünde in einer Gruppe ein Name, den es nicht mehr
+   gibt. Bis v.35.46.0 kamen sie aus dem Profil, das dafür jedes Mitglied
+   lesen durfte, samt E-Mail. Seit v.35.47.0 aus der Namenskarte
+   (personen.js), die nichts trägt als den Namen.
 
-   Die Regeln erlauben jedem Mitglied, ein Profil zu lesen
-   (allow get: … || isMember()), also wird hier nachgeschlagen. Ein
-   Kader hat acht bis zwanzig Leute; das ist ein Lesezugriff pro Person
-   und einmal pro Aufruf, nicht pro Bildaufbau.
-
-   Der Zwischenspeicher gilt für die Lebensdauer der Seite. Ein Name,
-   der sich währenddessen ändert, ist beim nächsten Öffnen richtig —
-   das ist der Preis dafür, nicht bei jedem Neuzeichnen zu lesen. */
-const namensSpeicher = new Map();
-
-async function nameVon(uid) {
-  if (namensSpeicher.has(uid)) return namensSpeicher.get(uid);
-  let name = '';
-  try {
-    const snap = await getDoc(doc(db, 'users', uid));
-    if (snap.exists()) {
-      const d = snap.data();
-      name = String(d.displayName || d.name || '').trim();
-    }
-  } catch { /* fremdes Profil nicht lesbar — dann eben ohne Namen */ }
-  namensSpeicher.set(uid, name);
-  return name;
-}
-
+   Ein Kader hat acht bis zwanzig Leute; das ist ein Lesezugriff pro
+   Person und Seite, nicht pro Bildaufbau. */
 export async function ladeMitglieder(gid) {
   const snap = await getDocs(collection(db, 'groups', gid, 'members'));
   const roh = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
   return Promise.all(roh.map(async m => ({ ...m, name: await nameVon(m.uid) })));
+}
+
+/* Wen man kennt: die Leute aus den eigenen Gruppen, jede Person einmal.
+   Das ist die Auswahl im Chat und beim Teilen — nicht mehr die Liste
+   aller Konten der App. Eine Gruppe, deren Mitglieder sich nicht laden
+   lassen, fällt still weg, statt die ganze Auswahl zu leeren. */
+export async function kontakte(uid) {
+  const gruppen = await meineGruppen(uid);
+  const jeGruppe = await Promise.all(gruppen.map(async g => {
+    try { return { gruppe: g.name || '', mitglieder: await ladeMitglieder(g.id) }; }
+    catch { return { gruppe: g.name || '', mitglieder: [] }; }
+  }));
+  return bekannteAus(jeGruppe, uid);
 }
 
 export async function rolleVon(gid, uid) {

@@ -168,20 +168,25 @@ test('Familie und Kader unterscheiden sich in Wörtern und Vorgaben, nicht in Co
 test('die Kaderliste zeigt Namen, nicht UIDs', async () => {
   const src = await groups();
 
-  // Namen stehen im Profil, nicht am Mitgliedsdokument — sie dort zu
-  // spiegeln hiesse, sie bei jeder Namensänderung in jeder Gruppe
-  // nachziehen zu müssen. Also wird nachgeschlagen.
+  // Namen stehen nicht am Mitgliedsdokument — sie dort zu spiegeln
+  // hiesse, sie bei jeder Namensänderung in jeder Gruppe nachziehen zu
+  // müssen. Also wird nachgeschlagen, seit v.35.47.0 auf der
+  // Namenskarte statt im Profil (datenschutz.test.mjs).
   assert.match(fnBody(src, 'ladeMitglieder'), /name: await nameVon\(m\.uid\)/);
-  assert.match(fnBody(src, 'nameVon'), /doc\(db, 'users', uid\)/);
-  assert.match(fnBody(src, 'nameVon'), /displayName \|\| d\.name/);
+  assert.match(src, /import \{ nameVon \} from '\.\/personen\.js'/);
+  assert.doesNotMatch(src, /doc\(db, 'users', uid\)/,
+    'groups.js liest wieder fremde Profile — die Regeln erlauben das nur noch dem Admin');
 
-  // Ein nicht lesbares Profil darf die Liste nicht kippen — dann steht
+  const personen = await read('assets/js/personen.js');
+  assert.match(fnBody(personen, 'lies'), /doc\(db, 'personen', uid\)/);
+
+  // Eine nicht lesbare Karte darf die Liste nicht kippen — dann steht
   // dort eben kein Name.
-  assert.match(fnBody(src, 'nameVon'), /catch \{[^}]*\}/);
+  assert.match(fnBody(personen, 'lies'), /catch \{[^}]*\}/);
 
   // Und nicht bei jedem Neuzeichnen erneut lesen.
-  assert.match(src, /const namensSpeicher = new Map\(\)/);
-  assert.match(fnBody(src, 'nameVon'), /namensSpeicher\.has\(uid\)/);
+  assert.match(personen, /const speicher = new Map\(\)/);
+  assert.match(fnBody(personen, 'nameVon'), /speicher\.has\(uid\)/);
 });
 
 test('die Rolle steht einmal da, nicht zweimal', async () => {
