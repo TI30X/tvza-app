@@ -1845,6 +1845,45 @@ body.reorder-editing .module-tile::after {
 }
 .marke--tvza:not(:first-child) { margin-top: var(--s4); }
 
+/* Das Wortzeichen TVZA: dieselben Buchstaben, dasselbe Gewicht und
+   derselbe Abstand wie .tvza-marke, nur gross und ohne Rahmen — auf der
+   Projektseite und in der Leiste, wenn man in TVZA ist. Die Farbe kommt
+   aus der Umgebung. */
+.tvza { font-weight: 800; letter-spacing: 0.08em; white-space: nowrap; }
+
+/* ── Firn oder TVZA (wechsel.js, v.35.40.0) ────────────────────────
+   Beide Wortzeichen liegen übereinander; sichtbar ist das, was
+   data-software am nächsten Vorfahren sagt — ohne Angabe Firn. So
+   blenden sie ineinander, während sich das Zeichen daneben vom Berg
+   zum T verwandelt. */
+.software-wort { display: inline-grid; align-items: center; }
+.software-wort > * { grid-area: 1 / 1; transition: opacity 240ms ease; }
+.software-wort > .tvza { opacity: 0; }
+[data-software="tvza"] .software-wort > .tvza { opacity: 1; }
+[data-software="tvza"] .software-wort > .firn { opacity: 0; }
+
+/* Am Handy hat die Leiste keinen Kopf. Beim Wechsel erscheint das
+   Zeichen darum kurz oben in der Mitte und verwandelt sich dort;
+   wechsel.js baut es und nimmt es wieder weg. */
+.wechsel-hinweis {
+  position: fixed; z-index: 400; left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + var(--s2));
+  display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s1) var(--s4) var(--s1) var(--s1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--r-pill);
+  background: var(--brand-navy); color: #FFFFFF;
+  font-size: 17px; line-height: 1;
+  opacity: 0; transform: translate(-50%, -8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+.wechsel-hinweis.is-da { opacity: 1; transform: translate(-50%, 0); }
+.wechsel-hinweis svg { display: block; width: 30px; height: 30px; flex: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wechsel-hinweis, .wechsel-hinweis.is-da { transform: translate(-50%, 0); }
+}
+
 /* Knoepfe unter einem Abschnitt. Nebeneinander, solange sie passen. */
 /* ── Die Vorschau in der Tageskarte ────────────────────────────────
    Aufbau wie in der Schul-Mail, an der sich die Karte orientiert:

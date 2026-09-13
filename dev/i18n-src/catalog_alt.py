@@ -16,11 +16,11 @@ ueber die Vorgaben der Kantonsschule.
 
 KEYS = {
 # ── Seitentitel ───────────────────────────────────────────────────
-'ma.seitentitel':   ('Maturaarbeit — Firn', 'Thesis — Firn', 'Travail de maturité — Firn', 'Lavoro di maturità — Firn',
-                     'Praca maturalna — Firn', 'Eindwerk — Firn', 'Trabajo final — Firn'),
-'mt.seitentitel':   ('Maturaarbeit-Tracker — Firn', 'Thesis tracker — Firn', 'Suivi du travail de maturité — Firn',
-                     'Tracker lavoro di maturità — Firn', 'Tracker pracy maturalnej — Firn', 'Eindwerk-tracker — Firn',
-                     'Seguimiento del trabajo final — Firn'),
+'ma.seitentitel':   ('Maturaarbeit — {absender}', 'Thesis — {absender}', 'Travail de maturité — {absender}', 'Lavoro di maturità — {absender}',
+                     'Praca maturalna — {absender}', 'Eindwerk — {absender}', 'Trabajo final — {absender}'),
+'mt.seitentitel':   ('Maturaarbeit-Tracker — {absender}', 'Thesis tracker — {absender}', 'Suivi du travail de maturité — {absender}',
+                     'Tracker lavoro di maturità — {absender}', 'Tracker pracy maturalnej — {absender}', 'Eindwerk-tracker — {absender}',
+                     'Seguimiento del trabajo final — {absender}'),
 'adm.seitentitel':  ('Admin — Firn', 'Admin — Firn', 'Admin — Firn', 'Admin — Firn', 'Admin — Firn', 'Admin — Firn', 'Admin — Firn'),
 'gast.seitentitel': ('Gast-Zugang — Firn', 'Guest access — Firn', 'Accès invité — Firn', 'Accesso ospite — Firn',
                      'Dostęp dla gości — Firn', 'Gasttoegang — Firn', 'Acceso de invitado — Firn'),

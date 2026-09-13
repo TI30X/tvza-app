@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.35.39.0';
+const CACHE = 'tvza-v.35.40.0';
 // Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
@@ -23,7 +23,7 @@ const SHELL = [
   './index.html',
   './login.html',
   './willkommen.html',
-  './assets/css/kit.css?v=13',
+  './assets/css/kit.css?v=14',
   './assets/css/feature/willkommen.css?v=3',
   './assets/css/legacy.css?v=1',
   './assets/css/feature/calendar.css?v=15',
@@ -39,9 +39,9 @@ const SHELL = [
   './assets/icons/firn-192.png',
   './assets/js/theme.js',
   // Der Start traegt seinen Code seit v.35.19.0 in eigenen Dateien.
-  './assets/js/feature/start/start.js?v=8',
-  './assets/js/feature/start/wetter-chip.js?v=3',
-  './assets/js/feature/start/heute.js?v=4',
+  './assets/js/feature/start/start.js?v=9',
+  './assets/js/feature/start/wetter-chip.js?v=4',
+  './assets/js/feature/start/heute.js?v=5',
   './assets/js/i18n.js?v=1',
   // Sprachdateien gehoeren in den Vorrat: sonst laesst sich offline
   // zwar umschalten, aber der Katalog fehlt und alles bleibt deutsch.
@@ -65,8 +65,9 @@ const SHELL = [
   './assets/js/calendar-interop.js',
   './assets/js/calendar-view.js',
   './assets/js/matura-sync.js',
-  './assets/js/shell.js?v=12',
+  './assets/js/shell.js?v=13',
   './assets/js/router.js?v=9',
+  './assets/js/wechsel.js',
   './assets/js/reminders-overlay.js',
   './assets/js/settings-layer.js',
   './assets/js/hints.js',
@@ -81,13 +82,13 @@ const SHELL = [
   './assets/js/uebernahme.js',
   './assets/js/worker-config.js',
   './assets/js/pose.js',
-  './assets/js/feature/video/video.js?v=4',
+  './assets/js/feature/video/video.js?v=5',
   './assets/css/feature/video.css?v=1',
-  './assets/js/feature/einheit/einheit.js?v=5',
+  './assets/js/feature/einheit/einheit.js?v=6',
   './assets/js/briefing.js',
-  './assets/js/nav.js?v=10',
+  './assets/js/nav.js?v=11',
   './assets/js/groups.js',
-  './assets/js/feature/gruppe/gruppe.js?v=8',
+  './assets/js/feature/gruppe/gruppe.js?v=9',
   './assets/css/feature/gruppe.css?v=5',
   './assets/js/feature/ski/ski.js?v=1',
   './pages/gruppe.html',
@@ -104,14 +105,14 @@ const SHELL = [
   './assets/css/feature/gast.css?v=1',
   './pages/maturaarbeit.html',
   './pages/maturaarbeit-tracker.html',
-  './assets/js/feature/matura/uebersicht.js?v=1',
+  './assets/js/feature/matura/uebersicht.js?v=2',
   './assets/js/feature/matura/uebersicht-ansicht.js',
-  './assets/js/feature/matura/tracker.js?v=1',
+  './assets/js/feature/matura/tracker.js?v=2',
   './assets/js/feature/matura/tracker-ansicht.js',
   './pages/training.html',
   './assets/js/training-parser.js',
   './assets/data/training/images.json',
-  './assets/js/feature/training/training.js?v=2',
+  './assets/js/feature/training/training.js?v=3',
   './assets/js/feature/woche/woche.js',
   './assets/css/feature/woche.css?v=1',
   './pages/admin.html',
@@ -119,7 +120,7 @@ const SHELL = [
   './assets/icons/tvza.svg',
   './assets/icons/tvza-192.png',
   './assets/js/feature/oeffentlich/oeffentlich.js?v=1',
-  './assets/css/feature/oeffentlich.css?v=2',
+  './assets/css/feature/oeffentlich.css?v=3',
   ...FIREBASE_SDK,
 ];
 

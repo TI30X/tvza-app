@@ -16,7 +16,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell } from '../../shell.js?v=12';
+import { mountShell } from '../../shell.js?v=13';
 import {
   beobachteMeineGruppen, ladePlaene, ladeProtokolle, waehleAktive, leitet, PLAN_FUER_ALLE,
 } from '../../groups.js';

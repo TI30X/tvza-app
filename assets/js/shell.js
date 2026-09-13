@@ -21,6 +21,7 @@ import { auth, MODULES, enabledModules } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { frage } from './dialog.js';
 import { mountAppRouter } from './router.js?v=9';
+import { zeichen, wort, softwareVon, softwareZeigen } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
 // The module skips content frames, so routed pages mount exactly one bell.
@@ -322,12 +323,11 @@ export function mountRail({ profile = null } = {}) {
 
   /* Das Zeichen steht links vom Wort und bleibt stehen, wenn die
      Leiste zuklappt — in 64 Pixeln bricht "Firn" um, das Zeichen
-     nicht. */
+     nicht. Zeichen und Wort sagen, in welcher Software man ist: Firn
+     oder TVZA (wechsel.js). Das Zeichen ist darum ein SVG im Dokument,
+     kein <img> — es verwandelt sich beim Wechsel. */
   nav.innerHTML = `
-    <a class="nav__kopf" href="${b}index.html" aria-label="Firn — Start">
-      <img class="nav__zeichen" src="${b}assets/icons/firn.svg" alt="" width="28" height="28" />
-      <span class="nav__marke firn firn--hell" aria-hidden="true">Fir<b>n</b></span>
-    </a>
+    <a class="nav__kopf" href="${b}index.html" aria-label="Firn — Start"></a>
     ${tabs}
     <div class="nav__fuss">
       <button class="nav__klapp" id="shellNavKlapp" type="button"
@@ -338,6 +338,12 @@ export function mountRail({ profile = null } = {}) {
       </button>
     </div>`;
   nav.querySelector('.nav__fuss').prepend(kontoKnopf('leiste'));
+  const software = softwareVon(document);
+  const kopfZeichen = zeichen(software);
+  kopfZeichen.classList.add('nav__zeichen');
+  const kopfWort = wort();
+  kopfWort.classList.add('nav__marke');
+  nav.querySelector('.nav__kopf').append(kopfZeichen, kopfWort);
 
   document.body.appendChild(nav);
   relabel(nav);
@@ -349,6 +355,7 @@ export function mountRail({ profile = null } = {}) {
   nav.addEventListener('click', event => {
     if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
   });
+  softwareZeigen(software, { sanft: false });
   mountAppRouter(nav);
   verkabelLeiste();
   gruppeInDerLeiste(nav);

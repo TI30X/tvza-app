@@ -28,12 +28,20 @@ async function seiten() {
   return [...wurzel, ...unter].filter(f => !AUSNAHMEN.has(f.split('/').pop()));
 }
 
-test('kein Tab-Titel heisst noch TVZA', async () => {
+/* Seit v.35.40.0 sind die persönlichen Bereiche TVZA — auch im Titel.
+   Die Seite sagt es selbst (<body data-marke="TVZA">), und nur dort darf
+   der Titel TVZA nennen. Die Firn-Seiten bleiben frei davon. */
+test('der Tab-Titel nennt TVZA genau dort, wo die Seite TVZA ist', async () => {
+  const wurzel = (await readdir(root)).filter(f => f.endsWith('.html'));
+  const unter = (await readdir(join(root, 'pages'))).filter(f => f.endsWith('.html')).map(f => `pages/${f}`);
   const funde = [];
-  for (const f of await seiten()) {
+  for (const f of [...wurzel, ...unter]) {
     const html = await readFile(join(root, f), 'utf8');
     const titel = html.match(/<title[^>]*>([^<]*)<\/title>/)?.[1] || '';
-    if (/TVZA|TvZ/.test(titel)) funde.push(`${f}: ${titel}`);
+    const tvza = /<body[^>]*data-marke="TVZA"/.test(html);
+    if (/TvZ\b/.test(titel)) funde.push(`${f}: ${titel} (die alte Schreibweise)`);
+    if (tvza && !/TVZA/.test(titel)) funde.push(`${f}: TVZA-Seite, Titel ${titel}`);
+    if (!tvza && /TVZA/.test(titel)) funde.push(`${f}: Firn-Seite, Titel ${titel}`);
   }
   assert.deepEqual(funde, []);
 });

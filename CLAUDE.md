@@ -14,16 +14,24 @@ Anmeldung, aber nicht als ein Produkt.
 - **TVZA** sind die persönlichen Bereiche, die Timo für sich und seine
   Freunde gebaut hat (Maturaarbeit, Maturaarbeit-Tracker, Food, Watchlist,
   Projekte). Auf Start ein eigener Teil, in den Seiten das Zeichen TVZA, im
-  Tab das TVZA-Symbol, für neue Konten nicht freigegeben — der Admin gibt sie
-  frei, wem er will. Welche Bereiche TVZA sind, entscheidet **eine** Liste:
-  `TVZA_BEREICHE` in `assets/js/firebase-config.js`.
+  Tab das TVZA-Symbol und „— TVZA", für neue Konten nicht freigegeben — der
+  Admin gibt sie frei, wem er will. Welche Bereiche TVZA sind, entscheidet
+  **eine** Liste: `TVZA_BEREICHE` in `assets/js/firebase-config.js`.
 
-  Das Tab-Symbol sagt jede Seite selbst (`<link rel="icon">`). Weil der
-  Router die Bereiche in einen Rahmen lädt und die Seite oben stehen bleibt,
-  übernimmt `symbolFolgen()` in `router.js` das Symbol der Seite im Rahmen —
-  sonst zeigte der Tab in der Maturaarbeit den Firn-Berg der Startseite.
-  `dev/tvza-teil.test.mjs` leitet aus `TVZA_BEREICHE` ab, welche Seite
-  welches Symbol tragen muss.
+  **Eine Seite sagt selbst, wozu sie gehört:** `<body data-marke="TVZA">`,
+  dazu `<link rel="icon">` und `<title>`. `dev/tvza-teil.test.mjs` leitet aus
+  `TVZA_BEREICHE` ab, welche Seite was tragen muss. Weil der Router die
+  Bereiche in einen Rahmen lädt und die Seite oben stehen bleibt, übernimmt
+  `tabFolgen()` in `router.js` Symbol und Titel der Seite im Rahmen.
+
+  **Der Wechsel ist sichtbar** (`assets/js/wechsel.js`, v.35.40.0): an der
+  Grenze Firn ↔ TVZA wird oben in der Leiste der Berg zum T, „Firn" blendet
+  zu „TVZA"; am Handy erscheint das Zeichen kurz oben in der Mitte. Zwischen
+  zwei Firn-Seiten passiert nichts. Das Zeichen der Leiste ist darum ein SVG
+  im Dokument, kein `<img>`. Die Verwandlung rechnet zwischen den Ecken von
+  je drei Vierecken; `dev/wechsel.test.mjs` prüft, dass beide Enden genau
+  `firn.svg` und `tvza.svg` sind — wer eines der Symbole ändert, muss
+  `FORMEN` mitziehen.
 
 Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
 Michel baut und hostet. Timos Name steht je Seite **einmal**, als
@@ -31,7 +39,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.39.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.40.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -59,7 +67,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-55 Testdateien, **603 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+57 Testdateien, **613 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -84,7 +92,11 @@ Service-Worker-Vorrat.
 
 Dasselbe gilt für `?v=` an `kit.css` und den Seitenmodulen: ändert sich das
 Stylesheet, muss die Zahl in **allen** Seiten und in `sw.js` mitwandern.
-Sonst sieht man neues Markup mit altem Stylesheet.
+Sonst sieht man neues Markup mit altem Stylesheet. Und die Kette: wer eine
+geänderte Datei lädt, hat selbst eine neue Zeile — `shell.js` ändern heisst
+`gruppe.js` und `gruppe.html` ändern. Das zieht `node dev/versionen.mjs
+<datei> …` nach; `dev/versionen.test.mjs` prüft, dass jede Datei überall
+dieselbe Zahl trägt.
 
 **2. Die Regeln sind die Wahrheit, nicht die Oberfläche.** Mitgliedschaft,
 Gruppenisolation und einmalige Einladungscodes stehen in `firestore.rules`
@@ -339,7 +351,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 603 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 613 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -361,7 +373,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.39.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.40.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

@@ -68,7 +68,8 @@ test('Maturaarbeit auf Englisch: der Rahmen uebersetzt, Timos Inhalt deutsch', a
   const w = await starte('pages/maturaarbeit.html');
   const en = kataloge.en;
 
-  assert.equal(w.document.title, en['ma.seitentitel']);
+  /* Der Absender steht als Variable im Titel, nicht als Wort im Katalog. */
+  assert.equal(w.document.title, en['ma.seitentitel'].replace('{absender}', 'TVZA'));
   assert.match(text(w, '#cat-overview'), /Milestones/);
   assert.match(text(w, '#progress-summary'), /^\d+ of \d+ items done$/);
   assert.match(text(w, '#deadline-label'), /17 August 2026|August 17, 2026/, 'das Datum kommt aus Intl, nicht aus einem String');

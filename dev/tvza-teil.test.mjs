@@ -124,12 +124,13 @@ test('die persönlichen Seiten tragen das Zeichen, die Firn-Seiten nicht', async
   }
 });
 
-/* ── Das Symbol im Tab (v.35.39.0) ────────────────────────────────
-   Die persönlichen Bereiche zeigen das TVZA-Symbol, alle anderen den
-   Firn-Berg. Welche Seite welches trägt, folgt aus TVZA_BEREICHE und der
-   Seite in MODULES — keine zweite Liste. */
+/* ── Symbol, Titel und Zeichen der Software (v.35.39.0, v.35.40.0) ──
+   Die persönlichen Bereiche sind TVZA: im Tab das TVZA-Symbol, im Titel
+   "— TVZA", und <body data-marke="TVZA"> — daran erkennen Leiste und
+   Versionszeile, in welcher Software man ist. Welche Seite TVZA ist,
+   folgt aus TVZA_BEREICHE und der Seite in MODULES — keine zweite Liste. */
 
-test('jede Bereichsseite zeigt das Symbol ihrer Software', async () => {
+test('jede Bereichsseite trägt Symbol, Titel und Zeichen ihrer Software', async () => {
   const r = await registry();
   let tvza = 0;
   for (const m of Object.values(r.MODULES)) {
@@ -137,38 +138,50 @@ test('jede Bereichsseite zeigt das Symbol ihrer Software', async () => {
     const html = await lies(m.page);
     const symbol = html.match(/<link rel="icon"[^>]*href="[^"]*icons\/([a-z-]+)\.svg"/)?.[1];
     const touch = html.match(/<link rel="apple-touch-icon" href="[^"]*icons\/([a-z0-9-]+)\.png"/)?.[1];
+    const titel = html.match(/<title[^>]*>([^<]*)<\/title>/)?.[1] || '';
+    const marke = /<body[^>]*data-marke="TVZA"/.test(html);
     const soll = r.istTvza(m.key) ? 'tvza' : 'firn';
     assert.equal(symbol, soll, `${m.page}: Tab-Symbol`);
     assert.equal(touch, `${soll}-192`, `${m.page}: Homescreen-Symbol`);
+    assert.equal(marke, soll === 'tvza', `${m.page}: <body data-marke="TVZA">`);
+    assert.match(titel, soll === 'tvza' ? / — TVZA$/ : / — Firn$|^Firn$/, `${m.page}: Titel ${titel}`);
     if (soll === 'tvza') tvza++;
   }
   assert.equal(tvza, 4, 'Maturaarbeit, Tracker, Food, Watchlist — Projekte haben keine eigene Seite');
-  assert.match(await lies('index.html'), /<link rel="icon"[^>]*icons\/firn\.svg"/, 'Start ist Firn');
+  const start = await lies('index.html');
+  assert.match(start, /<link rel="icon"[^>]*icons\/firn\.svg"/, 'Start ist Firn');
+  assert.doesNotMatch(start, /<body[^>]*data-marke=/, 'Start ist Firn');
 });
 
 /* Der Router laedt die Bereiche in einen Rahmen, die Seite oben bleibt
-   stehen. Ohne symbolFolgen zeigte der Tab in der Maturaarbeit den
-   Firn-Berg der Startseite. */
-test('der Tab nimmt das Symbol der Seite im Rahmen, zurück auf Start das eigene', async () => {
+   stehen. Ohne tabFolgen zeigte der Tab in der Maturaarbeit den
+   Firn-Berg und den Titel der Startseite. */
+test('der Tab nimmt Symbol und Titel der Seite im Rahmen, zurück auf Start die eigenen', async () => {
   const { JSDOM } = await import('jsdom');
-  const { symbolFolgen } = await import('../assets/js/router.js');
-  const oben = new JSDOM('<link rel="icon" href="https://firn.test/assets/icons/firn.svg">', { url: 'https://firn.test/' }).window.document;
+  const { tabFolgen } = await import('../assets/js/router.js');
+  const oben = new JSDOM('<title>Firn</title><link rel="icon" href="https://firn.test/assets/icons/firn.svg">',
+    { url: 'https://firn.test/' }).window.document;
   const link = oben.querySelector('link[rel="icon"]');
-  const eigenes = link.href;
+  const eigen = { symbol: link.href, titel: oben.title };
   const rahmen = html => ({ contentDocument: new JSDOM(html, { url: 'https://firn.test/pages/x.html' }).window.document });
+  const matura = '<title>Maturaarbeit — TVZA</title><link rel="icon" href="../assets/icons/tvza.svg">';
 
-  symbolFolgen(link, rahmen('<link rel="icon" href="../assets/icons/tvza.svg">'), eigenes);
+  tabFolgen(oben, rahmen(matura), eigen);
   assert.equal(link.href, 'https://firn.test/assets/icons/tvza.svg', 'in der Maturaarbeit bleibt der Firn-Berg');
+  assert.equal(oben.title, 'Maturaarbeit — TVZA', 'in der Maturaarbeit steht "Firn" im Tab');
 
-  symbolFolgen(link, rahmen('<link rel="icon" href="../assets/icons/firn.svg">'), eigenes);
-  assert.equal(link.href, eigenes, 'zurück in einem Firn-Bereich bleibt das T stehen');
+  tabFolgen(oben, rahmen('<title>Kalender — Firn</title><link rel="icon" href="../assets/icons/firn.svg">'), eigen);
+  assert.equal(link.href, eigen.symbol, 'zurück in einem Firn-Bereich bleibt das T stehen');
+  assert.equal(oben.title, 'Kalender — Firn');
 
-  symbolFolgen(link, rahmen('<link rel="icon" href="../assets/icons/tvza.svg">'), eigenes);
-  symbolFolgen(link, null, eigenes);
-  assert.equal(link.href, eigenes, 'zurück auf der Startseite (kein Rahmen) bleibt das T stehen');
+  tabFolgen(oben, rahmen(matura), eigen);
+  tabFolgen(oben, null, eigen);
+  assert.equal(link.href, eigen.symbol, 'zurück auf der Startseite (kein Rahmen) bleibt das T stehen');
+  assert.equal(oben.title, 'Firn');
 
-  symbolFolgen(link, rahmen('<title>ohne Symbol</title>'), eigenes);
-  assert.equal(link.href, eigenes);
-  symbolFolgen(link, { get contentDocument() { throw new Error('fremder Ursprung'); } }, eigenes);
-  assert.equal(link.href, eigenes, 'ein Rahmen, den man nicht lesen darf, bricht nichts');
+  tabFolgen(oben, rahmen('<p>ohne Kopf</p>'), eigen);
+  assert.equal(link.href, eigen.symbol);
+  assert.equal(oben.title, 'Firn');
+  tabFolgen(oben, { get contentDocument() { throw new Error('fremder Ursprung'); } }, eigen);
+  assert.equal(link.href, eigen.symbol, 'ein Rahmen, den man nicht lesen darf, bricht nichts');
 });

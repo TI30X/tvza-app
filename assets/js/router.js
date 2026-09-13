@@ -6,6 +6,8 @@
    flash caused by full-document navigation.
 */
 
+import { softwareVon, softwareZeigen } from './wechsel.js';
+
 const FRAME_PARAM = 'tvzaFrame';
 const APP_FILES = new Set([
   'index.html',
@@ -227,16 +229,21 @@ function headerController(runPageAction) {
   return { show, bar };
 }
 
-/* Das Symbol im Tab gehoert der Seite, die man sieht (v.35.39.0).
+/* Der Tab gehoert der Seite, die man sieht — Symbol und Titel.
    Der Router laedt die Bereiche in einen Rahmen; die Seite oben bleibt
-   stehen und mit ihr ihr <link rel="icon">. Ohne das zeigte der Tab in
-   der Maturaarbeit weiter den Firn-Berg, obwohl die Seite selbst das
-   TVZA-Symbol traegt. Die Seite sagt ihr Symbol selbst — es gibt keine
-   Liste, die mit TVZA_BEREICHE auseinanderlaufen koennte. */
-export function symbolFolgen(link, rahmen, eigenes) {
-  let ziel = eigenes;
-  try { ziel = rahmen?.contentDocument?.querySelector('link[rel="icon"]')?.href || eigenes; } catch {}
-  if (link && ziel && link.href !== ziel) link.href = ziel;
+   stehen und mit ihr ihr <link rel="icon"> und ihr <title>. Ohne das
+   zeigte der Tab in der Maturaarbeit den Firn-Berg und "Firn" der
+   Startseite (v.35.39.0: Symbol, v.35.40.0: Titel). Die Seite sagt beides
+   selbst — es gibt keine Liste, die mit TVZA_BEREICHE auseinanderlaufen
+   koennte. Ohne lesbaren Rahmen gilt das Eigene der Seite oben. */
+export function tabFolgen(doc, rahmen, eigen) {
+  let fremd = null;
+  try { fremd = rahmen?.contentDocument || null; } catch {}
+  const symbol = fremd?.querySelector('link[rel="icon"]')?.href || eigen.symbol;
+  const titel = fremd?.title || eigen.titel;
+  const link = doc.querySelector('link[rel="icon"]');
+  if (link && symbol && link.href !== symbol) link.href = symbol;
+  if (titel && doc.title !== titel) doc.title = titel;
 }
 
 export function mountAppRouter(nav) {
@@ -267,8 +274,10 @@ export function mountAppRouter(nav) {
     );
   });
   header.show(initialUrl, routeLabel(nav, initialUrl));
-  const tabSymbol = document.querySelector('link[rel="icon"]');
-  const eigenesSymbol = tabSymbol?.href;
+  /* Was der Tab auf der Seite oben traegt. Gemerkt wird es jedes Mal,
+     bevor man sie verlaesst — bis dahin kann der Katalog den Titel
+     uebersetzt haben. */
+  const eigen = { symbol: document.querySelector('link[rel="icon"]')?.href, titel: document.title };
 
   const progress = document.createElement('div');
   progress.className = 'tvza-route-progress';
@@ -309,7 +318,8 @@ export function mountAppRouter(nav) {
     currentUrl = new URL(target.href);
     updateNavigation(nav, target);
     header.show(target, routeLabel(nav, target));
-    symbolFolgen(tabSymbol, null, eigenesSymbol);
+    tabFolgen(document, null, eigen);
+    softwareZeigen(softwareVon(document));
   };
 
   const navigate = (raw, historyMode = 'push') => {
@@ -324,6 +334,10 @@ export function mountAppRouter(nav) {
 
     const id = ++navigationId;
     const label = routeLabel(nav, target);
+    if (!currentFrame) {
+      eigen.symbol = document.querySelector('link[rel="icon"]')?.href || eigen.symbol;
+      eigen.titel = document.title || eigen.titel;
+    }
     const direction = routeDirection(currentUrl, target);
     const incoming = document.createElement('div');
     incoming.className = `tvza-route-frame is-entering ${direction < 0 ? 'from-left' : 'from-right'}`;
@@ -351,7 +365,10 @@ export function mountAppRouter(nav) {
         currentUrl = new URL(target.href);
         updateNavigation(nav, target);
         header.show(target, label);
-        symbolFolgen(tabSymbol, contentFrame, eigenesSymbol);
+        tabFolgen(document, contentFrame, eigen);
+        let rahmenDoc = null;
+        try { rahmenDoc = contentFrame.contentDocument; } catch {}
+        softwareZeigen(softwareVon(rahmenDoc));
         progress.classList.remove('is-loading');
         requestAnimationFrame(() => {
           incoming.classList.remove('is-entering');

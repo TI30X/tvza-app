@@ -9,7 +9,7 @@
    lud das Kit nicht: sie hatte ihren eigenen Token-Satz, eigene Radien
    (8/12 px) und ein eigenes Wortzeichen. Jetzt kommen Skala, Radien und
    die Fusstafel aus kit.css; hier steht nur, was die Seite anders macht —
-   die Palette und das Zeichen TVZA.
+   die Palette und wie gross das Zeichen TVZA steht.
 
    Die Palette hängt an .oeffentlich und nicht an :root, damit sie
    nirgends sonst greift. --brand-gradient und --accent stehen mit
@@ -45,11 +45,8 @@
   --border:    oklch(0.34 0.006 250);
 }
 
-/* Das Zeichen der Seite ist TVZA, nicht Firn (v.35.37.0): dieselben
-   Buchstaben, dasselbe Gewicht und derselbe Abstand wie .tvza-marke im
-   Kit, nur gross und ohne Rahmen — damit das kleine Zeichen auf Start
-   und in den Bereichen und das grosse hier eines sind. */
-.tvza { font-weight: 800; letter-spacing: 0.08em; white-space: nowrap; color: #FFFFFF; }
+/* Das Zeichen der Seite ist TVZA, nicht Firn (v.35.37.0). Das Wortzeichen
+   .tvza steht seit v.35.40.0 im Kit, weil auch die Leiste es zeigt. */
 
 /* ── Kopf ─────────────────────────────────────────────────────────── */
 .hero {
