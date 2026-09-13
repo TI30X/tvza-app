@@ -123,3 +123,52 @@ test('die persönlichen Seiten tragen das Zeichen, die Firn-Seiten nicht', async
     assert.doesNotMatch(await lies(seite), /tvza-marke/, `${seite} ist Firn, nicht TVZA`);
   }
 });
+
+/* ── Das Symbol im Tab (v.35.39.0) ────────────────────────────────
+   Die persönlichen Bereiche zeigen das TVZA-Symbol, alle anderen den
+   Firn-Berg. Welche Seite welches trägt, folgt aus TVZA_BEREICHE und der
+   Seite in MODULES — keine zweite Liste. */
+
+test('jede Bereichsseite zeigt das Symbol ihrer Software', async () => {
+  const r = await registry();
+  let tvza = 0;
+  for (const m of Object.values(r.MODULES)) {
+    if (!m.page) continue;
+    const html = await lies(m.page);
+    const symbol = html.match(/<link rel="icon"[^>]*href="[^"]*icons\/([a-z-]+)\.svg"/)?.[1];
+    const touch = html.match(/<link rel="apple-touch-icon" href="[^"]*icons\/([a-z0-9-]+)\.png"/)?.[1];
+    const soll = r.istTvza(m.key) ? 'tvza' : 'firn';
+    assert.equal(symbol, soll, `${m.page}: Tab-Symbol`);
+    assert.equal(touch, `${soll}-192`, `${m.page}: Homescreen-Symbol`);
+    if (soll === 'tvza') tvza++;
+  }
+  assert.equal(tvza, 4, 'Maturaarbeit, Tracker, Food, Watchlist — Projekte haben keine eigene Seite');
+  assert.match(await lies('index.html'), /<link rel="icon"[^>]*icons\/firn\.svg"/, 'Start ist Firn');
+});
+
+/* Der Router laedt die Bereiche in einen Rahmen, die Seite oben bleibt
+   stehen. Ohne symbolFolgen zeigte der Tab in der Maturaarbeit den
+   Firn-Berg der Startseite. */
+test('der Tab nimmt das Symbol der Seite im Rahmen, zurück auf Start das eigene', async () => {
+  const { JSDOM } = await import('jsdom');
+  const { symbolFolgen } = await import('../assets/js/router.js');
+  const oben = new JSDOM('<link rel="icon" href="https://firn.test/assets/icons/firn.svg">', { url: 'https://firn.test/' }).window.document;
+  const link = oben.querySelector('link[rel="icon"]');
+  const eigenes = link.href;
+  const rahmen = html => ({ contentDocument: new JSDOM(html, { url: 'https://firn.test/pages/x.html' }).window.document });
+
+  symbolFolgen(link, rahmen('<link rel="icon" href="../assets/icons/tvza.svg">'), eigenes);
+  assert.equal(link.href, 'https://firn.test/assets/icons/tvza.svg', 'in der Maturaarbeit bleibt der Firn-Berg');
+
+  symbolFolgen(link, rahmen('<link rel="icon" href="../assets/icons/firn.svg">'), eigenes);
+  assert.equal(link.href, eigenes, 'zurück in einem Firn-Bereich bleibt das T stehen');
+
+  symbolFolgen(link, rahmen('<link rel="icon" href="../assets/icons/tvza.svg">'), eigenes);
+  symbolFolgen(link, null, eigenes);
+  assert.equal(link.href, eigenes, 'zurück auf der Startseite (kein Rahmen) bleibt das T stehen');
+
+  symbolFolgen(link, rahmen('<title>ohne Symbol</title>'), eigenes);
+  assert.equal(link.href, eigenes);
+  symbolFolgen(link, { get contentDocument() { throw new Error('fremder Ursprung'); } }, eigenes);
+  assert.equal(link.href, eigenes, 'ein Rahmen, den man nicht lesen darf, bricht nichts');
+});

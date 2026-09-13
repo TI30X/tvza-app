@@ -177,8 +177,8 @@
       .news-grid { grid-template-columns:1fr; }
     }
   </style>
-  <link rel="icon" type="image/svg+xml" href="../assets/icons/firn.svg" />
-  <link rel="apple-touch-icon" href="../assets/icons/firn-192.png" />
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/tvza.svg" />
+  <link rel="apple-touch-icon" href="../assets/icons/tvza-192.png" />
 </head>
 <body class="wl">
 
@@ -839,7 +839,7 @@
           try {
             new Notification(`${dispSym(i.symbol)} ${dir} ${Math.abs(q.dp).toFixed(1)}%`, {
               body: `Aktueller Kurs: ${fmtPrice(q.price, q.cur)}`,
-              icon: '../assets/icons/firn-192.png', tag: 'wl-' + i.symbol
+              icon: '../assets/icons/tvza-192.png', tag: 'wl-' + i.symbol
             });
           } catch (e) {}
         }

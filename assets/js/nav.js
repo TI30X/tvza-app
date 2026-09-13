@@ -24,7 +24,7 @@ import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=12';
-import { mountAppRouter } from './router.js?v=8';
+import { mountAppRouter } from './router.js?v=9';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 
 const BEREICH_OF = {

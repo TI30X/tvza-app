@@ -227,6 +227,18 @@ function headerController(runPageAction) {
   return { show, bar };
 }
 
+/* Das Symbol im Tab gehoert der Seite, die man sieht (v.35.39.0).
+   Der Router laedt die Bereiche in einen Rahmen; die Seite oben bleibt
+   stehen und mit ihr ihr <link rel="icon">. Ohne das zeigte der Tab in
+   der Maturaarbeit weiter den Firn-Berg, obwohl die Seite selbst das
+   TVZA-Symbol traegt. Die Seite sagt ihr Symbol selbst — es gibt keine
+   Liste, die mit TVZA_BEREICHE auseinanderlaufen koennte. */
+export function symbolFolgen(link, rahmen, eigenes) {
+  let ziel = eigenes;
+  try { ziel = rahmen?.contentDocument?.querySelector('link[rel="icon"]')?.href || eigenes; } catch {}
+  if (link && ziel && link.href !== ziel) link.href = ziel;
+}
+
 export function mountAppRouter(nav) {
   if (isFramedContent()) {
     wireContentBridge();
@@ -255,6 +267,8 @@ export function mountAppRouter(nav) {
     );
   });
   header.show(initialUrl, routeLabel(nav, initialUrl));
+  const tabSymbol = document.querySelector('link[rel="icon"]');
+  const eigenesSymbol = tabSymbol?.href;
 
   const progress = document.createElement('div');
   progress.className = 'tvza-route-progress';
@@ -295,6 +309,7 @@ export function mountAppRouter(nav) {
     currentUrl = new URL(target.href);
     updateNavigation(nav, target);
     header.show(target, routeLabel(nav, target));
+    symbolFolgen(tabSymbol, null, eigenesSymbol);
   };
 
   const navigate = (raw, historyMode = 'push') => {
@@ -336,6 +351,7 @@ export function mountAppRouter(nav) {
         currentUrl = new URL(target.href);
         updateNavigation(nav, target);
         header.show(target, label);
+        symbolFolgen(tabSymbol, contentFrame, eigenesSymbol);
         progress.classList.remove('is-loading');
         requestAnimationFrame(() => {
           incoming.classList.remove('is-entering');

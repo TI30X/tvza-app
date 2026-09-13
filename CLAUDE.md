@@ -13,10 +13,17 @@ Anmeldung, aber nicht als ein Produkt.
   die Firn-Bereiche (Training, Ski-Tracker, Wetter). Das sieht jedes Konto.
 - **TVZA** sind die persönlichen Bereiche, die Timo für sich und seine
   Freunde gebaut hat (Maturaarbeit, Maturaarbeit-Tracker, Food, Watchlist,
-  Projekte). Auf Start ein eigener Teil, in den Seiten das Zeichen TVZA, für
-  neue Konten nicht freigegeben — der Admin gibt sie frei, wem er will.
-  Welche Bereiche TVZA sind, entscheidet **eine** Liste: `TVZA_BEREICHE` in
-  `assets/js/firebase-config.js`.
+  Projekte). Auf Start ein eigener Teil, in den Seiten das Zeichen TVZA, im
+  Tab das TVZA-Symbol, für neue Konten nicht freigegeben — der Admin gibt sie
+  frei, wem er will. Welche Bereiche TVZA sind, entscheidet **eine** Liste:
+  `TVZA_BEREICHE` in `assets/js/firebase-config.js`.
+
+  Das Tab-Symbol sagt jede Seite selbst (`<link rel="icon">`). Weil der
+  Router die Bereiche in einen Rahmen lädt und die Seite oben stehen bleibt,
+  übernimmt `symbolFolgen()` in `router.js` das Symbol der Seite im Rahmen —
+  sonst zeigte der Tab in der Maturaarbeit den Firn-Berg der Startseite.
+  `dev/tvza-teil.test.mjs` leitet aus `TVZA_BEREICHE` ab, welche Seite
+  welches Symbol tragen muss.
 
 Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
 Michel baut und hostet. Timos Name steht je Seite **einmal**, als
@@ -24,7 +31,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.38.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.39.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -52,7 +59,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-55 Testdateien, **601 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+55 Testdateien, **603 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -332,7 +339,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 601 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 603 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -354,7 +361,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.38.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.39.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
