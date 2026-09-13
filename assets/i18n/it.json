@@ -139,6 +139,8 @@
  "disziplin.SL": "Slalom",
  "eh.abweichend": "È andata diversamente",
  "eh.alleFertig": "{titel} — tutti i {n} esercizi fatti.",
+ "eh.ansicht": "Questo è il piano di {name}. Vedi cosa è stato registrato; può registrare solo {name}.",
+ "eh.ansichtOhneName": "Questo non è il tuo piano. Vedi cosa è stato registrato; può registrare solo chi lo possiede.",
  "eh.ariaWdh": "Ripetizioni, serie {n}",
  "eh.ariaWert": "Valore, serie {n}",
  "eh.einheit": "Sessione",

@@ -39,7 +39,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.40.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.41.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -67,7 +67,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-57 Testdateien, **613 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+57 Testdateien, **616 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -235,6 +235,14 @@ auf der Gruppenseite und im Bereich Training, geübt wird in `einheit.html`.
 Der Bereich Training hat keinen eigenen Import und keinen eigenen Speicher
 mehr; die alten Daten unter `users/{uid}/trainingLogs` bleiben in Firestore.
 
+Ein Plan gilt für alle oder für **einen** Athleten (`fuer`) — die Excel des
+Kaders ist meist pro Athlet. Die Leitung sieht alle Pläne und öffnet auch
+die Einheiten eines Athleten; der Player ist dann eine **Ansicht**: er zeigt
+das Protokoll des Athleten und schreibt nichts. Er liest den Plan direkt
+(`ladePlan`), die Regel entscheidet. Bis v.35.40.0 holte er ihn über die
+Abfrage eines Athleten und fand den Plan der Leitung nie — ein Test verlangte
+genau diese Zeile wörtlich.
+
 **11. Kontaktkarten sehen nur die Leitung und die Person selbst.** Kontakte
 von Minderjährigen und ihren Eltern. Die Regel (`get`: Leitung oder man
 selbst, `list`: nur Leitung) ist die Sicherung; die Oberfläche fragt gar
@@ -296,7 +304,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **801 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **803 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -351,7 +359,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 613 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 616 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -373,7 +381,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.40.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.41.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

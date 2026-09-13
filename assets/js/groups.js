@@ -525,6 +525,17 @@ export async function ladePlaene(gid, uid, alsLeitung = false) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+/* Ein Plan, direkt gelesen — für den Player. Dieselbe Regel wie beim
+   Auflisten greift auch hier (allow get, list): ein Athlet bekommt nur,
+   was für alle oder für ihn bestimmt ist, die Leitung alles in ihrer
+   Gruppe. Bis v.35.40.0 holte der Player den Plan über die Abfrage
+   eines Athleten — auch für die Leitung, die den Plan eines Athleten
+   öffnete und ihn darum nie fand. */
+export async function ladePlan(gid, planId) {
+  const snap = await getDoc(planRef(gid, planId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
 export async function planVeroeffentlichen(gid, uid, { titel, json, fuer, notiz } = {}) {
   const sauber = String(titel ?? '').trim();
   if (!sauber) throw new Error('Der Plan braucht einen Titel.');

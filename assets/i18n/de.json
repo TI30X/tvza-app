@@ -139,6 +139,8 @@
  "disziplin.SL": "Slalom",
  "eh.abweichend": "Anders gelaufen",
  "eh.alleFertig": "{titel} — alle {n} Übungen erledigt.",
+ "eh.ansicht": "Das ist der Plan von {name}. Du siehst, was eingetragen ist; eintragen kann nur {name}.",
+ "eh.ansichtOhneName": "Das ist nicht dein Plan. Du siehst, was eingetragen ist; eintragen kann nur, wem er gehört.",
  "eh.ariaWdh": "Wiederholungen {n}. Satz",
  "eh.ariaWert": "Wert {n}. Satz",
  "eh.einheit": "Einheit",

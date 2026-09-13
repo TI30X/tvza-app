@@ -139,6 +139,8 @@
  "disziplin.SL": "Slalom",
  "eh.abweichend": "Poszło inaczej",
  "eh.alleFertig": "{titel} — wszystkie ćwiczenia ({n}) zrobione.",
+ "eh.ansicht": "To plan: {name}. Widzisz, co zostało wpisane; wpisywać może tylko {name}.",
+ "eh.ansichtOhneName": "To nie jest twój plan. Widzisz, co zostało wpisane; wpisywać może tylko jego właściciel.",
  "eh.ariaWdh": "Powtórzenia, seria {n}",
  "eh.ariaWert": "Wartość, seria {n}",
  "eh.einheit": "Jednostka",

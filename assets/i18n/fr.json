@@ -139,6 +139,8 @@
  "disziplin.SL": "Slalom",
  "eh.abweichend": "Ça s'est passé autrement",
  "eh.alleFertig": "{titel} — les {n} exercices sont faits.",
+ "eh.ansicht": "C’est le plan de {name}. Tu vois ce qui a été saisi ; seul·e {name} peut saisir.",
+ "eh.ansichtOhneName": "Ce n’est pas ton plan. Tu vois ce qui a été saisi ; seule la personne concernée peut saisir.",
  "eh.ariaWdh": "Répétitions, série {n}",
  "eh.ariaWert": "Valeur, série {n}",
  "eh.einheit": "Séance",

@@ -139,6 +139,8 @@
  "disziplin.SL": "Slalom",
  "eh.abweichend": "It went differently",
  "eh.alleFertig": "{titel} — all {n} exercises done.",
+ "eh.ansicht": "This is {name}’s plan. You can see what has been logged; only {name} can log.",
+ "eh.ansichtOhneName": "This is not your plan. You can see what has been logged; only its owner can log.",
  "eh.ariaWdh": "Repetitions, set {n}",
  "eh.ariaWert": "Value, set {n}",
  "eh.einheit": "Session",

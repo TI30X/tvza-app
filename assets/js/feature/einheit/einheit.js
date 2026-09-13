@@ -9,6 +9,14 @@
 
    Aufgerufen mit ?g=<gruppe>&p=<plan>[&u=<einheit>][&d=<datum>].
 
+   ── Der Plan eines anderen ────────────────────────────────────────
+   Die Leitung sieht in der Gruppe die Pläne ALLER Athleten und öffnet
+   von dort auch deren Einheiten. Dann ist der Player eine Ansicht: er
+   zeigt, was der Athlet an dem Tag eingetragen hat, und schreibt
+   nichts — die Regel liesse es auch nicht zu (geschrieben wird nur das
+   eigene Protokoll). Bis v.35.40.0 fand der Player einen solchen Plan
+   gar nicht und meldete "Der Plan liess sich nicht laden."
+
    Die Logik steht in assets/js/einheit.js, ohne Firebase und ohne DOM.
    Hier ist nur, was der Browser dazutut: Felder, Klicks, Speichern.
 
@@ -23,7 +31,7 @@ import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
 import { mountShell } from '../../shell.js?v=13';
 import {
-  ladeGruppe, ladePlaene, ladeProtokoll, protokollSpeichern,
+  ladeGruppe, ladePlan, ladeProtokoll, protokollSpeichern, ladeMitglieder, PLAN_FUER_ALLE,
 } from '../../groups.js';
 import {
   einheiten, uebungen, einheitTitel,
@@ -58,6 +66,7 @@ let items = [];
 let protokoll = { units: {} };
 let pos = 0;
 let timer = null;
+let ansicht = false;       // der Plan eines anderen: nur ansehen
 let bilder = {};           // images.json, einmal geladen
 
 function zeige(id, an) {
@@ -74,6 +83,7 @@ function fehler(text) {
 /* ── Speichern ─────────────────────────────────────────────────────*/
 
 function speichereBald() {
+  if (ansicht) return;
   clearTimeout(timer);
   timer = setTimeout(async () => {
     try {
@@ -138,7 +148,7 @@ function satzZeile(reihe, index, offen) {
   const ziel = [reihe.zielReps && `${reihe.zielReps}×`, reihe.zielWert]
     .filter(Boolean).join(' ');
   const gemacht = satzGemacht(reihe);
-  const zeigeFelder = offen || (gemacht && !passtZurVorgabe(reihe));
+  const zeigeFelder = !ansicht && (offen || (gemacht && !passtZurVorgabe(reihe)));
 
   const werte = gemacht
     ? [reihe.reps && `${reihe.reps}×`, reihe.weight].filter(Boolean).join(' ')
@@ -146,7 +156,7 @@ function satzZeile(reihe, index, offen) {
 
   return `
     <div class="row satz${gemacht ? ' satz--gemacht' : ''}" data-bereich="t-training" data-satz-zeile="${index}">
-      <button class="satz__haken" type="button" data-satz-tippen="${index}"
+      <button class="satz__haken" type="button" data-satz-tippen="${index}"${ansicht ? ' disabled' : ''}
               aria-pressed="${gemacht ? 'true' : 'false'}"
               aria-label="${escHtml(t('eh.satzAbhaken', 'Satz {n} wie geplant', { n: index + 1 }))}">
         ${gemacht
@@ -169,12 +179,12 @@ function satzZeile(reihe, index, offen) {
                value="${escHtml(reihe.reps)}"
                placeholder="${escHtml(reihe.zielReps || t('eh.wdh', 'Wdh'))}"
                aria-label="${escHtml(t('eh.ariaWdh', 'Wiederholungen {n}. Satz', { n: index + 1 }))}" />`
-        : `<span class="satz__wert">${escHtml(werte)}</span>
+        : `<span class="satz__wert">${escHtml(werte)}</span>${ansicht ? '' : `
         <button class="row__aktion" type="button" data-satz-oeffnen="${index}"
                 title="${escHtml(t('eh.abweichend', 'Anders gelaufen'))}"
                 aria-label="${escHtml(t('eh.abweichend', 'Anders gelaufen'))}">
           <svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-        </button>`}
+        </button>`}`}
       </span>
     </div>`;
 }
@@ -262,6 +272,8 @@ function zeichnePlayer() {
     : '';
 
   $('uebNotiz').value = e.note;
+  $('uebNotiz').readOnly = ansicht;
+  $('btnErledigt').hidden = ansicht;
 
   const erledigt = e.done;
   const knopf = $('btnErledigt');
@@ -317,6 +329,7 @@ function weiter() {
 /* ── Eingaben ──────────────────────────────────────────────────────*/
 
 function satzGeaendert(event) {
+  if (ansicht) return;
   const feld = event.target.closest('[data-satz]');
   if (!feld) return;
 
@@ -336,11 +349,13 @@ function satzGeaendert(event) {
 }
 
 function notizGeaendert() {
+  if (ansicht) return;
   protokoll = mitEintrag(protokoll, unitId, items[pos].key, { note: $('uebNotiz').value });
   speichereBald();
 }
 
 function erledigtGeklickt() {
+  if (ansicht) return;
   const item = items[pos];
   const war = eintrag(protokoll, unitId, item.key).done;
   protokoll = mitEintrag(protokoll, unitId, item.key, { done: !war });
@@ -348,6 +363,19 @@ function erledigtGeklickt() {
 
   if (war) zeichnePlayer();   // wieder aufgeklappt
   else weiter();
+}
+
+/* Wessen Plan das ist — der Name ist Beiwerk: fehlt er, steht der
+   Hinweis ohne. */
+async function zeigeAnsicht(uid) {
+  let name = '';
+  try { name = (await ladeMitglieder(gid)).find(m => m.uid === uid)?.name || ''; }
+  catch (e) { reportClientError('einheit/ansicht', e); }
+  const hinweis = $('ansichtHinweis');
+  hinweis.textContent = name
+    ? t('eh.ansicht', 'Das ist der Plan von {name}. Du siehst, was eingetragen ist; eintragen kann nur {name}.', { name })
+    : t('eh.ansichtOhneName', 'Das ist nicht dein Plan. Du siehst, was eingetragen ist; eintragen kann nur, wem er gehört.');
+  hinweis.hidden = false;
 }
 
 /* ── Start ─────────────────────────────────────────────────────────*/
@@ -405,7 +433,7 @@ function erledigtGeklickt() {
     }
 
     const tipp = event.target.closest('[data-satz-tippen]');
-    if (!tipp) return;
+    if (!tipp || ansicht) return;
 
     const item = items[pos];
     if (!item) return;
@@ -440,13 +468,13 @@ function erledigtGeklickt() {
     const gruppe = await ladeGruppe(gid);
     if (!gruppe) throw new Error('Gruppe nicht lesbar.');
 
-    /* Der Plan wird über die erlaubte Abfrage geholt und nicht direkt
-       gelesen: so greift dieselbe Regel wie in der Gruppenansicht, und
-       ein Plan, der für jemand anderen bestimmt ist, kommt gar nicht
-       an. */
-    const meine = await ladePlaene(gid, user.uid, false);
-    const plan = meine.find(x => x.id === planId);
+    /* Direkt gelesen; die Regel entscheidet (allow get): ein Athlet
+       bekommt nur Pläne für alle oder für sich, die Leitung jeden in
+       ihrer Gruppe. Ein fremder Plan ist darum immer einer, den die
+       Leitung ansieht. */
+    const plan = await ladePlan(gid, planId);
     if (!plan) throw new Error('Plan nicht gefunden.');
+    ansicht = Boolean(plan.fuer) && plan.fuer !== PLAN_FUER_ALLE && plan.fuer !== user.uid;
 
     programm = JSON.parse(plan.json);
 
@@ -455,10 +483,13 @@ function erledigtGeklickt() {
       const antwort = await fetch('../assets/data/training/images.json');
       bilder = antwort.ok ? await antwort.json() : {};
     } catch { bilder = {}; }
-    protokoll = await ladeProtokoll(gid, user.uid, datum);
+    /* In der Ansicht das Protokoll des Athleten: die Leitung sieht, was
+       an dem Tag eingetragen wurde (allow get: leadsGroup). */
+    protokoll = await ladeProtokoll(gid, ansicht ? plan.fuer : user.uid, datum);
     if (!protokoll.units) protokoll.units = {};
 
     $('kopfTitel').textContent = plan.titel || t('eh.einheit', 'Einheit');
+    if (ansicht) await zeigeAnsicht(plan.fuer);
 
     if (unitId && uebungen(programm, unitId).length) starte(unitId);
     else zeichneWahl();

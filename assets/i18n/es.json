@@ -139,6 +139,8 @@
  "disziplin.SL": "Eslalon",
  "eh.abweichend": "Fue distinto",
  "eh.alleFertig": "{titel} — los {n} ejercicios están hechos.",
+ "eh.ansicht": "Este es el plan de {name}. Ves lo que se ha registrado; solo {name} puede registrar.",
+ "eh.ansichtOhneName": "Este no es tu plan. Ves lo que se ha registrado; solo su titular puede registrar.",
  "eh.ariaWdh": "Repeticiones, serie {n}",
  "eh.ariaWert": "Valor, serie {n}",
  "eh.einheit": "Sesión",

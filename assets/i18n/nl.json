@@ -139,6 +139,8 @@
  "disziplin.SL": "Slalom",
  "eh.abweichend": "Het ging anders",
  "eh.alleFertig": "{titel} — alle {n} oefeningen klaar.",
+ "eh.ansicht": "Dit is het plan van {name}. Je ziet wat er is ingevuld; alleen {name} kan invullen.",
+ "eh.ansichtOhneName": "Dit is niet jouw plan. Je ziet wat er is ingevuld; alleen de eigenaar kan invullen.",
  "eh.ariaWdh": "Herhalingen, set {n}",
  "eh.ariaWert": "Waarde, set {n}",
  "eh.einheit": "Sessie",

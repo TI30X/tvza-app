@@ -85,6 +85,24 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const ladeKontakte = async () =>
       Object.entries(globalThis.__kontakte || {}).map(([uid, k]) => ({ ...k, uid }));
     export const kontaktSpeichern = ${merke('kontaktSpeichern')};
+    /* Der Player (einheit.js). ladePlan bildet die Regel nach: ein Athlet
+       bekommt nur Pläne für alle oder für sich, die Leitung jeden. */
+    export const ladeGruppe = async gid => ({ id: gid, name: 'Kader' });
+    export const ladePlan = async (gid, id) => {
+      const alle = ${JSON.stringify(plaene)};
+      const p = (Array.isArray(alle) ? alle : Object.values(alle).flat()).find(x => x.id === id);
+      if (!p) return null;
+      const rolle = ${JSON.stringify(gruppen[0]?.meineRolle || 'mitglied')};
+      if (p.fuer !== 'alle' && p.fuer !== 'timo' && !['head', 'staff'].includes(rolle)) {
+        throw new Error('Missing or insufficient permissions.');
+      }
+      return p;
+    };
+    export const ladeProtokoll = async (gid, uid, datum) => {
+      (globalThis.__aufrufe ||= []).push(['ladeProtokoll', gid, uid, datum]);
+      return globalThis.__protokoll?.[uid] || { uid, datum, units: {} };
+    };
+    export const protokollSpeichern = ${merke('protokollSpeichern')};
   `;
 }
 
@@ -106,6 +124,16 @@ export function starteGruppe({
   return lade({ seite: 'gruppe', skript: 'assets/js/feature/gruppe/gruppe.js', bereit, ...rest });
 }
 
+/** Der Einheiten-Player; suche ist die Adresse, z.B. '?g=g1&p=p1&u=kraft'. */
+export function starteEinheit({
+  suche = '',
+  bereit = doc => !doc.getElementById('secWahl').hidden || !doc.getElementById('secPlayer').hidden
+    || !doc.getElementById('ladeFehler').hidden,
+  ...rest
+} = {}) {
+  return lade({ seite: 'einheit', skript: 'assets/js/feature/einheit/einheit.js', suche, bereit, ...rest });
+}
+
 /** Der Bereich Training — dieselben Attrappen, eine andere Seite. */
 export function starteTraining({
   bereit = doc => !doc.getElementById('secWoche').hidden || !doc.getElementById('secOhne').hidden,
@@ -115,7 +143,7 @@ export function starteTraining({
 }
 
 async function lade({
-  seite, skript, bereit,
+  seite, skript, bereit, suche = '',
   gruppen = [{ id: 'g1', name: 'Kader', art: 'kader', meineRolle: 'mitglied' }],
   plaene = [],
   protokolle = [],
@@ -124,7 +152,7 @@ async function lade({
 }) {
   const html = await readFile(join(root, `pages/${seite}.html`), 'utf8');
   const dom = new JSDOM(html.replace(/<script\b[^>]*><\/script>/gi, ''), {
-    url: `https://firn.test/pages/${seite}.html`,
+    url: `https://firn.test/pages/${seite}.html${suche}`,
   });
   const { window } = dom;
 
@@ -170,6 +198,7 @@ async function lade({
     .replace(`'../../gruppenwahl.js'`, `'${datei('assets/js/gruppenwahl.js')}'`)
     .replace(`'../../kontakte.js'`, `'${datei('assets/js/kontakte.js')}'`)
     .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
+    .replace(`'../../einheit.js'`, `'${datei('assets/js/einheit.js')}'`)
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)
     .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`);
 
