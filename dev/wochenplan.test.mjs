@@ -269,3 +269,20 @@ test('"Als Nächstes" ist der erste Termin nach der Woche', () => {
   assert.equal(W.naechsterNach(termine, '2026-08-03').id, 'y');
   assert.equal(W.naechsterNach(termine, '2026-08-31'), null);
 });
+
+test('welche älteren Pläne ein neuer ersetzt: dieselbe Person, ein gemeinsamer Tag', () => {
+  const naechsteWoche = { ...programm, dateRange: {}, days: programm.days.map(d => ({ ...d, date: W.plusTage(d.date, 7) })) };
+  const bestehend = [
+    { plan: { id: 'timo31', fuer: 'timo' }, programm },
+    { plan: { id: 'lea31', fuer: 'lea' }, programm },
+    { plan: { id: 'alle31', fuer: 'alle' }, programm },
+    { plan: { id: 'timo32', fuer: 'timo' }, programm: naechsteWoche },
+    { plan: { id: 'kaputt', fuer: 'timo' }, programm: null },
+  ];
+  assert.deepEqual(W.ersetztePlaene([{ fuer: 'timo', programm }], bestehend).map(b => b.plan.id), ['timo31']);
+  assert.deepEqual(W.ersetztePlaene([{ fuer: 'alle', programm }], bestehend).map(b => b.plan.id), ['alle31'],
+    '"für alle" ersetzt nur "für alle", nicht die Einzelpläne');
+  assert.deepEqual(W.ersetztePlaene([{ fuer: 'timo', programm }, { fuer: 'lea', programm }], bestehend).map(b => b.plan.id).sort(),
+    ['lea31', 'timo31']);
+  assert.deepEqual(W.ersetztePlaene([], bestehend), []);
+});

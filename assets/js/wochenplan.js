@@ -327,6 +327,27 @@ export function startWoche({ heute, quellen = [], termine = [] }) {
 }
 
 /**
+ * Welche bestehenden Pläne ein neuer ersetzt (v.35.44.0): derselbe
+ * Mensch (fuer — "alle" ist auch einer) und mindestens ein gemeinsamer
+ * Tag. In der Woche gewinnt ohnehin der neuere (agendaTage); der ältere
+ * läge sonst für immer in Firestore. Gelöscht wird er erst, wenn die
+ * Leitung es bestätigt.
+ *
+ * @param {Array<{fuer:string, programm:object}>} neue
+ * @param {Array<{plan:object, programm:object}>} bestehende
+ * @returns die Einträge aus bestehende, die ersetzt werden
+ */
+export function ersetztePlaene(neue = [], bestehende = [], heute = '') {
+  const tage = programm => new Set(planTageMitDatum(programm, heute).map(t => t.datum));
+  const neuJe = neue.map(n => ({ fuer: n.fuer, tage: tage(n.programm) }));
+  return bestehende.filter(b => {
+    if (!b?.plan?.fuer || !b.programm) return false;
+    const alt = tage(b.programm);
+    return neuJe.some(n => n.fuer === b.plan.fuer && [...n.tage].some(d => alt.has(d)));
+  });
+}
+
+/**
  * Der nächste Termin nach der gezeigten Woche — "Als Nächstes".
  * Wer eine ruhige Woche sieht, soll trotzdem wissen, dass in drei
  * Wochen ein Rennen ist.

@@ -26,7 +26,7 @@ import {
   rolleSetzen, mitgliedEntfernen, uebergeben,
   einladungErzeugen, beitreten,
   ladeErgebnisse, ergebnisSpeichern,
-  ladePlaene, planVeroeffentlichen, eigeneProgramme, PLAN_FUER_ALLE,
+  ladePlaene, planVeroeffentlichen, planLoeschen, eigeneProgramme, PLAN_FUER_ALLE,
   ladeProtokolle, ladeKontakt, ladeKontakte, kontaktSpeichern,
   abonnementErneuern, abonnementAdresse,
   terminAbsagen, absageZuruecknehmen,
@@ -34,7 +34,7 @@ import {
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
-  wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag, planTageMitDatum,
+  wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag, planTageMitDatum, ersetztePlaene,
 } from '../../wochenplan.js';
 import { agendaAnsicht, tagName, kurzDatum } from '../woche/woche.js';
 import { frage, eingabe, meldung } from '../../dialog.js';
@@ -588,6 +588,10 @@ async function planSpeichern() {
     return;
   }
 
+  let neuesProgramm = null;
+  try { neuesProgramm = JSON.parse(json); } catch { /* ohne Programm ersetzt der Plan nichts */ }
+  const ersetzt = neuesProgramm ? ersetztePlaene([{ fuer, programm: neuesProgramm }], bestehendePlaene(), isoTag()) : [];
+
   const btn = $('btnPlanSpeichern');
   btn.disabled = true;
   try {
@@ -598,6 +602,7 @@ async function planSpeichern() {
     });
     eingelesen = [];
     planFormSchliessen();
+    await aeltereLoeschen(ersetzt);
     /* Wer eben die Excel für Timo eingelesen hat, will Timos Woche sehen
        — und zwar die, in der der Plan liegt, nicht heute. */
     wochePerson = fuer || PLAN_FUER_ALLE;
@@ -611,6 +616,43 @@ async function planSpeichern() {
     fehler.hidden = false;
   } finally {
     btn.disabled = false;
+  }
+}
+
+/* Die aelteren Fassungen (v.35.44.0). Wer dieselbe Woche fuer dieselbe
+   Person noch einmal einliest, ersetzt sie — in der Woche gewinnt der
+   neuere ohnehin, der aeltere laege aber fuer immer in Firestore. Gefragt
+   wird NACH dem Veroeffentlichen: scheitert das, ist nichts geloescht.
+   Das Protokoll haengt am Tag und nicht am Plan; was ein Athlet schon
+   eingetragen hat, bleibt. */
+function bestehendePlaene() {
+  return plaene.map(plan => ({ plan, programm: programmVon(plan) })).filter(x => x.programm);
+}
+
+async function aeltereLoeschen(ersetzt) {
+  if (!ersetzt.length) return;
+  const wem = uid => (uid === PLAN_FUER_ALLE
+    ? t('grp.alleInGruppe', 'Alle in der Gruppe')
+    : mitglieder.find(m => m.uid === uid)?.name || t('grp.einAthlet', 'ein Athlet'));
+  const was = ersetzt.map(({ plan, programm }) => `${planTitelVorschlag(programm) || plan.titel} · ${wem(plan.fuer)}`).join(', ');
+  const ja = await frage({
+    titel: ersetzt.length === 1
+      ? t('grp.aeltereTitel', 'Die ältere Fassung löschen?')
+      : t('grp.aeltereTitelN', 'Die {n} älteren Fassungen löschen?', { n: ersetzt.length }),
+    text: t('grp.aeltereText', 'Für {was} gab es schon einen Plan. Es gilt der neue. Was schon eingetragen ist, bleibt.', { was }),
+    ja: t('grp.aeltereLoeschen', 'Löschen'),
+    nein: t('grp.aeltereBehalten', 'Behalten'),
+    gefahr: true,
+  });
+  if (!ja) return;
+  for (const { plan } of ersetzt) {
+    try {
+      await planLoeschen(aktiv.id, plan.id);
+      programme.delete(plan.id);
+    } catch (e) {
+      /* Ein Plan, der bleibt, stört niemanden — der neuere gilt. */
+      reportClientError('gruppe/planLoeschen', e);
+    }
   }
 }
 
@@ -632,6 +674,7 @@ async function mehrereVeroeffentlichen() {
     return;
   }
 
+  const ersetzt = ersetztePlaene(gut.map(x => ({ fuer: x.fuer, programm: x.programm })), bestehendePlaene(), isoTag());
   const btn = $('btnPlanSpeichern');
   btn.disabled = true;
   const draussen = [];
@@ -647,6 +690,7 @@ async function mehrereVeroeffentlichen() {
     const erster = gut[0];
     eingelesen = [];
     planFormSchliessen();
+    await aeltereLoeschen(ersetzt);
     /* Die Woche des ersten, dort, wo sein Plan liegt. */
     wochePerson = erster.fuer;
     await zeichnePlaene();

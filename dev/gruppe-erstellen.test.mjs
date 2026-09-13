@@ -10,6 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { parseProgram } from '../assets/js/training-parser.js';
 import { starteGruppe, klick, warte, root } from './gruppe-harness.mjs';
 
 const aufrufe = name => (globalThis.__aufrufe || []).filter(a => a[0] === name);
@@ -393,4 +394,61 @@ test('eine Datei mit einem Namen, den es nicht gibt: "Für wen" bleibt offen und
     assert.match(doc.getElementById('planFehler').textContent, /für wen/);
     assert.equal(aufrufe('planVeroeffentlichen').length, 0);
   } finally { zurueck(); delete globalThis.__raster; }
+});
+
+/* ── Die ältere Fassung derselben Woche (v.35.44.0) ─────────────────
+   Michel: "lösch die ältere nach Bestätigung". Wer KW 31 für Timothy
+   noch einmal einliest, wird gefragt, ob die alte weg soll — erst NACH
+   dem Veröffentlichen, und nur die derselben Person. */
+
+const programmKW31 = parseProgram(KW31);
+const alterPlan = (id, fuer) => ({ id, titel: 'KW 31 · TW 12', fuer, json: JSON.stringify(programmKW31) });
+
+async function nochmalEinlesen({ plaene, antwort }) {
+  globalThis.__raster = KW31;
+  const w = await starteGruppe({ ...KADER, plaene });
+  const { doc } = w;
+  klick(doc.getElementById('btnPlanNeu'));
+  await warte(() => !doc.getElementById('secPlanForm').hidden);
+  await waehleDatei(doc, 'Van Zanten Timothy KW 31.xlsx');
+  await warte(() => !doc.getElementById('planVorschau').hidden);
+  klick(doc.getElementById('btnPlanSpeichern'));
+  await warte(() => aufrufe('planVeroeffentlichen').length > 0);
+  if (antwort) {
+    await warte(() => doc.querySelector('dialog.frage'));
+    const dialog = doc.querySelector('dialog.frage');
+    w.frage = { titel: dialog.querySelector('.frage__titel').textContent, text: dialog.querySelector('.frage__text')?.textContent || '' };
+    klick(dialog.querySelector(`[data-frage="${antwort}"]`));
+    await warte(() => !doc.querySelector('dialog.frage'));
+  }
+  await warte(() => !doc.getElementById('secWoche').hidden);
+  return w;
+}
+
+test('dieselbe Woche für dieselbe Person noch einmal: nach Bestätigung ist die ältere weg', async () => {
+  const w = await nochmalEinlesen({ plaene: [alterPlan('alt', 'timo'), alterPlan('lea31', 'lea')], antwort: 'ja' });
+  try {
+    assert.match(w.frage.titel, /ältere Fassung löschen/);
+    assert.match(w.frage.text, /KW 31 · TW 12 · Timothy van Zanten/);
+    assert.match(w.frage.text, /Was schon eingetragen ist, bleibt/);
+    await warte(() => aufrufe('planLoeschen').length > 0);
+    assert.deepEqual(aufrufe('planLoeschen').map(a => a.slice(1)), [['g1', 'alt']],
+      'gelöscht wird nur Timothys alte KW 31, nicht Leas');
+  } finally { w.zurueck(); delete globalThis.__raster; }
+});
+
+test('wer "Behalten" sagt, behält die ältere', async () => {
+  const w = await nochmalEinlesen({ plaene: [alterPlan('alt', 'timo')], antwort: 'nein' });
+  try {
+    assert.equal(aufrufe('planVeroeffentlichen').length, 1, 'der neue ist trotzdem draussen');
+    assert.equal(aufrufe('planLoeschen').length, 0);
+  } finally { w.zurueck(); delete globalThis.__raster; }
+});
+
+test('ohne ältere Fassung wird nicht gefragt', async () => {
+  const w = await nochmalEinlesen({ plaene: [alterPlan('lea31', 'lea')], antwort: null });
+  try {
+    assert.equal(w.doc.querySelector('dialog.frage'), null);
+    assert.equal(aufrufe('planLoeschen').length, 0);
+  } finally { w.zurueck(); delete globalThis.__raster; }
 });

@@ -83,6 +83,7 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const beitreten = ${merke('beitreten')};
     export const ergebnisSpeichern = ${merke('ergebnisSpeichern')};
     export const planVeroeffentlichen = ${merke('planVeroeffentlichen')};
+    export const planLoeschen = ${merke('planLoeschen')};
     export const abonnementErneuern = async () => '';
     export const abonnementAdresse = () => '';
     export const anhangSpeichern = ${merke('anhangSpeichern')};
