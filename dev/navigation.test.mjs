@@ -210,7 +210,7 @@ test('der Anordnen-Knopf sitzt in der Bereiche-Ueberschrift', async () => {
   /* Aus der section-head mit h2 wurde eine .marke--reihe: die
      Ueberschrift links, die Knoepfe rechts. Geprueft wird die
      Nachbarschaft, nicht die genaue Attributliste. */
-  assert.match(dashboard, /data-i18n="home.bereiche">Bereiche<\/span>\s*<button class="reorder-fab" id="editModeBtn"/);
+  assert.match(dashboard, /data-i18n="home.bereiche">Bereiche<\/span>(<\/span>)?\s*<button class="reorder-fab" id="editModeBtn"/);
   assert.match(css, /\.reorder-fab \{[\s\S]*position: static;[\s\S]*background: var\(--surface\)/);
   assert.doesNotMatch(css, /global-reminder-fab:not\(\[hidden\]\)\) \.reorder-fab/);
 });

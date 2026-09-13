@@ -6,7 +6,9 @@
    flash caused by full-document navigation.
 */
 
-import { softwareVon, softwareZeigen } from './wechsel.js';
+import {
+  softwareVon, softwareZeigen, imZuhauseKreis, istZuhause, zuhauseSymbol, zuhauseTitel,
+} from './wechsel.js';
 
 const FRAME_PARAM = 'tvzaFrame';
 const APP_FILES = new Set([
@@ -257,8 +259,15 @@ export function headerController(runPageAction) {
 export function tabFolgen(doc, rahmen, eigen) {
   let fremd = null;
   try { fremd = rahmen?.contentDocument || null; } catch {}
-  const symbol = fremd?.querySelector('link[rel="icon"]')?.href || eigen.symbol;
-  const titel = fremd?.title || eigen.titel;
+  let symbol = fremd?.querySelector('link[rel="icon"]')?.href || eigen.symbol;
+  let titel = fremd?.title || eigen.titel;
+  /* Ein Zuhause im Rahmen (Kalender, Chat) ist für den TVZA-Kreis TVZA
+     (wechsel.js, v.35.48.0) — auch wenn die Seite im Rahmen ihr Profil
+     noch nicht geladen und sich selbst noch nicht umbenannt hat. */
+  if (fremd && imZuhauseKreis() && istZuhause(fremd)) {
+    symbol = zuhauseSymbol(symbol);
+    titel = zuhauseTitel(titel);
+  }
   const link = doc.querySelector('link[rel="icon"]');
   if (link && symbol && link.href !== symbol) link.href = symbol;
   if (titel && doc.title !== titel) doc.title = titel;

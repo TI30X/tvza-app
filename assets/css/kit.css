@@ -1832,8 +1832,13 @@ body.reorder-editing .module-tile::after {
    den Einstellungen, im Admin-Bereich und im Kopf der Seiten selbst.
    Leise mit Absicht — es sagt, wem etwas gehört, es wirbt nicht. Die
    Farbe ist die der Umgebung (currentColor), darum trägt es auf hellem
-   Grund wie im dunklen Kopf. */
-.tvza-marke {
+   Grund wie im dunklen Kopf.
+
+   Für den TVZA-Kreis ist Start TVZA; über den Firn-Bereichen steht dort
+   dasselbe Zeichen mit "Firn" (v.35.48.0) — die Tür in die andere
+   Software, in derselben Stimme. */
+.tvza-marke,
+.firn-marke {
   display: inline-flex; align-items: center; flex: none;
   padding: 1px var(--s1);
   border: 1px solid currentColor;

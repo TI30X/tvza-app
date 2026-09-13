@@ -119,9 +119,52 @@ export function wort(doc = document) {
   return span;
 }
 
+/* ── Das Zuhause (v.35.48.0) ─────────────────────────────────────────
+   Für den TVZA-Kreis — Freunde und Familie — ist TVZA das Zuhause und
+   Firn das, wohin man geht, wenn man in die Gruppe geht. Start, Kalender
+   und Chat tragen darum <body data-zuhause>: sie gehören zu keiner der
+   beiden Softwares fest, sondern zu der, in der man zuhause ist. Wer
+   nicht im Kreis ist, sieht dort Firn und von TVZA nichts.
+
+   Den Kreis setzt die Leiste, sobald sie das Profil kennt (shell.js).
+   Er gilt für die Seite oben und damit auch für die Seiten, die der
+   Router in seinen Rahmen lädt. */
+let kreis = false;
+export function kreisSetzen(ja) { kreis = !!ja; }
+export const imZuhauseKreis = () => kreis;
+export const istZuhause = doc => !!doc?.body?.hasAttribute?.('data-zuhause');
+
 /** Zu welcher Software ein Dokument gehört. */
 export function softwareVon(doc) {
-  return doc?.body?.dataset?.marke === 'TVZA' ? TVZA : FIRN;
+  if (doc?.body?.dataset?.marke === 'TVZA') return TVZA;
+  return kreis && istZuhause(doc) ? TVZA : FIRN;
+}
+
+/* Was ein Zuhause im Tab trägt: das TVZA-Symbol statt des Bergs und
+   "TVZA" statt "Firn" am Ende des Titels. Eine Rechnung, damit die Seite
+   oben und der Router für die Seiten im Rahmen dasselbe tun. */
+export const zuhauseSymbol = href => String(href || '').replace(/firn\.svg(\?|$)/, 'tvza.svg$1');
+export const zuhauseTitel = titel => String(titel || '').replace(/Firn$/, 'TVZA');
+
+/**
+ * Macht aus einer Zuhause-Seite eine TVZA-Seite, wenn man im Kreis ist:
+ * Marke, Tab-Symbol, Titel und die Versionszeile. Der Titel verliert
+ * dabei sein data-i18n — sonst setzte der Katalog, der später kommt,
+ * "Firn" zurück (Falle 5).
+ */
+export function zuhauseMarkieren(doc = document) {
+  if (!kreis || !istZuhause(doc)) return false;
+  doc.body.dataset.marke = 'TVZA';
+  const link = doc.querySelector('link[rel="icon"]');
+  if (link) link.setAttribute('href', zuhauseSymbol(link.getAttribute('href')));
+  const titel = doc.querySelector('title');
+  if (titel) {
+    titel.removeAttribute('data-i18n');
+    doc.title = zuhauseTitel(doc.title);
+  }
+  const version = doc.querySelector('.fx-version');
+  if (version) version.textContent = version.textContent.replace(/^Firn/, 'TVZA');
+  return true;
 }
 
 const glatt = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
@@ -173,27 +216,58 @@ async function hinweis(doc, von, nach, ruhig) {
 
 let aktuell = null;
 
+/* Über eine Seitengrenze hinweg. Die Gruppe (und Einheit, Video) lädt
+   der Router nicht in seinen Rahmen, sondern als neue Seite — dort
+   beginnt dieses Modul von vorn und wüsste nicht, dass man eben noch in
+   TVZA war. Für den TVZA-Kreis ist aber genau das der Wechsel: vom
+   Zuhause in die Gruppe (v.35.48.0). Darum merkt sich die Sitzung, in
+   welcher Software man zuletzt war. Eine Seite im Rahmen des Routers
+   merkt nichts und zeigt nichts — das tut die Seite oben. */
+const MERKER = 'firn.software';
+const gerahmt = win => !!win && win.parent !== win;
+function zuletzt(win) {
+  if (gerahmt(win)) return null;
+  try { return win.sessionStorage.getItem(MERKER); } catch { return null; }
+}
+function merken(win, software) {
+  if (gerahmt(win)) return;
+  try { win.sessionStorage.setItem(MERKER, software); } catch { /* ohne Speicher eben ohne Übergang */ }
+}
+
 /**
  * Zeigt, in welcher Software man ist. Beim ersten Aufruf (die Leiste
- * wird gebaut) ohne Bewegung; danach nur, wenn sich die Software ändert.
+ * wird gebaut) ohne Bewegung — ausser man kommt gerade von einer Seite
+ * der anderen Software. Danach nur, wenn sich die Software ändert.
  * Gibt zurück, ob sich etwas geändert hat.
  */
 export function softwareZeigen(ziel, { sanft = true, doc = document } = {}) {
   const win = doc.defaultView;
   const erstes = aktuell === null;
   if (aktuell === ziel) return false;
-  const von = aktuell || FIRN;
+  const vorher = erstes ? zuletzt(win) : null;
+  const quer = erstes && (vorher === FIRN || vorher === TVZA) && vorher !== ziel;
+  const von = aktuell || (quer ? vorher : null) || FIRN;
   aktuell = ziel;
+  merken(win, ziel);
 
-  const ruhig = erstes || !sanft || passt(win, '(prefers-reduced-motion: reduce)');
+  const ruhig = (erstes && !quer) || !sanft || passt(win, '(prefers-reduced-motion: reduce)');
   for (const nav of doc.querySelectorAll('.nav')) {
-    nav.dataset.software = ziel;
-    for (const svg of nav.querySelectorAll('[data-software-zeichen]')) {
-      if (ruhig) stelle(svg, ziel === TVZA ? 1 : 0);
-      else bewege(svg, ziel);
+    const zeichenListe = nav.querySelectorAll('[data-software-zeichen]');
+    if (ruhig) {
+      nav.dataset.software = ziel;
+      zeichenListe.forEach(svg => stelle(svg, ziel === TVZA ? 1 : 0));
+    } else if (quer) {
+      /* Die neue Seite beginnt, wo die alte aufgehört hat, und
+         verwandelt sich dann — Zeichen und Wort. */
+      nav.dataset.software = von;
+      zeichenListe.forEach(svg => { stelle(svg, von === TVZA ? 1 : 0); bewege(svg, ziel); });
+      win.requestAnimationFrame(() => { nav.dataset.software = ziel; });
+    } else {
+      nav.dataset.software = ziel;
+      zeichenListe.forEach(svg => bewege(svg, ziel));
     }
   }
-  if (!erstes && sanft && passt(win, '(max-width: 899px)')) {
+  if ((!erstes || quer) && sanft && passt(win, '(max-width: 899px)')) {
     hinweis(doc, von, ziel, ruhig);
   }
   return true;

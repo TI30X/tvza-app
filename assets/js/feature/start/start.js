@@ -14,7 +14,7 @@
 import {
   auth, db, requireAuth, wireOfflineBanner, escHtml,
   MODULES, CORE_MODULE_KEYS, allowedModules, enabledModules, getProfile, sharesForEmail,
-  projekteReparatur, istTvza,
+  projekteReparatur, istTvza, imKreis,
   sharesByOwner, reportClientError
 } from '../../firebase-config.js';
 
@@ -32,8 +32,8 @@ import {
   doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from '../../shell.js?v=15';
-import { initialsOf } from '../../nav.js?v=14';
+import { ICONS, icon } from '../../shell.js?v=16';
+import { initialsOf } from '../../nav.js?v=15';
 import { frage } from '../../dialog.js';
 import { meineGruppen, leitet, kontakte } from '../../groups.js';
 import { nameAus } from '../../bekannte.js';
@@ -127,8 +127,16 @@ let appUsers = [];
 let appUsersLoaded = false;
 /* 'tvza' ist der persönliche Teil (v.35.35.0). storedOrder nimmt einen
    neuen Abschnitt in eine gespeicherte Reihenfolge auf, ohne sie zu
-   verwerfen. */
-const overviewSectionDefaults = ['tracker', 'shared', 'tvza', 'projects'];
+   verwerfen.
+
+   Für den TVZA-Kreis ist Start TVZA (v.35.48.0): zuerst das Eigene,
+   dann das Geteilte, und die Firn-Bereiche unten, mit dem Zeichen Firn
+   darüber. Wer eine Reihenfolge gespeichert hat, behält sie. */
+const kreis = imKreis(profile);
+const overviewSectionDefaults = kreis
+  ? ['tvza', 'projects', 'shared', 'tracker']
+  : ['tracker', 'shared', 'tvza', 'projects'];
+document.getElementById('firnMarke').hidden = !kreis;
 const trackerTileDefaults = ['ski', 'food', 'watch', 'weather', 'dm', 'trip', 'matura', 'maturatracker', 'training'];
 const quickAccessExcluded = new Set(['dm', 'watch', 'trip']);
 let reorderEditing = false;
@@ -840,7 +848,7 @@ async function loadShareTargets() {
       shareTargets = appUsers.filter(u => u.uid !== user.uid)
         .map(u => ({ uid: u.uid, name: nameAus(u) || u.email, gruppen: [] }));
     } else {
-      shareTargets = await kontakte(user.uid);
+      shareTargets = await kontakte(user.uid, { kreis: imKreis(profile) });
     }
   } catch (e) {
     reportClientError('share-targets', e);
@@ -1240,6 +1248,8 @@ async function renderAdminUsers() {
   wrap.innerHTML = manageableUsers.map(u => {
     const allowed = allowedModules(u);
     const enabledCount = manageableModuleKeys.filter(key => allowed[key]).length;
+    const kreis = imKreis(u);
+    const merkmal = u.isTimo ? 'Admin' : `${kreis ? 'TVZA · ' : ''}${enabledCount} Module`;
     return `
     <details class="admin-user" data-admin-user="${escHtml(u.uid)}">
       <summary class="row admin-user__head">
@@ -1248,9 +1258,16 @@ async function renderAdminUsers() {
           <span class="row__title">${escHtml(u.displayName || 'Ohne Name')}</span>
           <span class="row__sub">${escHtml(u.email || '')}</span>
         </span>
-        <span class="row__end"><span class="role-badge">${u.isTimo ? 'Admin' : enabledCount + ' Module'}</span></span>
+        <span class="row__end"><span class="role-badge">${merkmal}</span></span>
       </summary>
       <div class="admin-user__body">
+        <!-- Der TVZA-Kreis (v.35.48.0): Freunde und Familie. Nur wer
+             darin ist, sieht TVZA; wer einem Verein beitritt, ist es nicht. -->
+        <label class="admin-mod admin-mod--kreis">
+          <input type="checkbox" data-admin-kreis ${kreis ? 'checked' : ''} />
+          <span class="admin-mod__icon tvza-marke">TVZA</span>
+          <span>Im TVZA-Kreis</span>
+        </label>
         <div class="admin-mods">
           ${Object.values(MODULES).filter(m => manageableModuleKeys.includes(m.key)).map(m => `
             <label class="admin-mod" data-bereich="${BEREICH_OF[m.key] || ''}">
@@ -1270,12 +1287,24 @@ async function renderAdminUsers() {
     </details>`;
   }).join('');
 
+  /* Hinein heisst: die TVZA-Bereiche sind frei; hinaus: keiner. Der
+     Admin kann danach einzelne wieder abwählen. So bedeutet der Schalter
+     etwas, das man sieht, statt eines Felds, das nur zusammen mit
+     anderen Häkchen wirkt. */
+  wrap.querySelectorAll('[data-admin-kreis]').forEach(schalter => schalter.addEventListener('change', () => {
+    const row = schalter.closest('[data-admin-user]');
+    row.querySelectorAll('[data-admin-allowed]').forEach(cb => {
+      if (istTvza(cb.dataset.adminAllowed)) cb.checked = schalter.checked;
+    });
+  }));
+
   wrap.querySelectorAll('[data-admin-save]').forEach(btn => btn.addEventListener('click', async () => {
     const uid = btn.dataset.adminSave;
     const row = wrap.querySelector(`[data-admin-user="${CSS.escape(uid)}"]`);
     const allowedModulesNext = {};
     row.querySelectorAll('[data-admin-allowed]').forEach(cb => allowedModulesNext[cb.dataset.adminAllowed] = cb.checked);
     const isTimo = row.querySelector('[data-admin-timo]').checked;
+    const kreis = row.querySelector('[data-admin-kreis]').checked;
     if (uid === user.uid && !isTimo) { alert('Du kannst dir selbst den Admin-Zugriff nicht entfernen.'); return; }
     const moduleKeys = manageableModuleKeys;
     const allowedKeys = Object.keys(allowedModulesNext);
@@ -1302,12 +1331,20 @@ async function renderAdminUsers() {
         throw error;
       }
 
-      await updateDoc(doc(db, 'users', uid), {
+      /* Profil und Kreisliste in EINEM Stapel: die Liste ist, was
+         Freunde und Familie im Chat einander finden lässt, und darf dem
+         Profil nie widersprechen. */
+      const stapel = writeBatch(db);
+      stapel.update(doc(db, 'users', uid), {
         allowedModules: allowedModulesNext,
-        isTimo
+        isTimo,
+        kreis
       });
+      if (kreis || isTimo) stapel.set(doc(db, 'kreis', uid), { seit: serverTimestamp() });
+      else stapel.delete(doc(db, 'kreis', uid));
+      await stapel.commit();
       if (uid === user.uid) {
-        profile = { ...profile, allowedModules: allowedModulesNext, isTimo };
+        profile = { ...profile, allowedModules: allowedModulesNext, isTimo, kreis };
         applyModules();
       }
       await loadAppUsers(true);

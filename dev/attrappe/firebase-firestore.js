@@ -14,7 +14,8 @@
    und Einstellungsrahmen dieselben Daten sehen), Zuhörer, die auch
    zwischen den Rahmen melden (BroadcastChannel), und genau die
    Funktionen, die die App importiert. Regeln prüft die Attrappe nicht
-   — dafür gibt es security-model.test.mjs —, bis auf zwei (unten).
+   — dafür gibt es security-model.test.mjs —, bis auf die zu Profilen,
+   Namenskarten und dem TVZA-Kreis (unten).
 
    Nichts hiervon wird ausgeliefert: dev/ gehört nicht zur App.
    ══════════════════════════════════════════════════════════════════ */
@@ -254,6 +255,8 @@ function darfLesen(ref) {
 function darfListen(q) {
   const basis = q.type === 'query' ? q.basis : q;
   if (basis.type === 'collection' && ['users', 'personen'].includes(basis.path) && !istAdmin()) throw abgelehnt();
+  /* Die Liste des TVZA-Kreises liest nur, wer darauf steht (v.35.48.0). */
+  if (basis.type === 'collection' && basis.path === 'kreis' && !istAdmin() && !speicher['kreis/' + ich()]) throw abgelehnt();
 }
 
 export async function getDoc(ref) { await bereit; lesen(); darfLesen(ref); return new DocumentSnapshot(ref, speicher[ref.path]); }

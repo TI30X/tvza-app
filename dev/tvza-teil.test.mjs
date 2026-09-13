@@ -99,7 +99,9 @@ test('Start: die persönlichen Kacheln stehen im TVZA-Teil, die übrigen bei Fir
   assert.match(html, /<section class="section" id="tvzaSection" data-overview-section="tvza" hidden>/);
   assert.match(html, /id="tvzaSection"[\s\S]{0,400}<span class="tvza-marke">TVZA<\/span>/);
   assert.match(html, /id="projectsSection"[\s\S]{0,400}<span class="tvza-marke">TVZA<\/span>/);
-  assert.match(html, /overviewSectionDefaults = \['tracker', 'shared', 'tvza', 'projects'\]/);
+  /* Wer nicht im Kreis ist, sieht Firn zuerst; der TVZA-Kreis sein
+     Eigenes (kreis.test.mjs). */
+  assert.match(html, /overviewSectionDefaults = kreis\s*\? \['tvza', 'projects', 'shared', 'tracker'\]\s*: \['tracker', 'shared', 'tvza', 'projects'\]/);
   /* Beim Sortieren geht jede Kachel in ihr Raster zurück. */
   assert.match(html, /\(istTvza\(id\) && tvza \? tvza : firn\)\.appendChild\(tile\)/);
 });

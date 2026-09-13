@@ -10,12 +10,14 @@
    beim nächsten Laden auf diese Startdaten zurück. Von Hand:
    attrappeZuruecksetzen() in der Konsole. */
 
-export const VERSION = 3;
+export const VERSION = 4;
 
 export const KONTEN = {
   michel: { email: 'michel@firn.test', name: 'Michel van Zanten' },
   timo: { email: 'timo@firn.test', name: 'Timothy van Zanten' },
   lea: { email: 'lea@firn.test', name: 'Lea Müller' },
+  /* Familie, in keiner Gruppe — nur im TVZA-Kreis (v.35.48.0). */
+  anna: { email: 'anna@firn.test', name: 'Anna van Zanten' },
 };
 
 const pad = n => String(n).padStart(2, '0');
@@ -56,8 +58,23 @@ export async function startDaten() {
       isTimo: false,
       allowedModules: { training: true, ski: true, weather: true, matura: true, maturatracker: true },
       modules: { training: true, ski: true, weather: true, matura: true, maturatracker: false },
+      kreis: true,
     }),
-    'users/lea': profil('lea', { isTimo: false, allowedModules: { training: true }, modules: { training: true } }),
+    /* Lea ist dem Kader beigetreten, wie jedes neue Konto: TVZA nicht frei,
+       nicht im Kreis. Sie sieht Firn und von TVZA nichts. */
+    'users/lea': profil('lea', {
+      isTimo: false,
+      allowedModules: { training: true, ski: true, weather: true, food: false, watch: false, matura: false, maturatracker: false, projects: false },
+      modules: { training: true },
+    }),
+    'users/anna': profil('anna', {
+      isTimo: false, kreis: true,
+      allowedModules: { food: true, watch: true, weather: true, training: false, ski: false, matura: false, maturatracker: false, projects: false },
+      modules: { food: true, watch: true },
+    }),
+    'kreis/michel': { seit: zeit(-90) },
+    'kreis/timo': { seit: zeit(-90) },
+    'kreis/anna': { seit: zeit(-30) },
 
     'groups/g1': {
       name: 'BSV Perspektivkader', art: 'kader', headUid: 'michel',

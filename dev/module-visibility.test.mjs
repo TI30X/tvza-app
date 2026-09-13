@@ -29,7 +29,11 @@ function visibilityHelpers() {
   const enabledSource = firebase.match(
     /export function enabledModules\(profile\) \{[\s\S]*?\n\}/
   )?.[0];
-  assert.ok(allowedSource && enabledSource, 'module visibility helpers not found');
+  /* Seit v.35.48.0 fragt allowedModules den TVZA-Kreis (kreis.test.mjs). */
+  const kreisSource = firebase.match(
+    /export function imKreis\(profile\) \{[\s\S]*?\n\}/
+  )?.[0];
+  assert.ok(allowedSource && enabledSource && kreisSource, 'module visibility helpers not found');
 
   const context = {
     MODULES: {
@@ -45,12 +49,15 @@ function visibilityHelpers() {
       ski:false, food:true, trip:true, dm:true, matura:true, maturatracker:false, admin:true,
     },
     CORE_MODULE_KEYS: ['trip', 'dm'],
+    TVZA_BEREICHE: ['matura', 'maturatracker', 'food'],
   };
   vm.runInNewContext(
-    `${allowedSource.replace('export ', '')}
+    `${kreisSource.replace('export ', '')}
+     ${allowedSource.replace('export ', '')}
      ${enabledSource.replace('export ', '')}
      this.allowedModules = allowedModules;
-     this.enabledModules = enabledModules;`,
+     this.enabledModules = enabledModules;
+     this.imKreis = imKreis;`,
     context
   );
   return context;

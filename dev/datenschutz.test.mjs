@@ -90,7 +90,7 @@ test('kein Modul listet die Profile — ausser dem Admin-Teil', async () => {
     'die Einstellungen laden wieder alle Profile — für jedes Konto');
   const teilen = start.slice(start.indexOf('async function loadShareTargets('), start.indexOf('async function renderShareTargets('));
   assert.match(teilen, /if \(profile\.isTimo === true\) \{\s*await loadAppUsers\(\);/);
-  assert.match(teilen, /shareTargets = await kontakte\(user\.uid\);/);
+  assert.match(teilen, /shareTargets = await kontakte\(user\.uid, \{ kreis: imKreis\(profile\) \}\);/);
 
   const personen = await lies('assets/js/personen.js');
   const nachtragen = personen.slice(personen.indexOf('export async function kartenNachtragen'));
@@ -106,7 +106,7 @@ test('fremde Profile liest niemand mehr einzeln — bis auf drei begründete Ste
      ein Profil hat (uid ist dort die eigene); und der Übergang in
      personen.js, der still scheitert, sobald die Regeln gelten. */
   const begruendet = {
-    'assets/js/feature/start/start.js': /updateDoc\(doc\(db, 'users', uid\), \{\s*allowedModules/,
+    'assets/js/feature/start/start.js': /stapel\.update\(doc\(db, 'users', uid\), \{\s*allowedModules/,
     'assets/js/feature/gast/gast.js': /async function isFamilyAccount\(uid\)/,
     'assets/js/personen.js': /Übergang/,
   };
@@ -123,7 +123,7 @@ test('der Chat bietet Leute aus den eigenen Gruppen an, ohne E-Mail', async () =
   const chat = await lies('pages/messages.html');
   assert.doesNotMatch(chat, /collection\(db, 'users'\)/);
   assert.match(chat, /import \{ kontakte \} from '\.\.\/assets\/js\/groups\.js';/);
-  assert.match(chat, /liste = await kontakte\(me\)/);
+  assert.match(chat, /liste = await kontakte\(me, \{ kreis: imKreis\(profile\) \}\)/);
   const auswahl = chat.slice(chat.indexOf('function renderUsers('), chat.indexOf("$('newChatBtn')"));
   assert.doesNotMatch(auswahl, /email/i, 'die Auswahl zeigt wieder E-Mail-Adressen');
   // Wer schon schreibt, bleibt erreichbar — auch ohne gemeinsame Gruppe.

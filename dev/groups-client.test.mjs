@@ -173,7 +173,7 @@ test('die Kaderliste zeigt Namen, nicht UIDs', async () => {
   // müssen. Also wird nachgeschlagen, seit v.35.47.0 auf der
   // Namenskarte statt im Profil (datenschutz.test.mjs).
   assert.match(fnBody(src, 'ladeMitglieder'), /name: await nameVon\(m\.uid\)/);
-  assert.match(src, /import \{ nameVon \} from '\.\/personen\.js'/);
+  assert.match(src, /import \{ nameVon[^}]*\} from '\.\/personen\.js'/);
   assert.doesNotMatch(src, /doc\(db, 'users', uid\)/,
     'groups.js liest wieder fremde Profile — die Regeln erlauben das nur noch dem Admin');
 

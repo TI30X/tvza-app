@@ -22,11 +22,11 @@
    Admin sie nach (kartenNachtragen) — er darf die Profile lesen.
    ══════════════════════════════════════════════════════════════════ */
 
-import { db } from './firebase-config.js';
+import { db, imKreis } from './firebase-config.js';
 import {
   collection, doc, getDoc, getDocs, setDoc, writeBatch, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { nameAus, fehlendeKarten } from './bekannte.js';
+import { nameAus, fehlendeKarten, kreisAbgleich } from './bekannte.js';
 
 /* Der Zwischenspeicher hält das Versprechen, nicht den Namen: fragen
    zwanzig Zeilen gleichzeitig nach derselben Person, wird einmal
@@ -77,29 +77,50 @@ export async function eigeneKarte(uid, profil) {
   } catch { return false; }
 }
 
-/* Der Admin trägt fehlende Karten nach — einmal am Tag, beim Öffnen von
-   Start. Nur er darf alle Profile und alle Karten auflisten; bei allen
-   anderen wäre schon das Lesen abgelehnt. In Stapeln zu 400, unter der
-   Grenze von 500 Schreibvorgängen je Stapel. */
+/* Der Admin trägt fehlende Karten nach und richtet die Liste des
+   TVZA-Kreises nach den Profilen (v.35.48.0) — einmal am Tag, beim
+   Öffnen der App. Nur er darf alle Profile, Karten und die Kreisliste
+   auflisten; bei allen anderen wäre schon das Lesen abgelehnt. In
+   Stapeln zu 400, unter der Grenze von 500 Schreibvorgängen je Stapel. */
 export async function kartenNachtragen() {
   const heute = new Date().toISOString().slice(0, 10);
   try { if (localStorage.getItem('firn.karten.nachgetragen') === heute) return 0; } catch { /* dann eben jetzt */ }
-  const [profile, karten] = await Promise.all([
+  /* Die Kreisliste für sich: fehlt ihre Regel noch (Code vor Regeln
+     ausgerollt), sollen wenigstens die Karten entstehen. */
+  const [profilSnap, karten, kreis] = await Promise.all([
     getDocs(collection(db, 'users')),
     getDocs(collection(db, 'personen')),
+    getDocs(collection(db, 'kreis')).catch(() => null),
   ]);
+  const profile = profilSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
   const fehlend = fehlendeKarten(
-    profile.docs.map(d => ({ uid: d.id, ...d.data() })),
+    profile,
     new Map(karten.docs.map(d => [d.id, String(d.data().name || '')])),
   );
-  for (let i = 0; i < fehlend.length; i += 400) {
+  const { hinzu, weg } = kreis
+    ? kreisAbgleich(profile, new Set(kreis.docs.map(d => d.id)), imKreis)
+    : { hinzu: [], weg: [] };
+  const schritte = [
+    ...fehlend.map(p => s => s.set(doc(db, 'personen', p.uid), { name: p.name, aktualisiert: serverTimestamp() })),
+    ...hinzu.map(uid => s => s.set(doc(db, 'kreis', uid), { seit: serverTimestamp() })),
+    ...weg.map(uid => s => s.delete(doc(db, 'kreis', uid))),
+  ];
+  for (let i = 0; i < schritte.length; i += 400) {
     const stapel = writeBatch(db);
-    for (const p of fehlend.slice(i, i + 400)) {
-      stapel.set(doc(db, 'personen', p.uid), { name: p.name, aktualisiert: serverTimestamp() });
-    }
+    schritte.slice(i, i + 400).forEach(schritt => schritt(stapel));
     await stapel.commit();
   }
   fehlend.forEach(p => speicher.set(p.uid, Promise.resolve(p.name)));
   try { localStorage.setItem('firn.karten.nachgetragen', heute); } catch { /* nicht schlimm */ }
-  return fehlend.length;
+  return schritte.length;
+}
+
+/* Wer im Kreis ist — für die Kontakte im Chat und beim Teilen. Nur wer
+   selbst im Kreis ist, darf die Liste lesen; alle anderen bekommen
+   still eine leere. */
+export async function kreisMitglieder() {
+  try {
+    const snap = await getDocs(collection(db, 'kreis'));
+    return Promise.all(snap.docs.map(async d => ({ uid: d.id, name: await nameVon(d.id) })));
+  } catch { return []; }
 }

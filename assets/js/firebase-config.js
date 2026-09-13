@@ -223,11 +223,29 @@ export async function getProfile(user) {
   } catch (e) { reportClientError('profile', e); return {}; }
 }
 
-// Admin-Freigabe eines Nutzers.
+/* Der TVZA-Kreis (v.35.48.0). TVZA ist für Freunde und Familie, nicht
+   für jeden, der einem Verein in Firn beitritt. Im Kreis ist, wen Timo
+   oder Michel hineingenommen haben — im Admin "TVZA-Kreis", im Profil
+   das Feld kreis, das nur der Admin schreiben darf. Wer draussen ist,
+   sieht TVZA nie: keine Bereiche, kein Zeichen, Firn ist sein Zuhause.
+
+   Wer nie entschieden wurde (alle Konten von vorher), ist im Kreis,
+   wenn er schon einen TVZA-Bereich frei hatte. So verliert niemand
+   etwas, und neue Konten (NEUE_KONTEN: TVZA nicht frei) sind draussen,
+   bis jemand sie hineinnimmt. */
+export function imKreis(profile) {
+  if (profile?.isTimo === true || profile?.kreis === true) return true;
+  if (profile?.kreis === false) return false;
+  const frei = { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}) };
+  return TVZA_BEREICHE.some(key => frei[key] === true);
+}
+
+// Admin-Freigabe eines Nutzers. TVZA nur im Kreis (imKreis).
 export function allowedModules(profile) {
   const allowed = profile?.isTimo === true
     ? { ...ALL_MODULES }
     : { ...DEFAULT_MODULES, ...(profile?.allowedModules || {}), admin:false };
+  if (!imKreis(profile)) TVZA_BEREICHE.forEach(key => { allowed[key] = false; });
   CORE_MODULE_KEYS.forEach(key => { allowed[key] = true; });
   return allowed;
 }

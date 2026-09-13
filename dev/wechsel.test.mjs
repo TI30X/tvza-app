@@ -113,6 +113,51 @@ test('am Handy erscheint das Zeichen kurz oben und geht wieder', async () => {
   assert.equal(doc.querySelector('.wechsel-hinweis'), null, 'die Anzeige bleibt stehen');
 });
 
+/* Die Gruppe lädt als eigene Seite, nicht im Rahmen des Routers. Wer im
+   TVZA-Kreis vom Zuhause in die Gruppe geht, wechselt die Software über
+   eine Seitengrenze — die neue Seite beginnt, wo die alte aufhörte
+   (v.35.48.0). Bis dahin stand sie einfach in Firn da. */
+test('über eine Seitengrenze verwandelt sich das Zeichen auf der neuen Seite', async () => {
+  const neueSeite = (zuletzt, marke = '', handy = false) => {
+    const { window } = new JSDOM(`<body${marke ? ` data-marke="${marke}"` : ''}><nav class="nav"><a class="nav__kopf"></a></nav></body>`,
+      { pretendToBeVisual: true, url: 'https://firn.test/pages/gruppe.html' });
+    window.matchMedia = frage => ({ matches: /max-width/.test(frage) && handy });
+    if (zuletzt) window.sessionStorage.setItem('firn.software', zuletzt);
+    const doc = window.document;
+    const svg = zeichen(softwareVon(doc), doc);
+    doc.querySelector('.nav__kopf').append(svg, wort(doc));
+    _zuruecksetzen();
+    return { doc, svg, nav: doc.querySelector('.nav'), window };
+  };
+
+  const gruppe = neueSeite('tvza');
+  softwareZeigen(softwareVon(gruppe.doc), { doc: gruppe.doc });
+  assert.equal(gruppe.window.sessionStorage.getItem('firn.software'), 'firn', 'die Seite merkt sich, wo man jetzt ist');
+  await warte(DAUER / 2);
+  const mitte = Number(gruppe.svg.getAttribute('data-t'));
+  assert.ok(mitte > 0 && mitte < 1, `die Gruppe beginnt beim T und wird zum Berg (t=${mitte})`);
+  await warte(DAUER);
+  assert.equal(gruppe.svg.getAttribute('data-t'), '0');
+  assert.equal(gruppe.nav.dataset.software, 'firn');
+
+  // Aus derselben Software, oder als erste Seite der Sitzung: ohne Bewegung.
+  for (const zuletzt of ['firn', null]) {
+    const ruhig = neueSeite(zuletzt);
+    softwareZeigen(softwareVon(ruhig.doc), { doc: ruhig.doc });
+    assert.equal(ruhig.svg.getAttribute('data-t'), '0');
+    assert.equal(ruhig.doc.querySelector('.wechsel-hinweis'), null);
+  }
+
+  // Am Handy erscheint dazu das Zeichen oben.
+  const handy = neueSeite('firn', 'TVZA', true);
+  softwareZeigen(softwareVon(handy.doc), { doc: handy.doc });
+  assert.ok(handy.doc.querySelector('.wechsel-hinweis'), 'am Handy keine Anzeige über die Seitengrenze');
+
+  // Die Leiste baut ohne { sanft: false } — sonst gäbe es den Übergang nie.
+  const shell = await lies('assets/js/shell.js');
+  assert.match(shell, /\n  softwareZeigen\(software\);\n/);
+});
+
 test('das Zeichen der Leiste kann sich bewegen, und das Kit blendet die Wortzeichen', async () => {
   const shell = await lies('assets/js/shell.js');
   assert.doesNotMatch(shell, /<img class="nav__zeichen"/, 'ein <img> kann sich nicht verwandeln');

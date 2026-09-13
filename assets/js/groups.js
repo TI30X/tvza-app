@@ -38,7 +38,7 @@ import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
   onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { nameVon } from './personen.js';
+import { nameVon, kreisMitglieder } from './personen.js';
 import { bekannteAus } from './bekannte.js';
 
 /* Die Gruppenseite lädt nav.js nicht, schreibt ihre Namenskarte also
@@ -137,13 +137,17 @@ export async function ladeMitglieder(gid) {
 /* Wen man kennt: die Leute aus den eigenen Gruppen, jede Person einmal.
    Das ist die Auswahl im Chat und beim Teilen — nicht mehr die Liste
    aller Konten der App. Eine Gruppe, deren Mitglieder sich nicht laden
-   lassen, fällt still weg, statt die ganze Auswahl zu leeren. */
-export async function kontakte(uid) {
+   lassen, fällt still weg, statt die ganze Auswahl zu leeren.
+
+   Wer im TVZA-Kreis ist ({ kreis: true }, v.35.48.0), kennt dazu die
+   anderen im Kreis — Freunde und Familie sind keine Gruppe in Firn. */
+export async function kontakte(uid, { kreis = false } = {}) {
   const gruppen = await meineGruppen(uid);
   const jeGruppe = await Promise.all(gruppen.map(async g => {
     try { return { gruppe: g.name || '', mitglieder: await ladeMitglieder(g.id) }; }
     catch { return { gruppe: g.name || '', mitglieder: [] }; }
   }));
+  if (kreis) jeGruppe.push({ gruppe: 'TVZA', mitglieder: await kreisMitglieder() });
   return bekannteAus(jeGruppe, uid);
 }
 

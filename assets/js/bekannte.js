@@ -26,6 +26,18 @@ export function fehlendeKarten(profile, karten) {
     .filter(p => p.uid && p.name && karten.get(p.uid) !== p.name);
 }
 
+/* Die Liste des TVZA-Kreises (kreis/{uid}) nach den Profilen richten:
+   wer laut Profil im Kreis ist (`imKreis`, aus firebase-config.js), aber
+   nicht auf der Liste steht, kommt dazu; wer draussen ist, aber noch
+   darauf steht, geht. `bestehend` ist die Menge der uids auf der Liste. */
+export function kreisAbgleich(profile, bestehend, imKreis) {
+  const drin = new Set((profile || []).filter(p => p?.uid && imKreis(p)).map(p => p.uid));
+  return {
+    hinzu: [...drin].filter(uid => !bestehend.has(uid)),
+    weg: [...bestehend].filter(uid => !drin.has(uid)),
+  };
+}
+
 /* Die Kontakte aus den eigenen Gruppen: jede Person einmal, auch wenn
    sie in zwei Gruppen ist, nie man selbst, und nie jemand ohne Namen —
    "Ohne Namen" zehnmal untereinander hilft niemandem beim Wählen. Die

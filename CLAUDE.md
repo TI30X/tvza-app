@@ -31,7 +31,28 @@ Anmeldung, aber nicht als ein Produkt.
   im Dokument, kein `<img>`. Die Verwandlung rechnet zwischen den Ecken von
   je drei Vierecken; `dev/wechsel.test.mjs` prüft, dass beide Enden genau
   `firn.svg` und `tvza.svg` sind — wer eines der Symbole ändert, muss
-  `FORMEN` mitziehen.
+  `FORMEN` mitziehen. Die Gruppe (auch Einheit, Video) lädt der Router
+  nicht im Rahmen, sondern als neue Seite; damit der Wechsel auch dort
+  sichtbar ist, merkt sich die Sitzung die letzte Software
+  (`sessionStorage['firn.software']`), und die neue Seite beginnt, wo die
+  alte aufhörte.
+
+- **Der TVZA-Kreis** (v.35.48.0): TVZA ist für Freunde und Familie, nicht
+  für jeden, der einem Verein beitritt. Im Kreis ist, wen der Admin
+  hineinnimmt (Admin → „Im TVZA-Kreis", Profilfeld `kreis`, das nur der
+  Admin schreiben darf, dazu die Liste `kreis/{uid}`). `imKreis()` in
+  `firebase-config.js` entscheidet; wer nie entschieden wurde, ist drin,
+  wenn er schon einen TVZA-Bereich frei hatte — niemand verliert etwas.
+  **Draussen gibt es TVZA nicht**: `allowedModules()` nimmt die
+  TVZA-Bereiche weg, Firn ist das Zuhause.
+
+  **Im Kreis ist TVZA das Zuhause.** Start, Kalender und Chat tragen
+  `<body data-zuhause>` und sind für den Kreis TVZA (Zeichen, Titel,
+  Symbol, `zuhauseMarkieren()` in `wechsel.js`); die Gruppe und die
+  Firn-Bereiche bleiben Firn. Zu Firn kommt man also, wenn man in die
+  Gruppe geht — und sieht die Verwandlung. Auf Start steht für den Kreis
+  zuerst das Eigene, darunter die Firn-Bereiche mit dem Zeichen „Firn".
+  `dev/kreis.test.mjs`.
 
 Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
 Michel baut und hostet. Timos Name steht je Seite **einmal**, als
@@ -39,7 +60,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.47.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.48.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -67,7 +88,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-61 Testdateien, **652 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+62 Testdateien, **664 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -77,7 +98,9 @@ node dev/server.mjs --attrappe
 ```
 
 `http://localhost:4174` — die ganze App mit einem Testkader (Michel leitet,
-Timothy und Lea, Termine um heute herum, Timothys KW 31 als Plan). Jede
+Timothy und Lea, Termine um heute herum, Timothys KW 31 als Plan). Michel,
+Timothy und Anna (Familie, in keiner Gruppe) sind im TVZA-Kreis, Lea nicht
+— sie ist dem Kader beigetreten wie jedes neue Konto. Jede
 Seite bekommt eine Import-Map, die das Firebase-SDK auf `dev/attrappe/`
 umlenkt; alles andere ist der echte Code, auch in den Rahmen von Router und
 Einstellungen. Konto wechseln mit `?attrappe-als=timo`, Daten zurücksetzen
@@ -374,9 +397,10 @@ fremden Kadern. Seit v.35.47.0:
   auf der Gruppenseite, die nav.js nicht lädt); der Admin trägt einmal am
   Tag die fehlenden nach (`kartenNachtragen`).
 - Zur Wahl im Chat und beim Teilen stehen die Leute aus den eigenen
-  Gruppen (`kontakte()` in `groups.js`), im Chat dazu die, mit denen man
-  schon schreibt — nur Namen, darunter die Gruppe. Eine Freigabe trägt
-  keine `targetEmail` mehr.
+  Gruppen (`kontakte()` in `groups.js`), im TVZA-Kreis dazu der Kreis
+  (`kreis/{uid}` darf listen, wer darauf steht), im Chat dazu die, mit
+  denen man schon schreibt — nur Namen, darunter die Gruppe. Eine
+  Freigabe trägt keine `targetEmail` mehr.
 
 `dev/datenschutz.test.mjs` hält Regeln und Oberfläche fest, auch die drei
 begründeten Stellen, die ein fremdes Profil anfassen dürfen.
@@ -473,11 +497,14 @@ Zwei Dinge, die leicht übersehen werden:
   Regeln vor dem Code. v.35.47.0 (Profile privat, Namenskarten — Falle 15)
   umgekehrt: erst der Code, der beides verträgt, dann die Regeln, dann
   einmal als Admin die App öffnen, damit die Karten nachgetragen sind.
+  v.35.48.0 (TVZA-Kreis, `kreis/{uid}`) gehört in dieselbe Runde: bis die
+  Regeln stehen, scheitert im Admin nur das Speichern einer Person (der
+  Stapel schreibt die Kreisliste mit).
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.47.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.48.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

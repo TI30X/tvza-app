@@ -479,6 +479,25 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Der TVZA-Kreis (v.35.48.0) ──────────────────────────────────
+    // Wer im Kreis ist, steht im Profil (kreis, nur vom Admin gesetzt —
+    // die Selbstaenderung oben laesst das Feld nicht zu). Hier liegt die
+    // Liste dazu, damit Freunde und Familie einander im Chat finden,
+    // ohne die Profile lesen zu duerfen: auflisten darf, wer selbst im
+    // Kreis ist. Schreiben nur der Admin, zusammen mit dem Profil.
+    function imKreis() {
+      return isMember()
+        && exists(/databases/$(database)/documents/kreis/$(request.auth.uid));
+    }
+
+    match /kreis/{uid} {
+      allow get: if isMember() && (request.auth.uid == uid || imKreis() || isAdmin());
+      allow list: if imKreis() || isAdmin();
+      allow create, update: if isAdmin()
+                            && request.resource.data.keys().hasOnly(['seit']);
+      allow delete: if isAdmin();
+    }
+
     match /users/{uid}/reminders/{reminderId} {
       allow read, create, update, delete: if isMember()
                                            && request.auth.uid == uid;

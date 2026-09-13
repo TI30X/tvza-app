@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=15" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=16" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <title>Nachrichten — Firn</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
@@ -89,7 +89,7 @@
   <link rel="icon" type="image/svg+xml" href="../assets/icons/firn.svg" />
   <link rel="apple-touch-icon" href="../assets/icons/firn-192.png" />
 </head>
-<body class="dm">
+<body class="dm" data-zuhause>
 
   <div class="app">
     <div class="offline-banner" id="offlineBanner"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – Nachrichten werden gesendet, sobald du wieder online bist</div>
@@ -159,7 +159,7 @@
   </div>
 
   <script type="module">
-    import { db, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError } from '../assets/js/firebase-config.js';
+    import { db, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError, imKreis } from '../assets/js/firebase-config.js';
     import { kontakte } from '../assets/js/groups.js';
     import { nameVon } from '../assets/js/personen.js';
     import { sucheBekannte } from '../assets/js/bekannte.js';
@@ -442,14 +442,14 @@
        Bis v.35.46.0 lud die Auswahl ALLE Konten der App und zeigte bei
        jedem die E-Mail — jedes Konto sah jedes andere, auch Kinder aus
        fremden Kadern. Jetzt stehen hier die Leute aus den eigenen Gruppen
-       und die, mit denen man schon schreibt; nur Namen, darunter die
-       Gruppe. Den Namen liefert die Namenskarte (personen.js). */
+       und die, mit denen man schon schreibt, im TVZA-Kreis dazu Freunde
+       und Familie (v.35.48.0); nur Namen, darunter die Gruppe. Den Namen liefert die Namenskarte (personen.js). */
     const userModal = $('userModal');
     let allUsers = null;
     async function loadUsers() {
       if (allUsers) return allUsers;
       let liste = [];
-      try { liste = await kontakte(me); }
+      try { liste = await kontakte(me, { kreis: imKreis(profile) }); }
       catch (e) { reportClientError('messages-contacts-load', e); }
       const bekannt = new Set(liste.map(b => b.uid));
       for (const c of convs) {
@@ -511,6 +511,6 @@
       }
     }
   </script>
-  <script type="module" src="../assets/js/nav.js?v=14"></script>
+  <script type="module" src="../assets/js/nav.js?v=15"></script>
 </body>
 </html>
