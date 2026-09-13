@@ -51,9 +51,16 @@ test('jeder eingeschaltete Bereich steht in der Liste, ausser den Tabs', () => {
       return selector === '.row' ? this.link : null;
     }
   }));
+  /* Seit v.35.35.0 verteilt zeigeBereiche auch auf Firn und TVZA: der
+     TVZA-Teil und der Hinweis "noch kein Bereich" haengen daran. Die
+     Einteilung kommt aus firebase-config.js, nicht aus einer Abschrift. */
+  const config = fs.readFileSync(join(root, 'assets/js/firebase-config.js'), 'utf8');
+  const tvzaListe = JSON.parse(config.match(/TVZA_BEREICHE = Object\.freeze\((\[[^\]]*\])\)/)[1].replace(/'/g, '"'));
+  const elemente = { tvzaSection: { hidden: true }, noModulesHint: { hidden: false } };
   const context = {
     quickAccessExcluded: new Set(['dm', 'watch', 'trip']),
-    document: { querySelectorAll: () => tiles }
+    istTvza: key => tvzaListe.includes(key),
+    document: { querySelectorAll: () => tiles, getElementById: id => elemente[id] }
   };
 
   vm.runInNewContext(match[0], context);
@@ -74,4 +81,15 @@ test('jeder eingeschaltete Bereich steht in der Liste, ausser den Tabs', () => {
   tiles.find(t => t.id === 'food').dataset.enabled = '0';
   context.zeigeBereiche();
   assert.deepEqual(sichtbar(), ['ski', 'weather', 'matura', 'maturatracker']);
+
+  /* Der TVZA-Teil steht da, solange ein persoenlicher Bereich an ist,
+     und der Hinweis schweigt, solange ein Firn-Bereich an ist. */
+  assert.equal(elemente.tvzaSection.hidden, false);
+  assert.equal(elemente.noModulesHint.hidden, true);
+  for (const id of ['matura', 'maturatracker']) tiles.find(t => t.id === id).dataset.enabled = '0';
+  context.zeigeBereiche();
+  assert.equal(elemente.tvzaSection.hidden, true, 'ein leerer TVZA-Teil steht auf Start');
+  for (const id of ['ski', 'weather']) tiles.find(t => t.id === id).dataset.enabled = '0';
+  context.zeigeBereiche();
+  assert.equal(elemente.noModulesHint.hidden, false, 'ohne Firn-Bereich fehlt der Hinweis');
 });

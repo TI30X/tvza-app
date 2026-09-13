@@ -160,6 +160,35 @@ export const DEFAULT_VISIBLE_MODULES = {
 };
 export const CORE_MODULE_KEYS = Object.freeze(['trip', 'dm']);
 
+/* ── Firn und TVZA ────────────────────────────────────────────────
+   Firn ist der Ort, an dem sich eine Gruppe organisiert: Kader, Verein,
+   Gym, Familie. TVZA ist, woraus Firn entstanden ist — die Sammlung, die
+   Timo für sich und seine Freunde gebaut hat. Beides lebt in derselben
+   App, mit derselben Anmeldung, aber nicht als ein Produkt: die
+   persönlichen Bereiche stehen auf Start in einem eigenen Teil, tragen
+   in ihren Seiten das Zeichen TVZA und sind für neue Konten nicht
+   freigegeben — die gibt der Admin frei, wem er will.
+
+   DIESE Liste entscheidet. Wer einen Bereich verschiebt, verschiebt ihn
+   hier; Start, Einstellungen, Admin und neue Konten ziehen nach. */
+export const TVZA_BEREICHE = Object.freeze(['matura', 'maturatracker', 'food', 'watch', 'projects']);
+export const istTvza = key => TVZA_BEREICHE.includes(key);
+
+/* Was ein neues Konto bekommt (login.html). Der Kern ist an; die
+   Firn-Bereiche sind freigegeben, aber aus — man schaltet sie selbst ein,
+   wenn man sie braucht (CLAUDE.md, Falle 3: "Für neue Konten aus").
+   TVZA-Bereiche sind nicht freigegeben.
+
+   Bewusst NICHT DEFAULT_MODULES geändert: das ist die Rückfallebene für
+   Profile ohne gespeicherte Freigabe, und bestehende Konten sollen durch
+   diese Trennung nichts verlieren. */
+export const NEUE_KONTEN = Object.freeze({
+  erlaubt: Object.freeze(Object.fromEntries(Object.keys(MODULES).map(key =>
+    [key, CORE_MODULE_KEYS.includes(key) || (key !== 'admin' && !TVZA_BEREICHE.includes(key))]))),
+  sichtbar: Object.freeze(Object.fromEntries(Object.keys(MODULES).map(key =>
+    [key, CORE_MODULE_KEYS.includes(key)]))),
+});
+
 /* Die Reparatur fuer die verschwundenen Projekte.
  *
  * Bis v.35.22.0 schrieb das Umlegen EINES Bereichsschalters den Zustand

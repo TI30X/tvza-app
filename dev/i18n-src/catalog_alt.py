@@ -378,6 +378,15 @@ KEYS = {
                      'Agendagroepen zijn nu groepen. Vraag om een nieuwe uitnodigingscode en doe mee via het tabblad Groep.',
                      'Los grupos de calendario ahora son grupos. Pide un código de invitación nuevo y únete en la pestaña Grupo.'),
 
+# ── Der TVZA-Teil (v.35.35.0) ─────────────────────────────────────
+# "TVZA" selbst steht NICHT im Katalog — es ist ein Name, kein Wort
+# (marke.test.mjs haelt den Katalog frei davon). Uebersetzt wird nur,
+# was daneben steht.
+'home.persoenlich': ('Persönlich', 'Personal', 'Personnel', 'Personale', 'Osobiste', 'Persoonlijk', 'Personal'),
+'home.persoenlichBereich':('Persönlicher Bereich', 'Personal area', 'Espace personnel', 'Area personale',
+                     'Obszar osobisty', 'Persoonlijk gedeelte', 'Área personal'),
+'set.firnBereiche': ('Firn', 'Firn', 'Firn', 'Firn', 'Firn', 'Firn', 'Firn'),
+
 # ── Gruppe wechseln (v.35.31.0) ───────────────────────────────────
 'grp.wechselnKurz': ('Wechseln', 'Switch', 'Changer', 'Cambia', 'Zmień', 'Wisselen', 'Cambiar'),
 'grp.weitere.one':  ('1 weitere Gruppe', '1 more group', '1 autre groupe', '1 altro gruppo',

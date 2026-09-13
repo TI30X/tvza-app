@@ -14,7 +14,7 @@
 import {
   auth, db, requireAuth, wireOfflineBanner, escHtml,
   MODULES, CORE_MODULE_KEYS, allowedModules, enabledModules, getProfile, sharesForEmail,
-  projekteReparatur,
+  projekteReparatur, istTvza,
   sharesByOwner, reportClientError
 } from '../../firebase-config.js';
 
@@ -124,7 +124,10 @@ try { localStorage.setItem('tvza-name', profile.displayName || ''); } catch (e) 
 try { window.dispatchEvent(new CustomEvent('tvza-name', { detail: profile.displayName || '' })); } catch (e) {}
 let appUsers = [];
 let appUsersLoaded = false;
-const overviewSectionDefaults = ['tracker', 'shared', 'projects'];
+/* 'tvza' ist der persönliche Teil (v.35.35.0). storedOrder nimmt einen
+   neuen Abschnitt in eine gespeicherte Reihenfolge auf, ohne sie zu
+   verwerfen. */
+const overviewSectionDefaults = ['tracker', 'shared', 'tvza', 'projects'];
 const trackerTileDefaults = ['ski', 'food', 'watch', 'weather', 'dm', 'trip', 'matura', 'maturatracker', 'training'];
 const quickAccessExcluded = new Set(['dm', 'watch', 'trip']);
 let reorderEditing = false;
@@ -186,11 +189,15 @@ function setTrackerTile(key, enabled) {
   link.hidden = !enabled;
 }
 
+/* Eine Reihenfolge über alle Kacheln, aber zwei Raster: jede Kachel geht
+   in ihren Teil — Firn oder TVZA. Ziehen ordnet nur innerhalb des
+   eigenen Rasters um, eine Kachel wandert also nie hinüber. */
 function applyTrackerTileOrder() {
-  const grid = document.getElementById('trackerGrid');
+  const firn = document.getElementById('trackerGrid');
+  const tvza = document.getElementById('tvzaGrid');
   trackerTileOrder.forEach(id => {
     const tile = document.querySelector(`[data-tracker-tile="${id}"]`);
-    if (tile) grid.appendChild(tile);
+    if (tile) (istTvza(id) && tvza ? tvza : firn).appendChild(tile);
   });
 }
 
@@ -214,6 +221,14 @@ function zeigeBereiche() {
     const link = tile.querySelector('.row');
     if (link) link.hidden = !sichtbar;
   });
+  /* Der TVZA-Teil steht nur da, wenn darin etwas an ist — für ein Konto
+     ohne persönliche Bereiche gibt es ihn nicht. Der Hinweis "noch kein
+     Bereich" gilt den Firn-Bereichen. */
+  const sichtbare = tiles.filter(tile => !tile.hidden);
+  const tvza = document.getElementById('tvzaSection');
+  if (tvza) tvza.hidden = !sichtbare.some(tile => istTvza(tile.dataset.trackerTile));
+  document.getElementById('noModulesHint').hidden =
+    sichtbare.some(tile => !istTvza(tile.dataset.trackerTile));
 }
 
 const h = new Date().getHours();
@@ -234,14 +249,12 @@ function applyModules() {
   setTrackerTile('maturatracker', mods.maturatracker);
   setTrackerTile('training', mods.training);
   document.getElementById('projectsSection').style.display = mods.projects ? '' : 'none';
-  const anyTracker = mods.ski || mods.food || mods.weather || mods.matura || mods.maturatracker || mods.training;
   // The chip may not have registered yet — it is a module too, and
   // module order is document order. Record the wanted state either
   // way; whichever runs second applies it.
   window.tvzaWeatherWanted = !!mods.weather;
   if (window.tvzaWeatherChip) window.tvzaWeatherChip.setVisible(!!mods.weather);
   if (mods.dm) startDmBadge(); else stopDmBadge();
-  document.getElementById('noModulesHint').hidden = anyTracker;
   applyTrackerTileOrder();
   zeigeBereiche();
   applyOverviewLayout();
@@ -831,7 +844,7 @@ function renderModuleToggles() {
     document.getElementById('moduleToggles').innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch keine Module freigeschaltet.</p>';
     return;
   }
-  document.getElementById('moduleToggles').innerHTML = availableModules.map(m => `
+  const zeile = m => `
     <label class="row row--check${mods[m.key] ? ' is-checked' : ''}" data-bereich="${BEREICH_OF[m.key] || ''}">
       <span class="row__icon">${icon(ICONS[m.key] ? m.key : 'bereiche', 18)}</span>
       <span class="row__body">
@@ -842,7 +855,15 @@ function renderModuleToggles() {
         <span class="module-toggle-state">${mods[m.key] ? 'Sichtbar' : 'Ausgeblendet'}</span>
         <input type="checkbox" data-mod="${m.key}" ${mods[m.key] ? 'checked' : ''} />
       </span>
-    </label>`).join('');
+    </label>`;
+  /* Zwei Gruppen, wie auf Start: die Firn-Bereiche und der persönliche
+     TVZA-Teil. Eine Gruppe ohne freigegebenen Bereich erscheint nicht. */
+  const firn = availableModules.filter(m => !istTvza(m.key));
+  const tvza = availableModules.filter(m => istTvza(m.key));
+  document.getElementById('moduleToggles').innerHTML = [
+    firn.length ? `<div class="marke">${escHtml(t('set.firnBereiche', 'Firn'))}</div>${firn.map(zeile).join('')}` : '',
+    tvza.length ? `<div class="marke marke--tvza"><span class="tvza-marke">TVZA</span> ${escHtml(t('home.persoenlich', 'Persönlich'))}</div>${tvza.map(zeile).join('')}` : '',
+  ].join('');
 }
 
 let modulesSaveQueue = Promise.resolve();
@@ -1205,6 +1226,7 @@ async function renderAdminUsers() {
               <input type="checkbox" data-admin-allowed="${m.key}" ${allowed[m.key] ? 'checked' : ''} />
               <span class="admin-mod__icon">${icon(ICONS[m.key] ? m.key : 'bereiche', 15)}</span>
               <span>${escHtml(m.name)}</span>
+              ${istTvza(m.key) ? '<span class="tvza-marke">TVZA</span>' : ''}
             </label>`).join('')}
           <label class="admin-mod admin-mod--admin">
             <input type="checkbox" data-admin-timo ${u.isTimo ? 'checked' : ''} />

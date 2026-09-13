@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="assets/js/theme.js"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=12" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=13" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
   <title data-i18n="login.titel">Anmelden — Firn</title>
   <style>
@@ -116,7 +116,7 @@
 
   <script type="module">
     import {
-      auth, db, DEFAULT_MODULES, getTvzaConfig
+      auth, db, NEUE_KONTEN, getTvzaConfig
     } from './assets/js/firebase-config.js';
     import {
       emailAccessAllowed, requiresVerifiedEmail
@@ -281,8 +281,10 @@
             familyId,
             role: 'member',
             isTimo: false,
-            allowedModules: { ...DEFAULT_MODULES },
-            modules: { ...DEFAULT_MODULES },
+            /* Der Kern an, Firn-Bereiche frei aber aus, TVZA nicht frei —
+               firebase-config.js, NEUE_KONTEN. */
+            allowedModules: { ...NEUE_KONTEN.erlaubt },
+            modules: { ...NEUE_KONTEN.sichtbar },
             createdAt: serverTimestamp(),
             inviteCode: inviteCode || null
           });

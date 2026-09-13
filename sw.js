@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.35.34.0';
+const CACHE = 'tvza-v.35.35.0';
 // Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
@@ -23,11 +23,11 @@ const SHELL = [
   './index.html',
   './login.html',
   './willkommen.html',
-  './assets/css/kit.css?v=12',
+  './assets/css/kit.css?v=13',
   './assets/css/feature/willkommen.css?v=3',
   './assets/css/legacy.css?v=1',
   './assets/css/feature/calendar.css?v=15',
-  './assets/css/feature/matura.css?v=3',
+  './assets/css/feature/matura.css?v=4',
   './assets/css/feature/access.css?v=2',
   './assets/css/feature/food.css?v=2',
   './assets/css/feature/ski.css?v=3',
@@ -39,7 +39,7 @@ const SHELL = [
   './assets/icons/firn-192.png',
   './assets/js/theme.js',
   // Der Start traegt seinen Code seit v.35.19.0 in eigenen Dateien.
-  './assets/js/feature/start/start.js?v=7',
+  './assets/js/feature/start/start.js?v=8',
   './assets/js/feature/start/wetter-chip.js?v=3',
   './assets/js/feature/start/heute.js?v=4',
   './assets/js/i18n.js?v=1',

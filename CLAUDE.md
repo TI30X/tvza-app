@@ -4,15 +4,24 @@ Anleitung für Claude Code in diesem Repository.
 
 ## Was das ist
 
-**Firn** ist eine Trainingsplattform für Kader, Vereine und Gyms: Pläne,
-Termine, Videoanalyse, FIS-Punkte. Sie ist aus TVZA hervorgegangen — einer
-privaten Familien-App — und trägt deren Bereiche weiter (Kalender, Food,
-Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
+**TVZA ist die persönliche Software für alles; Firn ist eine Software von
+TVZA für Gruppen** — Kader, Vereine, Gyms, Unternehmen, Familien: Termine,
+Pläne, Training, Videoanalyse, FIS-Punkte. Beides lebt in einer App mit einer
+Anmeldung, aber nicht als ein Produkt.
 
-**Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
-Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
+- **Firn** ist, was eine Gruppe braucht: Start, Kalender, Gruppe, Chat, dazu
+  die Firn-Bereiche (Training, Ski-Tracker, Wetter). Das sieht jedes Konto.
+- **TVZA** sind die persönlichen Bereiche, die Timo für sich und seine
+  Freunde gebaut hat (Maturaarbeit, Maturaarbeit-Tracker, Food, Watchlist,
+  Projekte). Auf Start ein eigener Teil, in den Seiten das Zeichen TVZA, für
+  neue Konten nicht freigegeben — der Admin gibt sie frei, wem er will.
+  Welche Bereiche TVZA sind, entscheidet **eine** Liste: `TVZA_BEREICHE` in
+  `assets/js/firebase-config.js`.
 
-Version: **v.35.34.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
+Michel baut und hostet.
+
+Version: **v.35.35.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -40,7 +49,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-53 Testdateien, **563 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+54 Testdateien, **570 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -88,6 +97,14 @@ Module wird.
    leerer Bildschirm", ist er nicht öffentlich, sondern persönlich.
 5. **Eine Plättchenfarbe**, ein Eintrag in der Bereichsliste. Nichts bekommt
    eine zweite Oberfläche.
+
+Und die sechste Frage: **Firn oder TVZA?** Braucht eine Gruppe das, ist es
+Firn. Ist es für Timo und seine Freunde, ist es TVZA — dann gehört der
+Schlüssel in `TVZA_BEREICHE`, und Start, Einstellungen, Admin und neue Konten
+ziehen nach (`dev/tvza-teil.test.mjs`). Neue Konten bekommen `NEUE_KONTEN`:
+der Kern an, Firn-Bereiche frei aber aus, TVZA nicht frei. `DEFAULT_MODULES`
+bleibt die Rückfallebene für alte Profile, damit bestehende Konten nichts
+verlieren.
 
 **4. Seiten-Invariante.** Eine Seitendatei enthält Markup, `<link>`s und
 **ein** `<script type="module" src="…">`. Kein `<style>`-Block, kein
@@ -137,6 +154,10 @@ Laptop am Fuss der Leiste, nie beide sichtbar. Kein Zahnrad, kein zweites
 Menü. Tabs haben keinen Zurück-Pfeil; Unterseiten (Einheit, Video) schon.
 Alle Importe von `shell.js` und `router.js` müssen dieselbe `?v=` tragen —
 zwei Nummern sind für den Browser zwei Module mit getrenntem Zustand.
+
+**Den Kopf färbt das Kit, nicht die Seite.** Navy am Handy, hell am Laptop.
+Die Maturaarbeit färbte ihren Kopf bis v.35.34.0 selbst navy — am Laptop war
+ihr Titel damit Navy auf Navy und unsichtbar.
 
 **Keine Browserfenster.** `prompt()`, `confirm()` und `alert()` sind
 ersetzt durch `frage()`, `eingabe()`, `meldung()` aus `dialog.js`.
@@ -239,7 +260,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **798 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **801 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -294,7 +315,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 563 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 570 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -318,7 +339,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.34.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.35.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

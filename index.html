@@ -22,7 +22,7 @@
   </script>
   <script src="assets/js/theme.js?v=3"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=12" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=13" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="assets/css/feature/access.css?v=2" />
   <title data-i18n="home.seitentitel">Firn</title>
@@ -96,12 +96,12 @@
         <div class="rows share-list" id="sharedList"></div>
       </section>
 
-      <!-- Projekte. Ein persoenlicher Bereich: fuer neue Konten aus,
+      <!-- Projekte. Ein persoenlicher Bereich (TVZA): fuer neue Konten aus,
            fuer TvZ an. Der Link darunter macht die oeffentliche Seite
            verschickbar — sie ist kein Ort in der App. -->
       <section class="section" id="projectsSection" data-overview-section="projects" style="display:none">
         <div class="marke marke--reihe">
-          <span data-i18n="home.meineProjekte">Meine Projekte</span>
+          <span><span class="tvza-marke">TVZA</span> <span data-i18n="home.meineProjekte">Meine Projekte</span></span>
           <button class="overview-drag" type="button" draggable="true" data-section-drag="projects" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
         </div>
         <div class="rows" id="projectList">
@@ -150,34 +150,6 @@
             </a>
           </div>
 
-          <div class="module-tile" data-tracker-tile="food">
-            <a class="row" href="pages/foodtracker.html" id="cardFood" data-bereich="food" draggable="false" hidden>
-              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></span>
-              <span class="row__body">
-                <span class="row__title" data-i18n="mod.food.name">Food Tracker</span>
-                <span class="row__sub" data-i18n="mod.food.sub">Kalorien &amp; Nährstoffe</span>
-              </span>
-              <span class="row__end">
-                <span class="tile-live tile-prog" id="tileFood" hidden></span>
-                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-              </span>
-            </a>
-          </div>
-
-          <div class="module-tile" data-tracker-tile="watch">
-            <a class="row" href="pages/watchlist.html" id="cardWatch" data-bereich="watch" draggable="false" hidden>
-              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
-              <span class="row__body">
-                <span class="row__title" data-i18n="mod.watch.name">Watchlist</span>
-                <span class="row__sub" data-i18n="mod.watch.sub">Kurse, Märkte &amp; News</span>
-              </span>
-              <span class="row__end">
-                <span class="tile-live tile-ticker" id="tileWatch" hidden></span>
-                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-              </span>
-            </a>
-          </div>
-
           <div class="module-tile" data-tracker-tile="weather">
             <a class="row" href="pages/weather.html?v=3" id="cardWeather" data-bereich="weather" draggable="false" hidden>
               <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg></span>
@@ -220,6 +192,36 @@
             </a>
           </div>
 
+          <div class="module-tile" data-tracker-tile="training">
+            <a class="row" href="pages/training.html" id="cardTraining" data-bereich="training" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.training.name">Training</span>
+                <span class="row__sub" data-i18n="mod.training.sub">Wochenplan &amp; Übungen</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live tile-prog" id="tileTraining" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
+            </a>
+          </div>
+        </div>
+        <p class="empty-hint" id="noModulesHint" hidden data-i18n="home.keineModule">
+          Noch kein Bereich eingeschaltet. Du findest sie in den Einstellungen im Konto-Menü.
+        </p>
+      </section>
+
+      <!-- TVZA — die persönlichen Bereiche. Firn ist der Ort für Gruppen;
+           was Timo für sich und seine Freunde gebaut hat (Maturaarbeit,
+           Food, Watchlist, Projekte), steht hier für sich, mit dem Zeichen
+           TVZA. Welche Bereiche dazugehören, entscheidet TVZA_BEREICHE in
+           firebase-config.js. Sichtbar nur, wenn einer davon an ist. -->
+      <section class="section" id="tvzaSection" data-overview-section="tvza" hidden>
+        <div class="marke marke--reihe">
+          <span><span class="tvza-marke">TVZA</span> <span data-i18n="home.persoenlich">Persönlich</span></span>
+          <button class="overview-drag" type="button" draggable="true" data-section-drag="tvza" data-i18n-attr="title:a11y.bereichZiehen" title="Bereich ziehen"></button>
+        </div>
+        <div class="rows" id="tvzaGrid">
           <div class="module-tile" data-tracker-tile="matura">
             <a class="row" href="pages/maturaarbeit.html" id="cardMatura" data-bereich="matura" draggable="false" hidden>
               <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
@@ -248,23 +250,34 @@
             </a>
           </div>
 
-          <div class="module-tile" data-tracker-tile="training">
-            <a class="row" href="pages/training.html" id="cardTraining" data-bereich="training" draggable="false" hidden>
-              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></span>
+          <div class="module-tile" data-tracker-tile="food">
+            <a class="row" href="pages/foodtracker.html" id="cardFood" data-bereich="food" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></span>
               <span class="row__body">
-                <span class="row__title" data-i18n="mod.training.name">Training</span>
-                <span class="row__sub" data-i18n="mod.training.sub">Wochenplan &amp; Übungen</span>
+                <span class="row__title" data-i18n="mod.food.name">Food Tracker</span>
+                <span class="row__sub" data-i18n="mod.food.sub">Kalorien &amp; Nährstoffe</span>
               </span>
               <span class="row__end">
-                <span class="tile-live tile-prog" id="tileTraining" hidden></span>
+                <span class="tile-live tile-prog" id="tileFood" hidden></span>
+                <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </span>
+            </a>
+          </div>
+
+          <div class="module-tile" data-tracker-tile="watch">
+            <a class="row" href="pages/watchlist.html" id="cardWatch" data-bereich="watch" draggable="false" hidden>
+              <span class="row__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+              <span class="row__body">
+                <span class="row__title" data-i18n="mod.watch.name">Watchlist</span>
+                <span class="row__sub" data-i18n="mod.watch.sub">Kurse, Märkte &amp; News</span>
+              </span>
+              <span class="row__end">
+                <span class="tile-live tile-ticker" id="tileWatch" hidden></span>
                 <svg class="ic row__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
               </span>
             </a>
           </div>
         </div>
-        <p class="empty-hint" id="noModulesHint" hidden data-i18n="home.keineModule">
-          Noch kein Bereich eingeschaltet. Du findest sie in den Einstellungen im Konto-Menü.
-        </p>
       </section>
 
     </main>
@@ -476,7 +489,7 @@
     </div>
   </div>
 
-  <script type="module" src="./assets/js/feature/start/start.js?v=7"></script>
+  <script type="module" src="./assets/js/feature/start/start.js?v=8"></script>
 
   <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
   <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=3"></script>

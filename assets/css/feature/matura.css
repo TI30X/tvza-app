@@ -26,10 +26,12 @@ body.matura-page {
   --status-warn-bg: oklch(0.28 0.035 75);
 }
 
+/* Die Farbe des Kopfs ist die des Kits: Navy am Handy, hell am Laptop —
+   wie auf jeder Seite (CLAUDE.md, Falle 7). Bis v.35.34.0 stand hier das
+   Navy für alle Breiten; am Laptop war der Titel dann Navy auf Navy und
+   unsichtbar. Aufgefallen erst, als das TVZA-Zeichen daneben stand. */
 .matura-page > .appbar {
   padding: env(safe-area-inset-top) 0 0;
-  background: var(--brand-gradient);
-  color: #fff;
 }
 
 .matura-page h1,

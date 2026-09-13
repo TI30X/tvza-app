@@ -79,9 +79,14 @@ test('Dashboard hat eine Kachel, die am Modul hängt', async () => {
   assert.match(html, /href="pages\/training\.html"/);
   assert.match(html, /trackerTileDefaults = \[[^\]]*'training'\]/);
   assert.match(html, /setTrackerTile\('training', mods\.training\)/);
-  /* Ohne diese Ergänzung bliebe der Bereichskopf verborgen, wenn Training
-     das einzige freigeschaltete Modul ist. */
-  assert.match(html, /const anyTracker = [^;]*mods\.training/);
+  /* Der Hinweis "noch kein Bereich" darf nicht stehen, wenn Training das
+     einzige freigeschaltete Modul ist. Bis v.35.34.0 hing das an einer
+     Liste (anyTracker), die Training eigens nennen musste; seit v.35.35.0
+     zaehlt zeigeBereiche die sichtbaren Firn-Kacheln — und Training ist
+     keiner der TVZA-Bereiche. */
+  assert.match(html, /document\.getElementById\('noModulesHint'\)\.hidden =\s*sichtbare\.some\(tile => !istTvza\(tile\.dataset\.trackerTile\)\)/);
+  const config = await read('assets/js/firebase-config.js');
+  assert.doesNotMatch(config.match(/TVZA_BEREICHE = Object\.freeze\(\[[^\]]*\]\)/)[0], /'training'/);
 });
 
 test('die Seite haelt die Seiten-Invariante und laedt theme.js', async () => {

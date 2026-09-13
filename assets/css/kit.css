@@ -1261,6 +1261,9 @@ body.reorder-editing .reorder-fab {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--s2);
 }
+/* Die Gruppenköpfe (Firn, TVZA) gehen über die ganze Breite — sonst
+   belegt jeder eine Zelle des Rasters und steht neben einem Schalter. */
+#settingsModal #moduleToggles > .marke { grid-column: 1 / -1; margin-bottom: 0; }
 #settingsModal .modal-actions { margin-top: var(--s4); }
 #settingsModal .form-group { margin-bottom: var(--s4); }
 #settingsModal #myShares:not(:empty) { margin-top: var(--s4); }
@@ -1822,6 +1825,25 @@ body.reorder-editing .module-tile::after {
    Titel steht dann irgendwo in der Mitte. */
 .marke--reihe > :first-child { flex: 1; }
 .marke--reihe button { flex: none; }
+
+/* ── TVZA — das Zeichen des persönlichen Teils (v.35.35.0) ─────────
+   Firn ist der Ort für Gruppen; was Timo für sich und seine Freunde
+   gebaut hat, trägt dieses Zeichen: auf Start über dem eigenen Teil, in
+   den Einstellungen, im Admin-Bereich und im Kopf der Seiten selbst.
+   Leise mit Absicht — es sagt, wem etwas gehört, es wirbt nicht. Die
+   Farbe ist die der Umgebung (currentColor), darum trägt es auf hellem
+   Grund wie im dunklen Kopf. */
+.tvza-marke {
+  display: inline-flex; align-items: center; flex: none;
+  padding: 1px var(--s1);
+  border: 1px solid currentColor;
+  border-radius: var(--r-pill);
+  font-size: 10px; font-weight: 800; line-height: 1.3;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  opacity: 0.72;
+  vertical-align: middle;
+}
+.marke--tvza:not(:first-child) { margin-top: var(--s4); }
 
 /* Knoepfe unter einem Abschnitt. Nebeneinander, solange sie passen. */
 /* ── Die Vorschau in der Tageskarte ────────────────────────────────
