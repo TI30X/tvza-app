@@ -24,7 +24,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.37.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.38.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -52,7 +52,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-55 Testdateien, **599 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+55 Testdateien, **601 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -132,7 +132,11 @@ Palette — aber als Token an `.oeffentlich` in `oeffentlich.css`, nicht
 als zweites Kit. Skala, Radien und Fusstafel kommen aus `kit.css`. Das
 Zeichen ist dort **TVZA**, nicht Firn (seit v.35.37.0; gesetzt wie
 `.tvza-marke`, nur gross), und die Versionszeile nimmt ihr Zeichen aus
-`<body data-marke="TVZA">` — ohne das Attribut sagt sie „Firn".
+`<body data-marke="TVZA">` — ohne das Attribut sagt sie „Firn". Im Tab zeigt
+sie das TVZA-Symbol (`assets/icons/tvza.svg`: ein T, dessen Balken glüht —
+Geschwister des Firn-Bergs). Die PNG fürs iPhone rechnet
+`node dev/tvza-symbol-png.mjs` aus dem SVG; wer das SVG ändert, lässt es
+laufen, sonst meldet `marke.test.mjs` die Abweichung.
 
 **5. Der Katalog gewinnt, aber erst später.** `t()` gibt bei einem
 unbekannten Schlüssel den **Schlüssel** zurück, nie `undefined` — darum
@@ -328,7 +332,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 599 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 601 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -350,7 +354,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.37.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.38.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

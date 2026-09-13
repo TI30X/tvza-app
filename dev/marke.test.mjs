@@ -191,3 +191,35 @@ test('die Versionszeile nimmt das Zeichen der Seite, sonst Firn', async () => {
   assert.equal(await zeile('public.html'), `TVZA · ${version}`);
   assert.equal(await zeile('pages/guest.html'), `Firn · ${version}`);
 });
+
+/* ── Das TVZA-Symbol (v.35.38.0) ──────────────────────────────────
+   Bis dahin zeigte der Tab der Projektseite das Firn-Symbol. Jetzt
+   hat TVZA ein eigenes: ein T, dessen Balken glueht. Die PNG fuers
+   iPhone rechnet dev/tvza-symbol-png.mjs aus den Zahlen im SVG — dieser
+   Test prueft, dass sie genau das ist, also nicht vom SVG abweicht. */
+
+test('die Projektseite zeigt im Tab das TVZA-Symbol', async () => {
+  const html = await readFile(join(root, 'public.html'), 'utf8');
+  assert.match(html, /<link rel="icon" type="image\/svg\+xml" href="assets\/icons\/tvza\.svg"/);
+  assert.match(html, /<link rel="apple-touch-icon" href="assets\/icons\/tvza-192\.png"/);
+  assert.doesNotMatch(html, /icons\/firn/, 'ein Firn-Symbol haengt noch an der Projektseite');
+});
+
+test('das TVZA-Symbol ist maskierbar, und die PNG ist das SVG', async () => {
+  const { leseSymbol, zeichne, png } = await import('./tvza-symbol-png.mjs');
+  const svg = await readFile(join(root, 'assets/icons/tvza.svg'), 'utf8');
+  const symbol = leseSymbol(svg);
+
+  /* Android schneidet einen Kreis mit Radius 25.6 um die Mitte (32, 32). */
+  for (const r of symbol.rechtecke) {
+    for (const [x, y] of [[r.x, r.y], [r.x + r.b, r.y], [r.x, r.y + r.h], [r.x + r.b, r.y + r.h]]) {
+      assert.ok(Math.hypot(x - 32, y - 32) <= 25.6, `Ecke (${x}, ${y}) liegt ausserhalb der Maske`);
+    }
+  }
+
+  const datei = await readFile(join(root, 'assets/icons/tvza-192.png'));
+  assert.equal(datei.readUInt32BE(16), 192);
+  assert.equal(datei.readUInt32BE(20), 192);
+  assert.ok(png(zeichne(symbol)).equals(datei),
+    'tvza-192.png passt nicht zum SVG — node dev/tvza-symbol-png.mjs laufen lassen');
+});

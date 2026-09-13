@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
+     role="img" aria-label="TVZA">
+  <!--
+    Das Symbol von TVZA: ein T, dessen Balken glüht.
+
+    ── Wofür ────────────────────────────────────────────────────────
+    TVZA ist der Absender — die persönliche Software, aus der Firn
+    kommt. Es braucht ein Symbol, wo TVZA selbst spricht: im Tab der
+    öffentlichen Projektseite (public.html). Die App bleibt Firn.
+
+    ── Warum ein Buchstabe, und warum nicht vier ────────────────────
+    TVZA hat, anders als Firn, kein Bild hinter dem Namen — es ist ein
+    Name, und sein Zeichen in der App (.tvza-marke) ist rein
+    typografisch. Ein Buchstabe ist hier also keine Verlegenheit.
+    Alle vier Buchstaben gehen aber nicht: bei 16 Pixeln im Tab wäre
+    jeder vier Pixel hoch, und das ist Matsch. Das T trägt, und neben
+    dem Symbol steht im Tab ohnehin "TVZA · Projekte".
+
+    ── Geschwister von Firn ─────────────────────────────────────────
+    Dasselbe Format (64er Raster, Ecken 14), dieselbe Grösse der Form
+    (17 bis 47), dieselbe Lücke zwischen den Teilen wie zwischen den
+    Firnschichten (2.5) — und dasselbe Alpenglühen oben, wo es am Berg
+    zuerst hinfällt. Nebeneinander sehen die beiden aus wie eine
+    Familie, nicht wie zwei Firmen. Der Grund ist das TVZA-Navy der
+    Projektseite (#1A1A2E, auch ihre theme-color), nicht das Firn-Blau.
+
+    ── Maskierbar ───────────────────────────────────────────────────
+    Die äussersten Punkte (die Enden des Balkens) liegen 21.9 von 32
+    Einheiten vom Mittelpunkt, die Grenze der Android-Maske bei 25.6.
+    marke.test.mjs rechnet es nach.
+
+    Die runden Ecken hat nur diese Fassung; tvza-192.png ist randlos,
+    wie firn-192.png — iOS legt seine eigene Maske darüber.
+  -->
+  <defs>
+    <linearGradient id="tvzaGrund" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1A1A2E" />
+      <stop offset="1" stop-color="#0F3460" />
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="url(#tvzaGrund)" />
+
+  <g id="tvzaZeichen">
+    <!-- Der Balken im Alpenglühen. -->
+    <rect x="16" y="17" width="32" height="10" fill="#F6A183" />
+    <!-- Der Stamm; die Lücke darüber zeigt den Grund. -->
+    <rect x="26.5" y="29.5" width="11" height="17.5" fill="#FFFFFF" />
+  </g>
+</svg>
