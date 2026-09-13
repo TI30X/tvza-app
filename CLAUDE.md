@@ -39,7 +39,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.45.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.46.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -67,7 +67,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-60 Testdateien, **640 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+60 Testdateien, **641 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -348,6 +348,17 @@ Seite, dass jedes Element, das ihre Module ohne `?.` anfassen, im Markup
 steht oder vom Modul selbst gezeichnet wird. Wer ein Element aus einer
 Seite nimmt, sucht vorher nach seiner ID.
 
+Dieselbe Klasse zur Laufzeit: `mountShell()` löscht jede vorhandene
+`.appbar` und baut sie neu. Der Einheiten-Player schrieb bis v.35.45.0 in
+`#kopfTitel` aus dem eigenen Kopf der Seite — die Zeile warf, und der
+`catch` meldete „Der Plan liess sich nicht laden" (Michels Screenshot; die
+Korrektur in v.35.41.0 traf einen anderen, echten Fehler, diesen nicht).
+Die Videoanalyse zeigte aus demselben Grund nach der Dateiwahl nie ihren
+Player. Titel und zweite Kopfzeile gehen darum über `setShellTitle()` und
+`setShellMeta()`. Der Test zählt den Kopf einer Seite, die die Hülle baut,
+nicht mit, und die Hülle in `gruppe-harness.mjs` tut jetzt, was die echte
+tut — vorher tat sie nichts und verbarg genau diesen Fehler.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -429,6 +440,14 @@ Zwei Dinge, die leicht übersehen werden:
   noch eingelöst (`invitedAutoJoin`). Die Reisen
   (`trips`, samt Gastzugang) bleiben eine eigene Sammlung neben den
   Gruppenterminen (`groups/{gid}/events`).
+- **Jedes Mitglied sieht alle Konten der App** (Rundgang v.35.46.0). Die
+  Auswahl „Wem schreiben?" im Chat lädt `collection(db, 'users')` und zeigt
+  Name und E-Mail aller Konten — auch aus anderen Vereinen, auch von
+  Minderjährigen. Die Regel erlaubt es (`users`: `allow list: if isMember()`),
+  und ein Profil liest jedes Mitglied ganz. Für eine App, die mehrere Vereine
+  trägt, ist das zu viel; die Lösung (nur Leute aus gemeinsamen Gruppen,
+  keine E-Mail, ein öffentlicher Teil des Profils getrennt vom privaten)
+  ist eine Entscheidung für Michel und eine Regeländerung.
 - **Regeln ohne Emulator.** Auf dieser Maschine gibt es kein Java; die
   Regeln werden vor dem Ausrollen nur mit `--dry-run` gegen das Projekt
   kompiliert, nicht gegen Testfaelle gefahren. Zuletzt ausgerollt mit
@@ -440,7 +459,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.45.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.46.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

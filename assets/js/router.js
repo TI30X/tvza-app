@@ -152,7 +152,8 @@ function generatedStartHeader(bar) {
     : hour >= 18 ? 'Guten Abend'
     : 'Gute Nacht';
   return {
-    greeting: `${salutation}, ${name || 'du'}`,
+    /* Der Vorname, wie auf Start selbst. */
+    greeting: `${salutation}, ${name.split(/\s+/)[0] || 'du'}`,
     date: now.toLocaleDateString('de-CH', {
       weekday:'long',
       year:'numeric',

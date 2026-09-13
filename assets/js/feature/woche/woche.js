@@ -248,6 +248,19 @@ export function agendaAnsicht({ el, zurueck = '', beiTermin = null, beiNeuerTerm
       stand = { ...stand, quellen, termine, protokolleJe, darfTermine, leer, schluessel, mehrereGruppen };
       if (neu) stand.montag = startWoche({ heute: isoTag(), quellen, termine });
       zeichne();
+      /* Beim ersten Anzeigen zu heute, wenn heute weiter unten liegt — am
+         Sonntag stand man sonst vor dem Montag und musste die Woche
+         hinunterscrollen (Rundgang v.35.46.0). Beim Blättern und bei
+         jedem späteren Neuzeichnen nicht: da hat man selbst gescrollt. */
+      if (neu) {
+        const naechsterFrame = window.requestAnimationFrame?.bind(window) || (fn => setTimeout(fn, 0));
+        naechsterFrame(() => {
+          const heute = el.querySelector('.agenda__tag.ist-heute');
+          if (heute && heute.getBoundingClientRect().top > window.innerHeight * 0.6) {
+            heute.scrollIntoView({ block: 'start' });
+          }
+        });
+      }
     },
     /** In die Woche springen, in der iso liegt — nach dem Veröffentlichen
         in die Woche des neuen Plans. */

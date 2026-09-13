@@ -32,7 +32,7 @@
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell } from '../../shell.js?v=14';
+import { mountShell, setShellMeta } from '../../shell.js?v=15';
 import {
   PUNKT, gelenkwinkel, seitenunterschied, hueftversatz, befund,
 } from '../../pose.js';
@@ -336,9 +336,9 @@ function zeigeBefund(b) {
        direkt streamen. */
     video.src = URL.createObjectURL(datei);
     video.addEventListener('loadedmetadata', () => {
-      $('kopfMeta').textContent = `${datei.name} · ${
-        Math.round(video.duration)} s · ${video.videoWidth}×${video.videoHeight}`;
-      $('kopfMeta').hidden = false;
+      /* Über die Hülle: mountShell hat den Kopf der Seite ersetzt (setShellMeta). */
+      setShellMeta(`${datei.name} · ${
+        Math.round(video.duration)} s · ${video.videoWidth}×${video.videoHeight}`);
       zeige('secPlayer', true);
       aktualisiere();
     }, { once: true });

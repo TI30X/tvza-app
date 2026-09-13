@@ -25,9 +25,31 @@ const FIREBASE_STUB = `
   export const reportClientError = (wo, e) => { (globalThis.__fehler ||= []).push([wo, String(e)]); };
 `;
 
+/* Die Hülle tut hier, was die echte tut: den Kopf der Seite entfernen und
+   einen neuen bauen. Bis v.35.45.0 tat mountShell hier gar nichts — und
+   verbarg damit, dass der Einheiten-Player in einen Kopf schrieb, den es
+   in der echten App nicht mehr gab ("Der Plan liess sich nicht laden"). */
 const SHELL_STUB = `
-  export const mountShell = () => {};
-  export const setShellTitle = () => {};
+  export const mountShell = (o = {}) => {
+    document.querySelectorAll('.appbar, .nav').forEach(el => el.remove());
+    const bar = document.createElement('header');
+    bar.className = 'appbar';
+    bar.innerHTML = '<div class="appbar__inner"><div class="appbar__spacer"><span class="appbar__title"></span></div><span class="appbar__end"></span></div>';
+    bar.querySelector('.appbar__title').textContent = o.title || '';
+    document.body.prepend(bar);
+  };
+  export const setShellTitle = text => {
+    const el = document.querySelector('.appbar__title, .appbar__greet');
+    if (el) el.textContent = String(text ?? '');
+  };
+  export const setShellMeta = text => {
+    const spacer = document.querySelector('.appbar__spacer');
+    if (!spacer) return;
+    let el = spacer.querySelector('.appbar__date');
+    if (!el) { el = document.createElement('div'); el.className = 'appbar__date'; spacer.append(el); }
+    el.textContent = String(text ?? '');
+    el.hidden = !el.textContent;
+  };
 `;
 
 /* Nur was die Seite wirklich anfasst. Schreibende Aufrufe werden

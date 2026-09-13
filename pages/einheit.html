@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=14" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=15" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -25,14 +25,9 @@
 
   <div class="offline-banner" id="offlineBanner" hidden data-i18n="br.offline">Offline — Änderungen werden später gespeichert.</div>
 
-  <header class="appbar">
-    <div class="appbar__inner">
-      <div class="appbar__spacer">
-        <div class="appbar__greet" id="kopfTitel">Einheit</div>
-        <div class="appbar__date" id="kopfMeta" hidden></div>
-      </div>
-    </div>
-  </header>
+  <!-- Den Kopf baut mountShell (shell.js); Titel und zweite Zeile setzt der
+       Code über setShellTitle/setShellMeta. Bis v.35.45.0 stand hier ein
+       eigener Kopf, den mountShell wegwarf — der Code schrieb dann ins Leere. -->
 
   <main class="main" id="main">
 
@@ -120,6 +115,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=8"></script>
+  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=9"></script>
 </body>
 </html>

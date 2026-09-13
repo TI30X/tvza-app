@@ -32,8 +32,8 @@ import {
   doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from '../../shell.js?v=14';
-import { initialsOf } from '../../nav.js?v=12';
+import { ICONS, icon } from '../../shell.js?v=15';
+import { initialsOf } from '../../nav.js?v=13';
 import { frage } from '../../dialog.js';
 import { meineGruppen, leitet } from '../../groups.js';
 
@@ -233,7 +233,10 @@ function zeigeBereiche() {
 
 const h = new Date().getHours();
 const g = h>=5&&h<12 ? 'Guten Morgen' : h>=12&&h<18 ? 'Guten Tag' : h>=18 ? 'Guten Abend' : 'Gute Nacht';
-document.getElementById('greetingText').textContent = `${g}, ${name}`;
+/* Der Vorname: mit dem ganzen Namen war der Gruss am Handy abgeschnitten
+   ("Guten Abend, Michel van Zant…"). Der ganze Name steht im Konto-Menü. */
+const vorname = String(profile.displayName || '').trim().split(/\s+/)[0] || name;
+document.getElementById('greetingText').textContent = `${g}, ${vorname}`;
 document.getElementById('greetingDate').textContent =
   new Date().toLocaleDateString('de-CH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
@@ -895,6 +898,10 @@ function savePersonalModules(key, an) {
   profile = { ...profile, modules };
   const version = ++modulesSaveVersion;
   const status = document.getElementById('modulesSaveStatus');
+  /* Erst beim ersten Speichern sichtbar — vorher stand "Gespeichert" da,
+     bevor man etwas geändert hatte. Ohne data-i18n: den Zustand kennt nur
+     der Code (Falle 5). */
+  status.hidden = false;
   status.dataset.state = 'saving';
   status.textContent = 'Speichert';
   modulesSaveQueue = modulesSaveQueue.then(async () => {

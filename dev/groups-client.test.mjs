@@ -233,7 +233,9 @@ test('die Tageszusammenfassung nimmt Gruppentermine auf, ohne an ihnen zu hänge
   // Was heute in einer Gruppe läuft, gehört in den Tag — ein Training
   // um 14:00 auch dann, wenn der Trainer es eingetragen hat.
   assert.match(html, /import \{ meineGruppen, ladeTermine \}/);
-  assert.match(html, /import \{ alsBriefingTermine, alsVorschauTermine, isoTag \}/);
+  /* Nicht die ganze Zeile wörtlich: seit v.35.46.0 holt heute.js auch
+     tageBis von dort, und ein wörtlicher Test hätte das nur verboten. */
+  assert.match(html, /import \{[^}]*\balsBriefingTermine, alsVorschauTermine\b[^}]*\} from '\.\.\/\.\.\/termine\.js'/);
   /* Der Tagesteil kommt aus dem Stichtag des Fensters, die Vorschau
      aus dem Zeitraum danach — beides aus DERSELBEN Abfrage. Zweimal
      zu laden waere derselbe Weg fuer dieselben Daten. */

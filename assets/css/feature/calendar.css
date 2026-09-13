@@ -1280,3 +1280,22 @@
 .calendar-action-icon::after {
   transform: translate(-50%, -50%) rotate(90deg);
 }
+
+/* ── Ein geschlossenes Blatt ist unsichtbar, nicht nur verschoben ─────
+   Die Blätter verstecken sich mit translateY(100%) — um ihre eigene Höhe.
+   Am Handy sitzt das Erinnerungs-Blatt aber über der Tab-Leiste
+   (bottom: Höhe der Leiste). Geschlossen blieb darum sein Kopf genau über
+   der Leiste liegen, und weil es weiter vorne liegt (z-index 61 gegen 45),
+   verdeckte "Erinnerungen ×" die Navigation: wer den Kalender direkt
+   öffnete (neu geladen, vom Homescreen), kam über die Tabs nicht mehr weg.
+   Im Router-Rahmen war bottom 0 und alles gut — darum fiel es nur
+   manchmal auf. Gefunden im Rundgang mit der Attrappe (v.35.46.0).
+   visibility wechselt beim Schliessen erst nach dem Hinausgleiten. */
+.planner-page .sheet {
+  visibility: hidden;
+  transition: transform .3s cubic-bezier(.22,.61,.36,1), opacity 160ms ease, visibility 0s linear .3s;
+}
+.planner-page .sheet.visible {
+  visibility: visible;
+  transition: transform .3s cubic-bezier(.22,.61,.36,1), opacity 160ms ease, visibility 0s;
+}

@@ -322,7 +322,9 @@ export function starteUebersicht() {
     document.querySelector('.matura-progress-track')?.setAttribute('aria-valuenow',String(pct));
     // Persist a compact summary so the dashboard tile reflects this module's Gesamtfortschritt.
     try {
-      const days = Math.max(0, Math.ceil((DEADLINE - TODAY) / 86400000));
+      /* Nicht bei 0 abschneiden: nach der Abgabe ist die Zahl negativ,
+         und Start sagt dann "Abgabe vorbei" statt "Abgabe heute". */
+      const days = Math.ceil((DEADLINE - TODAY) / 86400000);
       localStorage.setItem('matura_v3_summary', JSON.stringify({ pct, done, total, deadline:'2026-08-17', days, ts:Date.now() }));
     } catch(e){}
   }

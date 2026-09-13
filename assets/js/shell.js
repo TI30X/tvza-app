@@ -20,7 +20,7 @@
 import { auth, MODULES, enabledModules } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { frage } from './dialog.js';
-import { mountAppRouter } from './router.js?v=10';
+import { mountAppRouter } from './router.js?v=11';
 import { zeichen, wort, softwareVon, softwareZeigen } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
@@ -525,6 +525,29 @@ export function setShellTitle(text) {
   const wert = String(text ?? '');
   const el = document.querySelector('.appbar__title, .appbar__greet');
   if (el) el.textContent = wert;
+}
+
+/**
+ * Die zweite Zeile unter der Überschrift — der Fortschritt einer Einheit,
+ * der Name eines Videos. Leer blendet sie aus.
+ *
+ * Aus demselben Grund wie setShellTitle: bis v.35.45.0 schrieben der
+ * Einheiten-Player und die Videoanalyse in ein #kopfMeta aus ihrem eigenen
+ * Markup, das mountShell längst gelöscht hatte. Das erste Schreiben warf —
+ * der Player meldete "Der Plan liess sich nicht laden", die Videoanalyse
+ * zeigte nach der Dateiwahl nie ihren Player.
+ */
+export function setShellMeta(text) {
+  const spacer = document.querySelector('.appbar__spacer');
+  if (!spacer) return;
+  let el = spacer.querySelector('.appbar__date');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'appbar__date';
+    spacer.append(el);
+  }
+  el.textContent = String(text ?? '');
+  el.hidden = !el.textContent;
 }
 
 /* ── Ein- und Ausklappen ───────────────────────────────────────────

@@ -29,7 +29,7 @@
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell } from '../../shell.js?v=14';
+import { mountShell, setShellTitle, setShellMeta } from '../../shell.js?v=15';
 import {
   ladeGruppe, ladePlan, ladeProtokoll, protokollSpeichern, ladeMitglieder, PLAN_FUER_ALLE,
 } from '../../groups.js';
@@ -213,9 +213,9 @@ function zeichnePlayer() {
   const e = eintrag(protokoll, unitId, item.key);
   const f = fortschritt(items, protokoll, unitId);
 
-  $('kopfTitel').textContent = einheitTitel(programm, unitId);
-  $('kopfMeta').textContent = `${f.erledigt} von ${f.gesamt} erledigt`;
-  $('kopfMeta').hidden = false;
+  /* Über die Hülle: mountShell hat den Kopf der Seite ersetzt (setShellMeta). */
+  setShellTitle(einheitTitel(programm, unitId));
+  setShellMeta(`${f.erledigt} von ${f.gesamt} erledigt`);
 
   $('uebPos').textContent = t('eh.uebungVon', 'Übung {n} von {gesamt}',
     { n: pos + 1, gesamt: items.length });
@@ -488,7 +488,7 @@ async function zeigeAnsicht(uid) {
     protokoll = await ladeProtokoll(gid, ansicht ? plan.fuer : user.uid, datum);
     if (!protokoll.units) protokoll.units = {};
 
-    $('kopfTitel').textContent = plan.titel || t('eh.einheit', 'Einheit');
+    setShellTitle(plan.titel || t('eh.einheit', 'Einheit'));
     if (ansicht) await zeigeAnsicht(plan.fuer);
 
     if (unitId && uebungen(programm, unitId).length) starte(unitId);

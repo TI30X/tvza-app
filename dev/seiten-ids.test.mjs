@@ -58,9 +58,18 @@ test('kein Modul greift ungeschützt auf ein Element zu, das es in seiner Seite 
     const module = await moduleVon(seite, html);
     if (!module.length) continue;
     const quellen = await Promise.all(module.map(lies));
-    const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
+    /* mountShell() löscht jede vorhandene .appbar und baut sie neu. Was im
+       Kopf der Seite steht, gibt es danach nicht mehr — genau daran
+       scheiterte der Einheiten-Player bis v.35.45.0: er schrieb in
+       #kopfTitel, warf, und meldete "Der Plan liess sich nicht laden". */
+    const baut = quellen.some(q => /\bmountShell\(/.test(q));
+    const markup = baut ? html.replace(/<header class="appbar[^"]*"[\s\S]*?<\/header>/g, '') : html;
+    const ids = new Set([...markup.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
     /* Was ein Modul selbst zeichnet, gibt es danach ebenfalls. */
-    for (const q of quellen) for (const m of q.matchAll(/\bid="([\w-]+)"/g)) ids.add(m[1]);
+    for (const q of quellen) {
+      for (const m of q.matchAll(/\bid="([\w-]+)"/g)) ids.add(m[1]);
+      for (const m of q.matchAll(/\.id\s*=\s*'([\w-]+)'/g)) ids.add(m[1]);
+    }
 
     module.forEach((pfad, i) => {
       const code = ohneKommentare(quellen[i]);

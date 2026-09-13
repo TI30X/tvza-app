@@ -62,6 +62,11 @@ const VORSPANN = `
   window.__attrappeFehler = [];
   addEventListener('error', e => __attrappeFehler.push(String(e.error?.stack || e.message).split('\\n').slice(0, 2).join(' | ')));
   addEventListener('unhandledrejection', e => __attrappeFehler.push('Promise: ' + String(e.reason?.stack || e.reason).split('\\n').slice(0, 2).join(' | ')));
+  /* Abgefangene Fehler meldet die App mit console.warn('[wo] code')
+     (reportClientError) — der Nutzer sieht davon nur "liess sich nicht
+     laden". Auch die gehören in den Rundgang. */
+  const warnen = console.warn.bind(console);
+  console.warn = (...a) => { __attrappeFehler.push('warn: ' + a.map(String).join(' ')); warnen(...a); };
   addEventListener('DOMContentLoaded', () => {
     if (window.parent !== window) return;
     const s = document.createElement('div');

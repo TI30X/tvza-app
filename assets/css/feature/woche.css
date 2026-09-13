@@ -55,6 +55,8 @@
 /* ── Die Tage ──────────────────────────────────────────────────────*/
 
 .agenda__tage { display: flex; flex-direction: column; gap: var(--s4); }
+/* Wer zu heute springt, landet unter dem Kopf der Seite, nicht dahinter. */
+.agenda__tag { scroll-margin-top: calc(61px + var(--s3)); }
 
 .agenda__datum {
   display: flex; align-items: center; gap: var(--s2);

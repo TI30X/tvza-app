@@ -240,3 +240,16 @@ test('pruefe laesst ein eigenes Wort zu und haelt seine Grenze', () => {
   assert.equal(pruefe({ ...training, bezeichnung: 'x'.repeat(BEZEICHNUNG_MAX + 1) }).length, 1);
   assert.equal(pruefe({ ...training, bezeichnung: 42 }).length, 1, 'nur Text');
 });
+
+test('tageBis: vorbei ist negativ, heute 0 — nie bei 0 abgeschnitten', async () => {
+  const { tageBis } = await import('../assets/js/termine.js');
+  /* Die Maturaarbeit: Abgabe am 17. August 2026. Bis v.35.46.0 stand auf
+     Start am 13. September "Abgabe heute". */
+  assert.equal(tageBis('2026-08-17', '2026-09-13'), -27);
+  assert.equal(tageBis('2026-08-17', '2026-08-17'), 0);
+  assert.equal(tageBis('2026-08-17', '2026-08-10'), 7);
+  assert.equal(tageBis('2026-08-17T00:00:00.000Z', '2026-08-16'), 1, 'ein ganzer Zeitstempel zählt als sein Tag');
+  assert.equal(tageBis('2026-03-30', '2026-03-28'), 2, 'die Zeitumstellung verschiebt keinen Tag');
+  assert.equal(tageBis('', '2026-08-10'), null);
+  assert.equal(tageBis('kein Datum', '2026-08-10'), null);
+});

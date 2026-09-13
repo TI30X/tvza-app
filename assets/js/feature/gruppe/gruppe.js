@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle } from '../../shell.js?v=14';
+import { mountShell, setShellTitle } from '../../shell.js?v=15';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -930,6 +930,8 @@ function detailOeffnen(eid) {
   zeige('secDetail', true);
   zeige('secWoche', false);
   zeige('secMitglieder', false);
+  /* Der Leitungsbereich gehört nicht unter einen Termin. */
+  zeige('secAktionen', false);
   zeichneZusagen();
   zeichneAnhaenge();
 }
@@ -939,6 +941,7 @@ function detailSchliessen() {
   zeige('secDetail', false);
   zeige('secWoche', !!aktiv);
   zeige('secMitglieder', !!aktiv);
+  zeige('secAktionen', !!aktiv && leitet(aktiv.meineRolle));
 }
 
 async function antworten(antwort) {

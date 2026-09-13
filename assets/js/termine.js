@@ -126,6 +126,18 @@ export function isoTag(datum = new Date()) {
   return `${d.getFullYear()}-${m}-${t}`;
 }
 
+/**
+ * Wie viele Tage bis zu einem Tag — negativ, wenn er vorbei ist, 0 heute.
+ * Nicht bei 0 abgeschnitten: bis v.35.46.0 stand auf Start vier Wochen
+ * nach der Abgabe der Maturaarbeit "Abgabe heute".
+ */
+export function tageBis(tag, heute = isoTag()) {
+  const ziel = alsDate(String(tag ?? '').slice(0, 10));
+  const jetzt = alsDate(heute);
+  if (!ziel || !jetzt) return null;
+  return Math.round((ziel - jetzt) / 864e5);
+}
+
 /* Mittags statt Mitternacht: so kippt ein Datum nicht über die
    Zeitzonengrenze, wenn es irgendwo weiterverarbeitet wird. */
 function alsDate(iso) {

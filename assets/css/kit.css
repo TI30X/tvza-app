@@ -2127,6 +2127,11 @@ body.reorder-editing .module-tile::after {
 }
 .nav__item svg { width: 21px; height: 21px; stroke-width: 1.9; }
 .nav__item.is-active { color: var(--nav-active); font-weight: 700; }
+/* Eine Zeile, auch wenn die Gruppe "BSV Perspektivkader" heisst: am Handy
+   brach der Tab sonst auf zwei Zeilen um und stand höher als die anderen
+   (Rundgang v.35.46.0). Der ganze Name steht oben auf der Gruppenseite. */
+.nav__item { min-width: 0; }
+.nav__wort { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav__dot {
   position: absolute; top: -2px; right: 50%; margin-right: -14px;
   width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--danger);

@@ -7,13 +7,13 @@
    Wettlauf. */
 
 import { db, requireAuth, getFinnhubKey, getProfile, reportClientError } from '../../firebase-config.js';
-import { weatherIcon } from '../../shell.js?v=14';
+import { weatherIcon } from '../../shell.js?v=15';
 import { chooseHint, markShown, dismissHint } from '../../hints.js';
 import {
   buildBriefing, renderBriefing, tagesfenster, ABEND_AB, VORSCHAU_TAGE,
 } from '../../briefing.js';
 import { meineGruppen, ladeTermine } from '../../groups.js';
-import { alsBriefingTermine, alsVorschauTermine, isoTag } from '../../termine.js';
+import { alsBriefingTermine, alsVorschauTermine, isoTag, tageBis as tageBisTag } from '../../termine.js';
 import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 (async () => {
@@ -73,16 +73,24 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
   /* Jede Kachel spiegelt den Gesamtfortschritt ihres eigenen Moduls wider:
      tileMatura ← matura_v3 (Maturaarbeit-Modul), tileMaturaTracker ← matura_tracker (Tracker-Modul). */
   (function matura() {
+    /* Die Tage bis zur Abgabe — bei jedem Laden aus dem Datum gerechnet.
+       Die Zusammenfassung trägt "days" von dem Tag, an dem jemand die Seite
+       zuletzt geöffnet hat, und bis v.35.46.0 unten bei 0 abgeschnitten:
+       vier Wochen nach der Abgabe stand auf Start "Abgabe heute", und
+       davor blieb der Countdown stehen, bis man die Seite wieder öffnete. */
+    const tageBis = (deadline, sonst = null) => (deadline ? tageBisTag(deadline) ?? sonst : sonst);
     const paintTile = (idn, pct, days) => {
       if (pct == null) return;
       const el = $(idn); if (!el) return;
-      const meta = (days == null) ? '' : `<span class="tl-meta">${days === 0 ? 'Abgabe heute' : days + ' Tage'}</span>`;
+      const text = days == null ? '' : days < 0 ? 'Abgabe vorbei' : days === 0 ? 'Abgabe heute' : days + ' Tage';
+      const meta = text ? `<span class="tl-meta">${text}</span>` : '';
       el.innerHTML = `<div class="tl-head"><span class="tl-pct">${pct}%</span>${meta}</div><div class="tl-bar"><div class="tl-fill"></div></div>`;
       show(el);
       requestAnimationFrame(() => { const f = el.querySelector('.tl-fill'); if (f) f.style.width = pct + '%'; });
       // Only the Maturaarbeit module earns the Heute row; the Tracker
       // is the same work counted twice and would read as two entries.
-      if (idn === 'tileMatura') {
+      /* Nach der Abgabe ist die Maturaarbeit nichts mehr für "Heute". */
+      if (idn === 'tileMatura' && !(days < 0)) {
         window.tvzaMaturaPct = pct;
         pushHeute('matura', {
           href: 'pages/maturaarbeit.html', bereich: 'matura',
@@ -101,7 +109,7 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
       const sumRaw = localStorage.getItem('matura_tracker_' + uid + '_summary');
       if (sumRaw) {
         const s = JSON.parse(sumRaw);
-        tPct = s.pct; tDays = (s.days == null ? null : s.days);
+        tPct = s.pct; tDays = tageBis(s.deadline, s.days ?? null);
       } else {
         const raw = localStorage.getItem('matura_tracker_' + uid);
         if (raw) {
@@ -110,7 +118,7 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
                        'vg1','vg2','vg3','vg4','vg5','vg6','vg7','vg8','meeting_1','meeting_2','meeting_3','meeting_4'];
           const done = IDS.filter(id => st[id]).length;
           tPct = Math.round(done / IDS.length * 100);
-          if (st.deadline) { const t = new Date(); t.setHours(0,0,0,0); tDays = Math.max(0, Math.ceil((new Date(st.deadline) - t) / 86400000)); }
+          if (st.deadline) tDays = tageBis(st.deadline);
         }
       }
     } catch (e) {}
@@ -120,7 +128,7 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
     let mPct = null, mDays = null;
     try {
       const sumRaw = localStorage.getItem('matura_v3_summary');
-      if (sumRaw) { const s = JSON.parse(sumRaw); mPct = s.pct; mDays = (s.days == null ? null : s.days); }
+      if (sumRaw) { const s = JSON.parse(sumRaw); mPct = s.pct; mDays = tageBis(s.deadline, s.days ?? null); }
     } catch (e) {}
     if (mPct == null) { mPct = tPct; mDays = tDays; }
 

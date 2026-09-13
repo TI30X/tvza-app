@@ -164,7 +164,7 @@ export function richteTrackerEin() {
     // Persist a compact summary so the dashboard tile can show progress + countdown.
     try {
       let days=null;
-      if(state.deadline){ const t=new Date(); t.setHours(0,0,0,0); days=Math.max(0,Math.ceil((new Date(state.deadline)-t)/86400000)); }
+      if(state.deadline){ const t=new Date(); t.setHours(0,0,0,0); days=Math.round((new Date(String(state.deadline).slice(0,10)+'T00:00:00')-t)/86400000); }
       if(KEY) localStorage.setItem(KEY+'_summary', JSON.stringify({ pct, done, total:ids.length, deadline:state.deadline||null, days, ts:Date.now() }));
     } catch(e){}
   }
