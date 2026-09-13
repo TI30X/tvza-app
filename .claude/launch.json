@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["dev/server.mjs"],
       "port": 4173
+    },
+    {
+      "name": "firn-attrappe",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["dev/server.mjs", "--attrappe"],
+      "port": 4174
     }
   ]
 }

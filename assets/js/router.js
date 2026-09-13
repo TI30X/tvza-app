@@ -162,11 +162,24 @@ function generatedStartHeader(bar) {
   };
 }
 
-function headerController(runPageAction) {
+export function headerController(runPageAction) {
   const bar = document.querySelector('.appbar');
   const title = bar?.querySelector('.appbar__title');
-  const greeting = bar?.querySelector('.appbar__greet');
+  let greeting = bar?.querySelector('.appbar__greet');
   let date = bar?.querySelector('.appbar__date');
+  /* Der Kopf einer Unterseite hat nur einen Titel. Wurde die App dort
+     geöffnet (neu geladen in der Gruppe, ein Link, das Homescreen-Symbol
+     nach einem Wechsel) und man tippt auf Start, stand oben das Wort
+     "Start" statt "Guten Abend, Michel" — Michel hat es am Handy gesehen.
+     Also bekommt ein solcher Kopf Gruss und Datum dazu, versteckt, bis
+     Start dran ist (v.35.45.0). */
+  const eigenerGruss = !greeting && !!title;
+  if (eigenerGruss) {
+    greeting = document.createElement('div');
+    greeting.className = 'appbar__greet';
+    greeting.hidden = true;
+    title.insertAdjacentElement('afterend', greeting);
+  }
   if (!date && greeting) {
     date = document.createElement('div');
     date.className = 'appbar__date';
@@ -215,6 +228,10 @@ function headerController(runPageAction) {
       ? generated.greeting
       : savedGreeting;
     if (greeting) greeting.textContent = start ? personalGreeting : label;
+    if (eigenerGruss) {
+      title.hidden = start;
+      greeting.hidden = !start;
+    }
     if (date) {
       if (start) date.textContent = startHeader.date || generated.date;
       date.hidden = !start;

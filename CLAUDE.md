@@ -39,7 +39,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.44.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.45.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -67,8 +67,23 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-58 Testdateien, **637 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+60 Testdateien, **640 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
+
+**Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
+
+```bash
+node dev/server.mjs --attrappe
+```
+
+`http://localhost:4174` — die ganze App mit einem Testkader (Michel leitet,
+Timothy und Lea, Termine um heute herum, Timothys KW 31 als Plan). Jede
+Seite bekommt eine Import-Map, die das Firebase-SDK auf `dev/attrappe/`
+umlenkt; alles andere ist der echte Code, auch in den Rahmen von Router und
+Einstellungen. Konto wechseln mit `?attrappe-als=timo`, Daten zurücksetzen
+mit `attrappeZuruecksetzen()` in der Konsole, Fehler jedes Dokuments stehen
+in `window.__attrappeFehler`. Vor dem Sagen „es geht" gehört ein Rundgang
+am Handy dazu.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
 
@@ -322,6 +337,17 @@ v.35.31.0 führte der Kalender eine zweite Verwaltung auf `families`
   `einladungsBeitritt()`, weil `isMember()` vor dem Profil noch falsch ist.
   Alte, offene Familien-Einladungen bleiben einlösbar.
 
+**14. Ein Fehler oben im Modul beendet das ganze Modul — lautlos.** Bis
+v.35.44.0 hängte `start.js` einen Zuhörer an `#openSettingsLink`, ein
+Element des alten Startmenüs, das v.35.12.0 abgeschafft hatte. Die Zeile
+warf, und alles darunter lief über dreissig Versionen nie: der Schliessknopf
+der Einstellungen, das Speichern der Modul-Schalter, Teilen, Einladungen,
+„Meine Projekte", der Service Worker. Sichtbar war nur, dass „manchmal das
+Kreuzchen nicht geht". `dev/seiten-ids.test.mjs` prüft seitdem für jede
+Seite, dass jedes Element, das ihre Module ohne `?.` anfassen, im Markup
+steht oder vom Modul selbst gezeichnet wird. Wer ein Element aus einer
+Seite nimmt, sucht vorher nach seiner ID.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -389,8 +415,11 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 637 Unit-Tests, aber
-  kein einziger Lauf gegen echtes Firestore.
+- **Gegen echtes Firestore ist die App nie durchgeklickt worden.** Seit
+  v.35.45.0 gibt es den Attrappen-Modus (siehe Befehle): die ganze App mit
+  Testkonto und Speicher im Browser. Er fand beim ersten Rundgang, dass
+  `start.js` seit v.35.12.0 mitten im Modul abbrach. Die Regeln prüft er
+  nicht — das bleibt security-model.test.mjs und `--dry-run`.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
   Bequemlichkeit, **kein** Schutz gegen Brute Force.
@@ -411,7 +440,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.44.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.45.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

@@ -32,8 +32,8 @@ import {
   doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from '../../shell.js?v=13';
-import { initialsOf } from '../../nav.js?v=11';
+import { ICONS, icon } from '../../shell.js?v=14';
+import { initialsOf } from '../../nav.js?v=12';
 import { frage } from '../../dialog.js';
 import { meineGruppen, leitet } from '../../groups.js';
 
@@ -612,14 +612,18 @@ if (embeddedSettings) {
 const languageSelect = document.getElementById('settingsLanguage');
 if (languageSelect && window.TVZAI18n) {
   const i18n = window.TVZAI18n;
+  /* tOr und nicht t(): beim ersten Füllen ist der Katalog noch nicht da,
+     und t() gäbe den Schlüssel zurück — bis v.35.44.0 stand in der Auswahl
+     "lang.system" (Falle 5). Wenn der Katalog kommt, wird neu gefüllt. */
   const fillLanguages = () => {
     const current = i18n.hasStoredChoice() ? i18n.lang : '';
     languageSelect.innerHTML =
-      `<option value="">${i18n.t('lang.system')}</option>` +
+      `<option value="">${escHtml(i18n.tOr('lang.system', 'Systemsprache'))}</option>` +
       i18n.LANGUAGES.map(l => `<option value="${l.id}">${l.native}</option>`).join('');
     languageSelect.value = current;
   };
   fillLanguages();
+  i18n.ready?.then(fillLanguages, () => {});
   window.addEventListener('tvza-lang-change', fillLanguages);
 
   languageSelect.addEventListener('change', async () => {
@@ -772,7 +776,14 @@ function openAdmin() {
   });
 }
 document.getElementById('acctSettings').addEventListener('click', () => { closeAcct(); openSettings(); });
-document.getElementById('openSettingsLink').addEventListener('click', openSettings);
+/* Hier stand bis v.35.44.0 ein Zuhörer auf #openSettingsLink — dem
+   Einstellungs-Link des alten Startmenüs, das v.35.12.0 abgeschafft hat.
+   Das Element gab es seitdem nicht mehr, die Zeile warf, und ALLES
+   darunter lief nie: der Schliessknopf der Einstellungen, das Speichern
+   der Modul-Schalter, Teilen, Einladungen, "Meine Projekte", der Service
+   Worker. Kein Fehler war zu sehen ausser in der Konsole. Seit v.35.45.0
+   prüft seiten-ids.test.mjs, dass jedes Element, das ein Modul ohne
+   ?. anfasst, in seiner Seite steht. */
 /* "Bereiche verwalten" im Bereiche-Tab springt hierher zurück. Ohne
    diese Zeile passierte nach dem Sprung schlicht nichts. */
 if (location.hash === '#settings') {

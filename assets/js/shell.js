@@ -20,7 +20,7 @@
 import { auth, MODULES, enabledModules } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { frage } from './dialog.js';
-import { mountAppRouter } from './router.js?v=9';
+import { mountAppRouter } from './router.js?v=10';
 import { zeichen, wort, softwareVon, softwareZeigen } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
