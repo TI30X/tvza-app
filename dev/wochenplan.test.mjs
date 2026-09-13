@@ -204,3 +204,68 @@ test('der Player fuehrt zurueck, woher man kam — aber nur an bekannte Orte', a
   const fremdZiel = new URLSearchParams(einheitZiel('g', 'p', { unit: 'u' }, '2026-08-04', 'https://x').split('?')[1]);
   assert.equal(fremdZiel.has('z'), false, 'ein unbekannter Rueckweg kommt gar nicht erst in die Adresse');
 });
+
+/* ── Die Woche als Kalender (v.35.42.0) ───────────────────────────── */
+
+const W = await import('../assets/js/wochenplan.js');
+const quelle = (id, fuer, erstelltAm, prog = programm) => ({ gid: 'g1', plan: { id, fuer, erstelltAm }, programm: prog });
+
+test('Kalenderrechnung: Montag, sieben Tage, ISO-Woche, Jahreswechsel', () => {
+  assert.equal(W.montagVon('2026-08-05'), '2026-08-03');
+  assert.equal(W.montagVon('2026-08-09'), '2026-08-03', 'der Sonntag gehört zur Woche davor');
+  assert.equal(W.montagVon('2026-01-01'), '2025-12-29');
+  assert.deepEqual(W.wocheAb('2026-08-03'), ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07', '2026-08-08', '2026-08-09']);
+  assert.equal(W.plusTage('2026-03-28', 2), '2026-03-30', 'die Zeitumstellung verschiebt keinen Tag');
+  assert.equal(W.kwVon('2026-08-03'), 32);
+  assert.equal(W.kwVon('2027-01-03'), 53);
+  assert.equal(W.montagDerKw(2026, 32), '2026-08-03');
+});
+
+test('ein Plan ohne Zeitraum liegt in der KW, die er nennt', () => {
+  const ohneDatum = { ...programm, dateRange: {}, days: programm.days.map(d => ({ ...d, date: '' })) };
+  const tage2 = W.planTageMitDatum(ohneDatum, '2026-05-01');
+  assert.equal(tage2[0].datum, W.montagDerKw(2026, 31));
+  assert.equal(W.planTageMitDatum({ ...ohneDatum, kw: null }, '2026-05-01').length, 0, 'ohne Datum und KW kein Platz im Kalender');
+});
+
+test('die Woche sammelt die Tage aller Pläne und die Termine; mehrtägige an jedem Tag', () => {
+  const termine = [
+    { id: 'a', von: '2026-08-06', zeit: '18:00', titel: 'spät' },
+    { id: 'b', von: '2026-08-06', zeit: '07:00', titel: 'früh' },
+    { id: 'l', von: '2026-08-08', bis: '2026-08-10', titel: 'Lager' },
+  ];
+  const woche = W.agendaTage({ montag: '2026-08-03', quellen: [quelle('p1', 'alle')], termine, heute: '2026-08-05' });
+  assert.equal(woche.length, 7);
+  assert.equal(woche.find(t => t.heute).datum, '2026-08-05');
+  assert.deepEqual(woche[3].termine.map(t => t.titel), ['früh', 'spät'], 'nach Uhrzeit');
+  assert.deepEqual(woche.filter(t => t.termine.some(x => x.id === 'l')).map(t => t.datum), ['2026-08-08', '2026-08-09']);
+  assert.deepEqual(woche[1].eintraege.map(e => e.titel), ['Kraft Beine', 'Fußgymnastik', 'Mobi']);
+  assert.equal(woche[1].eintraege[0].planId, 'p1');
+  const naechste = W.agendaTage({ montag: '2026-08-10', quellen: [quelle('p1', 'alle')], termine });
+  assert.equal(naechste[0].termine[0]?.id, 'l', 'das Lager läuft in die nächste Woche hinein');
+  assert.equal(naechste.every(t => !t.eintraege.length), true);
+});
+
+test('dieselbe Woche zweimal eingelesen: der neuere Plan gewinnt — für alle und für Timo stehen beide', () => {
+  const alt = quelle('alt', 'alle', { seconds: 100 });
+  const neu = quelle('neu', 'alle', { seconds: 200 });
+  const timo = quelle('timo', 'timo', { seconds: 50 });
+  const mi = W.agendaTage({ montag: '2026-08-03', quellen: [neu, alt, timo] })[2];
+  assert.deepEqual([...new Set(mi.eintraege.map(e => e.planId))].sort(), ['neu', 'timo']);
+});
+
+test('die Startwoche: heute, wenn darin etwas steht — sonst die Woche des Plans', () => {
+  const q = [quelle('p1', 'alle')];
+  assert.equal(W.startWoche({ heute: '2026-08-05', quellen: q }), '2026-08-03');
+  assert.equal(W.startWoche({ heute: '2026-09-13', quellen: q }), '2026-08-03', 'die vergangene Excel');
+  assert.equal(W.startWoche({ heute: '2026-07-01', quellen: q }), '2026-08-03', 'die kommende Excel');
+  assert.equal(W.startWoche({ heute: '2026-09-13', quellen: q, termine: [{ von: '2026-09-10' }] }), '2026-09-07',
+    'ein Termin diese Woche hält die Woche');
+  assert.equal(W.startWoche({ heute: '2026-09-13' }), '2026-09-07');
+});
+
+test('"Als Nächstes" ist der erste Termin nach der Woche', () => {
+  const termine = [{ id: 'x', von: '2026-08-06' }, { id: 'z', von: '2026-08-30' }, { id: 'y', von: '2026-08-20', zeit: '09:00' }];
+  assert.equal(W.naechsterNach(termine, '2026-08-03').id, 'y');
+  assert.equal(W.naechsterNach(termine, '2026-08-31'), null);
+});

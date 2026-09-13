@@ -39,7 +39,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.41.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.42.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -67,7 +67,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-57 Testdateien, **616 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+57 Testdateien, **624 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -243,6 +243,22 @@ das Protokoll des Athleten und schreibt nichts. Er liest den Plan direkt
 Abfrage eines Athleten und fand den Plan der Leitung nie — ein Test verlangte
 genau diese Zeile wörtlich.
 
+**Die Woche ist ein Kalender** (v.35.42.0), senkrecht wie bei Spond: oben
+`‹ Datum – Datum ›` zum Blättern und „Heute", darunter jeder Tag mit seinen
+Terminen und Einheiten; leere Tage sind eine Zeile. Termine und Plan stehen
+auf der Gruppenseite nicht mehr in zwei Abschnitten, sondern in einem
+(`secWoche`); die Leitung hat an jedem Tag ein „+" für einen Termin an genau
+diesem Tag und oben die Wahl, WESSEN Woche („Alle in der Gruppe" oder ein
+Athlet mit eigenem Plan — dann auch sein Fortschritt). Pläne liegen über das
+Datum ihrer Tage im Kalender (`agendaTage` in `wochenplan.js`); dieselbe
+Woche zweimal eingelesen: der neuere gewinnt. Geöffnet wird die Woche, in
+der etwas steht (`startWoche`) — eine Excel von KW 31 im September öffnet
+in KW 31. Der Kopf nennt die Woche so, wie die Excel sie nennt: die
+Kadervorlage zählt nicht nach ISO (3.–9. Aug. 2026 heisst dort KW 31, nach
+ISO 32), und eine selbst gerechnete Zahl daneben wäre eine zweite Wahrheit.
+Im Bereich Training dieselbe Woche aus allen Gruppen; ein Termin führt mit
+`gruppe.html?g=&termin=` in seine Gruppe.
+
 **11. Kontaktkarten sehen nur die Leitung und die Person selbst.** Kontakte
 von Minderjährigen und ihren Eltern. Die Regel (`get`: Leitung oder man
 selbst, `list`: nur Leitung) ist die Sicherung; die Oberfläche fragt gar
@@ -304,7 +320,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **803 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **806 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -359,7 +375,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 616 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 624 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -381,7 +397,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.41.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.42.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

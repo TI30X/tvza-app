@@ -48,7 +48,6 @@ KEYS = {
                  'Cambiar de grupo'),
 
 # ── Termine ───────────────────────────────────────────────────────
-'grp.termine': ('Termine', 'Dates', 'Dates', 'Date', 'Terminy', 'Data', 'Fechas'),
 'grp.terminNeu': ('Termin hinzufügen', 'Add a date', 'Ajouter une date',
                   'Aggiungi una data', 'Dodaj termin', 'Datum toevoegen',
                   'Añadir fecha'),
@@ -86,7 +85,6 @@ KEYS = {
                  'Zjazd', 'Afdaling', 'Descenso'),
 
 # ── Plaene ────────────────────────────────────────────────────────
-'grp.plan': ('Plan', 'Plan', 'Plan', 'Programma', 'Plan', 'Plan', 'Plan'),
 'grp.planNeu': ('Plan veröffentlichen', 'Publish a plan', 'Publier un plan',
                 'Pubblica un programma', 'Opublikuj plan', 'Plan publiceren',
                 'Publicar un plan'),

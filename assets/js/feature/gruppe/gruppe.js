@@ -34,16 +34,16 @@ import {
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet,
 } from '../../groups.js';
 import {
-  wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag,
+  wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag, planTageMitDatum,
 } from '../../wochenplan.js';
-import { wochenAnsicht, tagName, kurzDatum } from '../woche/woche.js';
+import { agendaAnsicht, tagName, kurzDatum } from '../woche/woche.js';
 import { frage, eingabe, meldung } from '../../dialog.js';
 import { gruppeWaehlen, gruppenStil, kuerzel } from '../../gruppenwahl.js';
 import {
   kontaktSauber, pruefeKontakt, verteiler, ohneAdresse, mailtoAdresse, istEmail, ELTERN_MAX,
 } from '../../kontakte.js';
 import {
-  kommende, zeitraum, artWort, artName, BEREICH_DER_ART, pruefe, isoTag,
+  zeitraum, artWort, artName, BEREICH_DER_ART, pruefe, isoTag,
   artenFuer, kenntDisziplinen, istAbgesagt,
 } from '../../termine.js';
 import {
@@ -73,6 +73,9 @@ let termine = [];
 let mitglieder = [];
 let offen = null;       // der gerade geoeffnete Termin
 let terminAbo = null;   // onSnapshot-Abmeldung der aktuellen Gruppe
+const adresse = new URLSearchParams(location.search);
+let gruppeAusAdresse = adresse.get('g') || '';
+let terminAusAdresse = adresse.get('termin') || '';
 
 /* ── Darstellung ───────────────────────────────────────────────────*/
 
@@ -135,6 +138,8 @@ async function zeichneMitglieder() {
     const meta = $('mitgliederZahl');
     meta.textContent = tPlural('grp.personen', zahl, 'Person', 'Personen');
     meta.hidden = false;
+    /* Die Personenwahl der Woche nennt Namen — sie kommen erst jetzt. */
+    if (plaene.length) zeichnePersonWahl();
   } catch (e) {
     reportClientError('gruppe/mitglieder', e);
     /* Der häufigste Grund ist ein fehlender Index oder eine Regel, die
@@ -144,128 +149,129 @@ async function zeichneMitglieder() {
   }
 }
 
-/* ── Termine ───────────────────────────────────────────────────────*/
+/* ── Die Woche: Termine und Pläne in einem Kalender ─────────────────
+   Seit v.35.42.0 stehen Termine und Plan nicht mehr in zwei Abschnitten
+   untereinander, sondern in EINER Woche (feature/woche/woche.js): jeder
+   Tag mit seinen Terminen und Einheiten, zum Blättern. Hier bleibt, was
+   nur die Gruppe tut: Pläne laden, wessen Woche die Leitung sieht, einen
+   neuen Plan veröffentlichen, einen Termin öffnen oder anlegen.
 
-function terminZeile(t) {
-  const bereich = BEREICH_DER_ART[t.art] || '';
-  const wann = zeitraum(t);
-  const ort = t.ort ? ` · ${t.ort}` : '';
-  /* Abgesagtes bleibt in der Liste — sonst faehrt jemand hin. Aber es
-     muss auf den ersten Blick anders aussehen als der Rest. */
-  const ab = istAbgesagt(t);
-  return `
-    <button class="row" type="button" data-termin="${escHtml(t.id)}" data-bereich="${escHtml(bereich)}">
-      <span class="row__icon">${escHtml(artName(t, aktiv?.art).slice(0, 1))}</span>
-      <span class="row__body">
-        <span class="row__title">${escHtml(ab ? `${t.titel} — abgesagt` : t.titel)}</span>
-        <span class="row__sub">${escHtml(wann + ort)}</span>
-      </span>
-      <span class="row__end">${escHtml(ab ? t('grp.abgesagt', 'Abgesagt') : artName(t, aktiv?.art))}</span>
-    </button>`;
-}
-
-function zeichneTermine() {
-  const liste = $('listTermine');
-  if (!liste) return;
-
-  /* Nur was noch kommt — ein laufendes Lager zählt dazu, bis es vorbei
-     ist. Vergangenes gehört in eine Saisonübersicht, nicht auf die
-     erste Seite der Gruppe. */
-  const naechste = kommende(termine, isoTag(), 6);
-
-  liste.innerHTML = naechste.length
-    ? naechste.map(terminZeile).join('')
-    : `<p class="empty-hint">${escHtml(t('grp.keineTermine', 'Noch keine Termine.'))}</p>`;
-}
-
-/* ── Pläne ─────────────────────────────────────────────────────────
-   Ein Plan gilt für den ganzen Kader oder für genau einen Athleten.
-   Das ist der Unterschied, den das alte Modell nicht abbilden konnte:
-   dort lag ein Programm unter users/{uid} und gehörte damit dem
-   Athleten, nicht dem Trainer. */
+   Ein Plan gilt für den ganzen Kader oder für genau einen Athleten —
+   die Excel des Kaders ist meist pro Athlet. Die Leitung sieht alle;
+   oben wählt sie, wessen Woche: "Alle in der Gruppe" (die Pläne für
+   alle) oder ein Athlet (seine Woche, wie er sie selbst sieht, samt dem,
+   was er eingetragen hat). Bis dahin wählte man einen PLAN aus einer
+   Liste, und jede Excel war eine eigene Woche ohne Nachbarn. */
 
 let plaene = [];
-let planAktiv = '';          // welcher Plan gezeigt wird
-let protokolle = {};         // nach Datum, fuer den Fortschritt
+let protokolle = {};          // des Menschen, dessen Woche steht — nach Datum
+let wochePerson = '';         // Leitung: PLAN_FUER_ALLE oder eine uid
+const programme = new Map();  // plan.id -> geparstes Programm (oder null)
 
-/* Die Woche zeichnet ein Baustein, den auch der Bereich Training
-   benutzt — feature/woche/woche.js. Hier bleibt, was nur die Gruppe
-   tut: Plaene laden, einen auswaehlen, einen neuen veroeffentlichen. */
-let woche = null;
-function wocheAnsicht() {
-  return woche ||= wochenAnsicht({
-    streifen: $('wocheStreifen'),
-    titel: $('tagTitel'),
-    liste: $('listPlaene'),
-    zeitraum: $('planZeitraum'),
+let agenda = null;
+function agendaHolen() {
+  return agenda ||= agendaAnsicht({
+    el: $('agenda'),
     zurueck: 'gruppe',
+    beiTermin: termin => detailOeffnen(termin.id),
+    beiNeuerTermin: datum => formOeffnen(datum),
   });
 }
 
-/* Den gewaehlten Plan zeigen. Ein Plan aus einer kaputten oder
-   kuenftigen Fassung darf die Gruppenseite nicht mitreissen. */
-function zeigePlan() {
-  const plan = plaene.find(p => p.id === planAktiv);
-  let programm = null;
-  if (plan) {
+/* Die Athleten, für die es einen eigenen Plan gibt — nach Namen. */
+function personenMitPlan() {
+  const name = uid => mitglieder.find(m => m.uid === uid)?.name || '';
+  return [...new Set(plaene.filter(p => p.fuer && p.fuer !== PLAN_FUER_ALLE).map(p => p.fuer))]
+    .map(uid => ({ uid, name: name(uid) || t('grp.einAthlet', 'ein Athlet') }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function zeichnePersonWahl() {
+  const wahl = $('planPerson');
+  if (!wahl) return;
+  const personen = leitet(aktiv?.meineRolle) ? personenMitPlan() : [];
+  wahl.hidden = !personen.length;
+  if (!personen.length) { wochePerson = PLAN_FUER_ALLE; return; }
+  if (wochePerson !== PLAN_FUER_ALLE && !personen.some(p => p.uid === wochePerson)) {
+    /* Gibt es einen Plan für alle, ist das die Woche der Gruppe. Sonst
+       der erste Athlet — wer nur Einzelpläne einliest, soll nicht vor
+       einer Woche ohne Plan stehen. */
+    wochePerson = plaene.some(p => p.fuer === PLAN_FUER_ALLE) ? PLAN_FUER_ALLE : personen[0].uid;
+  }
+  wahl.innerHTML = [
+    `<option value="${PLAN_FUER_ALLE}">${escHtml(t('grp.alleInGruppe', 'Alle in der Gruppe'))}</option>`,
+    ...personen.map(p => `<option value="${escHtml(p.uid)}">${escHtml(p.name)}</option>`),
+  ].join('');
+  wahl.value = wochePerson;
+}
+
+/* Welche Pläne in der Woche stehen. Ein Mitglied bekommt ohnehin nur
+   seine (die Abfrage filtert). Die Leitung sieht, wessen Woche sie
+   gewählt hat. */
+function plaeneDerWoche() {
+  if (!leitet(aktiv?.meineRolle)) return plaene;
+  return plaene.filter(p => p.fuer === PLAN_FUER_ALLE || (wochePerson && p.fuer === wochePerson));
+}
+
+/* Ein Plan aus einer kaputten oder künftigen Fassung darf die Woche
+   nicht mitreissen. Einmal gelesen je Plan — die Woche wird bei jeder
+   Terminänderung neu gezeichnet, und ein Plan kann fast ein MB sein. */
+function programmVon(plan) {
+  if (!programme.has(plan.id)) {
+    let programm = null;
     try { programm = JSON.parse(plan.json); }
     catch (e) { reportClientError('gruppe/planLesen', e); }
+    programme.set(plan.id, programm);
   }
-  if (!programm || !wochenTage(programm).length) {
-    wocheAnsicht().leer(leitet(aktiv?.meineRolle)
-      ? t('grp.keinPlan', 'Noch kein Plan veröffentlicht.')
-      : t('grp.keinPlanFuerDich', 'Für dich liegt noch kein Plan bereit.'));
-    return;
-  }
-  wocheAnsicht().setze({
-    gid: aktiv.id,
-    planId: planAktiv,
-    programm,
-    protokolle,
-    nurFuerMich: plan.fuer !== PLAN_FUER_ALLE,
+  return programme.get(plan.id);
+}
+
+function zeichneWoche() {
+  if (!aktiv || !$('agenda')) return;
+  const darf = leitet(aktiv.meineRolle);
+  const quellen = plaeneDerWoche()
+    .map(plan => ({ gid: aktiv.id, plan, programm: programmVon(plan) }))
+    .filter(q => q.programm && wochenTage(q.programm).length);
+  const leer = quellen.length || (darf && plaene.length) ? ''
+    : darf ? t('grp.keinPlan', 'Noch kein Plan veröffentlicht.')
+    : t('grp.keinPlanFuerDich', 'Für dich liegt noch kein Plan bereit.');
+  agendaHolen().setze({
+    quellen,
+    termine: termine.map(x => ({ ...x, gid: aktiv.id, gruppenart: aktiv.art })),
+    protokolleJe: new Map([[aktiv.id, protokolle]]),
+    darfTermine: darf,
+    leer,
+    schluessel: `${aktiv.id}|${wochePerson}`,
   });
 }
 
-async function zeichnePlaene() {
-  const liste = $('listPlaene');
-  if (!liste || !aktiv) return;
-
-  const darfFuehren = leitet(aktiv.meineRolle);
-  zeige('secPlaene', true);
-  $('btnPlanNeu').hidden = !darfFuehren;
-
-  try {
-    plaene = await ladePlaene(aktiv.id, user.uid, darfFuehren);
-  } catch (e) {
-    reportClientError('gruppe/plaene', e);
-    plaene = [];
-  }
-
-  /* Der Fortschritt ist Beiwerk: geht er nicht durch, steht die Woche
-     trotzdem da — nur ohne Punkte und ohne Zaehler. */
-  try {
-    protokolle = nachDatum(await ladeProtokolle(aktiv.id, user.uid));
-  } catch (e) {
+/* Der Fortschritt dessen, dessen Woche steht: die Leitung, die einen
+   Athleten gewählt hat, sieht, was ER eingetragen hat. */
+async function ladeProtokolleDerWoche() {
+  const wer = leitet(aktiv?.meineRolle) && wochePerson && wochePerson !== PLAN_FUER_ALLE ? wochePerson : user.uid;
+  try { protokolle = nachDatum(await ladeProtokolle(aktiv.id, wer)); }
+  catch (e) {
+    /* Beiwerk: geht er nicht durch, steht die Woche trotzdem da —
+       nur ohne Balken und Zähler. */
     reportClientError('gruppe/protokolle', e);
     protokolle = {};
   }
+}
 
-  /* Ein Auswahlfeld mit einem einzigen Eintrag ist eine Luege — wie
-     beim Gruppenwechsler eine Zeile weiter oben. */
-  const mehrere = plaene.length > 1;
-  zeige('planWahl', mehrere);
-  if (mehrere) {
-    $('planWahl').innerHTML = plaene.map(p => {
-      const wem = p.fuer === PLAN_FUER_ALLE
-        ? wort(aktiv?.art, 'mitglieder')
-        : (mitglieder.find(m => m.uid === p.fuer)?.name || t('grp.einAthlet', 'ein Athlet'));
-      return `<option value="${escHtml(p.id)}">${escHtml(p.titel)} — ${escHtml(wem)}</option>`;
-    }).join('');
-  }
-
-  planAktiv = plaene.some(p => p.id === planAktiv) ? planAktiv : (plaene[0]?.id || '');
-  if (mehrere) $('planWahl').value = planAktiv;
-  zeigePlan();
+async function zeichnePlaene() {
+  if (!aktiv) return;
+  const fuer = aktiv.id;
+  const darfFuehren = leitet(aktiv.meineRolle);
+  $('btnPlanNeu').hidden = !darfFuehren;
+  let neu = [];
+  try { neu = await ladePlaene(fuer, user.uid, darfFuehren); }
+  catch (e) { reportClientError('gruppe/plaene', e); }
+  if (aktiv?.id !== fuer) return;
+  plaene = neu;
+  zeichnePersonWahl();
+  await ladeProtokolleDerWoche();
+  if (aktiv?.id !== fuer) return;
+  zeichneWoche();
 }
 
 /* ── Die Excel einlesen ─────────────────────────────────────────────
@@ -415,15 +421,13 @@ async function planFormOeffnen() {
   $('planTitel').value = '';
   $('planFehler').hidden = true;
   zeige('secPlanForm', true);
-  zeige('secPlaene', false);
-  zeige('secTermine', false);
+  zeige('secWoche', false);
   zeige('secMitglieder', false);
 }
 
 function planFormSchliessen() {
   zeige('secPlanForm', false);
-  zeige('secPlaene', !!aktiv);
-  zeige('secTermine', !!aktiv);
+  zeige('secWoche', !!aktiv);
   zeige('secMitglieder', !!aktiv);
 }
 
@@ -450,14 +454,21 @@ async function planSpeichern() {
   const btn = $('btnPlanSpeichern');
   btn.disabled = true;
   try {
+    const fuer = $('planFuer').value;
     await planVeroeffentlichen(aktiv.id, user.uid, {
       titel: $('planTitel').value.trim() || programmId,
       json,
-      fuer: $('planFuer').value,
+      fuer,
     });
     eingelesen = null;
     planFormSchliessen();
+    /* Wer eben die Excel für Timo eingelesen hat, will Timos Woche sehen
+       — und zwar die, in der der Plan liegt, nicht heute. */
+    wochePerson = fuer || PLAN_FUER_ALLE;
     await zeichnePlaene();
+    let ersterTag = '';
+    try { ersterTag = planTageMitDatum(JSON.parse(json), isoTag())[0]?.datum || ''; } catch { /* ohne Datum bleibt die Woche */ }
+    if (ersterTag) agendaHolen().springeZu(ersterTag);
   } catch (e) {
     reportClientError('gruppe/plan', e);
     fehler.textContent = e?.message || t('grp.f.plan', 'Der Plan konnte nicht veröffentlicht werden.');
@@ -504,7 +515,7 @@ function zeichne() {
   const darfFuehren = hat && leitet(aktiv.meineRolle);
 
   zeige('secLeer', !hat);
-  zeige('secTermine', hat);
+  zeige('secWoche', hat);
   zeige('secMitglieder', hat);
   zeige('secAktionen', darfFuehren);
   zeichneWechsel();
@@ -531,7 +542,7 @@ function zeichne() {
 
   setShellTitle(aktiv.name);
   zeichneMitglieder();
-  zeichneTermine();
+  zeichneWoche();
   zeichnePlaene();
 }
 
@@ -687,9 +698,8 @@ function detailOeffnen(eid) {
   }
 
   zeige('secDetail', true);
-  zeige('secTermine', false);
+  zeige('secWoche', false);
   zeige('secMitglieder', false);
-  zeige('secPlaene', false);
   zeichneZusagen();
   zeichneAnhaenge();
 }
@@ -697,9 +707,8 @@ function detailOeffnen(eid) {
 function detailSchliessen() {
   offen = null;
   zeige('secDetail', false);
-  zeige('secTermine', !!aktiv);
+  zeige('secWoche', !!aktiv);
   zeige('secMitglieder', !!aktiv);
-  zeige('secPlaene', !!aktiv);
 }
 
 async function antworten(antwort) {
@@ -899,7 +908,7 @@ function setzeArtWahl(wahl) {
   formAnpassen();
 }
 
-function formOeffnen() {
+function formOeffnen(datum) {
   /* Was die Gruppe anbietet, entscheidet die Gruppenart: eine Familie
      braucht keinen Wettkampf-Eintrag. Die Knoepfe entstehen darum im
      Code und nicht im Markup — mit der Farbe ihrer Art, damit man sie
@@ -914,7 +923,9 @@ function formOeffnen() {
   $('fBezeichnung').value = '';
   setzeArtWahl(artenFuer(aktiv?.art)[0] || 'training');
   $('fTitel').value = '';
-  $('fVon').value = isoTag();
+  /* "+" an einem Tag der Woche bringt sein Datum mit; der Knopf unter
+     der Woche bringt ein Klick-Ereignis, und dann gilt heute. */
+  $('fVon').value = typeof datum === 'string' && datum ? datum : isoTag();
   $('fBis').value = '';
   $('fZeit').value = '';
   $('fDisziplin').value = '';
@@ -922,13 +933,13 @@ function formOeffnen() {
   $('formFehler').hidden = true;
   formAnpassen();
   zeige('secForm', true);
-  zeige('secTermine', false);
+  zeige('secWoche', false);
   $('fTitel').focus();
 }
 
 function formSchliessen() {
   zeige('secForm', false);
-  zeige('secTermine', !!aktiv);
+  zeige('secWoche', !!aktiv);
 }
 
 function formLesen() {
@@ -1163,8 +1174,7 @@ function personOeffnen(uid) {
 
   zeige('secPerson', true);
   zeige('secMitglieder', false);
-  zeige('secTermine', false);
-  zeige('secPlaene', false);
+  zeige('secWoche', false);
 
   zeichneErgebnisse();
 
@@ -1392,8 +1402,7 @@ async function verteilerOeffnen() {
   }
   verteilerZeichnen();
   zeige('secMitglieder', false);
-  zeige('secTermine', false);
-  zeige('secPlaene', false);
+  zeige('secWoche', false);
   zeige('secAktionen', false);
   zeige('secVerteiler', true);
 }
@@ -1401,8 +1410,7 @@ async function verteilerOeffnen() {
 function verteilerSchliessen() {
   zeige('secVerteiler', false);
   zeige('secMitglieder', !!aktiv);
-  zeige('secTermine', !!aktiv);
-  zeige('secPlaene', !!aktiv);
+  zeige('secWoche', !!aktiv);
   zeige('secAktionen', !!aktiv && leitet(aktiv.meineRolle));
 }
 
@@ -1427,8 +1435,7 @@ function personSchliessen() {
   zeige('secErgForm', false);
   zeige('secPerson', false);
   zeige('secMitglieder', !!aktiv);
-  zeige('secTermine', !!aktiv);
-  zeige('secPlaene', !!aktiv);
+  zeige('secWoche', !!aktiv);
 }
 
 async function rolleAendern(rolle) {
@@ -1747,10 +1754,6 @@ async function einladen() {
   /* Ein Zuhörer auf der Liste statt einer pro Zeile: die Zeilen werden
      bei jeder Änderung neu gezeichnet, einzeln gebundene Zuhörer wären
      nach dem ersten Neuzeichnen ins Leere gebunden. */
-  $('listTermine')?.addEventListener('click', event => {
-    const eid = event.target.closest('[data-termin]')?.dataset.termin;
-    if (eid) detailOeffnen(eid);
-  });
   $('zusageKnoepfe')?.addEventListener('click', event => {
     const antwort = event.target.closest('[data-antwort]')?.dataset.antwort;
     if (antwort) antworten(antwort);
@@ -1788,9 +1791,10 @@ async function einladen() {
   $('btnErgebnisNeu')?.addEventListener('click', ergFormOeffnen);
   $('btnErgAbbrechen')?.addEventListener('click', ergFormSchliessen);
   $('btnErgSpeichern')?.addEventListener('click', ergSpeichern);
-  $('planWahl')?.addEventListener('change', () => {
-    planAktiv = $('planWahl').value;
-    zeigePlan();
+  $('planPerson')?.addEventListener('change', async () => {
+    wochePerson = $('planPerson').value;
+    await ladeProtokolleDerWoche();
+    zeichneWoche();
   });
   $('btnPlanNeu')?.addEventListener('click', planFormOeffnen);
   $('planDatei')?.addEventListener('change', event => planDateiGewaehlt(event.target.files?.[0]));
@@ -1818,6 +1822,11 @@ async function einladen() {
 
   beobachteMeineGruppen(user.uid, liste => {
     gruppen = liste;
+    /* ?g=<gruppe>&termin=<id>: der Bereich Training zeigt die Termine
+       aller Gruppen, geöffnet werden sie hier. Die Gruppe wird aktiv,
+       der Termin geht auf, sobald er da ist (hoereAufTermine). */
+    if (gruppeAusAdresse && liste.some(g => g.id === gruppeAusAdresse)) aktiveGruppeSetzen(gruppeAusAdresse);
+    gruppeAusAdresse = '';
     const vorher = aktiv?.id;
     aktiv = waehleAktive(liste);
     if (aktiv?.id !== vorher) hoereAufTermine();
@@ -1834,7 +1843,11 @@ function hoereAufTermine() {
   terminAbo?.();
   terminAbo = null;
   termine = [];
-  zeichneTermine();
+  /* Die Pläne und die gewählte Person gehören zur alten Gruppe — bis
+     die neue geladen ist, stünden sonst ihre Einheiten in der Woche. */
+  plaene = [];
+  wochePerson = '';
+  zeichneWoche();
 
   if (!aktiv) return;
   const fuer = aktiv.id;
@@ -1843,11 +1856,16 @@ function hoereAufTermine() {
        überschreiben. */
     if (aktiv?.id !== fuer) return;
     termine = liste;
+    if (terminAusAdresse && termine.some(x => x.id === terminAusAdresse)) {
+      const id = terminAusAdresse;
+      terminAusAdresse = '';
+      detailOeffnen(id);
+    }
     if (offen && !termine.some(t => t.id === offen.id)) detailSchliessen();
     /* Wurde der offene Termin geaendert — etwa abgesagt —, muss die
        Detailansicht ihren Stand nachziehen. */
     else if (offen) { const neu = termine.find(t => t.id === offen.id); if (neu) detailOeffnen(neu.id); }
-    zeichneTermine();
+    zeichneWoche();
   });
 }
 

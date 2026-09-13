@@ -45,7 +45,10 @@ test('die Leitung ohne Plan wird zum Einlesen geschickt', async () => {
   } finally { zurueck(); }
 });
 
-test('der Plan der Gruppe steht als Woche da, heute offen, und fuehrt in den Player zurueck ins Training', async () => {
+const tag = (doc, datum) => doc.querySelector(`.agenda__tag[data-datum="${datum}"]`);
+const planIds = doc => [...doc.querySelectorAll('.agenda a.row')].map(a => new URL(a.href).searchParams.get('p'));
+
+test('der Plan der Gruppe steht als Woche da, heute markiert, und fuehrt in den Player zurueck ins Training', async () => {
   const { doc, zurueck } = await starteTraining({
     gruppen: [{ id: 'g1', name: 'BSV Perspektivkader', art: 'kader', meineRolle: 'mitglied' }],
     plaene: [{ id: 'p1', titel: 'KW 31', fuer: 'alle', json }],
@@ -53,22 +56,21 @@ test('der Plan der Gruppe steht als Woche da, heute offen, und fuehrt in den Pla
   try {
     assert.equal(doc.getElementById('secWoche').hidden, false);
     assert.equal(doc.getElementById('wocheGruppe').textContent, 'BSV Perspektivkader');
-    assert.equal(doc.querySelectorAll('#wocheStreifen .woche__tag').length, 7);
-    assert.equal(doc.querySelector('#wocheStreifen [aria-selected="true"]').dataset.tag, 'mi');
-    assert.equal(doc.getElementById('planWahl').hidden, true, 'ein Plan braucht keine Auswahl');
+    assert.equal(doc.querySelectorAll('.agenda__tag').length, 7);
+    assert.equal(tag(doc, '2026-08-05').classList.contains('ist-heute'), true);
 
-    const ziel = new URL(doc.querySelector('#listPlaene a.row').href);
+    const ziel = new URL(tag(doc, '2026-08-05').querySelector('a.row').href);
     assert.equal(ziel.pathname, '/pages/einheit.html');
     assert.equal(ziel.searchParams.get('g'), 'g1');
     assert.equal(ziel.searchParams.get('z'), 'training', 'der Player fuehrt ins Training zurueck, nicht in die Gruppe');
 
-    klick(doc.querySelector('#wocheStreifen [data-tag="di"]'));
-    const titel = [...doc.querySelectorAll('#listPlaene .row__title')].map(e => e.textContent);
-    assert.deepEqual(titel, ['Kraft Beine', 'Fußgymnastik', 'Mobi']);
+    const di = [...tag(doc, '2026-08-04').querySelectorAll('.row__title')].map(e => e.textContent);
+    assert.deepEqual(di, ['Kraft Beine', 'Fußgymnastik', 'Mobi']);
+    assert.equal(doc.querySelectorAll('.agenda__neu').length, 0, 'Termine legt man in der Gruppe an');
   } finally { zurueck(); }
 });
 
-test('Plaene aus zwei Gruppen stehen zur Wahl, mit dem Namen der Gruppe davor', async () => {
+test('Plaene aus zwei Gruppen stehen in derselben Woche, mit dem Namen der Gruppe', async () => {
   const { doc, zurueck } = await starteTraining({
     gruppen: [
       { id: 'g1', name: 'BSV Perspektivkader', art: 'kader', meineRolle: 'mitglied' },
@@ -80,18 +82,31 @@ test('Plaene aus zwei Gruppen stehen zur Wahl, mit dem Namen der Gruppe davor', 
     },
   });
   try {
-    const wahl = doc.getElementById('planWahl');
-    assert.equal(wahl.hidden, false);
-    assert.deepEqual([...wahl.options].map(o => o.textContent),
-      ['BSV Perspektivkader — KW 31', 'Gym Malbun — Kraftblock']);
+    assert.equal(doc.getElementById('wocheGruppe').textContent, 'Aus deinen Gruppen');
+    const mi = tag(doc, '2026-08-05');
+    const ziele = [...mi.querySelectorAll('a.row')].map(a => new URL(a.href).searchParams.get('g'));
+    assert.deepEqual([...new Set(ziele)].sort(), ['g1', 'g2'], 'eine Woche, beide Gruppen');
+    assert.match(mi.textContent, /Gym Malbun/, 'bei mehreren Gruppen steht dabei, woher');
+  } finally { zurueck(); }
+});
 
-    wahl.value = 'g2/p9';
-    wahl.dispatchEvent(new doc.defaultView.Event('change', { bubbles: true }));
-    await warte(() => doc.getElementById('wocheGruppe').textContent === 'Gym Malbun');
-    assert.equal(doc.getElementById('wocheGruppe').textContent, 'Gym Malbun');
-    const ziel = new URL(doc.querySelector('#listPlaene a.row').href);
-    assert.equal(ziel.searchParams.get('g'), 'g2');
-    assert.equal(ziel.searchParams.get('p'), 'p9');
+test('die Termine aller Gruppen stehen in der Woche und oeffnen sich in ihrer Gruppe', async () => {
+  const { doc, zurueck } = await starteTraining({
+    gruppen: [{ id: 'g1', name: 'BSV Perspektivkader', art: 'kader', meineRolle: 'mitglied' }],
+    plaene: [{ id: 'p1', titel: 'KW 31', fuer: 'alle', json }],
+    termine: [{ id: 't1', art: 'training', titel: 'Kondi Halle', von: '2026-08-06', zeit: '18:00' }],
+  });
+  try {
+    await warte(() => doc.querySelector('[data-termin="t1"]'));
+    const zeile = tag(doc, '2026-08-06').querySelector('[data-termin="t1"]');
+    assert.ok(zeile, 'der Termin fehlt in der Woche');
+    let ziel = '';
+    doc.defaultView.tvzaNavigate = href => { ziel = href; return true; };
+    klick(zeile);
+    const url = new URL(ziel);
+    assert.equal(url.pathname, '/pages/gruppe.html');
+    assert.equal(url.searchParams.get('g'), 'g1');
+    assert.equal(url.searchParams.get('termin'), 't1');
   } finally { zurueck(); }
 });
 
@@ -105,7 +120,6 @@ test('die Leitung sieht hier ihr Training, nicht die Einzelplaene ihrer Athleten
     ],
   });
   try {
-    const optionen = [...doc.getElementById('planWahl').options].map(o => o.textContent);
-    assert.deepEqual(optionen, ['KW 31', 'Nur ich']);
+    assert.deepEqual([...new Set(planIds(doc))].sort(), ['p1', 'p3']);
   } finally { zurueck(); }
 });

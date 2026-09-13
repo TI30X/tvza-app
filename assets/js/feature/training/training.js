@@ -8,20 +8,23 @@
    Trainer nie.
 
    Jetzt: alle Gruppen, in denen man ist; aus jeder die Plaene, die fuer
-   einen bestimmt sind; die Woche davon mit demselben Baustein wie auf
-   der Gruppenseite; ein Tipp fuehrt in denselben Player. Eingelesen
-   wird in der Gruppe ("Plan veroeffentlichen"), nicht hier — eine
-   Sache, ein Ort.
+   einen bestimmt sind, und ihre Termine; die Woche davon mit demselben
+   Baustein wie auf der Gruppenseite; ein Tipp auf eine Einheit fuehrt
+   in denselben Player, ein Tipp auf einen Termin in die Gruppe. Seit
+   v.35.42.0 ist die Woche ein Kalender zum Blaettern und sammelt die
+   Plaene ALLER Gruppen — bis dahin waehlte man einen Plan aus einer
+   Liste. Eingelesen wird in der Gruppe ("Plan veroeffentlichen"), nicht
+   hier — eine Sache, ein Ort.
    ══════════════════════════════════════════════════════════════════ */
 
-import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
+import { requireAuth, getProfile, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
 import { mountShell } from '../../shell.js?v=13';
 import {
-  beobachteMeineGruppen, ladePlaene, ladeProtokolle, waehleAktive, leitet, PLAN_FUER_ALLE,
+  beobachteMeineGruppen, beobachteTermine, ladePlaene, ladeProtokolle, leitet, PLAN_FUER_ALLE,
 } from '../../groups.js';
 import { wochenTage, nachDatum } from '../../wochenplan.js';
-import { wochenAnsicht } from '../woche/woche.js';
+import { agendaAnsicht } from '../woche/woche.js';
 
 const $ = id => document.getElementById(id);
 const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars)
@@ -29,9 +32,11 @@ const t = (key, fallback, vars) => window.TVZAI18n?.tOr(key, fallback, vars)
 const zeige = (id, an) => { const el = $(id); if (el) el.hidden = !an; };
 
 let user = null;
-let eintraege = [];            // [{ gruppe, plan, programm }]
-let aktiv = '';                // "gid/planId"
+let gruppen = [];
+let quellen = [];               // [{ gid, gruppe, plan, programm }]
 const protokolleJe = new Map(); // gid -> nach Datum
+const termineJe = new Map();    // gid -> Termine
+const abos = new Map();         // gid -> Abmeldung von beobachteTermine
 let woche = null;
 
 /* Welche Plaene zaehlen: die fuer alle und die fuer mich. Die Leitung
@@ -57,27 +62,53 @@ async function protokolleFuer(gid) {
   return werte;
 }
 
-async function zeigeAktiven() {
-  const eintrag = eintraege.find(e => `${e.gruppe.id}/${e.plan.id}` === aktiv) || eintraege[0];
-  if (!eintrag) return;
-  aktiv = `${eintrag.gruppe.id}/${eintrag.plan.id}`;
+/* Ein Termin gehoert in seine Gruppe: dort sind Zusage, Anhaenge und
+   Absage. Der Router fuehrt hin, wenn die Seite in seinem Rahmen steht. */
+function terminOeffnen(termin) {
+  const ziel = `./gruppe.html?g=${encodeURIComponent(termin.gid)}&termin=${encodeURIComponent(termin.id)}`;
+  if (window.tvzaNavigate?.(new URL(ziel, location.href).href)) return;
+  location.href = ziel;
+}
 
-  /* Erst laden, dann Name UND Woche zusammen wechseln — sonst stuende
-     einen Moment lang der Name der neuen Gruppe ueber dem Plan der
-     alten. */
-  const protokolle = await protokolleFuer(eintrag.gruppe.id);
-  $('wocheGruppe').textContent = eintrag.gruppe.name || t('nav.gruppe', 'Gruppe');
+function zeichne() {
+  if (!woche || !quellen.length) return;
+  const termine = gruppen.flatMap(g => (termineJe.get(g.id) || [])
+    .map(x => ({ ...x, gid: g.id, gruppe: g.name, gruppenart: g.art })));
+  const mitPlan = new Set(quellen.map(q => q.gid));
+  $('wocheGruppe').textContent = mitPlan.size === 1 && gruppen.length === 1
+    ? (gruppen[0].name || t('nav.gruppe', 'Gruppe'))
+    : t('tr.ausGruppen', 'Aus deinen Gruppen');
   woche.setze({
-    gid: eintrag.gruppe.id,
-    planId: eintrag.plan.id,
-    programm: eintrag.programm,
-    protokolle,
-    nurFuerMich: eintrag.plan.fuer !== PLAN_FUER_ALLE,
+    quellen,
+    termine,
+    protokolleJe,
+    darfTermine: false,
+    schluessel: gruppen.map(g => g.id).join('|'),
   });
 }
 
-async function laden(gruppen) {
+/* Die Termine jeder Gruppe live — und nur so lange man in ihr ist.
+   Ohne das Abmelden liefen nach einem Austritt die Zuhoerer weiter. */
+function hoereAufTermine() {
+  const jetzt = new Set(gruppen.map(g => g.id));
+  for (const [gid, ab] of abos) {
+    if (!jetzt.has(gid)) { ab?.(); abos.delete(gid); termineJe.delete(gid); }
+  }
+  for (const g of gruppen) {
+    if (abos.has(g.id)) continue;
+    abos.set(g.id, beobachteTermine(g.id, liste => {
+      termineJe.set(g.id, liste);
+      zeichne();
+    }));
+  }
+}
+
+async function laden(liste) {
+  gruppen = liste;
+  hoereAufTermine();
+
   if (!gruppen.length) {
+    quellen = [];
     ohne({
       text: t('tr.ohneGruppe',
         'Dein Training kommt aus deiner Gruppe. Tritt ihr bei oder lege eine an — dann steht hier die Woche, die dein Trainer veröffentlicht.'),
@@ -86,13 +117,8 @@ async function laden(gruppen) {
     return;
   }
 
-  /* Die aktive Gruppe zuerst: dort ist man gerade, dort liegt meist
-     der Plan, den man heute braucht. */
-  const vorn = waehleAktive(gruppen);
-  const reihe = [vorn, ...gruppen.filter(g => g.id !== vorn?.id)].filter(Boolean);
-
   const gefunden = [];
-  for (const gruppe of reihe) {
+  for (const gruppe of gruppen) {
     let plaene = [];
     try { plaene = await ladePlaene(gruppe.id, user.uid, leitet(gruppe.meineRolle)); }
     catch (e) { reportClientError('training/plaene', e); }
@@ -100,13 +126,15 @@ async function laden(gruppen) {
       let programm = null;
       try { programm = JSON.parse(plan.json); }
       catch (e) { reportClientError('training/planLesen', e); }
-      if (programm && wochenTage(programm).length) gefunden.push({ gruppe, plan, programm });
+      if (programm && wochenTage(programm).length) {
+        gefunden.push({ gid: gruppe.id, gruppe: gruppe.name, plan, programm });
+      }
     }
   }
-  eintraege = gefunden;
+  quellen = gefunden;
 
-  if (!eintraege.length) {
-    const fuehrtIrgendwo = reihe.some(g => leitet(g.meineRolle));
+  if (!quellen.length) {
+    const fuehrtIrgendwo = gruppen.some(g => leitet(g.meineRolle));
     ohne({
       text: fuehrtIrgendwo
         ? t('tr.keinPlanLeitung', 'Noch kein Plan veröffentlicht. Lies die Excel des Wochenplans in der Gruppe ein — dann steht er hier und bei deinem Kader.')
@@ -116,26 +144,10 @@ async function laden(gruppen) {
     return;
   }
 
-  /* Die Auswahl nur, wenn es etwas zu waehlen gibt. Bei Plaenen aus
-     mehreren Gruppen steht die Gruppe davor. */
-  const mehrere = eintraege.length > 1;
-  const mehrereGruppen = new Set(eintraege.map(e => e.gruppe.id)).size > 1;
-  zeige('planWahl', mehrere);
-  if (mehrere) {
-    $('planWahl').innerHTML = eintraege.map(e => {
-      const wert = `${e.gruppe.id}/${e.plan.id}`;
-      const text = mehrereGruppen ? `${e.gruppe.name} — ${e.plan.titel}` : e.plan.titel;
-      return `<option value="${escHtml(wert)}">${escHtml(text)}</option>`;
-    }).join('');
-  }
-  if (!eintraege.some(e => `${e.gruppe.id}/${e.plan.id}` === aktiv)) {
-    aktiv = `${eintraege[0].gruppe.id}/${eintraege[0].plan.id}`;
-  }
-  if (mehrere) $('planWahl').value = aktiv;
-
+  for (const gid of new Set(quellen.map(q => q.gid))) await protokolleFuer(gid);
   zeige('secOhne', false);
   zeige('secWoche', true);
-  await zeigeAktiven();
+  zeichne();
 }
 
 (async function () {
@@ -155,20 +167,13 @@ async function laden(gruppen) {
     profile,
   });
 
-  woche = wochenAnsicht({
-    streifen: $('wocheStreifen'),
-    titel: $('tagTitel'),
-    liste: $('listPlaene'),
-    zeitraum: $('planZeitraum'),
+  woche = agendaAnsicht({
+    el: $('agenda'),
     zurueck: 'training',
+    beiTermin: terminOeffnen,
   });
 
-  $('planWahl')?.addEventListener('change', () => {
-    aktiv = $('planWahl').value;
-    zeigeAktiven();
-  });
-
-  beobachteMeineGruppen(user.uid, gruppen => {
-    laden(gruppen).catch(e => reportClientError('training/laden', e));
+  beobachteMeineGruppen(user.uid, liste => {
+    laden(liste).catch(e => reportClientError('training/laden', e));
   });
 }());

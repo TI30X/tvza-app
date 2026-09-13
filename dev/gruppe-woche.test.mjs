@@ -1,185 +1,237 @@
-/* Die Woche auf der Gruppenseite — wirklich gefahren, nicht gelesen.
+/* Die Woche der Gruppe — gefahren, nicht gelesen.
 
-   gruppe-seite.test.mjs prüft den Quelltext: welche IDs vorkommen, ob
-   Haken ein Gegenstück haben. Das findet einen Tippfehler, aber nicht,
-   ob am Ende etwas auf dem Bildschirm steht. Genau das war der Fehler,
-   den dieser Umbau behebt — der Wochenplan wurde gelesen, geparst und
-   dann nie gezeichnet, und keine einzige Zusicherung hat es gemerkt.
+   Seit v.35.42.0 ein Kalender, senkrecht wie bei Spond: oben blättert
+   man die Woche, darunter steht jeder Tag mit seinen Terminen und den
+   Einheiten aus den Plänen. Michel: "Kann man nicht Woche vor oder
+   zurück?" und "besser in einer vertikalen Leiste wie Spond — man
+   sollte ja noch eintragen können, was für Termine anstehen."
 
-   Darum hier dasselbe Verfahren wie in training-ui.test.mjs: jsdom für
-   das DOM, Data-URL-Module statt Firestore, und Timothys echte KW 31
-   als Plan.
-*/
+   Timothys echte KW 31 als Plan (dev/fixtures/kw31-grid.json), die
+   Seite im jsdom mit Attrappen für Firestore (gruppe-harness.mjs). */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { starteGruppe } from './gruppe-harness.mjs';
-
+import { starteGruppe, klick, warte } from './gruppe-harness.mjs';
 import { parseProgram } from '../assets/js/training-parser.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const programm = parseProgram(JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8')));
+const json = JSON.stringify(programm);
 
-const grid = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
-const programm = parseProgram(grid);
-
-/* Die Woche liegt in der Vergangenheit. Damit "Heute" prüfbar ist,
-   tut die Seite so, als wäre Mittwoch dieser Woche. isoTag() kommt aus
-   termine.js und liest die Systemuhr — also wird sie gestellt. */
+/* Der Plan liegt vom 3. bis 9. August 2026. Damit "Heute" prüfbar ist,
+   tut die Seite so, als wäre Mittwoch dieser Woche. */
 const HEUTE = '2026-08-05';
+const LEITUNG = [{ id: 'g1', name: 'Kader', art: 'kader', meineRolle: 'head' }];
+const MITGLIEDER = [{ uid: 'timo', name: 'Timothy', rolle: 'head' }, { uid: 'lea', name: 'Lea', rolle: 'mitglied' }];
+const planFuerAlle = { id: 'p1', titel: 'Woche 31 — Kraft', fuer: 'alle', json };
 
-/* Der jsdom-Aufbau liegt seit v.35.24.0 in gruppe-harness.mjs — ihn
-   brauchen mehrere Tests, und zwei Kopien laufen auseinander. */
-async function starteSeite({ plaene, protokolle = [] }) {
-  const { doc, zurueck } = await starteGruppe({
-    plaene, protokolle, heute: HEUTE,
-    bereit: d => !d.getElementById('secPlaene').hidden && d.getElementById('listPlaene').innerHTML,
-  });
-  zurueck();
-  return doc;
-}
-
-const planFuerAlle = {
-  id: 'p1', titel: 'Woche 31 — Kraft', fuer: 'alle', json: JSON.stringify(programm),
-};
-
-/* Am Mittwoch abgehakt: die Ausdauer-Einheit ganz, damit sich Punkt,
-   Zähler und Balken unterscheiden lassen. */
+/* Am Mittwoch abgehakt: die Ausdauer-Einheit ganz. */
 const protokollMittwoch = [{
   uid: 'timo', datum: HEUTE,
-  units: {
-    ausdauer: {
-      items: Object.fromEntries(programm.units.ausdauer.items.map(i => [i.key, { done: true }])),
-    },
-  },
+  units: { ausdauer: { items: Object.fromEntries(programm.units.ausdauer.items.map(i => [i.key, { done: true }])) } },
 }];
 
-const doc = await starteSeite({ plaene: [planFuerAlle], protokolle: protokollMittwoch });
-const $ = sel => doc.querySelector(sel);
-const $$ = sel => [...doc.querySelectorAll(sel)];
-const klick = el => {
-  assert.ok(el, 'Element zum Klicken fehlt');
-  el.dispatchEvent(new doc.defaultView.MouseEvent('click', { bubbles: true }));
-};
+const TERMINE = [
+  { id: 't1', art: 'training', titel: 'Kondi Halle', von: '2026-08-06', zeit: '18:00', ort: 'Malbun' },
+  { id: 't2', art: 'lager', titel: 'Sommerlager', von: '2026-08-08', bis: '2026-08-10' },
+  { id: 't3', art: 'rennen', titel: 'FIS RS Saas-Fee', von: '2026-08-20', zeit: '09:30' },
+];
 
-test('die Seite lädt ohne gemeldeten Fehler', () => {
-  assert.deepEqual(globalThis.__fehler, []);
-});
-
-test('der Wochenstreifen zeigt sieben Tage, heute markiert', () => {
-  const tage = $$('#wocheStreifen .woche__tag');
-  assert.equal(tage.length, 7);
-  assert.equal($('#wocheStreifen').hidden, false);
-
-  const heute = $$('#wocheStreifen .woche__tag.ist-heute');
-  assert.equal(heute.length, 1, 'genau ein Tag ist heute');
-  assert.equal(heute[0].dataset.tag, 'mi');
-  assert.equal(heute[0].getAttribute('aria-selected'), 'true',
-    'beim Öffnen steht heute offen');
-});
-
-test('der Kopf nennt die Woche, nicht den getippten Titel', () => {
-  /* "KW 31 · 3. Aug. – 9. Aug." sagt einem Athleten mehr als
-     "Woche 31 — Kraft". Der Titel steht in der Auswahl, sobald es
-     mehrere Pläne gibt. */
-  const zeitraum = $('#planZeitraum');
-  assert.equal(zeitraum.hidden, false);
-  assert.match(zeitraum.textContent, /KW 31/);
-  assert.doesNotMatch(zeitraum.textContent, /Kraft/);
-});
-
-test('bei einem einzigen Plan gibt es keine Auswahl', () => {
-  assert.equal($('#planWahl').hidden, true);
-});
-
-test('der Tag zeigt seine Einheiten mit Tageshälfte', () => {
-  /* Mittwoch: Vormittag Intervall, Nachmittag Rumpf. */
-  const titel = $$('#listPlaene .row__title').map(el => el.textContent);
-  assert.deepEqual(titel, ['Intervall INTENSIV 4x5 min (Joggen)', 'Rumpf']);
-  const slots = $$('#listPlaene .eintrag__slot').map(el => el.textContent);
-  assert.deepEqual(slots, ['Vormittag', 'Nachmittag']);
-});
-
-test('eine Einheit führt in den Player, mit Gruppe, Plan, Blatt und dem geplanten Tag', () => {
-  const ziel = new URL($('#listPlaene a.row').href, 'https://firn.test/pages/');
-  assert.equal(ziel.pathname, '/pages/einheit.html');
-  assert.equal(ziel.searchParams.get('g'), 'g1');
-  assert.equal(ziel.searchParams.get('p'), 'p1');
-  assert.equal(ziel.searchParams.get('u'), 'ausdauer');
-  assert.equal(ziel.searchParams.get('d'), HEUTE);
-});
-
-test('das Abgehakte steht als Zähler, Balken und voller Punkt da', () => {
-  const erste = $('#listPlaene .row');
-  const zaehler = erste.querySelector('.row__zaehler');
-  assert.match(zaehler.textContent, /^(\d+)\/\1$/, 'Ausdauer ist ganz erledigt');
-  assert.equal(zaehler.classList.contains('ist-fertig'), true);
-  assert.equal(erste.querySelector('.row__bar > i').style.width, '100%');
-
-  const mi = $('#wocheStreifen [data-tag="mi"]');
-  assert.equal(mi.querySelectorAll('.woche__punkt').length, 2, 'Mittwoch hat zwei Einheiten');
-  assert.equal(mi.querySelectorAll('.woche__punkt.ist-fertig').length, 1);
-});
-
-test('ein anderer Tag wird gezeichnet, wenn man ihn antippt', () => {
-  klick($('#wocheStreifen [data-tag="di"]'));
-
-  const titel = $$('#listPlaene .row__title').map(el => el.textContent);
-  assert.deepEqual(titel, ['Kraft Beine', 'Fußgymnastik', 'Mobi']);
-  assert.equal($('#wocheStreifen [data-tag="di"]').getAttribute('aria-selected'), 'true');
-  assert.equal($('#wocheStreifen [data-tag="mi"]').getAttribute('aria-selected'), 'false');
-
-  /* Der Dienstag trägt kein Protokoll — dieselbe Einheit an einem
-     anderen Tag ist ein anderes Training. */
-  assert.equal($('#listPlaene .row__bar > i').style.width, '0%');
-});
-
-test('ein Eintrag ohne Blatt steht da, ist aber kein Link', () => {
-  klick($('#wocheStreifen [data-tag="do"]'));
-
-  const ohne = $('#listPlaene .row--ohneBlatt');
-  assert.ok(ohne, '"evtl. Spiel" fehlt in der Woche');
-  assert.equal(ohne.tagName, 'DIV', 'kein Link — es gibt nichts zu öffnen');
-  assert.match(ohne.textContent, /evtl\. Spiel/);
-  assert.match(ohne.textContent, /kein Blatt hinterlegt/);
-});
-
-test('ein Ruhetag sagt, dass nichts geplant ist', () => {
-  klick($('#wocheStreifen [data-tag="so"]'));
-  assert.equal($$('#listPlaene .row').length, 0);
-  assert.match($('#listPlaene .empty-hint').textContent, /Ruhetag/);
-});
-
-test('mehrere Pläne bekommen eine Auswahl, ein einzelner nicht', async () => {
-  const doc2 = await starteSeite({
-    plaene: [
-      planFuerAlle,
-      { id: 'p2', titel: 'Nur Timo', fuer: 'timo', json: JSON.stringify(programm) },
-    ],
+async function starte(o = {}) {
+  const w = await starteGruppe({
+    plaene: [planFuerAlle], protokolle: protokollMittwoch, heute: HEUTE, mitglieder: MITGLIEDER,
+    bereit: d => !d.getElementById('agenda').hidden && d.querySelector('.agenda__tag'),
+    ...o,
   });
-  const wahl = doc2.getElementById('planWahl');
-  assert.equal(wahl.hidden, false);
-  assert.equal(wahl.options.length, 2);
-  assert.equal(wahl.value, 'p1');
-  assert.match(wahl.options[0].textContent, /Woche 31 — Kraft/);
+  /* Die Termine kommen wie von onSnapshot: einen Moment später. */
+  if (o.termine?.length) await warte(() => w.doc.querySelector('.agenda__termin'));
+  return w;
+}
+const tag = (doc, datum) => doc.querySelector(`.agenda__tag[data-datum="${datum}"]`);
+const titel = (el) => [...el.querySelectorAll('.row__title')].map(x => x.textContent);
+
+test('die Woche steht als sieben Tage untereinander, heute markiert, mit dem Namen aus der Excel', async () => {
+  const { doc, zurueck } = await starte();
+  try {
+    assert.deepEqual(globalThis.__fehler, []);
+    assert.equal(doc.querySelectorAll('.agenda__tag').length, 7);
+    assert.equal(doc.querySelectorAll('.agenda__tag.ist-heute').length, 1);
+    assert.equal(tag(doc, HEUTE).classList.contains('ist-heute'), true);
+    /* Die Daten der Woche, und die Nummer so, wie sie in der Excel steht
+       — die Vorlage zählt nicht nach ISO. */
+    assert.match(doc.querySelector('.agenda__daten').textContent, /3\..*Aug.*9\..*Aug/);
+    assert.match(doc.querySelector('.agenda__kw').textContent, /^KW 31/);
+    assert.doesNotMatch(doc.querySelector('.agenda__kopf').textContent, /Kraft/, 'der getippte Titel gehört nicht in den Kopf');
+    assert.equal(doc.querySelector('[data-blaettern="0"]').hidden, true, '"Heute" braucht es in dieser Woche nicht');
+    assert.equal(doc.getElementById('planPerson').hidden, true, 'ohne Einzelpläne keine Personenwahl');
+  } finally { zurueck(); }
 });
 
-test('ohne Plan steht ein Satz statt einer leeren Woche', async () => {
-  const doc3 = await starteSeite({ plaene: [] });
-  assert.equal(doc3.getElementById('wocheStreifen').hidden, true);
-  assert.equal(doc3.getElementById('tagTitel').hidden, true);
-  assert.match(doc3.getElementById('listPlaene').textContent, /noch kein Plan bereit/i);
+test('jeder Tag trägt seine Einheiten mit Tageshälfte und Fortschritt', async () => {
+  const { doc, zurueck } = await starte();
+  try {
+    const mi = tag(doc, HEUTE);
+    assert.deepEqual(titel(mi), ['Intervall INTENSIV 4x5 min (Joggen)', 'Rumpf']);
+    assert.deepEqual([...mi.querySelectorAll('.eintrag__slot')].map(x => x.textContent), ['Vormittag', 'Nachmittag']);
+    const erste = mi.querySelector('a.row');
+    assert.match(erste.querySelector('.row__zaehler').textContent, /^(\d+)\/\1$/, 'Ausdauer ist ganz erledigt');
+    assert.equal(erste.querySelector('.row__bar > i').style.width, '100%');
+
+    assert.deepEqual(titel(tag(doc, '2026-08-04')), ['Kraft Beine', 'Fußgymnastik', 'Mobi']);
+    assert.equal(tag(doc, '2026-08-04').querySelector('.row__bar > i').style.width, '0%',
+      'dieselbe Einheit an einem anderen Tag ist ein anderes Training');
+
+    const ohne = tag(doc, '2026-08-06').querySelector('.row--ohneBlatt');
+    assert.ok(ohne, '"evtl. Spiel" fehlt');
+    assert.equal(ohne.tagName, 'DIV', 'kein Link — es gibt nichts zu öffnen');
+
+    assert.equal(tag(doc, '2026-08-09').classList.contains('ist-leer'), true, 'der Sonntag ist eine leere Zeile');
+    assert.equal(tag(doc, '2026-08-09').querySelectorAll('.row').length, 0);
+  } finally { zurueck(); }
+});
+
+test('eine Einheit führt in den Player, mit Gruppe, Plan, Blatt und dem geplanten Tag', async () => {
+  const { doc, zurueck } = await starte();
+  try {
+    const ziel = new URL(tag(doc, HEUTE).querySelector('a.row').href, 'https://firn.test/pages/');
+    assert.equal(ziel.pathname, '/pages/einheit.html');
+    assert.deepEqual(['g', 'p', 'u', 'd', 'z'].map(k => ziel.searchParams.get(k)), ['g1', 'p1', 'ausdauer', HEUTE, 'gruppe']);
+  } finally { zurueck(); }
+});
+
+test('man blättert vor und zurück, und "Heute" führt heim', async () => {
+  const { doc, zurueck } = await starte();
+  try {
+    klick(doc.querySelector('[data-blaettern="1"]'));
+    assert.match(doc.querySelector('.agenda__daten').textContent, /10\..*Aug.*16\..*Aug/);
+    assert.equal(doc.querySelector('.agenda__kw').textContent, '', 'eine Woche ohne Plan nennt keine KW');
+    assert.match(doc.querySelector('.agenda__nichts').textContent, /nichts geplant/);
+    assert.equal(doc.querySelector('[data-blaettern="0"]').hidden, false);
+
+    klick(doc.querySelector('[data-blaettern="-1"]'));
+    klick(doc.querySelector('[data-blaettern="-1"]'));
+    assert.match(doc.querySelector('.agenda__daten').textContent, /27\..*Juli?.*2\..*Aug/);
+
+    klick(doc.querySelector('[data-blaettern="0"]'));
+    assert.match(doc.querySelector('.agenda__daten').textContent, /3\..*Aug.*9\..*Aug/);
+    assert.equal(tag(doc, HEUTE).classList.contains('ist-heute'), true);
+  } finally { zurueck(); }
+});
+
+test('Termine stehen an ihrem Tag, ein Lager an jedem seiner Tage, und was danach kommt, darunter', async () => {
+  const { doc, zurueck } = await starte({ termine: TERMINE });
+  try {
+    const do_ = tag(doc, '2026-08-06');
+    assert.equal(titel(do_)[0], 'Kondi Halle', 'der Termin steht vor den Einheiten des Tages');
+    assert.match(do_.querySelector('.agenda__termin .row__sub').textContent, /18:00 · Malbun/);
+    assert.ok(tag(doc, '2026-08-08').querySelector('[data-termin="t2"]'));
+    assert.ok(tag(doc, '2026-08-09').querySelector('[data-termin="t2"]'), 'das Lager läuft am Sonntag weiter');
+    const danach = doc.querySelector('.agenda__danach + .rows [data-termin]');
+    assert.equal(danach?.dataset.termin, 't3', 'das Rennen in zwei Wochen fehlt unter der Woche');
+  } finally { zurueck(); }
+});
+
+test('ein Tipp auf einen Termin öffnet ihn', async () => {
+  const { doc, zurueck } = await starte({ termine: TERMINE });
+  try {
+    klick(tag(doc, '2026-08-06').querySelector('[data-termin="t1"]'));
+    await warte(() => !doc.getElementById('secDetail').hidden);
+    assert.equal(doc.getElementById('secDetail').hidden, false);
+    assert.equal(doc.getElementById('secWoche').hidden, true);
+  } finally { zurueck(); }
+});
+
+test('die Leitung legt einen Termin an genau dem Tag an, an dem sie "+" tippt', async () => {
+  const { doc, zurueck } = await starte({ gruppen: LEITUNG });
+  try {
+    assert.equal(doc.querySelectorAll('.agenda__neu').length, 7);
+    klick(tag(doc, '2026-08-07').querySelector('.agenda__neu'));
+    assert.equal(doc.getElementById('secForm').hidden, false);
+    assert.equal(doc.getElementById('fVon').value, '2026-08-07');
+    /* Der Knopf unter der Woche bleibt, und dort gilt heute. */
+    klick(doc.getElementById('btnAbbrechen'));
+    klick(doc.getElementById('btnTermin'));
+    assert.equal(doc.getElementById('fVon').value, HEUTE);
+  } finally { zurueck(); }
+});
+
+test('ein Mitglied hat kein "+"', async () => {
+  const { doc, zurueck } = await starte();
+  try {
+    assert.equal(doc.querySelectorAll('.agenda__neu').length, 0);
+  } finally { zurueck(); }
+});
+
+test('die Leitung wählt, wessen Woche — und sieht dann dessen Plan und dessen Fortschritt', async () => {
+  const { doc, zurueck } = await starte({
+    gruppen: LEITUNG,
+    plaene: [planFuerAlle, { id: 'p2', titel: 'KW 31 Lea', fuer: 'lea', json }],
+  });
+  try {
+    const wahl = doc.getElementById('planPerson');
+    assert.equal(wahl.hidden, false);
+    assert.deepEqual([...wahl.options].map(o => o.textContent), ['Alle in der Gruppe', 'Lea']);
+    assert.equal(wahl.value, 'alle');
+    const plaeneAm = () => [...tag(doc, HEUTE).querySelectorAll('a.row')].map(a => new URL(a.href, 'https://firn.test/').searchParams.get('p'));
+    assert.deepEqual([...new Set(plaeneAm())], ['p1'], 'in der Woche der Gruppe steht Leas Plan nicht');
+
+    wahl.value = 'lea';
+    wahl.dispatchEvent(new doc.defaultView.Event('change', { bubbles: true }));
+    await warte(() => plaeneAm().includes('p2'));
+    assert.deepEqual([...new Set(plaeneAm())].sort(), ['p1', 'p2'], 'Leas Woche: der Plan für alle und ihrer');
+    assert.deepEqual(globalThis.__aufrufe.filter(a => a[0] === 'ladeProtokolle').at(-1), ['ladeProtokolle', 'g1', 'lea'],
+      'die Leitung sieht Leas Fortschritt, nicht den eigenen');
+  } finally { zurueck(); }
+});
+
+test('wer nur Einzelpläne einliest, landet in der Woche des ersten Athleten', async () => {
+  const { doc, zurueck } = await starte({
+    gruppen: LEITUNG,
+    plaene: [{ id: 'p2', titel: 'KW 31 Lea', fuer: 'lea', json }],
+  });
+  try {
+    assert.equal(doc.getElementById('planPerson').value, 'lea');
+    assert.ok(tag(doc, HEUTE).querySelector('a.row'), 'die Woche steht leer');
+  } finally { zurueck(); }
+});
+
+test('eine vergangene Excel öffnet in ihrer Woche, nicht im leeren Heute', async () => {
+  const { doc, zurueck } = await starte({ heute: '2026-09-13' });
+  try {
+    assert.match(doc.querySelector('.agenda__daten').textContent, /3\..*Aug.*9\..*Aug/);
+    assert.equal(doc.querySelector('[data-blaettern="0"]').hidden, false);
+  } finally { zurueck(); }
+});
+
+test('ohne Plan steht die Woche mit ihren Terminen und ein Satz', async () => {
+  const { doc, zurueck } = await starte({ plaene: [], termine: TERMINE });
+  try {
+    assert.equal(doc.getElementById('agenda').hidden, false);
+    assert.ok(tag(doc, '2026-08-06').querySelector('[data-termin="t1"]'));
+    assert.match(doc.getElementById('agenda').textContent, /noch kein Plan bereit/i);
+  } finally { zurueck(); }
 });
 
 test('ein unlesbarer Plan nimmt die Gruppenseite nicht mit', async () => {
-  const doc4 = await starteSeite({
-    plaene: [{ id: 'px', titel: 'Kaputt', fuer: 'alle', json: '{nicht mal JSON' }],
+  const { doc, zurueck } = await starte({ plaene: [{ id: 'px', titel: 'Kaputt', fuer: 'alle', json: '{nicht mal JSON' }] });
+  try {
+    assert.equal(doc.getElementById('secMitglieder').hidden, false);
+    assert.equal(doc.querySelectorAll('.agenda a.row').length, 0);
+    assert.equal(globalThis.__fehler.some(([wo]) => wo === 'gruppe/planLesen'), true, 'der Fehler wird gemeldet, nicht verschluckt');
+  } finally { zurueck(); }
+});
+
+test('aus dem Bereich Training: ?g=&termin= öffnet den Termin in seiner Gruppe', async () => {
+  const { doc, zurueck } = await starteGruppe({
+    suche: '?g=g1&termin=t1', plaene: [planFuerAlle], heute: HEUTE, mitglieder: MITGLIEDER,
+    termine: TERMINE,
+    bereit: d => !d.getElementById('secDetail').hidden,
   });
-  /* Die Termine und die Mitglieder stehen trotzdem. */
-  assert.equal(doc4.getElementById('secMitglieder').hidden, false);
-  assert.equal(doc4.getElementById('wocheStreifen').hidden, true);
-  assert.equal(globalThis.__fehler.some(([wo]) => wo === 'gruppe/planLesen'), true,
-    'der Fehler wird gemeldet, nicht verschluckt');
+  try {
+    assert.equal(doc.getElementById('secDetail').hidden, false, 'der Termin geht nicht auf');
+    assert.equal(doc.getElementById('secWoche').hidden, true);
+  } finally { zurueck(); }
 });

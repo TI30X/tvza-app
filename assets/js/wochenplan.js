@@ -193,6 +193,151 @@ export function planZusammenfassung(programm) {
   };
 }
 
+/* ══ Die Woche als Kalender (v.35.42.0) ═════════════════════════════
+   Bis dahin zeigte die Ansicht EINEN Plan — eine eingelesene Excel —
+   und man wechselte über eine Auswahl. Michel: "Kann man nicht Woche
+   vor oder zurück?" Und die Termine der Gruppe standen in einer eigenen
+   Liste daneben. Jetzt ist die Woche ein Kalender: jede Kalenderwoche
+   sammelt, was in ihr liegt — die Tage aller Pläne und alle Termine.
+
+   Alles hier rechnet mit ISO-Tagen ('2026-08-05') in Ortszeit und ohne
+   Uhrzeit. Ein Date mit 12 Uhr statt Mitternacht, damit eine
+   Zeitumstellung den Tag nicht verschiebt. */
+
+const pad = n => String(n).padStart(2, '0');
+const alsTag = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const mittag = iso => new Date(`${iso}T12:00:00`);
+
+/** Der Tag n Tage nach iso (n darf negativ sein). */
+export function plusTage(iso, n) {
+  const d = mittag(iso);
+  d.setDate(d.getDate() + n);
+  return alsTag(d);
+}
+
+/** Der Montag der Woche, in der iso liegt. */
+export function montagVon(iso) {
+  const d = mittag(iso);
+  return plusTage(iso, -((d.getDay() + 6) % 7));
+}
+
+/** Die sieben Tage ab einem Montag. */
+export function wocheAb(montag) {
+  return Array.from({ length: 7 }, (_, i) => plusTage(montag, i));
+}
+
+/** Die Kalenderwoche nach ISO 8601 — dieselbe Zahl wie "KW 31" in der Vorlage. */
+export function kwVon(iso) {
+  const donnerstag = mittag(plusTage(montagVon(iso), 3));
+  const jan4 = new Date(donnerstag.getFullYear(), 0, 4, 12);
+  const ersteWoche = mittag(montagVon(alsTag(jan4)));
+  return 1 + Math.round((donnerstag - ersteWoche) / (7 * 864e5) - 3 / 7);
+}
+
+/** Der Montag der ISO-Kalenderwoche kw im Jahr jahr. */
+export function montagDerKw(jahr, kw) {
+  const jan4 = alsTag(new Date(jahr, 0, 4, 12));
+  return plusTage(montagVon(jan4), (kw - 1) * 7);
+}
+
+/**
+ * Die Tage eines Plans mit Datum.
+ *
+ * Die Kadervorlage nennt den Zeitraum ("03.08. - 09.08.2026"), und der
+ * Parser gibt jedem Tag sein Datum. Fehlt der Zeitraum, aber die KW
+ * steht da, liegt der Plan in dieser KW des laufenden Jahres. Ohne
+ * beides hat ein Plan keinen Platz im Kalender.
+ */
+export function planTageMitDatum(programm, heute) {
+  const tage = wochenTage(programm);
+  if (tage.some(t => t.datum)) return tage.filter(t => t.datum);
+  const kw = wochenKopf(programm).kw;
+  if (!kw || !heute) return [];
+  const montag = montagDerKw(Number(heute.slice(0, 4)), kw);
+  return tage.slice(0, 7).map((t, i) => ({ ...t, datum: plusTage(montag, i) }));
+}
+
+/* Wann ein Plan veröffentlicht wurde — für "der neuere gewinnt". */
+function zeitVon(plan) {
+  const e = plan?.erstelltAm;
+  if (!e) return 0;
+  if (typeof e.toMillis === 'function') return e.toMillis();
+  if (Number.isFinite(e.seconds)) return e.seconds * 1000;
+  const n = Date.parse(e);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * Die Woche ab montag: je Tag die Termine und die Einträge der Pläne.
+ *
+ * @param {object} o
+ * @param {string} o.montag
+ * @param {Array<{gid:string, plan:object, programm:object, gruppe?:string}>} o.quellen
+ * @param {Array<object>} [o.termine]  Termine mit gid (und gruppe) am Termin
+ * @param {string} [o.heute]
+ *
+ * Deckt derselbe Mensch denselben Tag mit zwei Plänen ab — die Excel
+ * derselben Woche zweimal eingelesen —, gewinnt der neuere. Ein Plan
+ * "für alle" und einer "für Timo" am selben Tag stehen beide da: das
+ * sind zwei Ansagen, keine Dublette.
+ */
+export function agendaTage({ montag, quellen = [], termine = [], heute = '' }) {
+  const mitTagen = quellen.map(q => ({ ...q, tage: planTageMitDatum(q.programm, heute) }));
+  return wocheAb(montag).map(datum => {
+    const beste = new Map();
+    for (const q of mitTagen) {
+      const tag = q.tage.find(t => t.datum === datum);
+      if (!tag) continue;
+      const wer = `${q.gid}|${q.plan?.fuer || ''}`;
+      const bisher = beste.get(wer);
+      if (!bisher || zeitVon(q.plan) > zeitVon(bisher.q.plan)) beste.set(wer, { q, tag });
+    }
+    const eintraege = [...beste.values()].flatMap(({ q, tag }) =>
+      tag.eintraege.map(e => ({ ...e, gid: q.gid, planId: q.plan?.id || '', programm: q.programm, gruppe: q.gruppe || '' })));
+    const amTag = termine
+      .filter(t => laeuft(t, datum))
+      .sort((a, b) => String(a.zeit || '').localeCompare(String(b.zeit || '')));
+    return { datum, termine: amTag, eintraege, heute: datum === heute };
+  });
+}
+
+/* Ein Termin läuft an einem Tag — mehrtägig (Lager) an jedem Tag dazwischen. */
+function laeuft(termin, tag) {
+  const von = termin?.von;
+  if (!von) return false;
+  const bis = termin.bis && termin.bis > von ? termin.bis : von;
+  return von <= tag && tag <= bis;
+}
+
+/**
+ * Welche Woche beim Öffnen gezeigt wird.
+ *
+ * Die laufende, wenn darin etwas steht. Sonst die nächste Woche mit
+ * einem Plan, und gibt es keine, die letzte — wer die Excel von KW 31
+ * im September einliest, soll nicht sechsmal zurückblättern müssen, um
+ * sie zu sehen.
+ */
+export function startWoche({ heute, quellen = [], termine = [] }) {
+  const jetzt = montagVon(heute);
+  const inWoche = m => agendaTage({ montag: m, quellen, termine, heute })
+    .some(t => t.termine.length || t.eintraege.length);
+  if (inWoche(jetzt)) return jetzt;
+  const planWochen = [...new Set(quellen.flatMap(q => planTageMitDatum(q.programm, heute).map(t => montagVon(t.datum))))].sort();
+  return planWochen.find(m => m > jetzt) || planWochen[planWochen.length - 1] || jetzt;
+}
+
+/**
+ * Der nächste Termin nach der gezeigten Woche — "Als Nächstes".
+ * Wer eine ruhige Woche sieht, soll trotzdem wissen, dass in drei
+ * Wochen ein Rennen ist.
+ */
+export function naechsterNach(termine, montag) {
+  const ende = plusTage(montag, 6);
+  return [...(termine || [])]
+    .filter(t => t?.von && t.von > ende)
+    .sort((a, b) => `${a.von}${a.zeit || ''}`.localeCompare(`${b.von}${b.zeit || ''}`))[0] || null;
+}
+
 /** Der Titel, den der Trainer nicht tippen muss: die Woche selbst. */
 export function planTitelVorschlag(programm) {
   const kopf = wochenKopf(programm);

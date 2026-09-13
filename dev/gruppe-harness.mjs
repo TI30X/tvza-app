@@ -48,7 +48,13 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
       w?.dispatchEvent(new w.CustomEvent('firn-gruppe', { detail: { gid: id } }));
     };
     export const beobachteMeineGruppen = (uid, cb) => { cb(${JSON.stringify(gruppen)}); return () => {}; };
-    export const beobachteTermine = () => () => {};
+    /* Termine: globalThis.__termine ist eine Liste (für jede Gruppe) oder
+       { gid: [...] }. Geliefert wird wie von onSnapshot: später. */
+    export const beobachteTermine = (gid, cb) => {
+      const alle = globalThis.__termine || [];
+      setTimeout(() => cb(Array.isArray(alle) ? alle : (alle[gid] || [])), 0);
+      return () => {};
+    };
     export const ladeMitglieder = async () => ${JSON.stringify(mitglieder)};
     /* Eine Liste gilt fuer jede Gruppe; ein Objekt { gid: [...] } je
        Gruppe — fuer den Bereich Training, der mehrere liest. */
@@ -56,7 +62,10 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
       const alle = ${JSON.stringify(plaene)};
       return Array.isArray(alle) ? alle : (alle[gid] || []);
     };
-    export const ladeProtokolle = async () => ${JSON.stringify(protokolle)};
+    export const ladeProtokolle = async (gid, uid) => {
+      (globalThis.__aufrufe ||= []).push(['ladeProtokolle', gid, uid]);
+      return ${JSON.stringify(protokolle)};
+    };
     export const ladeZusagen = async () => [];
     export const ladeErgebnisse = async () => [];
     export const ladeAnhaenge = async () => [];
@@ -149,6 +158,7 @@ async function lade({
   protokolle = [],
   mitglieder = [{ uid: 'timo', name: 'Timothy', rolle: 'mitglied' }],
   heute = '2026-08-05',
+  termine = [],
 }) {
   const html = await readFile(join(root, `pages/${seite}.html`), 'utf8');
   const dom = new JSDOM(html.replace(/<script\b[^>]*><\/script>/gi, ''), {
@@ -162,6 +172,7 @@ async function lade({
   globalThis.location = window.location;
   globalThis.__fehler = [];
   globalThis.__aufrufe = [];
+  globalThis.__termine = termine;
   globalThis.__antwort = { gruppeAnlegen: 'g-neu' };
 
   /* termine.js liest die Systemuhr. Ohne gestellte Uhr hinge der Test

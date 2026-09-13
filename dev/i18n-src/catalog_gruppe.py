@@ -73,18 +73,29 @@ KEYS = {
 # Der Plan ist eine Woche, kein Aktenschrank: was heute dran ist,
 # steht oben, und ein Tag ohne Eintrag ist ein Ruhetag und keine
 # Luecke.
+# Die Woche als Kalender (v.35.42.0): Termine und Plan in einer Ansicht.
+'grp.woche': ('Woche', 'Week', 'Semaine', 'Settimana', 'Tydzień', 'Week', 'Semana'),
+'grp.wessenWoche': ('Wessen Woche', 'Whose week', 'La semaine de qui', 'Di chi è la settimana',
+                    'Czyj tydzień', 'Wiens week', 'De quién es la semana'),
+'ag.vorige': ('Vorige Woche', 'Previous week', 'Semaine précédente', 'Settimana precedente',
+              'Poprzedni tydzień', 'Vorige week', 'Semana anterior'),
+'ag.naechste': ('Nächste Woche', 'Next week', 'Semaine suivante', 'Settimana successiva',
+                'Następny tydzień', 'Volgende week', 'Semana siguiente'),
+'ag.heute': ('Heute', 'Today', 'Aujourd’hui', 'Oggi', 'Dziś', 'Vandaag', 'Hoy'),
+'ag.leer': ('In dieser Woche ist nichts geplant.', 'Nothing is planned this week.',
+            'Rien n’est prévu cette semaine.', 'Niente in programma questa settimana.',
+            'W tym tygodniu nic nie zaplanowano.', 'Deze week staat er niets gepland.',
+            'No hay nada previsto esta semana.'),
+'ag.neu': ('Termin am {tag} hinzufügen', 'Add an event on {tag}', 'Ajouter un rendez-vous le {tag}',
+           'Aggiungi un appuntamento il {tag}', 'Dodaj termin: {tag}', 'Afspraak op {tag} toevoegen',
+           'Añadir una cita el {tag}'),
+'ag.alsNaechstes': ('Als Nächstes', 'Coming up', 'À venir', 'Prossimamente', 'Wkrótce', 'Hierna', 'Próximamente'),
 'grp.heute': ('Heute', 'Today', "Aujourd'hui", 'Oggi', 'Dzisiaj', 'Vandaag', 'Hoy'),
-'grp.ruhetag': ('Ruhetag — nichts geplant.', 'Rest day — nothing planned.',
-               'Jour de repos — rien de prévu.', 'Giorno di riposo — niente in programma.',
-               'Dzień odpoczynku — nic nie zaplanowano.', 'Rustdag — niets gepland.',
-               'Día de descanso — nada planificado.'),
 # Im Plan genannt, aber ohne Uebungsblatt: "evtl. Spiel (Tennis…)".
 # Kein Fehler beim Import, sondern eine Ansage des Trainers.
 'grp.keinBlatt': ('kein Blatt hinterlegt', 'no sheet attached', 'aucune fiche jointe',
                  'nessuna scheda allegata', 'brak arkusza', 'geen blad gekoppeld',
                  'sin ficha adjunta'),
-'grp.nurFuerDich': ('nur für dich', 'just for you', 'rien que pour toi',
-                   'solo per te', 'tylko dla ciebie', 'alleen voor jou', 'sólo para ti'),
 # ── Eine Gruppe anlegen ──────────────────────────────────────────
 # Drei Karten statt einer Ziffer in einem Browserfenster.
 'grp.neuTitel': ('Neue Gruppe', 'New group', 'Nouveau groupe', 'Nuovo gruppo', 'Nowa grupa', 'Nieuwe groep', 'Nuevo grupo'),
@@ -197,10 +208,10 @@ KEYS = {
 # ── Der Bereich Training: die Woche aus der Gruppe ───────────────
 'tr.seitentitel': ('Training — Firn', 'Training — Firn', 'Entraînement — Firn', 'Allenamento — Firn',
                    'Trening — Firn', 'Training — Firn', 'Entrenamiento — Firn'),
-'tr.planWaehlen': ('Plan wählen', 'Choose plan', 'Choisir le plan', 'Scegli il piano',
-                   'Wybierz plan', 'Plan kiezen', 'Elegir plan'),
 'tr.zurGruppe': ('Zur Gruppe', 'Go to group', 'Vers le groupe', 'Vai al gruppo',
                  'Do grupy', 'Naar de groep', 'Ir al grupo'),
+'tr.ausGruppen': ('Aus deinen Gruppen', 'From your groups', 'De tes groupes', 'Dai tuoi gruppi',
+                  'Z twoich grup', 'Uit je groepen', 'De tus grupos'),
 'tr.ohneGruppe': ('Dein Training kommt aus deiner Gruppe. Tritt ihr bei oder lege eine an — dann steht hier die Woche, die dein Trainer veröffentlicht.',
                   'Your training comes from your group. Join it or create one — then the week your coach publishes appears here.',
                   'Ton entraînement vient de ton groupe. Rejoins-le ou crée-en un — la semaine publiée par ton entraîneur apparaîtra ici.',

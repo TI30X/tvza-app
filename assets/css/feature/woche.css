@@ -1,81 +1,103 @@
 /* ══════════════════════════════════════════════════════════════════
    Die Woche — auf der Gruppenseite und im Bereich Training.
 
-   Seit v.35.26.0 eine eigene Datei: beide Seiten zeichnen dieselbe
-   Woche mit demselben Baustein (feature/woche/woche.js), also mit
-   denselben Regeln.
+   Beide Seiten zeichnen dieselbe Woche mit demselben Baustein
+   (feature/woche/woche.js), also mit denselben Regeln.
 
-   Sieben Tage nebeneinander, darunter der gewaehlte Tag als Zeilen.
-   Warum der Streifen und nicht sieben Ueberschriften untereinander:
-   auf einem Telefon waere die Woche dann zwei Bildschirme hoch, und
-   die Frage "was ist heute" braeuchte Scrollen.
+   Seit v.35.42.0 senkrecht, wie bei Spond: oben blättert man die Woche,
+   darunter steht jeder Tag mit seinen Terminen und Einheiten. Bis dahin
+   ein Streifen aus sieben Tagen, damit die Woche auf dem Telefon nicht
+   zwei Bildschirme hoch wird — darum sind leere Tage hier eine einzige
+   Zeile, und nur Tage mit Inhalt nehmen Platz.
 
-   Alle Abstaende kommen aus der Skala in kit.css. Freie Zahlen stehen
-   nur dort, wo es um eine physische Groesse geht — die Punkte im
-   Streifen sind 5 Pixel, weil sie sonst kein Punkt mehr sind.
+   Alle Abstände kommen aus der Skala in kit.css. Freie Zahlen stehen
+   nur dort, wo es um eine physische Grösse geht — ein Knopf, den ein
+   Daumen treffen muss, ist 40 Pixel hoch.
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── Der Wochenstreifen ────────────────────────────────────────────*/
+/* ── Der Kopf: blättern ────────────────────────────────────────────*/
 
-.woche {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: var(--s1);
+.agenda__kopf {
+  display: flex; align-items: center; gap: var(--s2);
   margin-bottom: var(--s4);
 }
-
-.woche__tag {
-  display: flex; flex-direction: column; align-items: center;
-  gap: var(--s1);
-  padding: var(--s2) var(--s1);
+.agenda__pfeil,
+.agenda__heute {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 40px; flex: none;
   border: 1px solid var(--border);
-  border-radius: var(--r-icon);
   background: var(--surface);
-  color: var(--ink-soft);
+  color: var(--ink);
   font: inherit;
   cursor: pointer;
-  /* Sieben Spalten auf 320 Pixeln: ohne das sprengt ein langes Datum
-     das Raster, statt sich zu kuerzen. */
-  min-width: 0;
-  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition: border-color 150ms ease, color 150ms ease;
 }
-.woche__tag:hover { border-color: var(--accent); }
-
-/* Heute ist markiert, auch wenn ein anderer Tag gewaehlt ist — sonst
-   verliert man beim Blaettern den Bezugspunkt. */
-.woche__tag.ist-heute { border-color: var(--accent); color: var(--ink); }
-
-.woche__tag[aria-selected="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--surface);
-}
-
-.woche__name { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; }
-.woche__datum { font-size: 11px; opacity: 0.75; }
-
-/* Ein Punkt je Einheit des Tages. Eine Zahl wie "3/8" ist in einer
-   Siebtel-Spalte nicht lesbar; ein voller Punkt schon. */
-.woche__punkte {
-  display: flex; gap: 3px; justify-content: center;
-  min-height: 5px;
-}
-.woche__punkt {
-  width: 5px; height: 5px;
+.agenda__pfeil { width: 40px; border-radius: var(--r-icon); }
+.agenda__heute {
+  padding: 0 var(--s3);
   border-radius: var(--r-pill);
-  background: currentColor;
-  opacity: 0.35;
+  font-size: 13px; font-weight: 700;
 }
-.woche__punkt.ist-fertig { background: var(--ok); opacity: 1; }
-.woche__tag[aria-selected="true"] .woche__punkt.ist-fertig { background: var(--surface); }
+.agenda__pfeil:hover,
+.agenda__heute:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ── Der gewaehlte Tag ─────────────────────────────────────────────*/
+.agenda__zeitraum {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+.agenda__daten { font-size: 16px; font-weight: 800; }
+/* Die Woche, wie die Excel sie nennt ("KW 31 · TW 17"). Leer, wenn
+   kein Plan in der Woche liegt — die Höhe bleibt trotzdem, sonst
+   springt der Kopf beim Blättern. */
+.agenda__kw { min-height: 1.4em; font-size: 12px; font-weight: 600; color: var(--ink-soft); }
 
-.marke--tag { display: flex; align-items: baseline; gap: var(--s2); }
-.marke--tag .tag__datum { font-weight: 600; letter-spacing: 0; opacity: 0.8; }
+/* ── Die Tage ──────────────────────────────────────────────────────*/
+
+.agenda__tage { display: flex; flex-direction: column; gap: var(--s4); }
+
+.agenda__datum {
+  display: flex; align-items: center; gap: var(--s2);
+  min-height: 32px;
+  margin-bottom: var(--s2);
+}
+.agenda__wtag { font-size: 14px; font-weight: 800; }
+.agenda__dnum { font-size: 13px; color: var(--ink-soft); }
+
+/* Heute ist markiert, egal wohin man blättert — der Bezugspunkt. */
+.agenda__tag.ist-heute .agenda__wtag { color: var(--accent); }
+.agenda__tag.ist-heute .agenda__datum {
+  padding-left: var(--s2);
+  border-left: 3px solid var(--accent);
+}
+
+/* Ein leerer Tag ist eine Zeile, blass — er soll da sein, aber
+   keinen Platz fressen. */
+.agenda__tag.ist-leer .agenda__datum { margin-bottom: 0; }
+.agenda__tag.ist-leer .agenda__wtag,
+.agenda__tag.ist-leer .agenda__dnum { opacity: 0.6; }
+
+/* "+" für einen Termin an genau diesem Tag — nur die Leitung sieht es. */
+.agenda__neu {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; margin-left: auto; flex: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-icon);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease;
+}
+.agenda__neu:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Abgesagt bleibt stehen — sonst fährt jemand hin —, aber durchgestrichen. */
+.agenda__termin.ist-abgesagt .row__title { text-decoration: line-through; color: var(--ink-soft); }
+
+.agenda__nichts { margin-bottom: var(--s3); text-align: center; }
+.agenda__danach { margin-top: var(--s5); }
 
 /* Vormittag / Nachmittag steht am Eintrag, nicht als Zwischentitel:
-   ein Kasten je Tageshaelfte waere viel Rahmen um oft eine Zeile. */
+   ein Kasten je Tageshälfte wäre viel Rahmen um oft eine Zeile. */
 .eintrag__slot {
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -98,11 +120,14 @@
 .row__zaehler.ist-fertig { color: var(--ok); }
 
 /* Die Fortschrittsleiste ist .row__bar aus dem Kit — sie sitzt im
-   .row__body und laeuft damit unter dem Namen statt neben ihm.
-   Fertig faerbt sie um; sonst muesste man die Zahl daneben lesen,
+   .row__body und läuft damit unter dem Namen statt neben ihm.
+   Fertig färbt sie um; sonst müsste man die Zahl daneben lesen,
    um zu wissen, ob es fertig ist. */
 .row__bar > i.ist-fertig { background: var(--ok); }
 
+/* Die Personenwahl der Leitung sitzt rechts in der Überschrift. */
+.marke--reihe .woche__person { width: auto; max-width: 60%; }
+
 @media (prefers-reduced-motion: reduce) {
-  .woche__tag { transition: none; }
+  .agenda__pfeil, .agenda__heute, .agenda__neu { transition: none; }
 }

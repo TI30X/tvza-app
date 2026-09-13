@@ -57,10 +57,12 @@ test('Service Worker legt Seite, Baustein und Parser in den Shell-Cache', async 
      Test, ohne dass etwas falsch war. */
   const modul = seite.match(/feature\/training\/training\.js\?v=\d+/)?.[0];
   assert.ok(modul, 'training.html laedt kein versioniertes Modul');
+  const stil = seite.match(/feature\/woche\.css\?v=\d+/)?.[0];
+  assert.ok(stil, 'training.html laedt woche.css nicht versioniert');
   ['./pages/training.html',
    `./assets/js/${modul}`,
    './assets/js/feature/woche/woche.js',
-   './assets/css/feature/woche.css?v=1',
+   `./assets/css/${stil}`,
    './assets/js/training-parser.js',
    './assets/data/training/images.json'].forEach(entry => {
     assert.ok(sw.includes(`'${entry}'`), `sw.js ohne ${entry}`);
@@ -108,7 +110,7 @@ test('der Bereich Training liest die Plaene der Gruppen, keinen eigenen Speicher
      Trainer nie. */
   assert.match(js, /from '\.\.\/\.\.\/groups\.js'/);
   assert.match(js, /ladePlaene\(/);
-  assert.match(js, /wochenAnsicht\(\{[\s\S]*zurueck: 'training'/);
+  assert.match(js, /agendaAnsicht\(\{[\s\S]*zurueck: 'training'/);
   assert.doesNotMatch(js, /trainingLogs|trainingPrograms|training-sync/);
   /* Eingelesen wird in der Gruppe, nicht hier. */
   assert.doesNotMatch(js, /gridFromFile|training-import/);
