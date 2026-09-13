@@ -226,7 +226,7 @@ test('die App hat keinen globalen Projekt-Feed mehr', async () => {
 });
 
 test('die oeffentliche Seite bleibt und behaelt ihren Speicher', async () => {
-  const oeffentlich = await readFile(new URL('../public.html', import.meta.url), 'utf8');
+  const oeffentlich = await leserMitStart(wurzel)('public.html');
   assert.match(oeffentlich, /collection\(db, 'publicProjects'\)/,
     'public.html liest die Sammlung nicht mehr — ohne sie ist die geteilte Seite leer');
   assert.match(dashboard, /doc\(db, 'publicProjects'/,

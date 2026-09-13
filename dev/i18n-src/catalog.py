@@ -100,6 +100,11 @@ KEYS = {
              'Trening, terminy i analiza wideo dla kadr i klubów',
              'Training, data en video-analyse voor selecties en clubs',
              'Entrenamiento, fechas y análisis de vídeo para equipos y clubes'),
+# Der Name des Betreibers steht einmal je Seite, in der Fusszeile, und
+# nie nackt unter dem Zeichen — dort las er sich wie ein Teil des Logos.
+'fuss.betrieben': ('betrieben von {wer}', 'run by {wer}', 'géré par {wer}',
+                   'gestito da {wer}', 'prowadzi: {wer}', 'beheerd door {wer}',
+                   'gestionado por {wer}'),
 # Die Leiste am Laptop laesst sich auf die Symbole einklappen.
 'nav.einklappen': ('Leiste einklappen', 'Collapse the sidebar',
                   'Réduire la barre latérale', 'Riduci la barra laterale',

@@ -12,24 +12,9 @@
   <link rel="stylesheet" href="../assets/css/kit.css?v=13" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <link rel="stylesheet" href="../assets/css/feature/gast.css?v=1" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
   <title data-i18n="gast.seitentitel">Gast-Zugang — Firn</title>
-  <style>
-    .g-msgs { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px 2px; }
-    .g-bubble { max-width: 80%; padding: 8px 12px; border-radius: var(--r-panel); font-size: 14px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
-    .g-bubble.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
-    .g-bubble.them { align-self: flex-start; background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); border-bottom-left-radius: 5px; }
-    .g-compose { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: end; margin-top: 10px; }
-    .g-day { font-weight: 700; font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; margin: 14px 0 8px; }
-    .g-day:first-child { margin-top: 0; }
-    .g-viewer { position: fixed; inset: 0; background: var(--surface); z-index: 200; display: none; flex-direction: column; }
-    .g-viewer.visible { display: flex; }
-    .g-viewer-bar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-    .g-viewer-bar span { font-weight: 700; flex: 1; }
-    .g-viewer iframe { flex: 1; width: 100%; border: 0; background: #fff; }
-    .g-viewer-bar .icon-pill { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
-      border: 1px solid var(--border); border-radius: var(--r1); background: var(--surface); color: var(--ink); cursor: pointer; font-size: 18px; }
-  </style>
   <link rel="icon" type="image/svg+xml" href="../assets/icons/firn.svg" />
   <link rel="apple-touch-icon" href="../assets/icons/firn-192.png" />
 </head>
@@ -44,35 +29,35 @@
     <main class="main">
       <div id="loading" class="spinner" data-i18n="common.laden">Lade…</div>
 
-      <div id="requestForm" style="display:none">
+      <div id="requestForm" hidden>
         <div class="form-card">
           <p class="form-title" id="authTitle">Willkommen!</p>
-          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:14px" id="authSub">
+          <p class="gast-sub" id="authSub">
             Erstelle ein Konto mit E-Mail und Passwort, um den Reiseplan zu sehen.
           </p>
-          <div class="login-error" id="authErr" style="background:var(--accent-bg);color:var(--accent);font-size:13px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r1);margin-bottom:14px;display:none"></div>
+          <div class="gast-fehler" id="authErr" hidden></div>
           <div class="field" id="gNameField"><label class="form-label" data-i18n="login.name">Dein Name</label><input id="gName" class="form-input" type="text" autocomplete="name" /></div>
           <div class="field"><label class="form-label" data-i18n="gast.mail">E-Mail-Adresse</label><input id="gEmail" class="form-input" type="email" autocomplete="username" inputmode="email" autocapitalize="none" /></div>
           <div class="field"><label class="form-label" data-i18n="login.pass">Passwort</label><input id="gPass" class="form-input" type="password" placeholder="mind. 6 Zeichen" data-i18n-attr="placeholder:gast.passPh" autocomplete="new-password" autocapitalize="none" /></div>
-          <button id="requestBtn" class="btn btn-primary btn-block" style="margin-top:8px">Konto erstellen</button>
-          <p class="switch-mode" style="text-align:center;font-size:13px;color:var(--ink-soft);margin-top:14px">
-            <span id="switchText">Schon ein Konto? </span><a id="switchLink" style="color:var(--accent);font-weight:700;cursor:pointer">Anmelden</a>
+          <button id="requestBtn" class="btn btn-primary btn-block gast-knopf">Konto erstellen</button>
+          <p class="gast-wechsel">
+            <span id="switchText">Schon ein Konto? </span><a id="switchLink">Anmelden</a>
           </p>
         </div>
       </div>
 
-      <div id="wrongAccount" style="display:none">
+      <div id="wrongAccount" hidden>
         <div class="empty-state">
           <span data-i18n="gast.falschesKonto">Auf diesem Gerät ist gerade ein Familienkonto angemeldet — dieser Link ist für Gäste gedacht.</span><br>
-          <button id="signOutBtn" class="btn btn-primary" style="margin-top:12px" data-i18n="gast.alsGast">Ausloggen &amp; als Gast anmelden</button>
+          <button id="signOutBtn" class="btn btn-primary gast-abmelden" data-i18n="gast.alsGast">Ausloggen &amp; als Gast anmelden</button>
         </div>
       </div>
 
-      <div id="invalidLink" style="display:none">
+      <div id="invalidLink" hidden>
         <div class="empty-state" data-i18n="gast.ungueltig">Dieser Link ist ungültig oder abgelaufen. Bitte frag die Familie nach einem neuen Link.</div>
       </div>
 
-      <div id="dashboard" style="display:none">
+      <div id="dashboard" hidden>
         <div class="form-card" id="tripCard"></div>
 
         <div class="form-card">
@@ -80,7 +65,7 @@
           <div id="itinList"></div>
         </div>
 
-        <div class="form-card" id="chatCard" style="display:none">
+        <div class="form-card" id="chatCard" hidden>
           <p class="form-title" data-i18n="gast.chat">Chat mit der Familie</p>
           <div class="g-msgs" id="msgs"></div>
           <div class="g-compose">
@@ -101,242 +86,6 @@
     <iframe id="gViewerFrame" sandbox="allow-same-origin allow-popups" referrerpolicy="no-referrer"></iframe>
   </div>
 
-  <script type="module">
-    import { auth, db, escHtml } from '../assets/js/firebase-config.js';
-    import {
-      doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, increment
-    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import {
-      signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut
-    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-
-    const $ = id => document.getElementById(id);
-    const params = new URLSearchParams(location.search);
-    /* Beschriftungen, die der Code setzt, kommen per tOr: bis der Katalog
-       da ist, steht Deutsch, nie der Schluessel. */
-    const T = (key, deutsch) => window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch) : deutsch;
-
-    // Trip/token travel via the URL on first open; stashed in localStorage so
-    // a guest can come back later without the full link.
-    const tripId = params.get('trip') || localStorage.getItem('tvza.guestTrip') || '';
-    const token  = params.get('token') || localStorage.getItem('tvza.guestToken') || '';
-    if (params.get('trip'))  localStorage.setItem('tvza.guestTrip', tripId);
-    if (params.get('token')) localStorage.setItem('tvza.guestToken', token);
-
-    function show(id) {
-      ['loading', 'requestForm', 'wrongAccount', 'invalidLink', 'dashboard']
-        .forEach(x => { $(x).style.display = x === id ? '' : 'none'; });
-    }
-
-    async function ensureGuestAccess(user, name) {
-      const profRef = doc(db, 'guestProfiles', user.uid);
-      const profSnap = await getDoc(profRef);
-      if (!profSnap.exists()) {
-        await setDoc(profRef, {
-          email: user.email || '',
-          name: name || user.email || 'Gast',
-          createdAt: serverTimestamp(),
-          lastActiveAt: serverTimestamp()
-        });
-      } else {
-        // Touch lastActiveAt on every return visit — this is what lets the
-        // family spot guests inactive 30+ days in the Gast-Zugang list.
-        await updateDoc(profRef, { lastActiveAt: serverTimestamp() }).catch(() => {});
-      }
-      const accessRef = doc(db, 'guestAccess', `${user.uid}_${tripId}`);
-      // Defensive: falls das get (z.B. durch alte Rules) scheitert, trotzdem
-      // versuchen, den Zugang anzulegen — create validiert ohnehin das Token.
-      const accessSnap = await getDoc(accessRef).catch(() => null);
-      if (!accessSnap || !accessSnap.exists()) {
-        await setDoc(accessRef, { uid: user.uid, tripId, token, createdAt: serverTimestamp() });
-      }
-    }
-
-    /* Die Reise wird einmal geholt und bei jedem Sprachwechsel neu
-       gezeichnet — ohne erneutes Lesen und ohne neuen tripViews-Eintrag. */
-    let geladeneReise = null;
-    function zeichneReise(trip) {
-      $('tripCard').innerHTML = `
-        <p class="form-title">${escHtml(trip.name || T('gast.reise', 'Reise'))}</p>
-        ${trip.destination ? `<p style="color:var(--ink-soft);font-size:14px">${escHtml(trip.destination)}</p>` : ''}
-        ${trip.notes ? `<p style="margin-top:8px;font-size:14px">${escHtml(trip.notes)}</p>` : ''}
-        ${(trip.planHtml || trip.planUrl) ? `<button class="btn btn-primary btn-block" id="gViewOriginal" style="margin-top:12px">${T('gast.original', 'Original-Design ansehen')}</button>` : ''}
-      `;
-      if ($('gViewOriginal')) $('gViewOriginal').onclick = () => {
-        const f = $('gViewerFrame');
-        if (trip.planUrl) { f.removeAttribute('srcdoc'); f.src = trip.planUrl; }
-        else { f.removeAttribute('src'); f.srcdoc = trip.planHtml || ''; }
-        $('gViewer').classList.add('visible');
-      };
-
-      const itin = (trip.itinerary || []).slice()
-        .sort((a, b) => ((a.date || '') + (a.time || '')).localeCompare((b.date || '') + (b.time || '')));
-      const byDay = {};
-      itin.forEach(it => { (byDay[it.date || ''] = byDay[it.date || ''] || []).push(it); });
-      const dayKeys = Object.keys(byDay).sort();
-      $('itinList').innerHTML = dayKeys.length ? dayKeys.map(d => `
-        <div class="g-day">${d ? escHtml(d) : T('gast.ohneDatum', 'Ohne Datum')}</div>
-        ${byDay[d].map(it => `
-          <div class="line">
-            <span class="l-main">
-              <span class="l-title">${it.time ? escHtml(it.time) + ' — ' : ''}${escHtml(it.title)}</span>
-              ${it.notes ? `<span class="l-sub">${escHtml(it.notes)}</span>` : ''}
-            </span>
-          </div>`).join('')}
-      `).join('') : `<p class="empty-hint" style="padding:10px">${T('gast.keinProgramm', 'Noch kein Programm hinterlegt.')}</p>`;
-    }
-
-    async function loadDashboard(user) {
-      const tripSnap = await getDoc(doc(db, 'trips', tripId));
-      if (!tripSnap.exists()) { show('invalidLink'); return; }
-      const trip = tripSnap.data();
-      geladeneReise = trip;
-      zeichneReise(trip);
-
-      // Log that this guest viewed the trip — family can see this, guest can't.
-      addDoc(collection(db, 'tripViews'), { tripId, guestUid: user.uid, viewedAt: serverTimestamp() }).catch(() => {});
-
-      if (trip.createdBy) {
-        $('chatCard').style.display = '';
-        wireChat(user.uid, trip.createdBy);
-      }
-      show('dashboard');
-    }
-
-    function convId(a, b) { return [a, b].sort().join('__'); }
-    function wireChat(me, other) {
-      const cid = convId(me, other);
-      onSnapshot(query(collection(db, 'dms', cid, 'messages'), orderBy('createdAt', 'asc')), snap => {
-        const box = $('msgs');
-        box.innerHTML = snap.docs.length ? snap.docs.map(d => {
-          const m = d.data(); const mine = m.sender === me;
-          return `<div class="g-bubble ${mine ? 'me' : 'them'}">${escHtml(m.text)}</div>`;
-        }).join('') : `<p class="empty-hint">${T('gast.keineNachrichten', 'Noch keine Nachrichten — sag Hallo.')}</p>`;
-        box.scrollTop = box.scrollHeight;
-      }, () => {});
-
-      $('sendBtn').onclick = async () => {
-        const text = $('msgInput').value.trim();
-        if (!text) return;
-        $('msgInput').value = '';
-        const convRef = doc(db, 'dms', cid);
-        const guestName = localStorage.getItem('tvza.guestName') || 'Gast';
-        await setDoc(convRef, {
-          participants: [me, other].sort(),
-          participantNames: { [me]: guestName },
-          lastMessage: text.slice(0, 140),
-          lastAt: serverTimestamp(),
-          lastSender: me,
-          unread: { [other]: increment(1), [me]: 0 }
-        }, { merge: true });
-        await addDoc(collection(convRef, 'messages'), { text, sender: me, createdAt: serverTimestamp() });
-      };
-      $('msgInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('sendBtn').click(); }
-      });
-    }
-
-    let mode = 'register'; // or 'login'
-    /* Diese fuenf Elemente beschriftet nur der Code — darum tragen sie
-       kein data-i18n (Falle 5 in CLAUDE.md). */
-    function beschrifte() {
-      const neu = mode === 'register';
-      $('authTitle').textContent = neu ? T('gast.willkommen', 'Willkommen!') : T('gast.willkommenZurueck', 'Willkommen zurück!');
-      $('authSub').textContent = neu
-        ? T('gast.subNeu', 'Erstelle ein Konto mit E-Mail und Passwort, um den Reiseplan zu sehen.')
-        : T('gast.subLogin', 'Melde dich mit E-Mail und Passwort an.');
-      $('requestBtn').textContent = neu ? T('gast.kontoErstellen', 'Konto erstellen') : T('login.anmelden', 'Anmelden');
-      $('switchText').textContent = (neu ? T('login.schonKonto', 'Schon ein Konto?') : T('login.keinKonto', 'Noch kein Konto?')) + ' ';
-      $('switchLink').textContent = neu ? T('login.anmelden', 'Anmelden') : T('login.registrieren', 'Registrieren');
-    }
-    function applyMode() {
-      $('gNameField').style.display = mode === 'register' ? '' : 'none';
-      beschrifte();
-      $('authErr').style.display = 'none';
-    }
-    function neuBeschriften() {
-      beschrifte();
-      if (geladeneReise) zeichneReise(geladeneReise);
-    }
-    if (window.TVZAI18n) window.TVZAI18n.ready.then(neuBeschriften, () => {});
-    window.addEventListener('tvza-lang-change', neuBeschriften);
-    $('switchLink').addEventListener('click', () => { mode = mode === 'register' ? 'login' : 'register'; applyMode(); });
-
-    function translateAuthError(code) {
-      if (code === 'auth/network-request-failed' || code === 'unavailable') {
-        return T('login.fehler.netz', 'Keine Internetverbindung. Bitte versuche es erneut.');
-      }
-      if (code === 'auth/weak-password') {
-        return T('login.fehler.schwach', 'Bitte verwende ein Passwort mit mindestens 6 Zeichen.');
-      }
-      if (mode === 'register') {
-        return T('gast.fehlerRegistrieren', 'Gastkonto konnte nicht erstellt werden. Prüfe E-Mail und Passwort.');
-      }
-      return T('login.fehler.anmelden', 'Anmeldung nicht möglich. Prüfe E-Mail und Passwort.');
-    }
-
-    // A family account has a users/{uid} profile created through an invitation.
-    // A Firebase Auth login without that profile is not a family member.
-    async function isFamilyAccount(uid) {
-      try { return await getDoc(doc(db, 'users', uid)).then(s => s.exists()); }
-      catch (e) { return false; }
-    }
-
-    let guestAuthInProgress = false;
-    async function init() {
-      if (!tripId || !token) { show('invalidLink'); return; }
-      applyMode();
-
-      onAuthStateChanged(auth, async user => {
-        if (guestAuthInProgress) return;
-        if (!user) { show('requestForm'); return; }
-        if (await isFamilyAccount(user.uid)) { show('wrongAccount'); return; }
-
-        try {
-          const name = $('gName').value.trim() || localStorage.getItem('tvza.guestName') || '';
-          await ensureGuestAccess(user, name);
-          await loadDashboard(user);
-        } catch (e) {
-          show('requestForm');
-        }
-      });
-    }
-
-    $('signOutBtn').addEventListener('click', async () => { await signOut(auth); location.reload(); });
-    $('gViewerClose').addEventListener('click', () => {
-      $('gViewer').classList.remove('visible');
-      const f = $('gViewerFrame'); f.removeAttribute('src'); f.removeAttribute('srcdoc');
-    });
-
-    $('requestBtn').addEventListener('click', async () => {
-      const name = $('gName').value.trim();
-      const email = $('gEmail').value.trim();
-      const pass = $('gPass').value;
-      if (!email || !pass) { $('authErr').textContent = T('login.fehler.leer', 'Bitte E-Mail und Passwort eingeben.'); $('authErr').style.display=''; return; }
-      if (mode === 'register' && !name) { $('authErr').textContent = T('login.fehler.name', 'Bitte deinen Namen eingeben.'); $('authErr').style.display=''; return; }
-      $('requestBtn').disabled = true;
-      guestAuthInProgress = true;
-      try {
-        localStorage.setItem('tvza.guestName', name);
-        const cred = mode === 'register'
-          ? await createUserWithEmailAndPassword(auth, email, pass)
-          : await signInWithEmailAndPassword(auth, email, pass);
-        // Same guard as the auto-login path above — never tag a real family
-        // account as a guest, even if someone types their real credentials
-        // into this form.
-        if (await isFamilyAccount(cred.user.uid)) { show('wrongAccount'); return; }
-        await ensureGuestAccess(cred.user, name);
-        await loadDashboard(cred.user);
-      } catch (e) {
-        $('authErr').textContent = translateAuthError(e.code);
-        $('authErr').style.display = '';
-        $('requestBtn').disabled = false;
-      } finally {
-        guestAuthInProgress = false;
-      }
-    });
-
-    init();
-  </script>
+  <script type="module" src="../assets/js/feature/gast/gast.js?v=1"></script>
 </body>
 </html>

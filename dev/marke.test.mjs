@@ -132,3 +132,30 @@ test('die Farbe des n traegt auf hellem, dunklem und Navy-Grund', async () => {
     assert.ok(kontrast(n, grund) >= 3, `${ort} (${grund}): nur ${kontrast(n, grund).toFixed(2)} : 1`);
   }
 });
+
+/* ── Der Name steht einmal ────────────────────────────────────────
+   Bis v.35.35.0 stand "Timothy van Zanten" auf der Projektseite viermal
+   sichtbar, auf Start und Willkommen nackt unter dem Firn-Zeichen — als
+   gehoere der Name zum Logo. Jetzt: je Seite hoechstens einmal, und nur
+   als "betrieben von …" (fuss.betrieben). Die Beschreibung im <head>
+   sieht niemand auf der Seite; sie bleibt aussen vor. */
+
+test('der Name des Betreibers steht je Seite hoechstens einmal, als „betrieben von"', async () => {
+  const wurzel = (await readdir(root)).filter(f => f.endsWith('.html'));
+  const unter = (await readdir(join(root, 'pages'))).filter(f => f.endsWith('.html')).map(f => `pages/${f}`);
+  const funde = [];
+  for (const f of [...wurzel, ...unter]) {
+    const html = (await readFile(join(root, f), 'utf8')).replace(/<!--[\s\S]*?-->/g, '');
+    const koerper = html.slice(html.indexOf('<body'));
+    const zeilen = koerper.match(/<[a-z]+[^>]*data-i18n="fuss\.betrieben"[^>]*>[^<]*</g) || [];
+    if (zeilen.length > 1) funde.push(`${f}: ${zeilen.length}× betrieben von`);
+    const rest = zeilen.reduce((k, z) => k.replace(z, ''), koerper);
+    if (/Timothy van Zanten/.test(rest)) funde.push(`${f}: der Name steht ausserhalb von fuss.betrieben`);
+  }
+  assert.deepEqual(funde, []);
+
+  const katalog = JSON.parse(await readFile(join(root, 'assets/i18n/de.json'), 'utf8'));
+  assert.equal(katalog['fuss.betrieben'], 'betrieben von {wer}');
+  assert.deepEqual(Object.entries(katalog).filter(([, v]) => /Timothy/.test(v)), [],
+    'ein Name gehoert in data-i18n-vars, nicht in den Katalog');
+});

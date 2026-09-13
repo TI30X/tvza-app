@@ -112,9 +112,10 @@ test('jeder sichtbare Text der Seite haengt an einem Schluessel', async () => {
     const text = m[3].trim();
     if (!text) continue;
     if (/data-i18n/.test(attribute)) continue;
-    /* Das Wortzeichen und der Name des Urhebers werden nicht
-       uebersetzt — Namen gehoeren den Leuten. */
-    if (text === 'Fir' || text === 'Timothy van Zanten') continue;
+    /* Das Wortzeichen wird nicht uebersetzt. Der Name des Betreibers
+       steht seit v.35.36.0 in fuss.betrieben und traegt damit selbst
+       ein data-i18n. */
+    if (text === 'Fir') continue;
     offen.push(text.slice(0, 40));
   }
 

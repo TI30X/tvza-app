@@ -1,0 +1,51 @@
+/* ══════════════════════════════════════════════════════════════════
+   Die Gastseite (pages/guest.html).
+
+   Wer einen Reiselink bekommt, ist kein Mitglied: ein Gastkonto sieht
+   genau eine Reise, ihr Programm und einen Chat mit der Person, die
+   sie angelegt hat. Bis v.35.35.0 stand das hier als <style>-Block
+   und als style="…" an elf Elementen in der Seite.
+
+   Abstände aus der Skala (Falle 8). Wo ein alter Wert zwischen zwei
+   Stufen lag, gewinnt die höhere: 10 → --s3, 14 → --s4.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Anmelden ─────────────────────────────────────────────────────── */
+.gast-sub { font-size: 14px; color: var(--ink-soft); margin-bottom: var(--s4); }
+.gast-fehler {
+  background: var(--accent-bg); color: var(--accent); font-size: 13px;
+  padding: var(--s3) var(--s3); border: 1px solid var(--border); border-radius: var(--r-icon);
+  margin-bottom: var(--s4);
+}
+.gast-knopf { margin-top: var(--s2); }
+.gast-wechsel { text-align: center; font-size: 13px; color: var(--ink-soft); margin-top: var(--s4); }
+.gast-wechsel a { color: var(--accent); font-weight: 700; cursor: pointer; }
+.gast-abmelden { margin-top: var(--s3); }
+
+/* ── Reise ────────────────────────────────────────────────────────── */
+.gast-ziel { color: var(--ink-soft); font-size: 14px; }
+.gast-notiz { margin-top: var(--s2); font-size: 14px; }
+.gast-original { margin-top: var(--s3); }
+.gast-leer { padding: var(--s3); }
+.g-day { font-weight: 700; font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; margin: var(--s4) 0 var(--s2); }
+.g-day:first-child { margin-top: 0; }
+
+/* ── Chat ─────────────────────────────────────────────────────────── */
+.g-msgs { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: var(--s2); padding: var(--s2) 2px; }
+.g-bubble { max-width: 80%; padding: var(--s2) var(--s3); border-radius: var(--r-panel); font-size: 14px; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
+.g-bubble.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
+.g-bubble.them { align-self: flex-start; background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); border-bottom-left-radius: 5px; }
+.g-compose { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: var(--s2); align-items: end; margin-top: var(--s3); }
+
+/* ── Das Original-Design im Vollbild ──────────────────────────────── */
+.g-viewer { position: fixed; inset: 0; background: var(--surface); z-index: 200; display: none; flex-direction: column; }
+.g-viewer.visible { display: flex; }
+.g-viewer-bar { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); }
+.g-viewer-bar span { font-weight: 700; flex: 1; }
+/* Weiss, nicht --surface: das Original bringt seine eigenen Farben mit
+   und rechnet mit hellem Grund, auch im dunklen Modus. */
+.g-viewer iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+.g-viewer-bar .icon-pill {
+  width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: var(--r-icon); background: var(--surface); color: var(--ink); cursor: pointer; font-size: 18px;
+}

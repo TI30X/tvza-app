@@ -38,11 +38,14 @@ export const SEITEN_MODULE = {
     'assets/js/feature/matura/tracker-ansicht.js',
     'assets/js/feature/matura/tracker.js',
   ],
+  /* Seit v.35.36.0 die Gastseite und die oeffentliche Projektseite. */
+  'pages/guest.html': ['assets/js/feature/gast/gast.js'],
+  'public.html': ['assets/js/feature/oeffentlich/oeffentlich.js'],
 };
 
 /**
  * Ein Ersatz fuer `read`, der eine Seite mit ihren Modulen ausliefert
- * (index.html und die Matura-Seiten). Jede andere Datei geht unveraendert
+ * (alle Seiten in SEITEN_MODULE). Jede andere Datei geht unveraendert
  * durch.
  */
 export function leserMitStart(root) {

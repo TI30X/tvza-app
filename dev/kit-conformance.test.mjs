@@ -16,6 +16,8 @@ const MIGRIERT = [
   'pages/skitracker.html',
   'pages/maturaarbeit.html',
   'pages/maturaarbeit-tracker.html',
+  'pages/guest.html',
+  'public.html',
 ];
 
 // U+2605/2606 (★/☆) excluded deliberately: they predate emoji, render as

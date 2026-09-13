@@ -19,9 +19,12 @@ Anmeldung, aber nicht als ein Produkt.
   `assets/js/firebase-config.js`.
 
 Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
-Michel baut und hostet.
+Michel baut und hostet. Timos Name steht je Seite **einmal**, als
+„betrieben von Timothy van Zanten" (`fuss.betrieben`) in der Fusszeile —
+nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
+(`dev/marke.test.mjs`).
 
-Version: **v.35.35.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.36.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -49,7 +52,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-54 Testdateien, **570 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+55 Testdateien, **597 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -114,12 +117,20 @@ Emoji als Funktionssymbol.
 `index.html` hielt das lange nicht — sie trug 2000 Zeilen Code in drei
 Inline-Modulen. Seit v.35.11.0 liegen die in `assets/js/feature/start/`.
 Die beiden Matura-Seiten folgten mit v.35.34.0 (`feature/matura/`, je ein
-`…-ansicht.js` ohne Firebase und ein Einstieg). Wer eine Seite umzieht,
-nimmt sie in `MIGRIERT` (`kit-conformance.test.mjs`) auf, und die Tests
-lesen sie über `leserMitStart` samt Modulen. Ein Stilblock, den man
-entfernt, wird **gemessen**, nicht abgeschrieben: bei der Maturaarbeit
-wirkten von 320 Zeilen noch zehn Regeln — der Rest war längst
-überschrieben.
+`…-ansicht.js` ohne Firebase und ein Einstieg), die Gastseite und die
+öffentliche Projektseite mit v.35.36.0 (`feature/gast/`,
+`feature/oeffentlich/`). Wer eine Seite umzieht, nimmt sie in `MIGRIERT`
+(`kit-conformance.test.mjs`) auf, und die Tests lesen sie über
+`leserMitStart` samt Modulen. Zustände schaltet `hidden`, nicht
+`style.display` — das Kit hält `[hidden]` mit `!important`. Ein
+Stilblock, den man entfernt, wird **gemessen**, nicht abgeschrieben: bei
+der Maturaarbeit wirkten von 320 Zeilen noch zehn Regeln — der Rest war
+längst überschrieben.
+
+`public.html` ist TVZAs eigene Seite und trägt darum eine eigene, warme
+Palette — aber als Token an `.oeffentlich` in `oeffentlich.css`, nicht
+als zweites Kit. Skala, Radien, Wortzeichen und Fusstafel kommen aus
+`kit.css`.
 
 **5. Der Katalog gewinnt, aber erst später.** `t()` gibt bei einem
 unbekannten Schlüssel den **Schlüssel** zurück, nie `undefined` — darum
@@ -315,14 +326,12 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 570 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 597 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
   Bequemlichkeit, **kein** Schutz gegen Brute Force.
 - Kein 2FA. SMS braucht Identity Platform (kostenpflichtig).
-- `guest.html` und `public.html` sind übersetzt, halten aber die
-  Seiten-Invariante noch nicht (`<style>`-Blöcke, Inline-Module).
 - **Reste des Familienmodells.** Das Profilfeld `users.familyId` wird nicht
   mehr geschrieben; alte, offene Einladungen in eine Kalendergruppe werden
   noch eingelöst (`invitedAutoJoin`). Die Reisen
@@ -339,7 +348,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.35.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.36.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
