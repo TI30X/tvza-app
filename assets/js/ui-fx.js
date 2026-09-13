@@ -17,7 +17,7 @@
   // Single source of truth for the footer version shown on every page.
   // Bei Änderung auch CACHE in sw.js gleichziehen — sonst bleibt das
   // alte Stylesheet im Cache liegen.
-  const APP_VERSION = "v.35.36.0";
+  const APP_VERSION = "v.35.37.0";
 
   function contentEl() {
     return document.querySelector("main, .main") || document.body;
@@ -29,7 +29,9 @@
     if (!host) return;
     const el = document.createElement("div");
     el.className = "fx-version";
-    el.textContent = "Firn · " + APP_VERSION;
+    /* Das Zeichen sagt die Seite: Firn, ausser sie traegt ein anderes
+       (public.html ist TVZAs Seite: <body data-marke="TVZA">). */
+    el.textContent = (document.body?.dataset.marke || "Firn") + " · " + APP_VERSION;
     host.appendChild(el);
   }
 

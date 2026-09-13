@@ -7,9 +7,9 @@
 
    Bis v.35.35.0 stand das als <style>-Block in der Seite, und die Seite
    lud das Kit nicht: sie hatte ihren eigenen Token-Satz, eigene Radien
-   (8/12 px) und ein eigenes Wortzeichen. Jetzt kommen Skala, Radien,
-   Wortzeichen und die Fusszeile aus kit.css; hier steht nur, was die
-   Seite anders macht.
+   (8/12 px) und ein eigenes Wortzeichen. Jetzt kommen Skala, Radien und
+   die Fusstafel aus kit.css; hier steht nur, was die Seite anders macht —
+   die Palette und das Zeichen TVZA.
 
    Die Palette hängt an .oeffentlich und nicht an :root, damit sie
    nirgends sonst greift. --brand-gradient und --accent stehen mit
@@ -44,6 +44,12 @@
   --accent-bg: oklch(0.28 0.04 250);
   --border:    oklch(0.34 0.006 250);
 }
+
+/* Das Zeichen der Seite ist TVZA, nicht Firn (v.35.37.0): dieselben
+   Buchstaben, dasselbe Gewicht und derselbe Abstand wie .tvza-marke im
+   Kit, nur gross und ohne Rahmen — damit das kleine Zeichen auf Start
+   und in den Bereichen und das grosse hier eines sind. */
+.tvza { font-weight: 800; letter-spacing: 0.08em; white-space: nowrap; color: #FFFFFF; }
 
 /* ── Kopf ─────────────────────────────────────────────────────────── */
 .hero {
@@ -83,7 +89,7 @@
   display: flex; align-items: center; gap: var(--s5);
 }
 .hero-logo { min-width: 104px; }
-.hero-logo .firn { display: block; font-size: 34px; }
+.hero-logo .tvza { display: block; font-size: 34px; }
 .hero-divider { width: 1px; align-self: stretch; background: rgba(255,255,255,0.18); }
 .hero-copy h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; line-height: inherit; }
 .hero-copy p { font-size: 13px; color: rgba(255,255,255,0.68); margin-top: 3px; }
@@ -125,14 +131,14 @@
    das diese Seite nicht lädt. Ohne die zwei Zeilen wären die Ecken eckig. */
 .oeffentlich .tvz-footer-panel { border-radius: var(--r-panel); }
 .oeffentlich .tvz-footer-copy p { border-radius: var(--r-icon); }
-.oeffentlich .tvz-footer-logo .firn { display: block; font-size: 32px; }
+.oeffentlich .tvz-footer-logo .tvza { display: block; font-size: 32px; }
 
 @media (max-width: 899px) {
   /* Kompakter Kopf: Marke und Knöpfe in Zeile 1, der Titel bricht in Zeile 2 */
   .hero { padding: var(--s3) var(--s4); }
   .hero-inner { flex-wrap: wrap; gap: var(--s2) var(--s3); align-items: center; }
   .hero-logo { order: 1; min-width: 0; }
-  .hero-logo .firn { font-size: 23px; }
+  .hero-logo .tvza { font-size: 23px; }
   .hero-divider { display: none; }
   .hero-actions { order: 2; margin-left: auto; align-self: center; }
   .hero-actions #authBtn { padding: var(--s2) var(--s4); }

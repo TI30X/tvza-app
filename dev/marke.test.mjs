@@ -159,3 +159,35 @@ test('der Name des Betreibers steht je Seite hoechstens einmal, als „betrieben
   assert.deepEqual(Object.entries(katalog).filter(([, v]) => /Timothy/.test(v)), [],
     'ein Name gehoert in data-i18n-vars, nicht in den Katalog');
 });
+
+/* ── Die Projektseite ist TVZAs ───────────────────────────────────
+   Bis v.35.36.0 stand auf public.html — Timos Projekte, TVZAs eigene
+   Seite — oben und in der Fusstafel das Firn-Zeichen, und die
+   Versionszeile sagte "Firn · v…". Jetzt traegt die Seite TVZA; die
+   Versionszeile nimmt ihr Zeichen aus <body data-marke>. */
+
+test('die Projektseite traegt das Zeichen TVZA, nicht Firn', async () => {
+  const html = await readFile(join(root, 'public.html'), 'utf8');
+  assert.equal((html.match(/<span class="tvza">TVZA<\/span>/g) || []).length, 2, 'Kopf und Fusstafel');
+  assert.doesNotMatch(html, /Fir<b>n<\/b>/, 'das Firn-Zeichen steht wieder auf der Projektseite');
+  assert.match(html, /<body[^>]*data-marke="TVZA"/);
+});
+
+test('die Versionszeile nimmt das Zeichen der Seite, sonst Firn', async () => {
+  const { JSDOM } = await import('jsdom');
+  const fx = await readFile(join(root, 'assets/js/ui-fx.js'), 'utf8');
+  const version = fx.match(/APP_VERSION = "([^"]+)"/)[1];
+  const zeile = async seite => {
+    const html = (await readFile(join(root, seite), 'utf8')).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+    const { window } = new JSDOM(html, { runScripts: 'outside-only', url: 'https://firn.test/' + seite });
+    window.matchMedia = () => ({ matches: true, addEventListener() {}, addListener() {} });
+    window.eval(fx);
+    /* ui-fx.js wartet auf DOMContentLoaded, solange die Seite noch laedt. */
+    if (window.document.readyState === 'loading') {
+      await new Promise(r => window.document.addEventListener('DOMContentLoaded', r));
+    }
+    return window.document.querySelector('.fx-version')?.textContent;
+  };
+  assert.equal(await zeile('public.html'), `TVZA · ${version}`);
+  assert.equal(await zeile('pages/guest.html'), `Firn · ${version}`);
+});
