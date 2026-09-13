@@ -50,6 +50,7 @@ import {
   rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
 } from '../../fispunkte.js';
 import { WORKER_BASIS } from '../../worker-config.js';
+import { passendesMitglied } from '../../zuordnung.js';
 
 const $ = id => document.getElementById(id);
 /* Ohne i18n.js fehlte hier das Einsetzen der Platzhalter: aus
@@ -283,8 +284,16 @@ async function zeichnePlaene() {
 
    Bis v.35.25.0 ging das nur ueber die alte persoenliche Trainingsseite.
    Die Gruppe hatte ein Auswahlfeld mit dem, was man DORT eingelesen
-   hatte — fuer jeden, der die Seite nie geoeffnet hatte, leer. */
-let eingelesen = null;          // { programm, json, datei }
+   hatte — fuer jeden, der die Seite nie geoeffnet hatte, leer.
+
+   Seit v.35.43.0 auch mehrere Dateien auf einmal: die Excel des Kaders
+   ist meist pro Athlet. Aus jeder liest Firn den Namen ("Name: Van
+   Zanten Timothy") und schlaegt das Mitglied vor, das so heisst
+   (zuordnung.js). Wo es niemanden oder mehrere findet, fragt es — ein
+   Athlet soll nie den Plan eines anderen bekommen, weil zwei Namen sich
+   aehnelten. */
+let eingelesen = [];            // je Datei: { datei, programm, json, vorschlag, fuer } oder { datei, fehler }
+let alsListe = false;           // mehrere Dateien: Karten statt Vorschau und "Für wen"
 let bilder = null;
 
 /* Die Bilder zu den Uebungen der Kadervorlage (Fussgymnastik,
@@ -342,13 +351,109 @@ function planVorschau(programm) {
   zeige('planVorschau', true);
 }
 
-async function planDateiGewaehlt(datei) {
-  if (!datei) return;
+/* Wem die Datei gehoert, als Satz — unter "Für wen" oder in der Karte. */
+function zuordnungText(x) {
+  const excel = String(x.programm?.athlete || '').trim();
+  const name = uid => mitglieder.find(m => m.uid === uid)?.name || uid;
+  switch (x.vorschlag?.grund) {
+    case 'passt': return t('grp.zuordnungPasst', 'Aus der Excel: {excel} → {name}', { excel, name: name(x.vorschlag.uid) });
+    case 'unbekannt': return t('grp.zuordnungUnbekannt', 'In der Excel steht „{excel}“, aber niemand in der Gruppe heisst so. Wähle, für wen der Plan ist.', { excel });
+    case 'mehrdeutig': return t('grp.zuordnungMehrdeutig', '„{excel}“ passt auf mehrere in der Gruppe. Wähle, für wen der Plan ist.', { excel });
+    case 'ohneName': return t('grp.zuordnungOhneName', 'In der Excel steht kein Name — der Plan ist für alle, wenn du nichts anderes wählst.');
+    default: return '';
+  }
+}
+
+/* Die Auswahl "für wen": alle, dann die Mitglieder. Ohne Vorschlag
+   steht "— wählen —" oben, damit niemand aus Versehen "alle" erwischt. */
+function fuerOptionen(wert, { nurWen = false } = {}) {
+  const auswahl = v => (v === wert ? ' selected' : '');
+  return [
+    wert === '' ? `<option value=""${auswahl('')}>${escHtml(t('grp.waehlen', '— wählen —'))}</option>` : '',
+    `<option value="${PLAN_FUER_ALLE}"${auswahl(PLAN_FUER_ALLE)}>${escHtml(t('grp.alleInGruppe', 'Alle in der Gruppe'))}</option>`,
+    ...mitglieder.map(m => {
+      const wen = m.name || m.uid;
+      return `<option value="${escHtml(m.uid)}"${auswahl(m.uid)}>${escHtml(nurWen ? t('grp.nurWen', 'Nur {wen}', { wen }) : wen)}</option>`;
+    }),
+  ].join('');
+}
+
+/* Eine Datei: die Woche als Vorschau, Titel und "Für wen" wie bisher —
+   nur mit dem Vorschlag aus der Excel. */
+function einzelnZeigen(x) {
+  alsListe = false;
+  planVorschau(x.programm);
+  zeige('planListe', false);
+  zeige('grpPlanTitel', true);
+  zeige('grpPlanFuer', true);
+  /* Der Titel ist die Woche. Wer schon einen eigenen getippt hat,
+     behaelt ihn. */
+  const titel = $('planTitel');
+  if (!titel.value.trim()) titel.value = planTitelVorschlag(x.programm);
+  $('planFuer').innerHTML = fuerOptionen(x.fuer, { nurWen: true });
+  const hinweis = $('planFuerHinweis');
+  hinweis.textContent = zuordnungText(x);
+  hinweis.hidden = !hinweis.textContent;
+}
+
+/* Mehrere: je Datei eine Karte mit Woche und Zuordnung. */
+function mehrereZeigen() {
+  alsListe = true;
+  zeige('planVorschau', false);
+  zeige('grpPlanTitel', false);
+  zeige('grpPlanFuer', false);
+
+  /* Dieselbe Person, dieselbe Woche, zwei Dateien: in der Woche gewinnt
+     die spaeter veroeffentlichte (agendaTage). Das soll man vorher sehen. */
+  const zuletzt = new Map();
+  eingelesen.forEach((x, i) => {
+    if (x.fehler || !x.fuer) return;
+    const erster = planTageMitDatum(x.programm, isoTag())[0]?.datum || '';
+    if (erster) zuletzt.set(`${x.fuer}|${erster}`, i);
+  });
+
+  $('planListe').innerHTML = eingelesen.map((x, i) => {
+    if (x.fehler) {
+      return `
+        <div class="plan-datei ist-kaputt">
+          <div class="plan-datei__kopf"><span class="plan-datei__name">${escHtml(x.datei)}</span></div>
+          <p class="plan-datei__hinweis">${escHtml(t('grp.f.einlesen', 'Die Datei liess sich nicht lesen. {grund}', { grund: x.fehler }))}</p>
+        </div>`;
+    }
+    const z = planZusammenfassung(x.programm);
+    const woche = [z.kw ? `KW ${z.kw}` : z.label, z.von && z.bis ? `${kurzDatum(z.von)} – ${kurzDatum(z.bis)}` : '']
+      .filter(Boolean).join(' · ');
+    const erster = planTageMitDatum(x.programm, isoTag())[0]?.datum || '';
+    const spaeter = x.fuer && erster ? zuletzt.get(`${x.fuer}|${erster}`) : i;
+    const doppelt = spaeter !== undefined && spaeter !== i
+      ? ` ${t('grp.planDoppelt', 'Dieselbe Woche wie {datei} — es gilt die spätere.', { datei: eingelesen[spaeter].datei })}`
+      : '';
+    return `
+      <div class="plan-datei${x.fuer ? '' : ' ist-offen'}">
+        <div class="plan-datei__kopf">
+          <span class="plan-datei__name">${escHtml(x.datei)}</span>
+          <span class="plan-datei__woche">${escHtml(woche || t('grp.planOhneWoche', 'Woche ohne Datum'))}</span>
+        </div>
+        <select class="form-select" data-datei-fuer="${i}" aria-label="${escHtml(t('grp.planFuer', 'Für wen'))}">${fuerOptionen(x.fuer)}</select>
+        <p class="plan-datei__hinweis">${escHtml(zuordnungText(x) + doppelt)}</p>
+      </div>`;
+  }).join('');
+  zeige('planListe', true);
+}
+
+async function planDateiGewaehlt(liste) {
+  const dateien = [...(liste || [])];
+  if (!dateien.length) return;
   const status = $('planDateiStatus');
-  status.textContent = t('grp.planLiest', 'Datei wird gelesen …');
+  status.textContent = dateien.length > 1
+    ? t('grp.planLiestN', '{n} Dateien werden gelesen …', { n: dateien.length })
+    : t('grp.planLiest', 'Datei wird gelesen …');
   status.hidden = false;
   zeige('planVorschau', false);
+  zeige('planListe', false);
   $('planFehler').hidden = true;
+  $('planFuerHinweis').hidden = true;
+  eingelesen = [];
 
   try {
     const [{ gridFromFile }, { parseProgram }, bildTabelle] = await Promise.all([
@@ -356,36 +461,61 @@ async function planDateiGewaehlt(datei) {
       import('../../training-parser.js'),
       bilderLaden(),
     ]);
-    const programm = parseProgram(await gridFromFile(datei), { images: bildTabelle });
-    eingelesen = { programm, json: JSON.stringify(programm), datei: datei.name || '' };
-    status.hidden = true;
-    planVorschau(programm);
-
-    /* Der Titel ist die Woche. Wer schon einen eigenen getippt hat,
-       behaelt ihn. */
-    const titel = $('planTitel');
-    if (!titel.value.trim()) titel.value = planTitelVorschlag(programm);
-    $('planDateiKnopf').textContent = t('grp.planAndereDatei', 'Andere Datei wählen');
-    zeige('grpPlanQuelle', false);
+    /* Eine nach der anderen: eine kaputte Datei nimmt die anderen nicht mit. */
+    for (const datei of dateien) {
+      try {
+        const programm = parseProgram(await gridFromFile(datei), { images: bildTabelle });
+        const vorschlag = passendesMitglied(programm.athlete, mitglieder);
+        eingelesen.push({
+          datei: datei.name || '', programm, json: JSON.stringify(programm), vorschlag,
+          /* Ohne Namen in der Excel ist es ein Plan fuer den Kader. Mit
+             einem Namen, der auf niemanden passt, bleibt die Wahl offen. */
+          fuer: vorschlag.uid || (vorschlag.grund === 'ohneName' ? PLAN_FUER_ALLE : ''),
+        });
+      } catch (e) {
+        reportClientError('gruppe/plan-einlesen', e);
+        /* Der Parser sagt, was fehlt ("Kein Wochenplan-Blatt gefunden.") —
+           das hilft mehr als ein Ersatzsatz. */
+        eingelesen.push({ datei: datei.name || '', fehler: e?.message || '' });
+      }
+    }
   } catch (e) {
     reportClientError('gruppe/plan-einlesen', e);
-    eingelesen = null;
-    /* Der Parser sagt, was fehlt ("Kein Wochenplan-Blatt gefunden.") —
-       das hilft mehr als ein Ersatzsatz. */
-    status.textContent = t('grp.f.einlesen', 'Die Datei liess sich nicht lesen. {grund}',
-      { grund: e?.message || '' });
+    eingelesen = dateien.map(d => ({ datei: d.name || '', fehler: e?.message || '' }));
   } finally {
     $('planDatei').value = '';
   }
+
+  if (dateien.length === 1) {
+    const [x] = eingelesen;
+    if (x.fehler) {
+      eingelesen = [];
+      status.textContent = t('grp.f.einlesen', 'Die Datei liess sich nicht lesen. {grund}', { grund: x.fehler });
+      return;
+    }
+    status.hidden = true;
+    einzelnZeigen(x);
+    $('planDateiKnopf').textContent = t('grp.planAndereDatei', 'Andere Datei wählen');
+  } else {
+    status.hidden = true;
+    mehrereZeigen();
+    $('planDateiKnopf').textContent = t('grp.planAndereDateien', 'Andere Dateien wählen');
+  }
+  zeige('grpPlanQuelle', false);
 }
 
 async function planFormOeffnen() {
   if (!aktiv) return;
 
-  eingelesen = null;
-  $('planDateiKnopf').textContent = t('grp.planDateiWaehlen', 'Excel-Datei wählen');
+  eingelesen = [];
+  $('planDateiKnopf').textContent = t('grp.planDateienWaehlen', 'Excel-Dateien wählen');
   $('planDateiStatus').hidden = true;
+  $('planFuerHinweis').hidden = true;
   zeige('planVorschau', false);
+  zeige('planListe', false);
+  zeige('grpPlanTitel', true);
+  zeige('grpPlanFuer', true);
+  alsListe = false;
 
   /* Frueher Eingelesenes als zweiter Weg — nur, wenn es das gibt. Ein
      Auswahlfeld mit "Du hast noch kein Programm eingelesen" als
@@ -412,11 +542,7 @@ async function planFormOeffnen() {
   /* "Alle" zuerst — der Normalfall ist ein Plan für den ganzen Kader.
      Ein Plan nur für einen Athleten ist die Ausnahme, und genau die
      soll möglich sein. */
-  $('planFuer').innerHTML = [
-    `<option value="${PLAN_FUER_ALLE}">${escHtml(t('grp.alleInGruppe', 'Alle in der Gruppe'))}</option>`,
-    ...mitglieder.map(m =>
-      `<option value="${escHtml(m.uid)}">${escHtml(t('grp.nurWen', 'Nur {wen}', { wen: m.name || m.uid }))}</option>`),
-  ].join('');
+  $('planFuer').innerHTML = fuerOptionen(PLAN_FUER_ALLE, { nurWen: true });
 
   $('planTitel').value = '';
   $('planFehler').hidden = true;
@@ -435,10 +561,14 @@ async function planSpeichern() {
   if (!aktiv) return;
   const quelle = $('planQuelle');
   const fehler = $('planFehler');
+  fehler.hidden = true;
+
+  if (alsListe) { await mehrereVeroeffentlichen(); return; }
 
   /* Die eben eingelesene Datei zuerst; sonst ein frueheres Programm. */
-  let json = eingelesen?.json || '';
-  let programmId = eingelesen ? planTitelVorschlag(eingelesen.programm) || eingelesen.datei : '';
+  const x = eingelesen[0];
+  let json = x?.json || '';
+  let programmId = x ? planTitelVorschlag(x.programm) || x.datei : '';
   if (!json && quelle.value) {
     programmId = quelle.value;
     try { json = JSON.parse(quelle.dataset.json || '{}')[programmId] || ''; }
@@ -451,16 +581,22 @@ async function planSpeichern() {
     return;
   }
 
+  const fuer = $('planFuer').value;
+  if (!fuer) {
+    fehler.textContent = t('grp.f.fuerWen', 'Wähle, für wen der Plan ist.');
+    fehler.hidden = false;
+    return;
+  }
+
   const btn = $('btnPlanSpeichern');
   btn.disabled = true;
   try {
-    const fuer = $('planFuer').value;
     await planVeroeffentlichen(aktiv.id, user.uid, {
       titel: $('planTitel').value.trim() || programmId,
       json,
       fuer,
     });
-    eingelesen = null;
+    eingelesen = [];
     planFormSchliessen();
     /* Wer eben die Excel für Timo eingelesen hat, will Timos Woche sehen
        — und zwar die, in der der Plan liegt, nicht heute. */
@@ -472,6 +608,56 @@ async function planSpeichern() {
   } catch (e) {
     reportClientError('gruppe/plan', e);
     fehler.textContent = e?.message || t('grp.f.plan', 'Der Plan konnte nicht veröffentlicht werden.');
+    fehler.hidden = false;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* Mehrere Dateien: jede als eigener Plan, fuer die Person, die in ihrer
+   Karte steht. Veroeffentlicht wird erst, wenn jede jemanden hat. Geht
+   mitten drin etwas schief, bleiben nur die Dateien in der Liste, die
+   noch nicht draussen sind — ein zweiter Versuch doppelt nichts. */
+async function mehrereVeroeffentlichen() {
+  const fehler = $('planFehler');
+  const gut = eingelesen.filter(x => !x.fehler);
+  if (!gut.length) {
+    fehler.textContent = t('grp.f.keineDatei', 'Wähle zuerst die Excel mit dem Wochenplan.');
+    fehler.hidden = false;
+    return;
+  }
+  if (gut.some(x => !x.fuer)) {
+    fehler.textContent = t('grp.f.zuordnen', 'Nicht jede Datei hat jemanden. Wähle, für wen sie ist.');
+    fehler.hidden = false;
+    return;
+  }
+
+  const btn = $('btnPlanSpeichern');
+  btn.disabled = true;
+  const draussen = [];
+  try {
+    for (const x of gut) {
+      await planVeroeffentlichen(aktiv.id, user.uid, {
+        titel: planTitelVorschlag(x.programm) || x.datei,
+        json: x.json,
+        fuer: x.fuer,
+      });
+      draussen.push(x);
+    }
+    const erster = gut[0];
+    eingelesen = [];
+    planFormSchliessen();
+    /* Die Woche des ersten, dort, wo sein Plan liegt. */
+    wochePerson = erster.fuer;
+    await zeichnePlaene();
+    const tag = planTageMitDatum(erster.programm, isoTag())[0]?.datum || '';
+    if (tag) agendaHolen().springeZu(tag);
+  } catch (e) {
+    reportClientError('gruppe/plan', e);
+    eingelesen = eingelesen.filter(x => !draussen.includes(x));
+    mehrereZeigen();
+    fehler.textContent = t('grp.f.planTeil', '{fertig} von {n} Plänen veröffentlicht, dann ging es nicht weiter. {grund}',
+      { fertig: draussen.length, n: gut.length, grund: e?.message || '' });
     fehler.hidden = false;
   } finally {
     btn.disabled = false;
@@ -1797,14 +1983,29 @@ async function einladen() {
     zeichneWoche();
   });
   $('btnPlanNeu')?.addEventListener('click', planFormOeffnen);
-  $('planDatei')?.addEventListener('change', event => planDateiGewaehlt(event.target.files?.[0]));
+  $('planDatei')?.addEventListener('change', event => planDateiGewaehlt(event.target.files));
+  /* Die Zuordnung je Datei. Ein Zuhoerer fuer die ganze Liste — die
+     Karten werden bei jeder Wahl neu gezeichnet. */
+  $('planListe')?.addEventListener('change', event => {
+    const feld = event.target.closest('[data-datei-fuer]');
+    const x = feld && eingelesen[Number(feld.dataset.dateiFuer)];
+    if (!x) return;
+    x.fuer = feld.value;
+    $('planFehler').hidden = true;
+    mehrereZeigen();
+  });
   $('planQuelle')?.addEventListener('change', () => {
     /* Wer ein frueheres Programm waehlt, will die eingelesene Datei
        nicht mehr — sonst gewaenne sie still beim Speichern. */
     if ($('planQuelle').value) {
-      eingelesen = null;
+      eingelesen = [];
       zeige('planVorschau', false);
-      $('planDateiKnopf').textContent = t('grp.planDateiWaehlen', 'Excel-Datei wählen');
+      zeige('planListe', false);
+      zeige('grpPlanTitel', true);
+      zeige('grpPlanFuer', true);
+      alsListe = false;
+      $('planFuerHinweis').hidden = true;
+      $('planDateiKnopf').textContent = t('grp.planDateienWaehlen', 'Excel-Dateien wählen');
     }
   });
   $('btnPlanAbbrechen')?.addEventListener('click', planFormSchliessen);

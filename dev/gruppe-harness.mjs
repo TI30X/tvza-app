@@ -199,8 +199,11 @@ async function lade({
        globalThis.__raster legt — der Parser dahinter ist der echte. */
     .replace(`'../../training-import.js'`, `'${dataUrl(`
       export async function gridFromFile(file) {
-        if (!globalThis.__raster) throw new Error('Kein Wochenplan-Blatt gefunden.');
-        return { file: file?.name || 'Import.xlsx', ...globalThis.__raster };
+        /* __raster ist ein Raster fuer jede Datei, oder eine Funktion
+           (datei) => Raster fuer mehrere verschiedene auf einmal. */
+        const r = typeof globalThis.__raster === 'function' ? globalThis.__raster(file) : globalThis.__raster;
+        if (!r) throw new Error('Kein Wochenplan-Blatt gefunden.');
+        return { file: file?.name || 'Import.xlsx', ...r };
       }`)}'`)
     .replace(`'../../training-parser.js'`, `'${datei('assets/js/training-parser.js')}'`)
     .replace(`'../../wochenplan.js'`, `'${datei('assets/js/wochenplan.js')}'`)
@@ -210,6 +213,7 @@ async function lade({
     .replace(`'../../kontakte.js'`, `'${datei('assets/js/kontakte.js')}'`)
     .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
     .replace(`'../../einheit.js'`, `'${datei('assets/js/einheit.js')}'`)
+    .replace(`'../../zuordnung.js'`, `'${datei('assets/js/zuordnung.js')}'`)
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)
     .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`);
 

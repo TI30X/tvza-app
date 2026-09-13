@@ -242,6 +242,8 @@ test('ein Trainer liest die Excel direkt in der Gruppe ein und sieht die Woche, 
     /* Der Titel steht schon da: die Woche selbst. */
     assert.equal(doc.getElementById('planTitel').value, 'KW 31 · TW 12');
     assert.match(doc.getElementById('planDateiKnopf').textContent, /Andere Datei/);
+    assert.equal(doc.getElementById('planFuer').value, 'timo');
+    assert.match(doc.getElementById('planFuerHinweis').textContent, /Van Zanten Timothy → Timothy/);
 
     klick(doc.getElementById('btnPlanSpeichern'));
     await warte(() => aufrufe('planVeroeffentlichen').length > 0);
@@ -249,7 +251,11 @@ test('ein Trainer liest die Excel direkt in der Gruppe ein und sieht die Woche, 
     assert.equal(gid, 'g1');
     assert.equal(uid, 'timo');
     assert.equal(plan.titel, 'KW 31 · TW 12');
-    assert.equal(plan.fuer, 'alle');
+    /* Seit v.35.43.0 liest Firn den Namen aus der Excel ("Van Zanten
+       Timothy") und schlaegt das Mitglied vor, das so heisst. Bis dahin
+       stand hier 'alle' — der Plan eines Athleten ging an den ganzen Kader,
+       wenn der Trainer nicht selbst umstellte. */
+    assert.equal(plan.fuer, 'timo');
     /* Veroeffentlicht wird das geparste Programm — dasselbe Format, das
        der Wochenplan und der Player lesen. */
     const programm = JSON.parse(plan.json);
@@ -277,4 +283,114 @@ test('eine Datei ohne Wochenplan sagt, was fehlt, statt still nichts zu tun', as
     assert.match(doc.getElementById('planFehler').textContent, /Excel/);
     assert.equal(aufrufe('planVeroeffentlichen').length, 0);
   } finally { zurueck(); }
+});
+
+/* ── Mehrere Dateien auf einmal (v.35.43.0) ────────────────────────
+   Michel: "Die Excel-Dokumente sind meist auf jeden Athleten einzeln
+   kuratiert." Drei Dateien: Timothy, Lea, und ein Name, den es in der
+   Gruppe nicht gibt. Dazu eine kaputte. */
+
+const KW31 = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
+const alsAthlet = name => JSON.parse(JSON.stringify(KW31).replaceAll('Van Zanten Timothy', name));
+const KADER = {
+  gruppen: [{ id: 'g1', name: 'TEST', art: 'kader', meineRolle: 'head' }],
+  mitglieder: [
+    { uid: 'michel', name: 'Michel van Zanten', rolle: 'head' },
+    { uid: 'timo', name: 'Timothy van Zanten', rolle: 'mitglied' },
+    { uid: 'lea', name: 'Lea Müller', rolle: 'mitglied' },
+  ],
+};
+
+async function waehleDateien(doc, namen) {
+  const feld = doc.getElementById('planDatei');
+  const win = doc.defaultView;
+  const dateien = namen.map(n => new win.File(['x'], n, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  Object.defineProperty(feld, 'files', { value: dateien, configurable: true });
+  feld.dispatchEvent(new win.Event('change', { bubbles: true }));
+}
+
+async function planFormMitDateien(namen) {
+  globalThis.__raster = datei => ({
+    'Van Zanten Timothy KW 31.xlsx': KW31,
+    'Mueller Lea KW 31.xlsx': alsAthlet('Mueller Lea'),
+    'Muster Max KW 31.xlsx': alsAthlet('Muster Max'),
+  })[datei.name] || null;
+  const w = await starteGruppe(KADER);
+  klick(w.doc.getElementById('btnPlanNeu'));
+  await warte(() => !w.doc.getElementById('secPlanForm').hidden);
+  await waehleDateien(w.doc, namen);
+  await warte(() => !w.doc.getElementById('planListe').hidden);
+  return w;
+}
+
+test('mehrere Dateien: jede Karte hat ihre Woche und ihren Menschen, aus dem Namen in der Excel', async () => {
+  const { doc, zurueck } = await planFormMitDateien(
+    ['Van Zanten Timothy KW 31.xlsx', 'Mueller Lea KW 31.xlsx', 'Muster Max KW 31.xlsx', 'Einkaufsliste.xlsx']);
+  try {
+    const karten = [...doc.querySelectorAll('#planListe .plan-datei')];
+    assert.equal(karten.length, 4);
+    assert.equal(doc.getElementById('planVorschau').hidden, true, 'bei mehreren keine Einzelvorschau');
+    assert.equal(doc.getElementById('grpPlanFuer').hidden, true, 'das eine "Für wen" gilt nicht für alle Dateien');
+    assert.match(doc.getElementById('planDateiKnopf').textContent, /Andere Dateien/);
+
+    const wahl = i => karten[i].querySelector('select')?.value;
+    assert.equal(wahl(0), 'timo', 'Van Zanten Timothy → Timothy van Zanten, nicht Michel van Zanten');
+    assert.equal(wahl(1), 'lea', 'Mueller Lea → Lea Müller');
+    assert.equal(wahl(2), '', 'Muster Max gibt es nicht — offen');
+    assert.equal(karten[2].classList.contains('ist-offen'), true);
+    assert.match(karten[2].textContent, /niemand in der Gruppe heisst so/);
+    assert.match(karten[0].textContent, /KW 31/);
+    assert.equal(karten[3].classList.contains('ist-kaputt'), true);
+    assert.match(karten[3].textContent, /Wochenplan-Blatt/, 'die kaputte sagt, warum');
+  } finally { zurueck(); delete globalThis.__raster; }
+});
+
+test('mehrere Dateien: veröffentlicht wird erst, wenn jede jemanden hat — dann jede für ihren Menschen', async () => {
+  const { doc, zurueck } = await planFormMitDateien(
+    ['Van Zanten Timothy KW 31.xlsx', 'Mueller Lea KW 31.xlsx', 'Muster Max KW 31.xlsx', 'Einkaufsliste.xlsx']);
+  try {
+    klick(doc.getElementById('btnPlanSpeichern'));
+    assert.equal(doc.getElementById('planFehler').hidden, false);
+    assert.match(doc.getElementById('planFehler').textContent, /Nicht jede Datei/);
+    assert.equal(aufrufe('planVeroeffentlichen').length, 0, 'mit einer offenen Datei geht nichts hinaus');
+
+    /* Max ist neu im Kader und noch nicht in Firn: sein Plan geht an alle. */
+    const offen = doc.querySelectorAll('#planListe select')[2];
+    offen.value = 'alle';
+    offen.dispatchEvent(new doc.defaultView.Event('change', { bubbles: true }));
+    assert.equal(doc.querySelectorAll('#planListe .ist-offen').length, 0);
+
+    klick(doc.getElementById('btnPlanSpeichern'));
+    await warte(() => aufrufe('planVeroeffentlichen').length === 3);
+    const raus = aufrufe('planVeroeffentlichen').map(([, , , plan]) => [plan.fuer, JSON.parse(plan.json).athlete]);
+    assert.deepEqual(raus, [['timo', 'Van Zanten Timothy'], ['lea', 'Mueller Lea'], ['alle', 'Muster Max']],
+      'die kaputte Datei wird nicht veröffentlicht, die anderen jede für ihren Menschen');
+    await warte(() => !doc.getElementById('secWoche').hidden);
+    assert.equal(doc.getElementById('secPlanForm').hidden, true);
+  } finally { zurueck(); delete globalThis.__raster; }
+});
+
+test('mehrere Dateien für dieselbe Person und Woche: die Karte sagt, dass die spätere gilt', async () => {
+  const { doc, zurueck } = await planFormMitDateien(['Van Zanten Timothy KW 31.xlsx', 'Van Zanten Timothy KW 31.xlsx']);
+  try {
+    const karten = [...doc.querySelectorAll('#planListe .plan-datei')];
+    assert.match(karten[0].textContent, /es gilt die spätere/);
+    assert.doesNotMatch(karten[1].textContent, /es gilt die spätere/);
+  } finally { zurueck(); delete globalThis.__raster; }
+});
+
+test('eine Datei mit einem Namen, den es nicht gibt: "Für wen" bleibt offen und muss gewählt werden', async () => {
+  globalThis.__raster = alsAthlet('Muster Max');
+  const { doc, zurueck } = await starteGruppe(KADER);
+  try {
+    klick(doc.getElementById('btnPlanNeu'));
+    await warte(() => !doc.getElementById('secPlanForm').hidden);
+    await waehleDatei(doc, 'Muster Max KW 31.xlsx');
+    await warte(() => !doc.getElementById('planVorschau').hidden);
+    assert.equal(doc.getElementById('planFuer').value, '');
+    assert.match(doc.getElementById('planFuerHinweis').textContent, /Muster Max/);
+    klick(doc.getElementById('btnPlanSpeichern'));
+    assert.match(doc.getElementById('planFehler').textContent, /für wen/);
+    assert.equal(aufrufe('planVeroeffentlichen').length, 0);
+  } finally { zurueck(); delete globalThis.__raster; }
 });

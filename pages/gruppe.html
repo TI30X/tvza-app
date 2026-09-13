@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../assets/css/kit.css?v=14" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=2" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=5" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=6" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
   <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
@@ -209,10 +209,15 @@
              nach dem Lesen umbeschriftet. -->
         <div class="form-group">
           <div class="form-label" data-i18n="grp.planDatei">Wochenplan (Excel)</div>
-          <label class="b b--secondary b--block" for="planDatei" id="planDateiKnopf">Excel-Datei wählen</label>
-          <input class="datei-feld" id="planDatei" type="file" accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+          <label class="b b--secondary b--block" for="planDatei" id="planDateiKnopf">Excel-Dateien wählen</label>
+          <!-- Mehrere auf einmal (v.35.43.0): die Excel des Kaders ist meist
+               pro Athlet. Firn liest den Namen aus jeder Datei und ordnet
+               sie dem Mitglied zu, das so heisst (zuordnung.js). -->
+          <input class="datei-feld" id="planDatei" type="file" multiple accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+          <p class="plan-vorschau__hinweis" data-i18n="grp.planMehrere">Auch mehrere auf einmal — eine Excel je Athlet. Firn ordnet sie nach dem Namen in der Datei zu.</p>
           <p class="empty-hint" id="planDateiStatus" hidden></p>
           <div class="plan-vorschau" id="planVorschau" hidden></div>
+          <div class="plan-liste" id="planListe" hidden></div>
         </div>
 
         <!-- Was man frueher auf der persoenlichen Seite eingelesen hat,
@@ -222,14 +227,17 @@
           <select class="form-select" id="planQuelle"></select>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="grpPlanTitel">
           <label class="form-label" for="planTitel" data-i18n="grp.titel">Titel</label>
           <input class="form-input" id="planTitel" type="text" maxlength="120" placeholder="z.B. Woche 31 — Kraft" data-i18n-attr="placeholder:grp.planTitelPh" />
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="grpPlanFuer">
           <label class="form-label" for="planFuer" data-i18n="grp.planFuer">Für wen</label>
           <select class="form-select" id="planFuer"></select>
+          <!-- Woher der Vorschlag kommt ("Aus der Excel: Van Zanten Timothy").
+               Den Satz setzt der Code, darum ohne data-i18n. -->
+          <p class="plan-vorschau__hinweis" id="planFuerHinweis" hidden></p>
         </div>
 
         <p class="empty-hint" id="planFehler" hidden></p>
@@ -463,6 +471,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=10"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=11"></script>
 </body>
 </html>

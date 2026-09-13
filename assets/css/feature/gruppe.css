@@ -17,6 +17,25 @@
 .plan-vorschau__was  { color: var(--ink-soft); }
 .plan-vorschau__hinweis { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
 
+/* ── Mehrere Dateien auf einmal (v.35.43.0) ────────────────────────
+   Je Datei eine Karte: welche Woche, welcher Name steht in der Excel,
+   und für wen sie ist. Wo Firn niemanden findet, ist die Karte markiert
+   — veröffentlicht wird erst, wenn jede Datei jemanden hat. */
+.plan-liste { display: flex; flex-direction: column; gap: var(--s2); margin-top: var(--s2); }
+.plan-datei {
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface);
+}
+.plan-datei.ist-offen { border-color: var(--warn); background: var(--warn-bg); }
+.plan-datei.ist-kaputt { background: var(--surface-2); }
+.plan-datei__kopf { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.plan-datei__name { font-weight: 700; font-size: 14px; overflow-wrap: anywhere; }
+.plan-datei__woche { font-size: 13px; color: var(--ink-soft); }
+.plan-datei__hinweis { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
+.plan-datei.ist-offen .plan-datei__hinweis { color: var(--warn); font-weight: 600; }
+
 /* ── Kontakt ───────────────────────────────────────────────────────
    Eine Zeile, die nichts oeffnet (Geburtsdatum, Adresse, Notiz), sieht
    aus wie die anderen, reagiert aber nicht auf den Zeiger. */

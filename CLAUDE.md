@@ -39,7 +39,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.42.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.43.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -67,7 +67,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-57 Testdateien, **624 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+58 Testdateien, **633 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -259,6 +259,15 @@ ISO 32), und eine selbst gerechnete Zahl daneben wäre eine zweite Wahrheit.
 Im Bereich Training dieselbe Woche aus allen Gruppen; ein Termin führt mit
 `gruppe.html?g=&termin=` in seine Gruppe.
 
+**Mehrere Excel auf einmal** (v.35.43.0): die Leitung wählt die Dateien der
+Woche zusammen, Firn liest aus jeder den Namen („Name: Van Zanten Timothy")
+und schlägt das Mitglied vor, das so heisst (`assets/js/zuordnung.js`:
+Reihenfolge egal, Umlaute als ae/oe/ue, „Timo" passt zu „Timothy"). Passen
+zwei gleich gut oder niemand, bleibt die Wahl offen, und veröffentlicht wird
+erst, wenn jede Datei jemanden hat — ein Athlet soll nie den Plan eines
+anderen bekommen, weil zwei Namen sich ähnelten. Eine einzelne Datei hat
+weiter ihre Wochenvorschau; „Für wen" ist dort nur vorgewählt.
+
 **11. Kontaktkarten sehen nur die Leitung und die Person selbst.** Kontakte
 von Minderjährigen und ihren Eltern. Die Regel (`get`: Leitung oder man
 selbst, `list`: nur Leitung) ist die Sicherung; die Oberfläche fragt gar
@@ -320,7 +329,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **806 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **818 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -375,7 +384,7 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 624 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 633 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
@@ -397,7 +406,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.42.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.43.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
