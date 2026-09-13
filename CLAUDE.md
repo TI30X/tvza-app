@@ -12,7 +12,7 @@ Ski, Watchlist, Wetter, Maturaarbeit, Nachrichten, Projekte).
 **Firn ist das Produkt, TVZA der Absender.** Die Fusszeilen sagen „Firn — ein
 Projekt von TVZA". Timo ist der Nutzer, Michel baut und hostet.
 
-Version: **v.35.33.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.34.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -40,7 +40,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-53 Testdateien, **548 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+53 Testdateien, **563 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 Katalog bauen (nur nötig, wenn jemand an den Tabellen arbeitet):
@@ -96,6 +96,13 @@ Emoji als Funktionssymbol.
 
 `index.html` hielt das lange nicht — sie trug 2000 Zeilen Code in drei
 Inline-Modulen. Seit v.35.11.0 liegen die in `assets/js/feature/start/`.
+Die beiden Matura-Seiten folgten mit v.35.34.0 (`feature/matura/`, je ein
+`…-ansicht.js` ohne Firebase und ein Einstieg). Wer eine Seite umzieht,
+nimmt sie in `MIGRIERT` (`kit-conformance.test.mjs`) auf, und die Tests
+lesen sie über `leserMitStart` samt Modulen. Ein Stilblock, den man
+entfernt, wird **gemessen**, nicht abgeschrieben: bei der Maturaarbeit
+wirkten von 320 Zeilen noch zehn Regeln — der Rest war längst
+überschrieben.
 
 **5. Der Katalog gewinnt, aber erst später.** `t()` gibt bei einem
 unbekannten Schlüssel den **Schlüssel** zurück, nie `undefined` — darum
@@ -287,15 +294,14 @@ Zwei Dinge, die leicht übersehen werden:
   (ohne Server nicht absicherbar — darum nennt `willkommen.html` keinen
   Preis) und fremde Quellen in der Tageszusammenfassung. Michel hat
   entschieden, dass ein Server später dazukommt.
-- **Die App ist nie end-zu-end durchgeklickt worden.** 548 Unit-Tests, aber
+- **Die App ist nie end-zu-end durchgeklickt worden.** 563 Unit-Tests, aber
   kein einziger Lauf gegen echtes Firestore.
 - `APP_CHECK_SITE_KEY` ist noch `''` — App Check vorbereitet, nicht scharf.
 - Die Anmeldesperre in `assets/js/auth-security.js` ist localStorage-only.
   Bequemlichkeit, **kein** Schutz gegen Brute Force.
 - Kein 2FA. SMS braucht Identity Platform (kostenpflichtig).
-- Die älteren Seiten (`maturaarbeit*.html`, `guest.html`, `public.html`)
-  sind übersetzt, halten aber die Seiten-Invariante noch nicht: `<style>`-Blöcke,
-  Inline-Skripte, `confirm()` beim Zurücksetzen der Maturaarbeit.
+- `guest.html` und `public.html` sind übersetzt, halten aber die
+  Seiten-Invariante noch nicht (`<style>`-Blöcke, Inline-Module).
 - **Reste des Familienmodells.** Das Profilfeld `users.familyId` wird nicht
   mehr geschrieben; alte, offene Einladungen in eine Kalendergruppe werden
   noch eingelöst (`invitedAutoJoin`). Die Reisen
@@ -312,7 +318,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.33.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.34.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

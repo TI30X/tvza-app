@@ -24,17 +24,35 @@ export const START_MODULE = [
   'assets/js/feature/start/heute.js',
 ];
 
+/* Seit v.35.34.0 genauso die beiden Matura-Seiten: ihr Code stand als
+   Inline-Skript in der Seite und liegt jetzt in assets/js/feature/matura/.
+   Die Zusagen (Fortschritt je Nutzer, sichere Migration, keine rohen
+   Fehler) gelten weiter — nur in einer anderen Datei. */
+export const SEITEN_MODULE = {
+  'index.html': START_MODULE,
+  'pages/maturaarbeit.html': [
+    'assets/js/feature/matura/uebersicht-ansicht.js',
+    'assets/js/feature/matura/uebersicht.js',
+  ],
+  'pages/maturaarbeit-tracker.html': [
+    'assets/js/feature/matura/tracker-ansicht.js',
+    'assets/js/feature/matura/tracker.js',
+  ],
+};
+
 /**
- * Ein Ersatz fuer `read`, der index.html mit ihren Modulen ausliefert.
- * Jede andere Datei geht unveraendert durch.
+ * Ein Ersatz fuer `read`, der eine Seite mit ihren Modulen ausliefert
+ * (index.html und die Matura-Seiten). Jede andere Datei geht unveraendert
+ * durch.
  */
 export function leserMitStart(root) {
   return async function read(relative) {
     const inhalt = await readFile(join(root, relative), 'utf8');
-    if (relative !== 'index.html') return inhalt;
+    const liste = SEITEN_MODULE[relative];
+    if (!liste) return inhalt;
 
     const module = await Promise.all(
-      START_MODULE.map(pfad => readFile(join(root, pfad), 'utf8')));
+      liste.map(pfad => readFile(join(root, pfad), 'utf8')));
     return inhalt + '\n' + module.join('\n');
   };
 }

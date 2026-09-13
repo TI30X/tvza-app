@@ -75,7 +75,6 @@ body.matura-page {
 .matura-page .sb-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: none;
 }
 
 .matura-page .matura-hero {
@@ -1273,3 +1272,31 @@ body.matura-page {
     margin-left: var(--s6);
   }
 }
+
+/* ── Aus den früheren <style>-Blöcken der beiden Seiten (v.35.34.0) ──
+   Bis hier trug jede Matura-Seite einen eigenen Stilblock (194 und 126
+   Zeilen), der fast vollständig von den Regeln oben überschrieben wurde.
+   Hier steht nur, was davon noch wirkte — nachgemessen Element für
+   Element, vorher und nachher, hell und dunkel, Laptop und Handy.
+   Weggelassen: die Schriftfarbe des Phasenstreifens (4 px, ohne Text und
+   ohne Rand — sie war nirgends zu sehen). */
+.matura-page .cp-icon { font-size: 1.1rem; }
+.matura-page .cp-info { flex: 1; }
+.matura-page .cp-name { opacity: 0.65; }
+.matura-overview-page .phase-toggle { font-size: 0.85rem; }
+.matura-tracker-page .phase-toggle { font-size: 0.8rem; }
+.matura-page .htag { display: inline-flex; }
+.matura-page .custom-check { font-size: 11px; font-weight: 700; }
+.matura-page .ch-tag { margin-top: 2px; }
+.matura-page .sb-title { display: flex; align-items: center; }
+.matura-page .sb-meet-row { margin-top: var(--s1); }
+
+/* Im Dunkeln behalten die Hinweise ihre Tönung — der Blau-Türkis des
+   "Du bist hier" und des Roten Fadens, das Gelb der Gesprächsnotiz. */
+:root[data-theme="dark"] .matura-page .here-banner,
+:root[data-theme="dark"] .matura-page .faden-note { background: rgba(12, 133, 153, 0.14); }
+:root[data-theme="dark"] .matura-page .here-banner { color: #7fd0d6; }
+:root[data-theme="dark"] .matura-page .meetings-note { background: rgba(255, 212, 59, 0.12); color: #e8c27a; }
+/* Der Hinweis "Besprechung ausmachen" unter den Gesprächspunkten — bis
+   v.35.33.0 ein style="margin-top:8px" im erzeugten Markup. */
+.matura-page .sb-item--abstand { margin-top: var(--s2); }

@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+/* Die Matura-Seiten stehen nicht mehr hier: seit v.35.34.0 tragen sie kein
+   Inline-Modul (matura-ui.test.mjs prueft ihre Module). */
 const files = [
   'index.html',
   'pages/planner.html',
@@ -13,7 +15,6 @@ const files = [
   'pages/messages.html',
   'pages/weather.html',
   'pages/watchlist.html',
-  'pages/maturaarbeit-tracker.html',
   'pages/training.html',
 ];
 

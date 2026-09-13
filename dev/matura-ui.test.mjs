@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { Script } from 'node:vm';
+import { SourceTextModule } from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { leserMitStart } from './start-quelle.mjs';
@@ -46,15 +46,26 @@ test('the detailed tracker derives the active phase from the current date', asyn
   assert.doesNotMatch(overview, /Du bist hier\s*[–-]\s*KW 21/);
 });
 
-test('classic Maturaarbeit scripts parse', async () => {
+/* Bis v.35.33.0: "classic Maturaarbeit scripts parse" — der Code stand als
+   klassisches Inline-Skript in den Seiten. Seit v.35.34.0 liegen die
+   Seiten auf der Seiten-Invariante; geprueft wird jetzt, dass die Module
+   als Module parsen und dass in den Seiten KEIN Code mehr steht. */
+test('die Matura-Seiten tragen keinen Code, ihre Module parsen', async () => {
+  const module = [
+    'assets/js/feature/matura/uebersicht-ansicht.js',
+    'assets/js/feature/matura/uebersicht.js',
+    'assets/js/feature/matura/tracker-ansicht.js',
+    'assets/js/feature/matura/tracker.js',
+  ];
+  for (const relative of module) {
+    new SourceTextModule(await readFile(join(root, relative), 'utf8'), { identifier: relative });
+  }
   for (const relative of pages) {
-    const html = await read(relative);
-    const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
-      .filter(match => !/\bsrc\s*=/.test(match[1]) && !/\btype=["']module["']/.test(match[1]));
-    assert.ok(scripts.length > 0, `${relative} has no classic inline script`);
-    scripts.forEach((match, index) => {
-      new Script(match[2], { filename: `${relative}:${index + 1}` });
-    });
+    const html = await readFile(join(root, relative), 'utf8');
+    const inline = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+      .filter(match => !/\bsrc\s*=/.test(match[1]));
+    assert.deepEqual(inline.map(m => m[2].trim().slice(0, 40)), [], `${relative} traegt wieder Inline-Code`);
+    assert.doesNotMatch(html, /\son[a-z]+="/, `${relative} hat wieder einen Inline-Handler`);
   }
 });
 

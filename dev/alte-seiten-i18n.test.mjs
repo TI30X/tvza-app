@@ -15,19 +15,32 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { JSDOM } from 'jsdom';
+import { leserMitStart } from './start-quelle.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const lies = leserMitStart(root);
 const SPRACHEN = ['de', 'en', 'fr', 'it', 'pl', 'nl', 'es'];
 
 const kataloge = Object.fromEntries(await Promise.all(SPRACHEN.map(async s =>
   [s, JSON.parse(await readFile(join(root, `assets/i18n/${s}.json`), 'utf8'))])));
 const i18nQuelle = await readFile(join(root, 'assets/js/i18n.js'), 'utf8');
 
-/** Seite laden, i18n.js starten, dann die klassischen Inline-Skripte der
-    Seite ausfuehren — so wie der Browser es tut, nur ohne Firebase. */
+/* Seit v.35.34.0 stehen die Matura-Seiten auf der Seiten-Invariante: ihr
+   Code ist kein Inline-Skript mehr, sondern ein Modul. Geladen wird der
+   Teil ohne Firebase (…-ansicht.js), mit den Globalen des jsdom-Fensters —
+   der Zaehler im Pfad gibt jedem Lauf ein frisches Modul. */
+const ANSICHT = {
+  'pages/maturaarbeit.html': ['assets/js/feature/matura/uebersicht-ansicht.js', 'starteUebersicht'],
+  'pages/maturaarbeit-tracker.html': ['assets/js/feature/matura/tracker-ansicht.js', 'richteTrackerEin'],
+};
+let lauf = 0;
+
+/** Seite laden, i18n.js starten, dann das Modul der Seite — so wie der
+    Browser es tut, nur ohne Firebase. Was das Modul zurueckgibt (TP,
+    startTracker), liegt danach an window.seite. */
 async function starte(seite, { lang = 'en', offline = false } = {}) {
   const html = await readFile(join(root, seite), 'utf8');
   const dom = new JSDOM(html, { url: `https://firn.test/${seite}`, runScripts: 'outside-only' });
@@ -42,7 +55,10 @@ async function starte(seite, { lang = 'en', offline = false } = {}) {
   };
   window.eval(i18nQuelle);
   await window.TVZAI18n.ready;
-  for (const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) window.eval(m[1]);
+  Object.assign(globalThis, { window, document: window.document, localStorage: window.localStorage });
+  const [pfad, einstieg] = ANSICHT[seite];
+  const modul = await import(`${pathToFileURL(join(root, pfad)).href}?lauf=${++lauf}`);
+  window.seite = modul[einstieg]();
   await new Promise(r => setTimeout(r, 0));          // ready.then(...) der Seite
   return window;
 }
@@ -86,9 +102,9 @@ test('Maturaarbeit: ein Sprachwechsel zeichnet auch, was der Code schreibt, neu'
 
 test('Maturaarbeit: Tage im Polnischen mit drei Formen', async () => {
   const w = await starte('pages/maturaarbeit.html', { lang: 'pl' });
-  assert.equal(w.TP('ma.sb.nochTage', 1, 'noch {n} Tag', 'noch {n} Tage'), 'został 1 dzień');
-  assert.equal(w.TP('ma.sb.nochTage', 3, 'noch {n} Tag', 'noch {n} Tage'), 'zostały 3 dni');
-  assert.equal(w.TP('ma.sb.nochTage', 5, 'noch {n} Tag', 'noch {n} Tage'), 'zostało 5 dni');
+  assert.equal(w.seite.TP('ma.sb.nochTage', 1, 'noch {n} Tag', 'noch {n} Tage'), 'został 1 dzień');
+  assert.equal(w.seite.TP('ma.sb.nochTage', 3, 'noch {n} Tag', 'noch {n} Tage'), 'zostały 3 dni');
+  assert.equal(w.seite.TP('ma.sb.nochTage', 5, 'noch {n} Tag', 'noch {n} Tage'), 'zostało 5 dni');
 });
 
 test('Maturaarbeit ohne Katalog: deutsch, nie ein Schluessel', async () => {
@@ -105,11 +121,13 @@ test('Maturaarbeit ohne Katalog: deutsch, nie ein Schluessel', async () => {
 
 test('Tracker: die Fortschrittszeile gehoert dem Code, nicht dem Katalog', async () => {
   const w = await starte('pages/maturaarbeit-tracker.html');
-  w.startTracker('u1', '');
+  w.seite.startTracker('u1', '');
   assert.equal(text(w, '#who-line'), 'Signed in: Student');
   assert.equal(text(w, '#tracker-progress-summary'), kataloge.en['mt.keineErledigt']);
 
-  w.toggleItem('p1a');
+  /* Ein Klick wie ein Mensch — die Handler haengen seit v.35.34.0 an
+     einem Zuhoerer fuer die ganze Seite, nicht mehr an window. */
+  w.document.querySelector('[data-item="p1a"]').click();
   assert.match(text(w, '#tracker-progress-summary'), /^1 of \d+ items done$/);
   /* Der Katalog beschriftet spaet noch einmal — genau das war der Fehler. */
   w.TVZAI18n.applyTo(w.document);
@@ -142,7 +160,8 @@ for (const [seite, ids] of Object.entries(VOM_CODE)) {
 test('jeder Schluessel, den die Skripte der alten Seiten benutzen, steht in allen Sprachen', async () => {
   const fehlend = [];
   for (const seite of Object.keys(VOM_CODE)) {
-    const html = await readFile(join(root, seite), 'utf8');
+    /* Seite samt Modulen: der Matura-Code liegt seit v.35.34.0 in feature/matura/. */
+    const html = await lies(seite);
     const schluessel = new Set();
     for (const m of html.matchAll(/\bT\(\s*'([a-z][\w.]*)'/g)) schluessel.add(m[1]);
     for (const m of html.matchAll(/\bTP\(\s*'([a-z][\w.]*)'/g)) { schluessel.add(`${m[1]}.one`); schluessel.add(`${m[1]}.other`); }
