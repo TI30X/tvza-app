@@ -24,6 +24,18 @@
       justify-content: center;
       padding: var(--s5);
     }
+    /* Wer über einen Einladungslink kommt (v.35.53.0), sieht, warum er
+       hier ist — statt eines Formulars ohne Zusammenhang. */
+    .login-einladung {
+      margin: 0 0 var(--s4);
+      padding: var(--s3) var(--s4);
+      border-radius: var(--r-row);
+      background: var(--accent-bg);
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
     .login-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -76,6 +88,8 @@
     <div class="login-card">
       <div class="login-logo"><span class="firn">Fir<b>n</b></span></div>
       <p class="login-sub" id="subTitle" data-i18n="login.subAn">Willkommen zurück! Melde dich an.</p>
+
+      <p class="login-einladung" id="einladungHinweis" hidden data-i18n="login.eingeladen">Du bist in eine Gruppe eingeladen. Erstelle ein Konto oder melde dich an — danach bist du drin.</p>
 
       <div class="login-error" id="errBox"></div>
 
@@ -131,6 +145,12 @@
     import {
       loginLockRemaining, recordLoginFailure, clearLoginFailures
     } from './assets/js/auth-security.js';
+    import { gemerkt, merken, codeSauber, CODE_LAENGE } from './assets/js/einladung.js';
+
+    /* Ein Einladungslink in eine Gruppe wartet (einladung.js): dann sagt
+       die Seite es, und das Feld für E-Mail-Einladungen verschwindet —
+       sonst tippt jemand den Gruppencode dort ein. */
+    const gruppenEinladung = !!gemerkt();
 
     // Already logged in? Go straight to the hub.
     let authActionInProgress = false;
@@ -170,9 +190,11 @@
     function setMode(nextMode) {
       mode = nextMode;
       $('nameGroup').style.display = mode === 'register' ? '' : 'none';
-      $('inviteGroup').style.display = mode === 'register' ? '' : 'none';
+      $('inviteGroup').style.display = mode === 'register' && !gruppenEinladung ? '' : 'none';
+      $('einladungHinweis').hidden = !gruppenEinladung;
       $('subTitle').textContent = mode === 'register'
-        ? t('login.subNeu', 'Erstelle dein Konto. Ein Einladungscode ist optional.')
+        ? (gruppenEinladung ? t('login.subNeuKurz', 'Erstelle dein Konto.')
+          : t('login.subNeu', 'Erstelle dein Konto. Ein Einladungscode ist optional.'))
         : t('login.subAn', 'Willkommen zurück! Melde dich an.');
       $('submitBtn').textContent = mode === 'register'
         ? t('login.registrieren', 'Registrieren') : t('login.anmelden', 'Anmelden');
@@ -240,7 +262,14 @@
       const email = $('fEmail').value.trim();
       const pass  = $('fPass').value;
       const name  = $('fName').value.trim();
-      const inviteCode = $('fInvite').value.trim();
+      let inviteCode = $('fInvite').value.trim();
+      /* Ein kurzer Gruppencode (K7Q3-M9XP) im Feld für E-Mail-Einladungen:
+         gemerkt und nach dem Registrieren eingelöst, wie vom Link. */
+      const gruppenCode = codeSauber(inviteCode);
+      if (mode === 'register' && gruppenCode.length === CODE_LAENGE) {
+        merken(gruppenCode);
+        inviteCode = '';
+      }
 
       if (!email || !pass) { showErr(t('login.fehler.leer', 'Bitte E-Mail und Passwort eingeben.')); return; }
       if (mode === 'register' && !name) { showErr(t('login.fehler.name', 'Bitte deinen Namen eingeben.')); return; }

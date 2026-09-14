@@ -79,3 +79,43 @@
   cursor: pointer;
 }
 .grp-weitere__link:hover { color: var(--accent); }
+
+/* Die Einladung (v.35.53.0): der kurze Link gross, darunter der Code zum
+   Abtippen und bis wann; drei Wege, sie loszuschicken. */
+.einladung {
+  display: grid;
+  gap: var(--s2);
+  margin-block: var(--s3);
+  padding: var(--s4);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+}
+.einladung__titel {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.einladung__link {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.einladung__meta {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.einladung__knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+.einladung__knoepfe .b { flex: 1 1 auto; }
+.einladung__weg { justify-self: start; }

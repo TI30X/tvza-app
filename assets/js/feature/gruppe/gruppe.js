@@ -16,7 +16,7 @@
    Tab und hat in einem Tippen etwas zu tun.
    ══════════════════════════════════════════════════════════════════ */
 
-import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
+import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError, imKreis }
   from '../../firebase-config.js';
 import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=19';
 import {
@@ -24,7 +24,7 @@ import {
   beobachteTermine, terminAnlegen, terminLoeschen,
   zusagen, ladeZusagen,
   rolleSetzen, mitgliedEntfernen, uebergeben,
-  einladungErzeugen, beitreten,
+  einladungErzeugen, beitreten, gruppenEinladungen, einladungZuruecknehmen, kontakte,
   ladeErgebnisse, ergebnisSpeichern,
   ladePlaene, planVeroeffentlichen, planLoeschen, eigeneProgramme, PLAN_FUER_ALLE,
   ladeProtokolle, ladeKontakt, ladeKontakte, kontaktSpeichern,
@@ -44,7 +44,9 @@ import {
   wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag, planTageMitDatum, ersetztePlaene,
 } from '../../wochenplan.js';
 import { agendaAnsicht, tagName, kurzDatum } from '../woche/woche.js';
-import { frage, eingabe, meldung } from '../../dialog.js';
+import { frage, eingabe, meldung, mehrere } from '../../dialog.js';
+import { einladungsLink, einladungsText, codeZeigen, gemerktEinloesen } from '../../einladung.js';
+import { gespraechspartner, anMehrere } from '../../chat-senden.js';
 import { gruppeWaehlen, gruppenStil, kuerzel } from '../../gruppenwahl.js';
 import {
   kontaktSauber, pruefeKontakt, verteiler, ohneAdresse, mailtoAdresse, istEmail, ELTERN_MAX,
@@ -77,6 +79,7 @@ const tPlural = (key, n, eins, mehr) => {
 };
 
 let user = null;
+let meinProfil = {};
 let gruppen = [];
 let aktiv = null;
 let termine = [];
@@ -2534,9 +2537,11 @@ async function codeEinloesen() {
   const code = await eingabe({
     titel: t('grp.beitretenTitel', 'Einer Gruppe beitreten'),
     text: t('grp.beitretenText', 'Den Code bekommst du von deinem Trainer oder aus der Einladung.'),
-    platzhalter: 'ABC123',
+    platzhalter: 'K7Q3-M9XP',
     ja: t('grp.beitretenKurz', 'Beitreten'),
-    maxlength: 32, gross: true,
+    /* Lang genug für den ganzen Link — wer ihn einfügt statt des Codes,
+       soll trotzdem hineinkommen (codeSauber in einladung.js). */
+    maxlength: 300, gross: true,
   });
   if (code === null) return;
   const sauber = code.trim();
@@ -2603,28 +2608,141 @@ async function aboErzeugen() {
   }
 }
 
+/* ── Einladen (v.35.53.0) ─────────────────────────────────────────
+   Michel: "ein Link zum Anmelden direkt mit Code, aber gekürzt … über
+   den Firn-Chat verschicken … auf Teilen, dann das Teilen-Menü öffnen
+   und gleich an mehrere schicken, WhatsApp-Gruppe, whatever. Wichtig
+   ist, dass der Code mal abläuft." Bis dahin: ein nackter Code aus 24
+   Hexzeichen, ohne Ablauf, in die Zwischenablage.
+
+   Jetzt eine Karte mit dem kurzen Link (einladung.js), dem Code zum
+   Abtippen und bis wann er gilt; darunter Teilen (das Menü des Telefons),
+   im Firn-Chat senden (an mehrere) und Kopieren. Eine noch gültige
+   Einladung wird wieder gezeigt statt neu angelegt. */
+
+let einladung = null;   // { code, bis }
+
 async function einladen() {
   if (!aktiv) return;
   const btn = $('btnEinladen');
   btn.disabled = true;
   try {
-    const kennung = await einladungErzeugen(aktiv.id, user.uid);
-    const feld = $('einladungText');
-    feld.textContent = kennung;
-    feld.hidden = false;
+    let offene = null;
     try {
-      await navigator.clipboard.writeText(kennung);
-      btn.textContent = t('grp.kopiert', 'Kopiert');
-      setTimeout(() => { btn.textContent = t('grp.einladen', 'Einladungscode erzeugen'); }, 1600);
-    } catch {
-      /* Ohne Zwischenablage — älteres iOS, kein sicherer Kontext —
-         steht der Code wenigstens lesbar darunter. */
-    }
+      /* Mindestens noch einen Tag gültig — sonst verschickt man einen
+         Link, der morgen nichts mehr taugt. */
+      offene = (await gruppenEinladungen(aktiv.id))
+        .find(e => e.bis.getTime() - Date.now() > 86400000) || null;
+    } catch { /* offline oder alte Regel: dann eben eine neue */ }
+    einladung = offene ? { code: offene.code, bis: offene.bis } : await einladungErzeugen(aktiv.id, user.uid);
+    einladungZeigen();
   } catch (e) {
     reportClientError('gruppe/einladen', e);
     await meldung({ titel: t('grp.f.code', 'Der Code konnte nicht erzeugt werden.') });
   } finally {
     btn.disabled = false;
+  }
+}
+
+function einladungZeigen(hinweis = '') {
+  const karte = $('einladung');
+  if (!karte) return;
+  karte.hidden = !einladung;
+  $('einladungText').hidden = !hinweis;
+  $('einladungText').textContent = hinweis;
+  if (!einladung) return;
+  /* Ohne https:// — kürzer zum Lesen, der Link selbst bleibt ganz. */
+  $('einladungLink').textContent = einladungsLink(einladung.code).replace(/^https?:\/\//, '');
+  $('einladungMeta').textContent = t('einl.meta', 'Code {code} · gilt bis {bis}', {
+    code: codeZeigen(einladung.code),
+    bis: einladung.bis.toLocaleDateString('de-CH', { day: 'numeric', month: 'long' }),
+  });
+}
+
+const einladungsNachricht = () => einladungsText({
+  gruppe: aktiv?.name, link: einladungsLink(einladung.code), bis: einladung.bis, t,
+});
+
+async function einladungTeilen() {
+  if (!einladung) return;
+  /* Das Teilen-Menü des Telefons: WhatsApp, Nachrichten, Mail — dort
+     wählt man auch mehrere oder eine ganze Gruppe. Nur der Text, der Link
+     steht darin; mit url dazu setzte iOS ihn zweimal hinein. */
+  if (navigator.share) {
+    try { await navigator.share({ title: aktiv?.name || 'Firn', text: einladungsNachricht() }); return; }
+    catch (e) { if (e?.name === 'AbortError') return; }
+  }
+  await einladungKopieren();
+}
+
+async function einladungKopieren() {
+  if (!einladung) return;
+  try {
+    await navigator.clipboard.writeText(einladungsNachricht());
+    einladungZeigen(t('einl.kopiert', 'Kopiert — mit dem Namen der Gruppe und bis wann der Link gilt.'));
+  } catch {
+    /* Ohne Zwischenablage (älteres iOS, kein sicherer Kontext) steht
+       der Link ja lesbar in der Karte. */
+    einladungZeigen(t('einl.nichtKopiert', 'Kopieren ging nicht — der Link steht oben.'));
+  }
+}
+
+/* An wen im Firn-Chat: wen man aus den eigenen Gruppen kennt und mit
+   wem man schon schreibt — ohne die, die schon in dieser Gruppe sind. */
+async function einladungImChat() {
+  if (!einladung || !aktiv) return;
+  const btn = $('btnEinladungChat');
+  btn.disabled = true;
+  try {
+    const [bekannte, partner] = await Promise.all([
+      kontakte(user.uid, { kreis: imKreis(meinProfil) }).catch(() => []),
+      gespraechspartner(user.uid),
+    ]);
+    const drin = new Set(mitglieder.map(m => m.uid));
+    const nach = new Map();
+    for (const b of bekannte) nach.set(b.uid, { uid: b.uid, name: b.name, text: (b.gruppen || []).join(', ') });
+    for (const p of partner) if (!nach.has(p.uid) && p.name) nach.set(p.uid, { uid: p.uid, name: p.name, text: '' });
+    const liste = [...nach.values()]
+      .filter(p => p.uid !== user.uid && !drin.has(p.uid))
+      .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    const wahl = await mehrere({
+      titel: t('einl.chatTitel', 'Im Chat senden'),
+      text: t('einl.chatText', 'Wer soll den Link bekommen?'),
+      optionen: liste.map(p => ({ wert: p, titel: p.name, text: p.text })),
+      ja: t('einl.senden', 'Senden'),
+      leer: t('einl.chatLeer', 'Alle, die du im Chat erreichst, sind schon in der Gruppe. Teile den Link stattdessen.'),
+    });
+    if (!wahl?.length) return;
+    const { gesendet, fehler } = await anMehrere({
+      ich: user.uid, meinName: meinProfil.displayName || '', empfaenger: wahl, text: einladungsNachricht(),
+    });
+    einladungZeigen(fehler
+      ? t('einl.teilweise', 'An {n} gesendet, an {f} nicht.', { n: gesendet, f: fehler })
+      : gesendet === 1
+        ? t('einl.gesendetEins', 'An 1 Person gesendet.')
+        : t('einl.gesendet', 'An {n} Personen gesendet.', { n: gesendet }));
+  } catch (e) {
+    reportClientError('gruppe/einladung-chat', e);
+    einladungZeigen(t('einl.f.chat', 'Das Senden hat nicht geklappt.'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function einladungZurueckziehen() {
+  if (!einladung) return;
+  if (!await frage({
+    titel: t('einl.frageWeg', 'Einladung zurückziehen?'),
+    text: t('einl.frageWegText', 'Der Link führt danach nirgends mehr hin. Wer schon beigetreten ist, bleibt in der Gruppe.'),
+    ja: t('einl.zurueckziehen', 'Zurückziehen'), gefahr: true,
+  })) return;
+  try {
+    await einladungZuruecknehmen(einladung.code);
+    einladung = null;
+    einladungZeigen();
+  } catch (e) {
+    reportClientError('gruppe/einladung-weg', e);
+    await meldung({ titel: t('einl.f.weg', 'Die Einladung liess sich nicht zurückziehen.') });
   }
 }
 
@@ -2638,6 +2756,7 @@ async function einladen() {
 
   let profile = {};
   try { profile = await getProfile(user); } catch { /* Kopf bleibt schlicht */ }
+  meinProfil = profile || {};
   /* Wer nur je die Gruppe öffnet, soll in der Kaderliste trotzdem mit
      Namen stehen (personen.js). Still und im Hintergrund. */
   void eigeneKarte(user.uid, profile);
@@ -2654,6 +2773,10 @@ async function einladen() {
 
   $('btnNeu')?.addEventListener('click', neueGruppe);
   $('btnEinladen')?.addEventListener('click', einladen);
+  $('btnEinladungTeilen')?.addEventListener('click', einladungTeilen);
+  $('btnEinladungChat')?.addEventListener('click', einladungImChat);
+  $('btnEinladungKopieren')?.addEventListener('click', einladungKopieren);
+  $('btnEinladungWeg')?.addEventListener('click', einladungZurueckziehen);
   $('btnAbo')?.addEventListener('click', aboErzeugen);
   $('btnTermin')?.addEventListener('click', formOeffnen);
   $('btnAbbrechen')?.addEventListener('click', formSchliessen);

@@ -111,7 +111,9 @@ function wireContentBridge() {
     if (event.defaultPrevented || event.button !== 0 ||
         event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const anchor = event.target.closest('a[href]');
-    if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+    /* data-kein-router: die Seite kümmert sich selbst (eine Einladung im Chat). */
+    if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download') ||
+        anchor.hasAttribute('data-kein-router')) return;
     const target = appUrl(anchor.href);
     if (target) {
       event.preventDefault();
@@ -692,7 +694,8 @@ export function mountAppRouter(nav) {
     if (event.defaultPrevented || event.button !== 0 ||
         event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const link = event.target.closest('a[href]');
-    if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+    if (!link || link.target === '_blank' || link.hasAttribute('download') ||
+        link.hasAttribute('data-kein-router')) return;
     const target = appUrl(link.href);
     if (!target) return;
     event.preventDefault();

@@ -22,6 +22,7 @@ const FIREBASE_STUB = `
   export const requireAuth = () => Promise.resolve({ uid: 'timo', email: 't@example.test' });
   export const getProfile = () => Promise.resolve({ displayName: 'Timothy' });
   export const wireOfflineBanner = () => {};
+  export const imKreis = p => !!p?.kreis;
   export const reportClientError = (wo, e) => { (globalThis.__fehler ||= []).push([wo, String(e)]); };
 `;
 
@@ -111,7 +112,11 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const rolleSetzen = ${merke('rolleSetzen')};
     export const mitgliedEntfernen = ${merke('mitgliedEntfernen')};
     export const uebergeben = ${merke('uebergeben')};
-    export const einladungErzeugen = async () => 'CODE';
+    /* Einladung mit Ablauf (v.35.53.0): { code, bis }. */
+    export const einladungErzeugen = async (...a) => { (globalThis.__aufrufe ||= []).push(['einladungErzeugen', ...a]); return { code: 'K7Q3M9XP', bis: new Date(Date.now() + 7 * 86400000) }; };
+    export const gruppenEinladungen = async () => globalThis.__einladungen || [];
+    export const einladungZuruecknehmen = ${merke('einladungZuruecknehmen')};
+    export const kontakte = async () => globalThis.__bekannte || [];
     export const beitreten = ${merke('beitreten')};
     export const ergebnisSpeichern = ${merke('ergebnisSpeichern')};
     export const planVeroeffentlichen = ${merke('planVeroeffentlichen')};
@@ -222,6 +227,9 @@ async function lade({
   globalThis.__fehler = [];
   globalThis.__gepackt = null;
   globalThis.__gaeste = [];
+  globalThis.__einladungen = [];
+  globalThis.__bekannte = [];
+  globalThis.__partner = [];
   globalThis.__aufrufe = [];
   globalThis.__termine = termine;
   globalThis.__antwort = { gruppeAnlegen: 'g-neu' };
@@ -268,7 +276,12 @@ async function lade({
     .replace(`'../../einheit.js'`, `'${datei('assets/js/einheit.js')}'`)
     .replace(`'../../zuordnung.js'`, `'${datei('assets/js/zuordnung.js')}'`)
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)
-    .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`);
+    .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`)
+    .replace(`'../../einladung.js'`, `'${datei('assets/js/einladung.js')}'`)
+    /* Der Chat: gesendet wird nichts, nur mitgeschrieben. */
+    .replace(`'../../chat-senden.js'`, `'${dataUrl(`
+      export const gespraechspartner = async () => globalThis.__partner || [];
+      export const anMehrere = async o => { (globalThis.__aufrufe ||= []).push(['anMehrere', o]); return { gesendet: o.empfaenger.length, fehler: 0 }; };`)}'`);
 
   /* Jeder Lauf bekommt eine eigene Adresse. Gleiche Parameter ergaeben
      sonst dieselbe Data-URL, der Modul-Cache lieferte das schon

@@ -105,7 +105,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-66 Testdateien, **722 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+67 Testdateien, **732 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -585,6 +585,41 @@ als ganze neue Seite. Jetzt:
 Tests: `navigation.test.mjs` („verlassene Seiten bleiben stehen …"),
 `calendar-groups`.
 
+**19. Eine Einladung ist ein kurzer Link, der abläuft** (v.35.53.0).
+Michel: „ein Link zum Anmelden direkt mit Code, aber gekürzt … wenn jemand
+einfach einen Code erhält, fragt er sich WTF … über den Firn-Chat
+verschicken, auf Teilen und gleich an mehrere … wichtig ist, dass der Code
+mal abläuft, und dass es keine Backends zeigt". Bis dahin: 24 Hexzeichen
+ohne Ablauf, nackt in die Zwischenablage.
+
+- `assets/js/einladung.js` (rein): Code aus 8 Zeichen ohne Verwechsler
+  (`ALPHABET`, 31 Zeichen, lesbar „K7Q3-M9XP"), Link = Wurzel der App +
+  `?k=<code>` — keine Gruppenkennung, kein Dienstname. `codeSauber()`
+  nimmt Code, Strich, Kleinschreibung oder den ganzen Link, alte Hex-Codes
+  bleiben klein.
+- **Ablauf:** `groupInvites/{code}.bis`, 7 Tage (`GUELTIG_TAGE`); die
+  Regel lässt beim Anlegen höchstens 15 zu und beim Beitritt nur, solange
+  `bis > request.time` — alte Codes ohne `bis` bis zum 15.10.2026. Die
+  Leitung darf die Einladungen IHRER Gruppe auflisten (`where gid ==`):
+  eine noch gültige wird wieder gezeigt statt neu angelegt, abgelaufene
+  räumt sie dabei weg (`gruppenEinladungen`).
+- **Gruppe-Tab:** „Leute einladen" → Karte mit Link, Code, „gilt bis";
+  Teilen (`navigator.share`, nur `text` — mit `url` setzte iOS den Link
+  zweimal), „Im Chat senden" (`mehrere()` in `dialog.js`, an mehrere,
+  nur wer noch nicht drin ist; `chat-senden.js` schreibt dieselbe Form wie
+  der Chat), Kopieren, Zurückziehen. Der Text nennt die Gruppe und das
+  Datum — nie ein nackter Code.
+- **Ankommen:** `requireAuth()` merkt `?k=` auf dem Gerät
+  (`localStorage['firn.beitritt']`, 14 Tage) und nimmt es aus der Adresse,
+  BEVOR irgendein Modul umleitet; wer eingeladen ist und kein Konto hat,
+  landet bei `login.html?neu=1` (mit Hinweis, ohne das Feld für
+  E-Mail-Einladungen — ein kurzer Code dort wird trotzdem genommen). Nach
+  der Anmeldung löst `start.js` den Code ein (nur oben, nie ein
+  vorgeladener Rahmen) und führt in die Gruppe. Im Chat wird NUR ein
+  Einladungslink der App zum Link (`data-kein-router`), ein Tipp tritt bei.
+
+Tests: `einladung.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -597,7 +632,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **953 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **975 Schlüssel** aus zwölf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -692,6 +727,10 @@ Zwei Dinge, die leicht übersehen werden:
   wollte gleich pushen); dazwischen scheiterten nur die neuen Felder. Mit
   derselben Runde: `protokoll` `get` über die Kennung (Falle-14-artig: ein
   Athlet konnte einen Tag ohne Protokoll nicht öffnen).
+  v.35.53.0 (Einladungen mit Ablauf, Falle 19): Regeln und Code **gleich
+  nacheinander** — die alten Regeln lehnen `bis` und die kurzen Codes ab,
+  die neuen die langen ohne `bis`. Dazwischen scheitert nur das Anlegen
+  einer Einladung; Beitreten mit alten Codes geht weiter.
 
 ## Gewohnheiten
 

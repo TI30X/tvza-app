@@ -94,6 +94,9 @@ test('jeder Regelhelfer ist definiert und wird auch benutzt', async () => {
     'timestamp', 'int', 'float', 'string', 'path', 'abs', 'function', 'if',
     /* "return (a || b) && c" ist kein Aufruf. */
     'return',
+    /* duration.value(15, 'd'), timestamp.date(2026, 10, 15) — der
+       Ablauf der Einladungen (v.35.53.0). */
+    'value', 'date',
   ]);
 
   const called = [

@@ -226,10 +226,12 @@ test('ein Einladungscode gilt mehrfach, ist aber nicht aufzählbar', async () =>
   // Deshalb steht hier bewusst KEIN !existsAfter.
   assert.doesNotMatch(block, /existsAfter/);
 
-  // Nachschlagen ja, auflisten nein: sonst wären alle Codes des Systems
-  // abgreifbar. Raten scheidet aus, die Codes sind 24 Hexzeichen lang.
+  // Nachschlagen ja, auflisten nur die Leitung ihrer eigenen Gruppe
+  // (v.35.53.0, zum Wiederverwenden und Aufräumen): sonst wären alle
+  // Codes des Systems abgreifbar. Raten scheidet aus — 31^8 Codes, und
+  // nach sieben Tagen wertlos (einladung.test.mjs).
   assert.match(allowClause(block, 'get'), /isMember\(\)/);
-  assert.match(allowClause(block, 'list'), /if false/);
+  assert.match(allowClause(block, 'list'), /^ if isMember\(\) && leadsGroup\(resource\.data\.gid\);$/);
 
   // Anlegen und zurückziehen darf nur, wer die Gruppe führt.
   assert.match(allowClause(block, 'create'), /leadsGroup\(request\.resource\.data\.gid\)/);

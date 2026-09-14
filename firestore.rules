@@ -1053,6 +1053,11 @@ service cloud.firestore {
                       //
                       // Immer als 'mitglied': wer beitritt, ernennt sich
                       // nicht selbst zum Trainer.
+                      //
+                      // Und nur, solange der Code gilt (v.35.53.0). Alte
+                      // Codes ohne 'bis' gelten bis zum 15. Oktober 2026 —
+                      // wer einen verschickt hat, soll ihn nicht ueber Nacht
+                      // verlieren.
                       || (
                         request.auth.uid == uid
                         && request.resource.data.rolle == 'mitglied'
@@ -1063,6 +1068,9 @@ service cloud.firestore {
                         && get(
                           /databases/$(database)/documents/groupInvites/$(request.resource.data.code)
                         ).data.gid == gid
+                        && get(
+                          /databases/$(database)/documents/groupInvites/$(request.resource.data.code)
+                        ).data.get('bis', timestamp.date(2026, 10, 15)) > request.time
                       )
                     ))
                     || einladungsBeitritt(gid, uid);
@@ -1143,18 +1151,28 @@ service cloud.firestore {
 
        'get' fuer jedes Mitglied, damit der Beitretende die Gruppe
        ueberhaupt nachschlagen kann — die Gruppe selbst darf er ja noch
-       nicht lesen. 'list' bleibt zu, sonst waeren alle Codes des
-       Systems aufzaehlbar. Raten scheidet aus: die Codes sind 24
-       Hexzeichen lang. */
+       nicht lesen. 'list' nur fuer die Leitung und nur mit dem Filter auf
+       ihre Gruppe — sonst waeren alle Codes des Systems aufzaehlbar.
+
+       Seit v.35.53.0 kurz und mit Ablauf (Michel: "wichtig ist, dass der
+       Code mal ablaeuft"): acht Zeichen aus einem Alphabet ohne
+       Verwechsler, 'bis' hoechstens 15 Tage nach dem Anlegen. Raten
+       scheidet trotzdem aus — 31^8 Codes, nicht auflistbar, jeder
+       Versuch ein Lesen, und nach Ablauf wertlos (siehe Beitritt in
+       members). */
     match /groupInvites/{code} {
       allow get: if isMember();
-      allow list: if false;
+      allow list: if isMember() && leadsGroup(resource.data.gid);
 
       allow create: if isMember()
+                    && code.matches('^[A-HJKMNP-Z2-9]{8}$')
                     && request.resource.data.gid is string
                     && leadsGroup(request.resource.data.gid)
-                    && request.resource.data.keys().hasOnly(['gid', 'createdBy', 'createdAt'])
-                    && request.resource.data.createdBy == request.auth.uid;
+                    && request.resource.data.keys().hasOnly(['gid', 'createdBy', 'createdAt', 'bis'])
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.bis is timestamp
+                    && request.resource.data.bis > request.time
+                    && request.resource.data.bis < request.time + duration.value(15, 'd');
 
       allow delete: if leadsGroup(resource.data.get('gid', ''));
     }

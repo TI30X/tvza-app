@@ -151,10 +151,8 @@ KEYS = {
                   'Quitar del grupo'),
 
 # ── Aktionen ──────────────────────────────────────────────────────
-'grp.einladen': ('Einladungscode erzeugen', 'Create an invitation code',
-                 "Générer un code d'invitation", 'Genera un codice di invito',
-                 'Wygeneruj kod zaproszenia', 'Uitnodigingscode maken',
-                 'Generar un código de invitación'),
+'grp.einladen': ('Leute einladen', 'Invite people', 'Inviter des personnes', 'Invita persone',
+                 'Zaproś osoby', 'Mensen uitnodigen', 'Invitar a personas'),
 'grp.abo': ('Kalender-Abo erzeugen', 'Create a calendar subscription',
             'Créer un abonnement calendrier', 'Crea un abbonamento calendario',
             'Utwórz subskrypcję kalendarza', 'Agenda-abonnement maken',

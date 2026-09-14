@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../assets/css/kit.css?v=21" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=7" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=8" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -569,11 +569,23 @@
       </div>
     </section>
 
-    <!-- Ein Code gilt fuer beliebig viele Beitritte — ein Kader laedt
-         zehn Athleten mit demselben Zettel ein. Zuruecknehmen heisst
-         loeschen; wer schon drin ist, bleibt drin. -->
+    <!-- Ein Link gilt fuer beliebig viele Beitritte — ein Kader laedt
+         zehn Athleten mit demselben Zettel ein. Er laeuft nach sieben
+         Tagen ab (v.35.53.0); zuruecknehmen heisst loeschen, wer schon
+         drin ist, bleibt drin. -->
     <section class="section" id="secAktionen" hidden>
-      <button class="b b--secondary b--block" id="btnEinladen" type="button" data-i18n="grp.einladen">Einladungscode erzeugen</button>
+      <button class="b b--secondary b--block" id="btnEinladen" type="button" data-i18n="grp.einladen">Leute einladen</button>
+      <div class="einladung" id="einladung" hidden>
+        <p class="einladung__titel" data-i18n="einl.titel">Einladungslink</p>
+        <p class="einladung__link" id="einladungLink"></p>
+        <p class="einladung__meta" id="einladungMeta"></p>
+        <div class="einladung__knoepfe">
+          <button class="b b--primary" id="btnEinladungTeilen" type="button" data-i18n="einl.teilen">Teilen</button>
+          <button class="b b--secondary" id="btnEinladungChat" type="button" data-i18n="einl.chat">Im Chat senden</button>
+          <button class="b b--secondary" id="btnEinladungKopieren" type="button" data-i18n="einl.kopieren">Kopieren</button>
+        </div>
+        <button class="grp-weitere__link einladung__weg" id="btnEinladungWeg" type="button" data-i18n="einl.zurueckziehen">Zurückziehen</button>
+      </div>
       <p class="empty-hint" id="einladungText" hidden></p>
       <button class="b b--secondary b--block" id="btnAbo" type="button" hidden data-i18n="grp.abo">Kalender-Abo erzeugen</button>
       <p class="empty-hint" id="aboText" hidden></p>
@@ -592,6 +604,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=21"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=22"></script>
 </body>
 </html>

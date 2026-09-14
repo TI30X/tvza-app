@@ -15,6 +15,7 @@ import { APP_CHECK_SITE_KEY } from './app-check-config.js';
 import {
   DEFAULT_REQUIRE_EMAIL_VERIFICATION, emailAccessAllowed
 } from './email-verification-policy.js';
+import { ausAdresseMerken, gemerkt } from './einladung.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNOe75cdHgw0kqL6xHACaUm0EUt83-cbE",
@@ -86,11 +87,21 @@ export function getTvzaConfig() {
 }
 
 // Redirect to login if not authenticated. Returns a promise of the user.
+/* Ein Einladungslink (?k=, einladung.js, v.35.53.0) wird hier gemerkt —
+   bevor irgendein Modul umleitet und der Code mit der Adresse verloren
+   geht. Und wer eingeladen ist und kein Konto hat, landet nicht auf
+   Willkommen, sondern gleich beim Registrieren: er weiss ja schon,
+   wofür. Hier und nicht in einem Modul, weil auf Start mehrere Module
+   requireAuth rufen — zwei verschiedene Ziele wären ein Wettlauf. */
 export function requireAuth(loginPath = 'login.html') {
+  ausAdresseMerken();
   return new Promise(resolve => {
     const unsub = auth.onAuthStateChanged(async user => {
       unsub();
-      if (!user) { window.location.href = loginPath; return; }
+      if (!user) {
+        window.location.href = gemerkt() ? loginPath.replace(/willkommen\.html$/, 'login.html?neu=1') : loginPath;
+        return;
+      }
       const tvzaConfig = await getTvzaConfig();
       if (!emailAccessAllowed(user, tvzaConfig)) {
         await signOut(auth).catch(() => {});

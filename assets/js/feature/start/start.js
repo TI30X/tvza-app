@@ -34,7 +34,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ICONS, icon } from '../../shell.js?v=19';
 import { initialsOf } from '../../nav.js?v=18';
-import { frage } from '../../dialog.js';
+import { frage, meldung } from '../../dialog.js';
+import { gemerktEinloesen } from '../../einladung.js';
 import { meineGruppen, leitet, kontakte } from '../../groups.js';
 import { nameAus } from '../../bekannte.js';
 
@@ -65,6 +66,8 @@ wireOfflineBanner();
    noch gar nicht, wofuer er sich anmelden soll. Von dort geht es
    weiter zu login.html — und nie zu public.html, das bleibt ein
    Link, den man verschickt. */
+/* Ein Einladungslink (?k=) merkt requireAuth selbst und schickt dann
+   zum Registrieren statt auf Willkommen (firebase-config.js). */
 const user = await requireAuth('willkommen.html');
 if (sessionStorage.getItem('tvza-send-verification') === '1') {
   sessionStorage.removeItem('tvza-send-verification');
@@ -114,6 +117,22 @@ if (!Object.keys(profile).length) {
   // queries below would flash an empty dashboard.
   await new Promise(() => {});
 }
+
+/* Wartet ein Code (vom Link, vielleicht von vor dem Konto), jetzt
+   beitreten und hin — über den Router, sobald die Leiste steht. */
+/* Nur oben — ein vorgeladener Start im Rahmen des Routers löst nichts
+   ein, sonst träten zwei Dokumente zugleich bei. */
+if (window.parent === window) void (async () => {
+  const beitritt = await gemerktEinloesen(user.uid);
+  if (!beitritt) return;
+  if (beitritt.fehler) {
+    await meldung({ titel: t('grp.f.beitritt', 'Der Beitritt hat nicht geklappt.'), text: beitritt.fehler });
+    return;
+  }
+  const ziel = new URL('pages/gruppe.html', location.href).href;
+  for (let i = 0; i < 20 && !window.tvzaNavigate; i++) await new Promise(r => setTimeout(r, 100));
+  if (!window.tvzaNavigate?.(ziel)) location.href = ziel;
+})();
 
 const name = profile.displayName || 'du';
 const ownerName = profile.displayName || '';

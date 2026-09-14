@@ -3402,6 +3402,23 @@ html.tvza-content-frame body > main {
    waehlt: was fuer eine Gruppe, welche Art von Termin. Vorher war das
    ein Auswahlfeld oder — beim Anlegen einer Gruppe — eine Ziffer, die
    man in ein Browserfenster tippte. */
+/* mehrere() in dialog.js: an wen im Chat (v.35.53.0). */
+.mehrere {
+  display: grid; gap: var(--s2);
+  max-height: 50vh; overflow-y: auto;
+  margin-block: var(--s3);
+}
+.mehrere__zeile {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s2) var(--s3);
+  border: 1.5px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface); cursor: pointer;
+}
+.mehrere__zeile:has(input:checked) { border-color: var(--accent); background: var(--accent-bg); }
+.mehrere__zeile input { flex: none; width: 18px; height: 18px; accent-color: var(--accent); }
+.mehrere__name { font-weight: 600; }
+.mehrere__text { display: block; font-size: 12px; color: var(--ink-soft); }
+
 .wahlkarten { display: grid; gap: var(--s2); }
 .wahlkarte {
   display: grid; grid-template-columns: auto 1fr; align-items: center;

@@ -36,8 +36,9 @@
 import { db } from './firebase-config.js';
 import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
-  onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp, deleteField, addDoc, setDoc,
+  onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp, deleteField, addDoc, setDoc, Timestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { neuerCode, codeSauber, ablaufAb, abgelaufen } from './einladung.js';
 import { reiseUebernehmen } from './reise-uebernahme.js';
 import { nameVon, kreisMitglieder } from './personen.js';
 import { bekannteAus } from './bekannte.js';
@@ -366,30 +367,63 @@ export function waehleAktive(gruppen) {
    E-Mail gebunden und einmalig sind: ein Kader lädt zehn Athleten mit
    demselben Zettel ein, nicht mit zehn Zetteln. Zurückziehen heisst
    löschen — danach trägt der Code ins Leere, und wer schon drin ist,
-   bleibt drin. */
+   bleibt drin.
 
-export async function einladungErzeugen(gid, uid) {
-  const kennung = code();
+   Seit v.35.53.0 kurz und mit Ablauf (`bis`, einladung.js): acht
+   Zeichen statt 24, und nach sieben Tagen lässt die Regel niemanden
+   mehr damit herein. */
+
+export async function einladungErzeugen(gid, uid, { bis = ablaufAb() } = {}) {
+  const kennung = neuerCode();
   await writeBatch(db)
     .set(doc(db, 'groupInvites', kennung),
-         { gid, createdBy: uid, createdAt: serverTimestamp() })
+         { gid, createdBy: uid, createdAt: serverTimestamp(), bis: Timestamp.fromDate(bis) })
     .commit();
-  return kennung;
+  return { code: kennung, bis };
 }
 
 export function einladungZuruecknehmen(kennung) {
   return deleteDoc(doc(db, 'groupInvites', kennung));
 }
 
+/* Die Einladungen einer Gruppe — nur für ihre Leitung, und nur mit dem
+   Filter auf die Gruppe (die Regel verlangt ihn). Abgelaufene räumt die
+   Leitung dabei weg, damit sie nicht liegen bleiben; die gültigen kommen
+   zurück, die neueste zuerst. So bekommt, wer zweimal auf "Einladen"
+   tippt, denselben Link und nicht jedes Mal einen neuen. */
+export async function gruppenEinladungen(gid) {
+  const snap = await getDocs(query(collection(db, 'groupInvites'), where('gid', '==', gid)));
+  const jetzt = new Date();
+  const alle = snap.docs.map(d => ({ code: d.id, ...d.data() }));
+  const alt = alle.filter(e => e.bis && abgelaufen(e, jetzt));
+  await Promise.all(alt.map(e => deleteDoc(doc(db, 'groupInvites', e.code)).catch(() => {})));
+  return alle
+    .filter(e => e.bis && !abgelaufen(e, jetzt))
+    .map(e => ({ ...e, bis: e.bis?.toDate ? e.bis.toDate() : new Date(e.bis) }))
+    .sort((a, b) => b.bis - a.bis);
+}
+
 export async function beitreten(kennung, uid) {
-  const sauber = String(kennung ?? '').trim().toLowerCase();
-  if (!sauber) throw new Error('Der Code fehlt.');
+  const sauber = codeSauber(kennung);
+  if (!sauber) throw new Error(String(kennung ?? '').trim() ? 'Das ist kein gültiger Code.' : 'Der Code fehlt.');
 
   const snap = await getDoc(doc(db, 'groupInvites', sauber));
   if (!snap.exists()) throw new Error('Diesen Code gibt es nicht (mehr).');
 
   const gid = snap.data().gid;
   if (!gid) throw new Error('Der Code zeigt auf keine Gruppe.');
+  /* Die Regel prüft den Ablauf ohnehin; hier nur, damit die Meldung
+     sagt, was los ist, statt "keine Berechtigung". Alte Codes ohne
+     `bis` lässt die Regel noch bis zum 15. Oktober 2026 zu. */
+  if (snap.data().bis && abgelaufen(snap.data())) {
+    throw new Error('Diese Einladung ist abgelaufen. Frag nach einem neuen Link.');
+  }
+
+  /* Wer schon drin ist, bleibt, wie er ist — ein zweites Schreiben wäre
+     für die Regel ein Ändern, und das darf nur der Kopf. */
+  try {
+    if ((await getDoc(mitgliedRef(gid, uid))).exists()) return gid;
+  } catch { /* nicht lesbar heisst: noch nicht drin */ }
 
   /* Immer als 'mitglied' — wer beitritt, ernennt sich nicht selbst zum
      Trainer. Die Regel besteht ohnehin darauf. Der Code bleibt im

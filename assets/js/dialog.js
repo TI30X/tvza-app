@@ -58,8 +58,17 @@ function oeffne(bauen) {
     /* waehle(): eine Karte antwortet mit ihrer Stelle in der Liste. */
     d.querySelectorAll('[data-wahl]').forEach(karte =>
       karte.addEventListener('click', () => zu(karte.dataset.wahl)));
+    /* mehrere(): die Suche blendet Zeilen aus, gewählt bleibt gewählt. */
+    d.querySelector('[data-mehrere-suche]')?.addEventListener('input', event => {
+      const wort = event.target.value.trim().toLowerCase();
+      d.querySelectorAll('[data-mehrere] label').forEach(zeile => {
+        zeile.hidden = !!wort && !zeile.textContent.toLowerCase().includes(wort);
+      });
+    });
     d.querySelector('form').addEventListener('submit', event => {
       event.preventDefault();
+      const haken = d.querySelectorAll('[data-mehrere] input[type="checkbox"]');
+      if (haken.length) { zu([...haken].filter(h => h.checked).map(h => h.value)); return; }
       const feld = d.querySelector('input, textarea');
       zu(feld ? feld.value : true);
     });
@@ -118,6 +127,38 @@ export async function waehle({ titel, text = '', optionen = [], nein } = {}) {
     </form>`);
   if (typeof antwort !== 'string') return null;
   return optionen[Number(antwort)]?.wert ?? null;
+}
+
+/**
+ * Mehrere auf einmal wählen — die fünfte Form (v.35.53.0), für "an wen
+ * im Chat schicken". Eine Liste mit Häkchen, ab acht Einträgen mit Suche.
+ *
+ * optionen: [{ wert, titel, text }]
+ * Ergebnis: die Werte der angehakten, bei Abbruch null. Nichts angehakt
+ * ist [] — auch eine Antwort, der Aufrufer entscheidet.
+ */
+export async function mehrere({ titel, text = '', optionen = [], ja, nein, leer = '' } = {}) {
+  const antwort = await oeffne(() => `
+    <form method="dialog" class="frage__karte">
+      <h2 class="frage__titel">${esc(titel)}</h2>
+      ${text ? `<p class="frage__text">${esc(text)}</p>` : ''}
+      ${optionen.length > 8 ? `<input class="form-input" type="search" data-mehrere-suche
+          placeholder="${esc(t('common.suchen', 'Suchen'))}" aria-label="${esc(t('common.suchen', 'Suchen'))}" autocomplete="off" />` : ''}
+      <div class="mehrere" data-mehrere>
+        ${optionen.length ? optionen.map((o, i) => `
+          <label class="mehrere__zeile">
+            <input type="checkbox" value="${i}" />
+            <span><span class="mehrere__name">${esc(o.titel)}</span>
+              ${o.text ? `<span class="mehrere__text">${esc(o.text)}</span>` : ''}</span>
+          </label>`).join('') : `<p class="frage__text">${esc(leer)}</p>`}
+      </div>
+      ${knoepfe({
+        ja: ja || t('common.ok', 'OK'),
+        nein: nein || t('common.abbrechen', 'Abbrechen'),
+      })}
+    </form>`);
+  if (!Array.isArray(antwort)) return null;
+  return antwort.map(i => optionen[Number(i)]?.wert).filter(w => w !== undefined);
 }
 
 /** Ja oder nein. Ein Abbruch (Escape, Rand, "Abbrechen") ist nein. */
