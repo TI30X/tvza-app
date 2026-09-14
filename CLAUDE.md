@@ -607,6 +607,10 @@ Zwei Dinge, die leicht übersehen werden:
   `gepackt/{uid}` und legt bei der Übernahme Termine mit diesen Feldern an — die alten
   Regeln lehnen das ab (die Übernahme scheitert dann still und läuft beim
   nächsten Öffnen wieder). Die neuen Regeln vertragen den alten Code.
+  Ausgerollt am 14.09.2026 — ausnahmsweise kurz NACH dem Code (Michel
+  wollte gleich pushen); dazwischen scheiterten nur die neuen Felder. Mit
+  derselben Runde: `protokoll` `get` über die Kennung (Falle-14-artig: ein
+  Athlet konnte einen Tag ohne Protokoll nicht öffnen).
 
 ## Gewohnheiten
 
