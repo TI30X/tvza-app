@@ -17,11 +17,11 @@
    Loaded as a module, because it reads MODULES from firebase-config.
    ══════════════════════════════════════════════════════════════════ */
 
-import { auth, MODULES, enabledModules, imKreis } from './firebase-config.js';
+import { auth, MODULES, enabledModules } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { frage } from './dialog.js';
-import { mountAppRouter } from './router.js?v=12';
-import { zeichen, wort, softwareVon, softwareZeigen, kreisSetzen, zuhauseMarkieren } from './wechsel.js';
+import { mountAppRouter } from './router.js?v=13';
+import { zeichen, wort, softwareZeigen, FIRN } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
 // The module skips content frames, so routed pages mount exactly one bell.
@@ -340,12 +340,10 @@ export function mountRail({ profile = null } = {}) {
       </button>
     </div>`;
   nav.querySelector('.nav__fuss').prepend(kontoKnopf('leiste'));
-  /* Im TVZA-Kreis sind Start, Kalender und Chat TVZA (wechsel.js,
-     v.35.48.0). Das muss feststehen, bevor die Leiste ihr Zeichen
-     waehlt — sonst blitzte bei Freunden und Familie erst Firn auf. */
-  if (profile && Object.keys(profile).length) kreisSetzen(imKreis(profile));
-  zuhauseMarkieren(document);
-  const software = softwareVon(document);
+  /* Oben links steht immer Firn (v.35.51.0, Michel: "die Application
+     heisst Firn"). Von v.35.48.0 bis v.35.50.0 stand dort für den
+     TVZA-Kreis auf Start, Kalender und Chat TVZA. */
+  const software = FIRN;
   const kopfZeichen = zeichen(software);
   kopfZeichen.classList.add('nav__zeichen');
   const kopfWort = wort();
@@ -362,10 +360,9 @@ export function mountRail({ profile = null } = {}) {
   nav.addEventListener('click', event => {
     if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
   });
-  /* Beim Bauen ohne Bewegung — ausser man kommt gerade von einer Seite
-     der anderen Software: die Gruppe lädt als eigene Seite, nicht im
-     Rahmen des Routers, und der Weg vom TVZA-Zuhause in die Gruppe ist
-     genau der Wechsel, den man sehen soll (wechsel.js, v.35.48.0). */
+  /* Die Leiste steht in Firn; kam man eben von einer Seite, deren
+     Leiste noch TVZA zeigte (vor v.35.51.0), verwandelt sie sich einmal
+     zurück. */
   softwareZeigen(software);
   mountAppRouter(nav);
   verkabelLeiste();

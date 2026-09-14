@@ -2636,13 +2636,16 @@ html.tvza-content-frame body > main {
      Inhalt 100 Pixel weiter rechts — zwei Linien, wo eine sein soll.
      Seiten mit breiterem Inhalt (Kalender, Matura) setzen
      --kopf-breite und --kopf-rand selbst. */
+  /* Navy wie am Handy und wie die Leiste daneben (v.35.51.0). Bis dahin
+     war der Kopf am Laptop weiss — Michel: "oben, wieso ist sie weiss?";
+     neben der dunklen Leiste las er sich wie ein Fehler. */
   .appbar {
     margin-left: 0;
     width: 100%;
     z-index: 50;
-    background: var(--surface);
-    color: var(--ink);
-    border-bottom: 1px solid var(--border);
+    background: var(--brand-gradient);
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   .appbar__accent { display: none; }
   .appbar__inner {
@@ -2655,10 +2658,10 @@ html.tvza-content-frame body > main {
   }
   .appbar__btn {
     background: transparent;
-    color: var(--ink-soft);
+    color: rgba(255, 255, 255, 0.82);
     transition: background-color 150ms ease, color 150ms ease;
   }
-  .appbar__btn:hover { background: var(--surface-2); color: var(--ink); }
+  .appbar__btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
   /* Das Konto steht am Laptop in der Leiste. Zwei Wege zu den
      Einstellungen auf einem Bildschirm waren einer zu viel. */
   .appbar .acct { display: none; }
@@ -2666,9 +2669,9 @@ html.tvza-content-frame body > main {
   .appbar--bereich .appbar__title { margin-left: 0; }
   /* Begrüssung und Datum stehen nebeneinander, nicht gestapelt. */
   .appbar__spacer { display: flex; align-items: baseline; gap: var(--s3); margin-left: 0; }
-  .appbar__greet  { font-size: 16px; font-weight: 700; color: var(--ink); }
-  .appbar__title  { font-size: 16px; font-weight: 700; color: var(--ink); }
-  .appbar__date   { font-size: 13px; margin-top: 0; color: var(--ink-soft); flex: none; }
+  .appbar__greet  { font-size: 16px; font-weight: 700; color: #fff; }
+  .appbar__title  { font-size: 16px; font-weight: 700; color: #fff; }
+  .appbar__date   { font-size: 13px; margin-top: 0; color: rgba(255, 255, 255, 0.7); flex: none; }
 
   /* ── Die Leiste ─────────────────────────────────────────────────*/
   .nav {

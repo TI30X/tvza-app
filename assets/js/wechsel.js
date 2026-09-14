@@ -128,52 +128,19 @@ export function wort(doc = document) {
   return span;
 }
 
-/* ── Das Zuhause (v.35.48.0) ─────────────────────────────────────────
-   Für den TVZA-Kreis — Freunde und Familie — ist TVZA das Zuhause und
-   Firn das, wohin man geht, wenn man in die Gruppe geht. Start, Kalender
-   und Chat tragen darum <body data-zuhause>: sie gehören zu keiner der
-   beiden Softwares fest, sondern zu der, in der man zuhause ist. Wer
-   nicht im Kreis ist, sieht dort Firn und von TVZA nichts.
+/* ── Firn überall (v.35.51.0) ─────────────────────────────────────
+   Von v.35.48.0 bis v.35.50.0 waren Start, Kalender und Chat für den
+   TVZA-Kreis "TVZA" (das Zuhause), und oben links stand dann TVZA statt
+   Firn. Michel: "die Application heisst Firn — und jetzt zeigen wir
+   TVZA oben links". Entschieden: Firn überall. Die Leiste zeigt immer
+   Firn (shell.js), TVZA steht nur noch als Etikett an den persönlichen
+   Bereichen — ihre Seiten tragen data-marke="TVZA" für Tab, Titel und
+   Versionszeile. softwareZeigen() bleibt für den Fall, dass die Leiste
+   je wieder umschalten soll. */
 
-   Den Kreis setzt die Leiste, sobald sie das Profil kennt (shell.js).
-   Er gilt für die Seite oben und damit auch für die Seiten, die der
-   Router in seinen Rahmen lädt. */
-let kreis = false;
-export function kreisSetzen(ja) { kreis = !!ja; }
-export const imZuhauseKreis = () => kreis;
-export const istZuhause = doc => !!doc?.body?.hasAttribute?.('data-zuhause');
-
-/** Zu welcher Software ein Dokument gehört. */
+/** Zu welcher Software ein Dokument gehört — die Seite sagt es selbst. */
 export function softwareVon(doc) {
-  if (doc?.body?.dataset?.marke === 'TVZA') return TVZA;
-  return kreis && istZuhause(doc) ? TVZA : FIRN;
-}
-
-/* Was ein Zuhause im Tab trägt: das TVZA-Symbol statt des Bergs und
-   "TVZA" statt "Firn" am Ende des Titels. Eine Rechnung, damit die Seite
-   oben und der Router für die Seiten im Rahmen dasselbe tun. */
-export const zuhauseSymbol = href => String(href || '').replace(/firn\.svg(\?|$)/, 'tvza.svg$1');
-export const zuhauseTitel = titel => String(titel || '').replace(/Firn$/, 'TVZA');
-
-/**
- * Macht aus einer Zuhause-Seite eine TVZA-Seite, wenn man im Kreis ist:
- * Marke, Tab-Symbol, Titel und die Versionszeile. Der Titel verliert
- * dabei sein data-i18n — sonst setzte der Katalog, der später kommt,
- * "Firn" zurück (Falle 5).
- */
-export function zuhauseMarkieren(doc = document) {
-  if (!kreis || !istZuhause(doc)) return false;
-  doc.body.dataset.marke = 'TVZA';
-  const link = doc.querySelector('link[rel="icon"]');
-  if (link) link.setAttribute('href', zuhauseSymbol(link.getAttribute('href')));
-  const titel = doc.querySelector('title');
-  if (titel) {
-    titel.removeAttribute('data-i18n');
-    doc.title = zuhauseTitel(doc.title);
-  }
-  const version = doc.querySelector('.fx-version');
-  if (version) version.textContent = version.textContent.replace(/^Firn/, 'TVZA');
-  return true;
+  return doc?.body?.dataset?.marke === 'TVZA' ? TVZA : FIRN;
 }
 
 const glatt = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);

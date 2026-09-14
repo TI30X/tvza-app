@@ -29,7 +29,7 @@
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle, setShellMeta } from '../../shell.js?v=17';
+import { mountShell, setShellTitle, setShellMeta } from '../../shell.js?v=18';
 import {
   ladeGruppe, ladePlan, ladeProtokoll, ladeProtokolle, protokollSpeichern, ladeMitglieder, PLAN_FUER_ALLE,
 } from '../../groups.js';

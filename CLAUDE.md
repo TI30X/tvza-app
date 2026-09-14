@@ -24,7 +24,16 @@ Anmeldung, aber nicht als ein Produkt.
   Bereiche in einen Rahmen lädt und die Seite oben stehen bleibt, übernimmt
   `tabFolgen()` in `router.js` Symbol und Titel der Seite im Rahmen.
 
-  **Der Wechsel ist sichtbar** (`assets/js/wechsel.js`, v.35.40.0): an der
+  **Oben links steht immer Firn** (v.35.52.0). Michel: „die Application
+  heisst Firn — und jetzt zeigen wir TVZA oben links"; entschieden: Firn
+  überall. TVZA steht nur noch als Etikett an den persönlichen Bereichen
+  (ihre Seiten tragen `data-marke="TVZA"` für Tab, Titel, Versionszeile;
+  auf Start die Marke „TVZA" über dem Eigenen). Die Leiste zeigt immer
+  Firn (`const software = FIRN` in `mountRail()`), der Router schaltet
+  sie nicht mehr mit der Seite um. Die Verwandlung unten bleibt im Code
+  (`softwareZeigen`), falls die Leiste je wieder umschalten soll.
+
+  **Der Wechsel war sichtbar** (`assets/js/wechsel.js`, v.35.40.0–v.35.51.0): an der
   Grenze Firn ↔ TVZA wird oben in der Leiste der Berg zum T, „Firn" blendet
   zu „TVZA". Seit v.35.51.0 (Michel: „viel deutlicher", dann „less
   intrusive") gleitet dazu oben in der Mitte eine Karte herein — am Handy
@@ -50,13 +59,13 @@ Anmeldung, aber nicht als ein Produkt.
   **Draussen gibt es TVZA nicht**: `allowedModules()` nimmt die
   TVZA-Bereiche weg, Firn ist das Zuhause.
 
-  **Im Kreis ist TVZA das Zuhause.** Start, Kalender und Chat tragen
-  `<body data-zuhause>` und sind für den Kreis TVZA (Zeichen, Titel,
-  Symbol, `zuhauseMarkieren()` in `wechsel.js`); die Gruppe und die
-  Firn-Bereiche bleiben Firn. Zu Firn kommt man also, wenn man in die
-  Gruppe geht — und sieht die Verwandlung. Auf Start steht für den Kreis
-  zuerst das Eigene, darunter die Firn-Bereiche mit dem Zeichen „Firn".
-  `dev/kreis.test.mjs`.
+  **Das „Zuhause" ist weg** (v.35.52.0). Von v.35.48.0 bis v.35.51.0 waren
+  Start, Kalender und Chat für den Kreis TVZA (`data-zuhause`,
+  `zuhauseMarkieren()`) — oben links stand dann TVZA. Seit „Firn überall"
+  ist keine Seite mehr ein Zuhause. Der Kreis entscheidet weiter, wer die
+  TVZA-Bereiche bekommt; auf Start steht für den Kreis zuerst das Eigene
+  (mit der Marke „TVZA"), darunter die Firn-Bereiche mit dem Zeichen
+  „Firn". `dev/kreis.test.mjs`.
 
 Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
 Michel baut und hostet. Timos Name steht je Seite **einmal**, als
@@ -64,7 +73,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.51.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.52.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -92,7 +101,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-66 Testdateien, **722 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+66 Testdateien, **721 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -234,7 +243,10 @@ Menü. Tabs haben keinen Zurück-Pfeil; Unterseiten (Einheit, Video) schon.
 Alle Importe von `shell.js` und `router.js` müssen dieselbe `?v=` tragen —
 zwei Nummern sind für den Browser zwei Module mit getrenntem Zustand.
 
-**Den Kopf färbt das Kit, nicht die Seite.** Navy am Handy, hell am Laptop.
+**Den Kopf färbt das Kit, nicht die Seite.** Navy am Handy und seit
+v.35.52.0 auch am Laptop (Michel: „oben, wieso ist sie weiss?" — neben der
+dunklen Leiste las sich der weisse Kopf wie ein Fehler); bis dahin hell am
+Laptop.
 Die Maturaarbeit färbte ihren Kopf bis v.35.34.0 selbst navy — am Laptop war
 ihr Titel damit Navy auf Navy und unsichtbar.
 
@@ -642,7 +654,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.51.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.52.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

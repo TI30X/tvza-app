@@ -26,7 +26,7 @@ body.matura-page {
   --status-warn-bg: oklch(0.28 0.035 75);
 }
 
-/* Die Farbe des Kopfs ist die des Kits: Navy am Handy, hell am Laptop —
+/* Die Farbe des Kopfs ist die des Kits: Navy am Handy und am Laptop —
    wie auf jeder Seite (CLAUDE.md, Falle 7). Bis v.35.34.0 stand hier das
    Navy für alle Breiten; am Laptop war der Titel dann Navy auf Navy und
    unsichtbar. Aufgefallen erst, als das TVZA-Zeichen daneben stand. */

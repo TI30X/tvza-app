@@ -129,84 +129,56 @@ test('im Kreis kennt man einander — auch ohne gemeinsame Gruppe', async () => 
   ]);
 });
 
-/* ── Das Zuhause ───────────────────────────────────────────────────*/
+/* ── Firn überall (v.35.51.0) ─────────────────────────────────────
+   Von v.35.48.0 bis v.35.50.0 waren Start, Kalender und Chat für den Kreis
+   "TVZA" — oben links stand TVZA statt Firn. Michel: "die Application
+   heisst Firn". Entschieden: Firn überall, TVZA nur als Etikett an den
+   persönlichen Bereichen. */
 
-test('Start, Kalender und Chat sind das Zuhause — sonst keine Seite', async () => {
-  const seiten = ['index.html', 'pages/planner.html', 'pages/messages.html'];
-  for (const s of seiten) {
+test('keine Seite ist mehr ein TVZA-Zuhause', async () => {
+  for (const s of ['index.html', 'pages/planner.html', 'pages/messages.html', 'pages/gruppe.html']) {
     const html = await lies(s);
-    assert.match(html, /<body[^>]*\sdata-zuhause[\s>]/, `${s} ist kein Zuhause`);
-    assert.doesNotMatch(html, /<body[^>]*data-marke/, `${s} darf nicht fest zu einer Software gehören`);
+    assert.doesNotMatch(html, /data-zuhause/, `${s} wird wieder zum Zuhause`);
+    assert.doesNotMatch(html, /<body[^>]*data-marke/, `${s} ist eine Seite von Firn`);
   }
-  for (const s of ['pages/gruppe.html', 'pages/training.html', 'pages/einheit.html', 'pages/maturaarbeit.html']) {
-    assert.doesNotMatch(await lies(s), /data-zuhause/, `${s} ist kein Zuhause`);
-  }
+  /* Die persönlichen Bereiche tragen TVZA weiter als Etikett. */
+  assert.match(await lies('pages/maturaarbeit.html'), /<body[^>]*data-marke="TVZA"/);
 });
 
-test('im Kreis ist das Zuhause TVZA, draussen Firn — die Gruppe bleibt Firn', async () => {
+test('oben links steht immer Firn — die Leiste schaltet nicht um', async () => {
+  const [shell, router, wechsel] = await Promise.all([
+    lies('assets/js/shell.js'), lies('assets/js/router.js'), lies('assets/js/wechsel.js'),
+  ]);
+  const rail = shell.slice(shell.indexOf('export function mountRail('));
+  assert.match(rail, /const software = FIRN;/);
+  assert.doesNotMatch(shell, /zuhauseMarkieren|kreisSetzen/);
+  assert.doesNotMatch(router, /softwareZeigen|zuhause/i, 'der Router schaltet die Leiste wieder mit der Seite um');
+  assert.doesNotMatch(wechsel, /export function zuhauseMarkieren|data-zuhause'\)/);
+
   const { JSDOM } = await import('jsdom');
   const w = await import('../assets/js/wechsel.js');
-  const seite = (body, kopf = '<title>Kalender — Firn</title><link rel="icon" href="../assets/icons/firn.svg">') =>
-    new JSDOM(`<head>${kopf}</head><body ${body}><div class="fx-version">Firn · v.35.48.0</div></body>`).window.document;
-
-  w.kreisSetzen(false);
-  const draussen = seite('data-zuhause');
-  assert.equal(w.softwareVon(draussen), w.FIRN);
-  assert.equal(w.zuhauseMarkieren(draussen), false, 'draussen wird nichts umbenannt');
-  assert.equal(draussen.title, 'Kalender — Firn');
-
-  w.kreisSetzen(true);
-  assert.equal(w.softwareVon(seite('')), w.FIRN, 'die Gruppe ist auch im Kreis Firn');
-  assert.equal(w.softwareVon(seite('data-marke="TVZA"')), w.TVZA);
-
-  const start = seite('data-zuhause', '<title data-i18n="home.seitentitel">Firn</title><link rel="icon" href="assets/icons/firn.svg">');
-  assert.equal(w.softwareVon(start), w.TVZA);
-  assert.equal(w.zuhauseMarkieren(start), true);
-  assert.equal(start.body.dataset.marke, 'TVZA');
-  assert.equal(start.title, 'TVZA');
-  assert.equal(start.querySelector('title').hasAttribute('data-i18n'), false,
-    'sonst setzt der Katalog, der später kommt, "Firn" zurück');
-  assert.equal(start.querySelector('link[rel="icon"]').getAttribute('href'), 'assets/icons/tvza.svg');
-  assert.equal(start.querySelector('.fx-version').textContent, 'TVZA · v.35.48.0');
-  w.kreisSetzen(false);
+  const doc = body => new JSDOM(`<body ${body}></body>`).window.document;
+  assert.equal(w.softwareVon(doc('')), w.FIRN);
+  assert.equal(w.softwareVon(doc('data-zuhause')), w.FIRN, 'ein altes Zuhause ist Firn');
+  assert.equal(w.softwareVon(doc('data-marke="TVZA"')), w.TVZA);
 });
 
-test('der Tab folgt dem Zuhause im Rahmen, bevor es sich selbst umbenennt', async () => {
+test('der Tab folgt der Seite im Rahmen — TVZA-Bereiche mit ihrem Symbol', async () => {
   const { JSDOM } = await import('jsdom');
   const { tabFolgen } = await import('../assets/js/router.js');
-  const w = await import('../assets/js/wechsel.js');
-  const oben = new JSDOM('<title>TVZA</title><link rel="icon" href="https://firn.test/assets/icons/tvza.svg">',
+  const oben = new JSDOM('<title>Firn</title><link rel="icon" href="https://firn.test/assets/icons/firn.svg">',
     { url: 'https://firn.test/' }).window.document;
   const link = oben.querySelector('link[rel="icon"]');
   const eigen = { symbol: link.href, titel: oben.title };
-  const rahmen = (body, titel) => ({ contentDocument: new JSDOM(
-    `<head><title>${titel}</title><link rel="icon" href="../assets/icons/firn.svg"></head><body ${body}></body>`,
+  const rahmen = (symbol, titel) => ({ contentDocument: new JSDOM(
+    `<head><title>${titel}</title><link rel="icon" href="../assets/icons/${symbol}"></head><body></body>`,
     { url: 'https://firn.test/pages/x.html' }).window.document });
 
-  w.kreisSetzen(true);
-  tabFolgen(oben, rahmen('data-zuhause', 'Nachrichten — Firn'), eigen);
-  assert.equal(oben.title, 'Nachrichten — TVZA');
+  tabFolgen(oben, rahmen('firn.svg', 'Nachrichten — Firn'), eigen);
+  assert.equal(oben.title, 'Nachrichten — Firn', 'der Chat heisst wieder TVZA');
+  tabFolgen(oben, rahmen('tvza.svg', 'Maturaarbeit — TVZA'), eigen);
+  assert.equal(oben.title, 'Maturaarbeit — TVZA');
   assert.equal(link.href, 'https://firn.test/assets/icons/tvza.svg');
-
-  tabFolgen(oben, rahmen('', 'Gruppe — Firn'), eigen);
-  assert.equal(oben.title, 'Gruppe — Firn', 'die Gruppe bleibt Firn');
-  assert.equal(link.href, 'https://firn.test/assets/icons/firn.svg');
-
-  w.kreisSetzen(false);
-  tabFolgen(oben, rahmen('data-zuhause', 'Nachrichten — Firn'), eigen);
-  assert.equal(oben.title, 'Nachrichten — Firn', 'draussen ist das Zuhause Firn');
-});
-
-test('die Leiste kennt den Kreis, bevor sie ihr Zeichen wählt', async () => {
-  const shell = await lies('assets/js/shell.js');
-  const rail = shell.slice(shell.indexOf('export function mountRail('));
-  const kreis = rail.indexOf('kreisSetzen(imKreis(profile))');
-  const markieren = rail.indexOf('zuhauseMarkieren(document)');
-  const zeichen = rail.indexOf('const software = softwareVon(document)');
-  assert.ok(kreis > 0 && kreis < markieren && markieren < zeichen,
-    'sonst blitzt bei Freunden und Familie erst Firn auf');
-  // Ein leeres Profil (nicht geladen) ist keine Entscheidung.
-  assert.match(rail, /if \(profile && Object\.keys\(profile\)\.length\) kreisSetzen/);
 });
 
 test('Start im Kreis: das Eigene zuerst, die Firn-Bereiche mit ihrem Zeichen', async () => {
