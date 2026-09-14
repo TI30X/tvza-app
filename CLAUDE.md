@@ -790,6 +790,9 @@ Zwei Dinge, die leicht übersehen werden:
   die neuen die langen ohne `bis`. Dazwischen scheitert nur das Anlegen
   einer Einladung; Beitreten mit alten Codes geht weiter. Ausgerollt am
   14.09.2026, Regeln unmittelbar vor dem Push.
+  v.35.54.0 (Assistent der Gruppe, `assistentGueltig`) Regeln VOR dem Code:
+  der neue Code schreibt `groups.assistent`, die alten Regeln lehnen das ab;
+  die neuen vertragen den alten Code. Ausgerollt am 15.09.2026.
 
 ## Gewohnheiten
 
