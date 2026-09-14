@@ -282,20 +282,37 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
           const x = d.data(); if (!x.startDate) return;
           const mine = familyIds.has(x.familyId);
           if (!mine) return;
+          /* Eine übernommene Reise ist ein Termin der Gruppe geworden
+             (v.35.50.0) und steht unten als solcher. */
+          if (x.uebernommen) return;
           // Bereits laufende Reisen (Start in der Vergangenheit, Ende noch nicht erreicht) zählen als "heute".
           const ongoing = x.startDate < todayStr && (!x.endDate || x.endDate >= todayStr);
           if (ongoing) candidates.push({ date: todayStr, title: x.name || 'Reise' });
           else if (x.startDate >= todayStr) candidates.push({ date: x.startDate, title: x.name || 'Reise' });
         });
       } catch (e) { reportClientError('calendar-tile-trips', e); }
+      /* Die Termine der Gruppen — seit Termine und Reisen eins sind
+         (v.35.50.0), stehen hier auch die Reisen. Abgesagtes steht nicht
+         an; ein Lager, das schon läuft, zählt als heute. */
+      try {
+        const listen = await Promise.all(gruppenIds.map(gid => ladeTermine(gid).catch(() => [])));
+        listen.flat().forEach(x => {
+          if (!x?.von || x.abgesagt === true) return;
+          const ende = x.bis && x.bis > x.von ? x.bis : x.von;
+          if (ende < todayStr) return;
+          candidates.push({ date: x.von < todayStr ? todayStr : x.von, title: x.titel || 'Termin', gruppe: true });
+        });
+      } catch (e) { reportClientError('calendar-tile-events', e); }
       if (!candidates.length) return;
       candidates.sort((a, b) => a.date < b.date ? -1 : 1);
       /* Was heute ansteht, fuer die Tageszusammenfassung. Alle Quellen
          hier — Erinnerungen und Reisen — tragen ein Datum ohne
          Uhrzeit, darum ganztags: true. Ohne das behauptete die Karte
          "Heute um 00:00". */
+      /* Die Gruppentermine bringt die Zusammenfassung selbst (mit
+         Uhrzeit, alsBriefingTermine) — hier stünden sie doppelt. */
       window.tvzaHeuteTermine = candidates
-        .filter(c => c.date === todayStr)
+        .filter(c => c.date === todayStr && !c.gruppe)
         .map(c => ({ titel: c.title, start: new Date(c.date + 'T00:00:00'), ganztags: true }));
       const ev = candidates[0];
       const t = new Date(); t.setHours(0,0,0,0);

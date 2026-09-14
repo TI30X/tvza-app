@@ -24,7 +24,9 @@ test('calendar discovers every group membership instead of one profile familyId'
   const planner = await read('pages/planner.html');
   assert.match(planner, /where\('members','array-contains',user\.uid\)/);
   assert.match(planner, /visibleGroupIds/);
-  assert.match(planner, /id="tGroup"/);
+  /* Seit v.35.50.0 gibt es keine Reise als eigenes Blatt mehr — sie ist
+     ein Termin der Gruppe (termine-reisen.test.mjs). */
+  assert.doesNotMatch(planner, /id="tripSheet"|id="tripDetail"|id="tGroup"/);
   assert.doesNotMatch(planner, /async function approve\(uid\)\{[^}]*users/);
 });
 
@@ -62,10 +64,10 @@ test('der Kalender verwaltet keine eigenen Gruppen mehr — das tut der Gruppe-T
    Gruppen ist?" (v.35.49.0) */
 test('in eine Gruppe trägt nur ihre Leitung ein — wer mehrere leitet, wählt', async () => {
   const quelle = await kalender();
-  assert.match(quelle, /function darfLeiten\(gid\) \{\s*const team = teams\.find\(g => g\.id === gid\);\s*if \(team\) return leitet\(team\.meineRolle\);/);
-  // Die Knöpfe gibt es nur, wenn man etwas leitet.
+  // Den Knopf gibt es nur, wenn man etwas leitet — und eine Reise ist
+  // seit v.35.50.0 ein Gruppentermin, kein zweiter Knopf.
   assert.match(quelle, /\$\('createGroupEventOption'\)\.hidden = !geleiteteTeams\(\)\.length;/);
-  assert.match(quelle, /\$\('createTripOption'\)\.hidden = !geleiteteGruppen\(\)\.length;/);
+  assert.doesNotMatch(quelle, /createTripOption|openTripForm/);
   // Wer mehrere leitet, wählt; die aktive steht vorne.
   const waehlen = quelle.match(/async function gruppeZumEintragen\(liste\) \{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(waehlen, /if \(liste\.length <= 1\) return liste\[0\]\?\.id \|\| null;/);
@@ -74,10 +76,9 @@ test('in eine Gruppe trägt nur ihre Leitung ein — wer mehrere leitet, wählt'
   assert.match(quelle, /location\.href = `\.\/gruppe\.html\?g=\$\{encodeURIComponent\(gid\)\}&neu=\$\{encodeURIComponent\(tag\)\}`;/);
   const gruppe = await readFile(join(root, 'assets/js/feature/gruppe/gruppe.js'), 'utf8');
   assert.match(gruppe, /if \(neuAusAdresse && aktiv\) \{[\s\S]*?if \(leitet\(aktiv\.meineRolle\)\) formOeffnen\(tag\);/);
-  // Eine Reise: nur in Gruppen, die man leitet; ändern und löschen die Leitung.
-  assert.match(quelle, /const waehlbar = geleiteteGruppen\(\);/);
-  assert.match(quelle, /const leite = darfLeiten\(tr\.familyId\);/);
-  assert.match(quelle, /\$\{leite \? '<button class="btn btn-danger btn-block" id="tdDelete"/);
+  // Bearbeiten und Gast-Link: nur die Leitung (die Regel verlangt es).
+  assert.match(gruppe, /\$\('btnBearbeiten'\)\.hidden = !darfFuehren;/);
+  assert.match(gruppe, /\$\('btnGastLink'\)\.hidden = !darfFuehren;/);
 
   // Und die Regel, die es hält.
   const rules = await readFile(join(root, 'firestore.rules'), 'utf8');
@@ -128,16 +129,26 @@ test('von der alten Mitgliederliste bleibt nichts zurueck', async () => {
 
 test('imported programs stay in TVZA and share completion state live', async () => {
   const planner = await read('pages/planner.html');
+  const programm = await readFile(join(root, 'assets/js/programm.js'), 'utf8');
+  const groups = await readFile(join(root, 'assets/js/groups.js'), 'utf8');
 
+  // Die alten Reisen bleiben live, bis sie übernommen sind.
   assert.match(planner, /function watchTrips\(\)/);
   assert.match(planner, /onSnapshot\(\s*query\(collection\(db,'trips'\)/);
-  assert.match(planner, /\[`itineraryDone\.\$\{item\.id\}`\]:next/);
-  assert.match(planner, /function renderPlanViewer\(tr\)/);
-  assert.match(planner, /function openPlan\(tr\)/);
-  assert.match(planner, /mode\.textContent='Original ansehen'/);
-  assert.doesNotMatch(planner, /function openPlanFull\(/);
-  // Abgehakt wird in der Liste, im Programm und im Detail — alles über dieselbe Funktion.
-  assert.match(planner, /beiStop:\(eintrag, stop\) => toggleItineraryItem\(eintrag\.ref, stop\)/);
+  // Abgehakt wird ein Programm nicht mehr (Michel, v.35.50.0) — weder im
+  // Termin noch in einer alten Reise; was vorbei ist, blendet sich ab.
+  assert.doesNotMatch(planner + groups, /itineraryDone\.|programmErledigt/);
+  assert.match(programm, /export function punktVorbei\(punkt, jetzt\)/);
+  // EIN Programm-Blatt für Kalender und Gruppe, mit dem Original daneben.
+  assert.match(programm, /export function programmZeigen\(o\)/);
+  assert.match(programm, /tt\('prog\.original', 'Original ansehen'\)/);
+  assert.match(planner, /import \{[^}]*programmZeigen[^}]*\} from '\.\.\/\.\.\/programm\.js';/);
+  assert.doesNotMatch(planner, /function renderPlanViewer\(|function openPlanFull\(/);
+  // Ein Punkt in der Liste öffnet das Programm; vorbei ist er nach der Uhr.
+  assert.match(planner, /const vorbeiVon = \(eintrag, stop\) => punktVorbei\(stop, jetztFuer\(new Date\(\)\)\);/);
+  assert.match(planner, /beiProgramm:programmOeffnen,/);
+  // Ein offenes Programm zieht Änderungen der anderen nach.
+  assert.match(planner, /teamTermine\.set\(gid, termine\);\s*renderCurrentView\(\);\s*offenesProgrammNeu\(\);/);
 });
 
 test('am Handy beginnt der Kalender mit der Liste, auf heute gestellt', async () => {
@@ -168,7 +179,7 @@ test('am Handy: Erstellen und Erinnerungen bleiben erreichbar', async () => {
     read('assets/css/feature/calendar.css'),
     read('assets/css/feature/planner.css'),
   ]);
-  for (const id of ['createEventOption', 'createGroupEventOption', 'createTripOption', 'createReminderOption',
+  for (const id of ['createEventOption', 'createGroupEventOption', 'createReminderOption',
                     'mobileRemindersBtn', 'mobileReminderCount', 'mobileCalAddBtn', 'reminderHubList', 'reminderHubAdd', 'reminderComplete']) {
     assert.match(planner, new RegExp(`id="${id}"`), `${id} fehlt`);
   }
@@ -193,7 +204,7 @@ test('der Monat am Handy: Punkte je Tag, die Einträge des Tags darunter', async
   ]);
   const monat = planner.match(/function renderMonat\(el, liste\) \{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(monat, /const kompakt = isMobileCalendar\(\);/);
-  assert.match(monat, /tagesListeHtml\(anchorKey, liste, \{ erledigtVon \}\)/);
+  assert.match(monat, /tagesListeHtml\(anchorKey, liste, \{ vorbeiVon \}\)/);
   // Ein Tag im Monat wählt am Handy den Tag, am Laptop öffnet er ihn.
   assert.match(planner, /if \(curView === 'month' && isMobileCalendar\(\)\) renderCurrentView\(\);\s*else setView\('day'\);/);
   assert.match(css, /\.kal-monatsraster\.is-kompakt \.kal-mtag\.is-gewaehlt \.kal-mtag__num/);

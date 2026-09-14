@@ -92,6 +92,8 @@ test('jeder Regelhelfer ist definiert und wird auch benutzt', async () => {
     'keys', 'values', 'size', 'diff', 'affectedKeys', 'concat', 'removeAll',
     'matches', 'lower', 'upper', 'split', 'toUtf8', 'debug', 'duration',
     'timestamp', 'int', 'float', 'string', 'path', 'abs', 'function', 'if',
+    /* "return (a || b) && c" ist kein Aufruf. */
+    'return',
   ]);
 
   const called = [

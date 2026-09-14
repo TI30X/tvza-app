@@ -51,17 +51,28 @@ const mindestens = (a, b) => (a < b ? b : a);
 
 export function ausTeamTermin(termin, gruppe, farbe) {
   if (!istIsoTag(termin?.von)) return null;
-  const bis = istIsoTag(termin.bis) && termin.bis > termin.von ? termin.bis : termin.von;
+  let von = termin.von;
+  let bis = istIsoTag(termin.bis) && termin.bis > termin.von ? termin.bis : termin.von;
+  /* Seit v.35.50.0 trägt ein Termin ein Programm (was vorher nur die
+     Reise konnte). Wie dort: reicht es über Von–Bis hinaus, reicht der
+     Eintrag mit. */
+  const programm = Array.isArray(termin.programm) ? termin.programm : [];
+  for (const stop of programm) {
+    if (!istIsoTag(stop?.date)) continue;
+    if (stop.date < von) von = stop.date;
+    if (stop.date > bis) bis = stop.date;
+  }
+  const eintaegig = von === bis && von === termin.von;
   const typ = artName(termin, gruppe?.art);
   return {
     id: `team:${gruppe?.id || ''}:${termin.id || termin.von}`,
     art: 'team',
-    von: termin.von,
+    von,
     bis,
     /* Eine Uhrzeit hat nur der eintägige Termin — ein Lager mit
        Anreisezeit stünde sonst an allen Tagen um 08:00. */
-    zeit: bis === termin.von ? String(termin.zeit || '') : '',
-    bisZeit: '',
+    zeit: eintaegig ? String(termin.zeit || '') : '',
+    bisZeit: eintaegig && termin.zeit ? String(termin.bisZeit || '') : '',
     titel: String(termin.titel || '').trim() || typ,
     ort: String(termin.ort || ''),
     quelle: gruppe?.name || '',
@@ -69,7 +80,7 @@ export function ausTeamTermin(termin, gruppe, farbe) {
     typ,
     abgesagt: istAbgesagt(termin),
     erledigt: false,
-    stops: [],
+    stops: programm,
     ref: { ...termin, location: termin.ort || '', gid: gruppe?.id || '', gruppenName: gruppe?.name || '' },
   };
 }

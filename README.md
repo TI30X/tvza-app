@@ -52,9 +52,11 @@
 - `familyDirectory/{familyId}` — enthält **ausschliesslich** `name`. Damit kann man eine
   Gruppe über ihren Namen finden und eine Beitrittsanfrage stellen, ohne die Gruppe selbst
   lesen zu dürfen.
-- `trips/{id}`, `activities/{id}`, `attachments/{id}` — Gruppendaten. Lesen darf die Gruppe
-  (`trip.familyId` ist die Gruppe, bei alten Familien die Familie); anlegen, ändern und löschen
-  seit v.35.49.0 nur ihre Leitung (`tripLeitung()`), Mitglieder haken Programmpunkte ab.
+- `trips/{id}`, `activities/{id}`, `attachments/{id}` — die alten Reisen. Seit v.35.50.0 sind
+  Reisen Termine der Gruppe (`groups/{gid}/events/{id}` mit `programm`, `planHtml`/`planUrl`,
+  `abfahrten`, `packliste`, `gastToken`, Untersammlungen `anhaenge` und `gepackt/{uid}`); die Leitung
+  übernimmt eine Reise unter derselben Kennung und markiert sie mit `uebernommen: true`. Lesen
+  darf die Gruppe, schreiben die Leitung; abgehakt wird nur die eigene Packliste.
   Ein Anhang gehört entweder zu einer Reise oder zu einem eigenen `calendarDays`-Eintrag.
 - `customFoods/{id}` — vom Admin freigegebene Lebensmittel (`name, kcal, protein, carbs, fat, fibre, micros`).
   Werden im Food Tracker beim Start geladen und stehen dann allen in Suche & Scan zur Verfügung.

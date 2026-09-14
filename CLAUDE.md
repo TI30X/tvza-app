@@ -60,7 +60,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.49.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.50.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -88,7 +88,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-64 Testdateien, **693 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+65 Testdateien, **712 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -138,7 +138,7 @@ dieselbe Zahl trägt.
 
 **2. Die Regeln sind die Wahrheit, nicht die Oberfläche.** Mitgliedschaft,
 Gruppenisolation und einmalige Einladungscodes stehen in `firestore.rules`
-(1365 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
+(1505 Zeilen). `dev/security-model.test.mjs` und `dev/rules-regression.test.mjs`
 halten die Invarianten fest — Regeländerungen gehören im selben Commit dorthin.
 
 Historisch drifteten Datei und Live-Stand auseinander, weil die Regeln in die
@@ -447,6 +447,63 @@ Termine um 10 Uhr lagen übereinander, und beim ersten Öffnen fragte er
 
 Tests: `kalender-eintraege`, `kalender-ansicht` (jsdom), `calendar-groups`.
 
+**17. Termine und Reisen sind EIN Modell** (v.35.50.0). Bis dahin gab es
+zwei Dinge für dasselbe: den Termin der Gruppe (`groups/{gid}/events` —
+Art, Zusagen, Absage, Unterlagen) und die Reise (`trips` — Programm aus
+einer HTML-Seite, Aufgaben, Dateien, Gast-Link). Die Reise stand nie im
+Gruppe-Tab, der Termin hatte kein Programm. Michel: „leg Termine und Reisen
+zusammen — ohne die Funktionalität der Reise nachzulassen, also die coole
+HTML-Option“. Jetzt kann der Termin alles:
+
+- **Programm** (`assets/js/programm.js`, geteilt von Kalender, Gruppe-Tab
+  und Gastseite): `programm` am Termin (dieselbe Form wie `itinerary`),
+  `planHtml`/`planUrl` als Seite. Eine Seite (einfügen, Datei, Link) liest
+  `programmMitSeite()` nach Tagen ein; die Punkte vom letzten Einlesen werden
+  ersetzt, von Hand angelegte (und geänderte) bleiben. „Programm öffnen“
+  zeigt es gross, „Original ansehen“ die bereinigte Seite (`sicheresHtml()`,
+  Rahmen ohne allow-scripts). Das Blatt baut das Modul selbst.
+- **Ein Programm wird NICHT abgehakt** (Michel: „um 7:00 sollte es von
+  alleine gehen, muss ja nicht durchgestrichen werden“). Vorbei ist, was nach
+  der Uhr vorbei ist (`punktVorbei()`, leiser, nie durchgestrichen), der
+  nächste Punkt trägt „Als Nächstes“. Die Leitung tippt einen Punkt an und
+  ändert ihn (Zeit, Datum, Details).
+- **Ändern darf nur die Leitung** — Programm, Seite, Abfahrten, Packliste,
+  Unterlagen. Mitglieder ändern am Termin nichts (die Regel hat keinen
+  Zweig mehr für sie).
+- **Abfahrten** je Person (`abfahrten: { uid: { zeit, ort } }`): die Leitung
+  trägt ein („Für alle“ füllt jede Zeile), jeder sieht oben im Termin, im
+  Programm und in der Karte des Kalenders „Deine Abfahrt“.
+- **Packliste:** die Punkte legt die Leitung an und bearbeitet sie
+  (`packliste` am Termin, „Yogamatte, Aussen-Turnschuhe“), abgehakt wird
+  für jede Person einzeln (`events/{eid}/gepackt/{uid}`, wie die Zusagen) —
+  dort stehen auch Punkte, die jemand nur für sich dazuschreibt. Die alten
+  Aufgaben einer Reise werden bei der Übernahme ihre Packliste.
+- **Was oft vorkommt**, tippt man nicht jedes Mal neu: im Formular stehen
+  die häufigsten Termine der Gruppe zum Antippen (gleicher Titel, Zeit, Ort
+  mindestens zweimal), und Titel, Orte und Packpunkte haben Vorschlagslisten
+  (`<datalist>`, gefüllt aus dem, was die Gruppe schon hat).
+- **Gäste:** `gastToken` am Termin, Link `guest.html?g=&termin=&token=`,
+  Zugang `guestAccess/{uid}_{eid}`; die Regel `terminGast()` vergleicht das
+  Token bei jedem Lesen. Ein Gast sieht genau einen Termin (`get`, nie
+  `list`).
+- **Bearbeiten** (gab es für Termine nicht): nur die Leitung, die Art bleibt.
+  Dazu Ende am Tag (`bisZeit`), Bemerkung, `.ics` für jeden.
+
+**Die Übernahme** (`reise-uebernahme.js`): wer eine Gruppe leitet,
+übernimmt ihre Reisen beim Öffnen von Kalender oder Gruppe — der Termin
+bekommt DIESELBE Kennung wie die Reise (`events/{tripId}`), die Aufgaben
+werden seine Packliste, die Dateien seine Unterlagen, zuletzt
+`trips.uebernommen = true`. Nichts wird gelöscht, jeder
+Schritt ist wiederholbar. Weil die Kennung bleibt und der Termin das Token
+der Reise trägt, gilt der alte Gastzugang `{uid}_{tripId}` auch für den
+Termin: alte Links (`guest.html?trip=`) zeigen ihn. Bis zur Übernahme steht
+die Reise wie früher im Kalender (zum Ansehen); eine übernommene nie
+doppelt (`sichtbareReisen()`). Der Kalender legt keine Reisen mehr an —
+„Gruppentermin“ führt in den Gruppe-Tab.
+
+Tests: `termine-reisen` (Programm, Übernahme, Regeln, Gruppe-Tab),
+`gast-seite`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -459,7 +516,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **823 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **935 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -527,9 +584,10 @@ Zwei Dinge, die leicht übersehen werden:
 - Kein 2FA. SMS braucht Identity Platform (kostenpflichtig).
 - **Reste des Familienmodells.** Das Profilfeld `users.familyId` wird nicht
   mehr geschrieben; alte, offene Einladungen in eine Kalendergruppe werden
-  noch eingelöst (`invitedAutoJoin`). Die Reisen
-  (`trips`, samt Gastzugang) bleiben eine eigene Sammlung neben den
-  Gruppenterminen (`groups/{gid}/events`).
+  noch eingelöst (`invitedAutoJoin`). Die Reisen (`trips`, `activities`,
+  `attachments` mit `parent` = Reise) bleiben nach der Übernahme stehen
+  (Falle 17) — löschen erst, wenn alle übernommen sind und niemand mehr
+  einen alten Gastlink braucht.
 - **Regeln ohne Emulator.** Auf dieser Maschine gibt es kein Java; die
   Regeln werden vor dem Ausrollen nur mit `--dry-run` gegen das Projekt
   kompiliert, nicht gegen Testfaelle gefahren. Zuletzt ausgerollt mit
@@ -544,11 +602,16 @@ Zwei Dinge, die leicht übersehen werden:
   Stapel schreibt die Kreisliste mit). Beide ausgerollt am 13.09.2026.
   v.35.49.0 (`tripLeitung()`: Reisen schreibt die Leitung) verschärft nur —
   der Code verlangt die neue Regel nicht, sie kann nach dem Code kommen.
+  v.35.50.0 (Termine = Reisen, Falle 17) wieder **Regeln VOR dem Code**: der
+  neue Code schreibt `programm`, `abfahrten`, `packliste`, `gastToken`,
+  `gepackt/{uid}` und legt bei der Übernahme Termine mit diesen Feldern an — die alten
+  Regeln lehnen das ab (die Übernahme scheitert dann still und läuft beim
+  nächsten Öffnen wieder). Die neuen Regeln vertragen den alten Code.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.49.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.50.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

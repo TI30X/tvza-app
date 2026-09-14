@@ -14,8 +14,9 @@
   <script src="../assets/js/i18n.js?v=1"></script>
   <link rel="stylesheet" href="../assets/css/kit.css?v=17" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=17" />
-  <link rel="stylesheet" href="../assets/css/feature/planner.css?v=3" />
+  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=18" />
+  <link rel="stylesheet" href="../assets/css/feature/planner.css?v=4" />
+  <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <title data-i18n="kal.seitentitel">Kalender — Firn</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -101,9 +102,6 @@
         </button>
       </div>
 
-      <!-- Ein geteilter Termin mit Programm, Gästen, Aufgaben und Dateien.
-           Steht an der Stelle des Kalenders, bis man zurückgeht. -->
-      <div id="tripDetail" hidden></div>
     </main>
   </div>
 
@@ -125,14 +123,7 @@
         <span class="create-option__icon create-option__icon--event" aria-hidden="true">
           <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </span>
-        <span><strong data-i18n="cal.gruppentermin">Gruppentermin</strong><small data-i18n="kal.gruppenterminSub">Training, Lager, Rennen — für alle in der Gruppe</small></span>
-        <svg class="ic create-option__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
-      <button class="create-option" id="createTripOption" type="button">
-        <span class="create-option__icon create-option__icon--event" aria-hidden="true">
-          <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/><path d="M3 12h18"/></svg>
-        </span>
-        <span><strong data-i18n="kal.reise">Reise mit Programm</strong><small data-i18n="kal.reiseSub">Mehrere Tage, mit Programm, Gästen und Dateien</small></span>
+        <span><strong data-i18n="cal.gruppentermin">Gruppentermin</strong><small data-i18n="kal.gruppenterminSub">Für alle in der Gruppe — auch Reisen mit Programm</small></span>
         <svg class="ic create-option__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
       </button>
       <button class="create-option" id="createReminderOption" type="button">
@@ -155,40 +146,6 @@
       <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
       <span data-i18n="cal.neueErinnerung">Neue Erinnerung</span>
     </button>
-  </div>
-
-  <!-- Ein Termin der Gruppe (Reise, Ausflug, Programm) -->
-  <div class="backdrop" id="tripBackdrop"></div>
-  <div class="sheet" id="tripSheet">
-    <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" id="tripFormTitle">Neuer Termin</span>
-      <button class="icon-pill" id="tripFormClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <div class="field"><label for="tName" data-i18n="cal.titel">Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" data-i18n-attr="placeholder:cal.bspTitel" /></div>
-    <div class="field"><label for="tDest" data-i18n="cal.zielOrt">Ziel / Ort</label><input class="form-input" id="tDest" placeholder="z.B. Saas-Fee" data-i18n-attr="placeholder:cal.bspOrt" /></div>
-    <div class="field"><label for="tGroup" data-i18n="cal.kalender">Kalender</label><select class="form-input" id="tGroup"></select></div>
-    <div class="row2">
-      <div class="field"><label for="tStart" data-i18n="cal.von">Von</label><input class="form-input" id="tStart" type="date" /></div>
-      <div class="field"><label for="tEnd" data-i18n="cal.bis">Bis</label><input class="form-input" id="tEnd" type="date" /></div>
-    </div>
-    <div class="row2">
-      <div class="field"><label for="tStartTime" data-i18n="cal.startzeit">Startzeit</label><input class="form-input" id="tStartTime" type="time" /></div>
-      <div class="field"><label for="tEndTime" data-i18n="cal.endzeit">Endzeit</label><input class="form-input" id="tEndTime" type="time" /></div>
-    </div>
-    <div class="field"><label for="tNotes" data-i18n="cal.notizen">Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
-    <div class="field">
-      <label data-i18n="cal.programm">Programm / Info-Seite</label>
-      <div class="tabs" id="tpTabs">
-        <button class="tab active" type="button" data-tpane="paste">HTML</button>
-        <button class="tab" type="button" data-tpane="upload" data-i18n="cal.datei">Datei (.html)</button>
-        <button class="tab" type="button" data-tpane="url" data-i18n="cal.link">Link</button>
-      </div>
-      <div data-tbody="paste"><textarea class="form-textarea" id="tpHtml" rows="4" placeholder="HTML hier einfügen — wird automatisch nach Tagen aufgeteilt…" data-i18n-attr="placeholder:cal.bspHtmlTage"></textarea></div>
-      <div data-tbody="upload" hidden><label class="drop" id="tpDrop"><span id="tpDropText" data-i18n="cal.htmlWaehlen">HTML-Datei wählen</span><input type="file" id="tpFile" accept=".html,.htm,text/html" hidden /></label><p class="gewaehlt" id="tpChosen" hidden></p></div>
-      <div data-tbody="url" hidden><input class="form-input" id="tpUrl" type="url" placeholder="https://…"></div>
-      <p class="html-import-feedback" id="tpImportStatus"></p>
-    </div>
-    <button class="btn btn-primary btn-block" id="tripSave" type="button" data-i18n="common.speichern">Speichern</button>
-    <button class="btn btn-danger btn-block blatt-loeschen" id="tripFormDelete" type="button" hidden data-i18n="cal.terminLoeschen">Termin löschen</button>
   </div>
 
   <!-- Einstellungen des Kalenders: Farbe und der Abgleich mit anderen
@@ -280,14 +237,9 @@
     </div>
   </div>
 
-  <!-- Programm und Info-Seite -->
-  <div class="viewer" id="viewer">
-    <div class="viewer-bar"><button class="icon-pill" id="viewerClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><span class="vt" id="viewerTitle">Info</span>
-      <button id="viewerMode" type="button" class="pill" hidden>Original</button></div>
-    <div class="viewer-plan" id="viewerPlan" hidden></div>
-    <iframe id="viewerFrame" sandbox="allow-popups" referrerpolicy="no-referrer" hidden></iframe>
-  </div>
+  <!-- Das Programm eines Termins baut programm.js selbst — derselbe
+       Code wie im Gruppe-Tab. -->
 
-  <script type="module" src="../assets/js/feature/kalender/kalender.js?v=2"></script>
+  <script type="module" src="../assets/js/feature/kalender/kalender.js?v=3"></script>
 </body>
 </html>

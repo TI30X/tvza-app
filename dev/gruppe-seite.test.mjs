@@ -53,7 +53,8 @@ test('kein $(...) ohne Anführungszeichen', async () => {
 });
 
 test('jeder data-Haken im Skript hat ein Gegenstück im Markup', async () => {
-  const [html, js] = await Promise.all([seite(), skript()]);
+  /* Das Programm eines Termins zeichnet programm.js (v.35.50.0). */
+  const [html, js] = await Promise.all([seite(), skript().then(async s => s + await read('assets/js/programm.js'))]);
 
   /* closest('[data-…]') sucht etwas, das entweder statisch im Markup
      steht oder vom Skript selbst erzeugt wird. Beides zählt. */

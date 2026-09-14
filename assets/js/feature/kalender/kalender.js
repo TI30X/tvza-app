@@ -5,8 +5,16 @@
    2500 Zeilen in einer Datei, dazu ein Stilblock von 220 Zeilen. Beim
    Umzug hierher (v.35.49.0) sind die Ansichten neu gebaut worden
    (eintraege.js rechnet, ansicht.js zeichnet); was Daten lädt, Gruppen
-   übernimmt und die Blätter (Termin, Erinnerung, Reise, Programm,
-   Dateien, Gäste, ICS) bedient, ist umgezogen, nicht umgeschrieben.
+   übernimmt und die Blätter (eigener Termin, Erinnerung, ICS) bedient,
+   ist umgezogen, nicht umgeschrieben.
+
+   Seit v.35.50.0 gibt es hier keine Reise mehr: Termine und Reisen
+   sind EIN Modell (groups/{gid}/events). Ein Termin trägt sein Programm
+   (programm.js), bearbeitet wird er im Gruppe-Tab; hier öffnet er sein
+   Programm. Abgehakt wird ein Programm nicht — was vorbei ist, blendet
+   sich von selbst ab (Michel). Die alten Reisen übernimmt die Leitung
+   beim Öffnen (reise-uebernahme.js); bis dahin stehen sie wie früher im
+   Kalender, zum Ansehen.
 
    Was sich für die Leute geändert hat, steht in ansicht.js und
    eintraege.js; hier nur so viel:
@@ -18,7 +26,10 @@
    ══════════════════════════════════════════════════════════════════ */
 
 import { db, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError } from '../../firebase-config.js';
-import { parseItineraryHtml, groupByDay } from '../../itinerary.js';
+import {
+  punktVorbei, jetztFuer, abfahrtVon, programmZeigen, programmNeuZeichnen, viewerOffen,
+} from '../../programm.js';
+import { sollReiseUebernehmen } from '../../reise-uebernahme.js';
 import { buildCalendarIcs, parseCalendarIcs } from '../../calendar-interop.js';
 import {
   CALENDAR_COLORS, DEFAULT_CALENDAR_COLOR, addCalendarDays, startOfCalendarWeek,
@@ -34,12 +45,13 @@ import {
    und stehen bis dahin als Quelle mit ihren Reisen daneben. */
 import {
   beobachteMeineGruppen, beobachteTermine, aktiveGruppeSetzen, aktiveGruppeId, VORGABE_BEREICHE, leitet, wort,
+  eineReiseUebernehmen,
 } from '../../groups.js';
 import { gruppenOptionen } from '../../gruppenwahl.js';
 import { teamTerminText, teamFarben } from '../../kalender-teams.js';
 import { familieUebernehmen, sollUebernehmen, vereinigeGruppen } from '../../uebernahme.js';
-import { frage, waehle } from '../../dialog.js';
-import { isoTag } from '../../termine.js';
+import { frage, waehle, meldung } from '../../dialog.js';
+import { isoTag, zeitraum, istAbgesagt, alsIcsEintrag } from '../../termine.js';
 import { sammeln, agenda, monatsWochen, zeitRaster } from './eintraege.js';
 import {
   agendaHtml, monatHtml, tagesListeHtml, zeitHtml, verdrahten, monatJahr, rasterTitel,
@@ -91,7 +103,7 @@ async function delAttachment(id){ return deleteDoc(doc(db,'attachments',id)); }
 
 const GROUP_COLORS = CALENDAR_COLORS.map(color => color.value);
 let user, group = null, groups = [], groupsUnsub = null, reminderUnsub = null, tripUnsubs = [];
-let trips = [], allTrips = [], days = [], reminders = [];
+let allTrips = [], days = [], reminders = [];
 let visibleGroupIds = new Set(), showPersonal = true;
 /* Teams: gespeichert werden die AUSGESCHALTETEN. Wer einem neuen Team
    beitritt, sieht dessen Termine sofort, statt sie erst suchen und
@@ -104,8 +116,8 @@ let teams = [], teamTermine = new Map(), teamAbos = new Map(), versteckteTeams =
 let familien = [], teamsGeladen = false, familienGeladen = false, gruppenFarben = new Map();
 let anchorKey = todayKey, curView = 'month';
 let calendarPreference = normalizeCalendarPreference({});
-let editTripId = null, editDayId = null, editReminderId = null, dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
-let pendingDayFiles = [], dayFiles = [], openPlanTripId = null, agendaShouldFocusToday = true;
+let editDayId = null, editReminderId = null, dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
+let pendingDayFiles = [], dayFiles = [], agendaShouldFocusToday = true;
 let calendarEntryFocusPending = true, initialGroupsLoaded = false, initialRemindersLoaded = false, daysLoaded = false;
 /* Die Einträge des letzten Zeichnens — ein Klick findet über sie seinen Eintrag. */
 let aktuelleEintraege = new Map();
@@ -258,23 +270,43 @@ function watchTeams() {
       teamAbos.set(gid, beobachteTermine(gid, termine => {
         teamTermine.set(gid, termine);
         renderCurrentView();
+        offenesProgrammNeu();
       }));
     }
     vereinige();
   });
 }
 async function zeigeTeamTermin(eintrag) {
-  const zurGruppe = await frage({
+  const hin = await frage({
     titel:eintrag.titel,
     /* teamTerminText kennt die Form aus kalender-teams.js: art ist dort
        das Wort ("Training"), nicht die Sorte des Eintrags. */
-    text:teamTerminText({ art:eintrag.typ, ref:eintrag.ref, abgesagt:eintrag.abgesagt }),
-    ja:tt('kal.zurGruppe','Zur Gruppe'),
+    text:[
+      teamTerminText({ art:eintrag.typ, ref:eintrag.ref, abgesagt:eintrag.abgesagt }),
+      abfahrtText(eintrag.ref),
+    ].filter(Boolean).join('\n\n'),
+    ja:tt('kal.zumTermin','Zum Termin'),
     nein:tt('a11y.schliessen','Schliessen'),
   });
-  if (!zurGruppe) return;
-  aktiveGruppeSetzen(eintrag.ref.gid);
-  location.href = './gruppe.html';
+  if (hin) zumTermin(eintrag.ref.gid, eintrag.ref.id);
+}
+/* Die eigene Abfahrt, wenn die Leitung eine eingetragen hat. */
+function abfahrtText(termin) {
+  const a = abfahrtVon(termin, user?.uid);
+  return a ? `${tt('prog.deineAbfahrt','Deine Abfahrt')}: ${[a.zeit, a.ort].filter(Boolean).join(' · ')}` : '';
+}
+/* Bearbeitet, zugesagt und gepackt wird ein Termin in seiner Gruppe —
+   dorthin führt "Zum Termin", nicht nur auf die Seite. */
+function zumTermin(gid, eid) {
+  aktiveGruppeSetzen(gid);
+  location.href = `./gruppe.html?g=${encodeURIComponent(gid)}&termin=${encodeURIComponent(eid)}`;
+}
+/* Eine Reise, die noch niemand übernommen hat, ohne Programm. */
+async function zeigeReise(eintrag) {
+  const x = eintrag.ref;
+  const zeile = [zeitraum({ von:eintrag.von, bis:eintrag.bis }), x.destination, groupName(x.familyId)]
+    .filter(Boolean).join(' · ');
+  await meldung({ titel:eintrag.titel, text:[zeile, String(x.notes || '').trim()].filter(Boolean).join('\n\n') });
 }
 /* Die alten Kalendergruppen, in denen man steht. Sie werden nicht mehr
    verwaltet — nur noch gelesen, bis der Kopf sie uebernommen hat. */
@@ -323,7 +355,6 @@ async function vereinige() {
     await reload();
     watchTrips();
   } else {
-    trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
     renderCurrentView();
   }
   initialGroupsLoaded = true;
@@ -385,7 +416,6 @@ function renderCalendarSources() {
     const id = button.dataset.sourceTeam;
     if (versteckteTeams.has(id)) versteckteTeams.delete(id); else versteckteTeams.add(id);
     visibleGroupIds = new Set(groups.map(item => item.id).filter(gid => !versteckteTeams.has(gid)));
-    trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
     saveVisibleSources();
     renderCalendarSources();
     renderCurrentView();
@@ -402,16 +432,9 @@ function zurGruppenseite() { location.href = './gruppe.html'; }
    Die Leitung: Kopf und Trainer (v.35.49.0). Mitglieder lesen, sagen zu,
    haken Programmpunkte ab — sie tragen nichts in die Gruppe ein. Bis
    dahin bot der Kalender jedem Mitglied "Gruppentermin" an, für jede
-   seiner Gruppen, und die Regel liess es zu. Eine alte Familie, die
-   ihr Kopf noch nicht übernommen hat, leitet ihr Kopf oder ihre
-   Verwaltung — wie vorher. */
-function darfLeiten(gid) {
-  const team = teams.find(g => g.id === gid);
-  if (team) return leitet(team.meineRolle);
-  const familie = familien.find(f => f.id === gid);
-  return !!familie && (familie.headUid === user.uid || (familie.managers || []).includes(user.uid));
-}
-const geleiteteGruppen = () => groups.filter(g => darfLeiten(g.id));
+   seiner Gruppen, und die Regel liess es zu. Seit v.35.50.0 gibt es
+   daneben keine "Reise" mehr zum Anlegen: eine Reise ist ein Termin der
+   Gruppe mit Programm, angelegt im Gruppe-Tab. */
 const geleiteteTeams = () => teams.filter(g => leitet(g.meineRolle));
 
 /* Wer mehrere Gruppen leitet, wählt; wer eine leitet, nicht. Die aktive
@@ -446,7 +469,6 @@ async function reload() {
       .catch(error => { reportClientError('calendar-trips-load',error); return []; })
   )).then(result => {
     allTrips = result.flat();
-    trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
   });
   const t2 = getDocs(query(collection(db,'calendarDays'), where('ownerUid','==',user.uid)))
     .then(s=>{ days = s.docs.map(d=>({id:d.id,...d.data()})); })
@@ -454,6 +476,25 @@ async function reload() {
     .finally(() => { daysLoaded = true; });
   await Promise.all([t1,t2]);
   renderCurrentView();
+}
+
+/* Die alten Reisen: sichtbar, solange sie kein Termin sind — nach der
+   Übernahme trägt der Termin dieselbe Kennung, und die Marke an der
+   Reise folgt einen Augenblick später. Dazwischen stünde sie doppelt. */
+function sichtbareReisen() {
+  return allTrips.filter(reise => visibleGroupIds.has(reise.familyId)
+    && !reise.uebernommen
+    && !(teamTermine.get(reise.familyId) || []).some(termin => termin.id === reise.id));
+}
+
+/* Wer eine Gruppe leitet, übernimmt ihre Reisen (reise-uebernahme.js). */
+function reisenUebernehmen() {
+  for (const reise of allTrips) {
+    const team = teams.find(g => g.id === reise.familyId);
+    if (!sollReiseUebernehmen(reise, { istGruppe:() => !!team, leitet:() => leitet(team?.meineRolle) })) continue;
+    eineReiseUebernehmen(reise, user.uid, team.art)
+      .catch(error => reportClientError('calendar-reise-uebernahme', error));
+  }
 }
 
 /* Reisen sind geteilte Daten der Gruppe. Ein einmaliges getDocs zeigte
@@ -465,12 +506,9 @@ function watchTrips() {
   const buckets = new Map(groups.map(item => [item.id, allTrips.filter(trip => trip.familyId === item.id)]));
   const sync = () => {
     allTrips = groups.flatMap(item => buckets.get(item.id) || []);
-    trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
     renderCurrentView();
-    if (openPlanTripId && $('viewer').classList.contains('visible') && !$('viewerPlan').hidden) {
-      const current = allTrips.find(item => item.id === openPlanTripId);
-      if (current) renderPlanViewer(current);
-    }
+    offenesProgrammNeu();
+    reisenUebernehmen();
   };
   groups.forEach(item => {
     tripUnsubs.push(onSnapshot(
@@ -597,7 +635,6 @@ function openCreateSheet(tag = null) {
     ? tt('kal.erstellenAm','Eintragen am {tag}', { tag:fmtDateKey(tag) })
     : tt('cal.erstellen','Erstellen');
   $('createGroupEventOption').hidden = !geleiteteTeams().length;
-  $('createTripOption').hidden = !geleiteteGruppen().length;
   $('createBackdrop').classList.add('visible');
   $('createSheet').classList.add('visible');
 }
@@ -649,33 +686,6 @@ async function setReminderCompletion(item, completed) {
   }
 }
 
-const itineraryItemDone = (trip, item) => {
-  if (item?.id && Object.prototype.hasOwnProperty.call(trip?.itineraryDone||{},item.id)) {
-    return !!trip.itineraryDone[item.id];
-  }
-  return !!item?.done;
-};
-async function toggleItineraryItem(trip, item) {
-  if (!trip?.id || !item?.id) return;
-  const before = itineraryItemDone(trip, item);
-  const next = !before;
-  trip.itineraryDone = { ...(trip.itineraryDone || {}), [item.id]:next };
-  renderCurrentView();
-  if (openPlanTripId === trip.id && !$('viewerPlan').hidden) renderPlanViewer(trip);
-  try {
-    await updateDoc(doc(db,'trips',trip.id), {
-      [`itineraryDone.${item.id}`]:next,
-      itineraryUpdatedAt:serverTimestamp()
-    });
-  } catch (error) {
-    reportClientError('calendar-itinerary-toggle', error);
-    trip.itineraryDone = { ...(trip.itineraryDone || {}), [item.id]:before };
-    renderCurrentView();
-    if (openPlanTripId === trip.id && !$('viewerPlan').hidden) renderPlanViewer(trip);
-    alert('Der Programmpunkt konnte nicht aktualisiert werden.');
-  }
-}
-
 /* ══ Zeichnen ══════════════════════════════════════════════════════
    Alle Ansichten aus DERSELBEN Liste von Einträgen (eintraege.js). */
 
@@ -683,7 +693,7 @@ function eintraegeJetzt() {
   return sammeln({
     tage:days,
     erinnerungen:reminders,
-    reisen:trips,
+    reisen:sichtbareReisen(),
     teams:groups.filter(item => !versteckteTeams.has(item.id))
       .map(gruppe => ({ gruppe, termine:teamTermine.get(gruppe.id) || [] })),
     persoenlich:showPersonal,
@@ -694,7 +704,9 @@ function eintraegeJetzt() {
   });
 }
 
-const erledigtVon = (eintrag, stop) => itineraryItemDone(eintrag.ref, stop);
+/* Ein Programmpunkt ist vorbei, wenn seine Zeit vorbei ist — abgehakt
+   wird er nicht (v.35.50.0). */
+const vorbeiVon = (eintrag, stop) => punktVorbei(stop, jetztFuer(new Date()));
 const buehne = () => $('kalBuehne');
 
 function titelSetzen() {
@@ -733,7 +745,7 @@ function renderListe(el, liste) {
   const ab = `${anchorKey.slice(0,7)}-01`;
   const tage = agenda(liste, { ab, heute:todayKey });
   const behalten = !agendaShouldFocusToday ? el.scrollTop : null;
-  el.innerHTML = `<div class="kal-liste">${agendaHtml(tage, { erledigtVon })}</div><div class="kal-auslauf" aria-hidden="true"></div>`;
+  el.innerHTML = `<div class="kal-liste">${agendaHtml(tage, { vorbeiVon })}</div><div class="kal-auslauf" aria-hidden="true"></div>`;
   if (behalten !== null) { el.scrollTop = behalten; titelNachScroll(el); return; }
   if (calendarEntryFocusPending) return;
   agendaShouldFocusToday = false;
@@ -779,7 +791,7 @@ function renderMonat(el, liste) {
   const kompakt = isMobileCalendar();
   const wochen = monatsWochen(anchorKey, liste, { heute:todayKey });
   el.innerHTML = monatHtml(wochen, { gewaehlt:kompakt ? anchorKey : '', kompakt, spurenMax:3 })
-    + (kompakt ? `<div class="kal-tagesliste">${tagesListeHtml(anchorKey, liste, { erledigtVon })}</div>` : '');
+    + (kompakt ? `<div class="kal-tagesliste">${tagesListeHtml(anchorKey, liste, { vorbeiVon })}</div>` : '');
   el.scrollTop = 0;
 }
 
@@ -788,7 +800,6 @@ function renderZeit(el, liste) {
   const tage = datesForCalendarView(anchorKey, curView);
   const jetzt = new Date();
   el.innerHTML = zeitHtml(zeitRaster(tage, liste), {
-    heute:todayKey,
     jetzt:tage.includes(todayKey) ? jetzt.getHours() * 60 + jetzt.getMinutes() : null,
   });
   /* Auf die Stunde stellen, in der etwas passiert: heute zwei Stunden
@@ -797,12 +808,17 @@ function renderZeit(el, liste) {
   el.scrollTop = stunde * stundeHoehe();
 }
 
-/* Ein Klick auf einen Eintrag öffnet, was zu ihm gehört: den Termin
-   der Gruppe als Karte (bearbeitet wird er in der Gruppe), die Reise
-   mit ihrem Programm, die Erinnerung, den eigenen Termin. */
+/* Ein Klick auf einen Eintrag öffnet, was zu ihm gehört: einen Termin
+   mit Programm dieses Programm (mit "Zum Termin"), einen ohne als Karte
+   — bearbeitet wird er in der Gruppe —, die Erinnerung, den eigenen
+   Termin. */
 function oeffne(eintrag) {
-  if (eintrag.art === 'team') { zeigeTeamTermin(eintrag); return; }
-  if (eintrag.art === 'reise') { openTrip(eintrag.ref.id); return; }
+  if (eintrag.art === 'team' || eintrag.art === 'reise') {
+    const x = eintrag.ref;
+    if (eintrag.stops.length || x.planHtml || x.planUrl) { programmOeffnen(eintrag); return; }
+    if (eintrag.art === 'team') zeigeTeamTermin(eintrag); else zeigeReise(eintrag);
+    return;
+  }
   if (eintrag.art === 'erinnerung') { openReminderForm(eintrag.ref); return; }
   openDayForm(eintrag.ref);
 }
@@ -869,298 +885,19 @@ function renderMiniCalendars() {
   });
 }
 
-/* ── Reise (Termin der Gruppe) ── */
-let newTripFileHtml = '';
-let editTripItinerary = [];
-function setTripPlanPane(p){
-  document.querySelectorAll('#tpTabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.tpane===p));
-  document.querySelectorAll('#tripSheet [data-tbody]').forEach(b=>{ b.hidden = b.dataset.tbody!==p; });
-}
-function describePlanHtml(html, baseDate = $('tStart').value) {
-  const status = $('tpImportStatus');
-  if (!html?.trim()) {
-    status.className='html-import-feedback';
-    status.textContent='Erkannte Tage und Programmpunkte erscheinen automatisch im Kalender. Die Originalseite bleibt zusätzlich öffnbar; Skripte werden nicht ausgeführt.';
-    return;
-  }
-  const parsed = parseItineraryHtml(html,{baseDate});
-  if (parsed.items.length) {
-    status.className='html-import-feedback is-good';
-    status.textContent=`${parsed.items.length} Programmpunkt${parsed.items.length===1?'':'e'} an ${parsed.days||1} Tag${parsed.days===1?'':'en'} erkannt — sie erscheinen im Kalender.`;
-  } else {
-    status.className='html-import-feedback is-warning';
-    status.textContent='Die Seite wird gespeichert und lässt sich öffnen, aber es wurden keine einzelnen Programmpunkte erkannt.';
-  }
-}
-function openTripForm(t){
-  editTripId = t ? t.id : null;
-  $('tripFormTitle').textContent = t ? tt('kal.terminBearbeiten','Termin bearbeiten') : tt('cal.gruppentermin','Gruppentermin');
-  $('tName').value=t?.name||''; $('tDest').value=t?.destination||'';
-  /* Nur Gruppen, die man leitet — dorthin darf man eintragen und
-     verschieben (die Regel für trips verlangt es für beide Seiten). */
-  const waehlbar = geleiteteGruppen();
-  $('tGroup').innerHTML = waehlbar.map(item=>`<option value="${esc(item.id)}">${esc(item.name||'Gruppe')}</option>`).join('');
-  $('tGroup').value = t?.familyId || (waehlbar.some(g => g.id === group?.id) ? group.id : waehlbar[0]?.id) || '';
-  $('tStart').value=t?.startDate||(sheetKey||''); $('tEnd').value=t?.endDate||'';
-  $('tStartTime').value=t?.startTime||''; $('tEndTime').value=t?.endTime||'';
-  $('tNotes').value=t?.notes||'';
-  $('tpHtml').value = t?.planHtml || '';
-  $('tpUrl').value = t?.planUrl || '';
-  editTripItinerary = t?.itinerary || [];
-  newTripFileHtml = '';
-  $('tpChosen').hidden = true;
-  describePlanHtml(t?.planHtml||'');
-  setTripPlanPane('paste');
-  $('tripFormDelete').hidden = !t;
-  $('tripBackdrop').classList.add('visible'); $('tripSheet').classList.add('visible');
-}
-function closeTripForm(){ $('tripBackdrop').classList.remove('visible'); $('tripSheet').classList.remove('visible'); }
-async function tripLoeschen(id) {
-  const aq = await getDocs(query(collection(db,'activities'), where('tripId','==',id)));
-  await Promise.all(aq.docs.map(d=>deleteDoc(d.ref)));
-  const fq = await loadAttachments(id);
-  await Promise.all(fq.map(f=>delAttachment(f.id).catch(()=>{})));
-  await deleteDoc(doc(db,'trips',id));
-}
-
-/* ── Reise im Detail ── */
-async function openTrip(id){
-  const s=await getDoc(doc(db,'trips',id)); if(!s.exists())return;
-  const tr={id:s.id,...s.data()}; editTripId=id;
-  const acts=await getDocs(query(collection(db,'activities'), where('tripId','==',id))).then(q=>q.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[]);
-  const files=await loadAttachments(id);
-  $('kalender').hidden = true;
-  $('tripDetail').hidden = false;
-  delete document.body.dataset.calendarWorkspace;
-  window.scrollTo(0,0);
-  renderTripDetail(tr, acts, files);
-}
-function backToGroup(){
-  $('tripDetail').hidden = true;
-  $('kalender').hidden = false;
-  document.body.dataset.calendarWorkspace='true';
-  agendaShouldFocusToday = false;
-  reload();
-}
-
-function renderTripDetail(tr, acts, files){
-  files = files || [];
-  const dt = tr.startDate ? (fmtDateKey(tr.startDate)+(tr.endDate&&tr.endDate!==tr.startDate?' – '+fmtDateKey(tr.endDate):'')) : 'Kein Datum';
-  // Nach Tagen: ein Plan über drei Tage liest sich als drei Tage.
-  const itinDays = groupByDay(tr.itinerary||[]);
-  const itinCount = (tr.itinerary||[]).length;
-  /* Ändern, Programm pflegen, Gäste einladen, löschen: die Leitung der
-     Gruppe. Mitglieder sehen das Programm, haken ab, teilen Aufgaben und
-     Dateien — so wie die Regel für trips es seit v.35.49.0 hält. */
-  const leite = darfLeiten(tr.familyId);
-  const v = $('tripDetail');
-  v.innerHTML = `
-    <button class="b b--secondary" id="tdBack" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg> ${esc(tt('nav.kalender','Kalender'))}</button>
-    <div class="grp-card reise-kopf" style="--farbe:${groupColor(tr.familyId)}">
-      <div class="grp-top"><span class="grp-name">${esc(tr.name)}</span>
-        ${leite ? `<button class="row__aktion" id="tdEdit" type="button" title="Bearbeiten" aria-label="Bearbeiten"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>` : ''}</div>
-      ${tr.destination?`<div class="item-meta">${esc(tr.destination)}</div>`:''}
-      <div class="item-meta">${esc(dt)} · ${esc(groupName(tr.familyId))}</div>
-      ${tr.notes?`<p class="reise-notiz">${esc(tr.notes)}</p>`:''}
-      <div class="grp-actions"><button class="b b--secondary" id="tdIcs" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> .ics</button>
-        ${(tr.planHtml||tr.planUrl||itinCount)?`<button class="b b--primary" id="pOpenTop" type="button">${esc(tt('kal.programmOeffnen','Programm öffnen'))}</button>`:''}</div>
-    </div>
-
-    <div class="sub-card"><div class="sub-title">Programm</div>
-      ${leite ? `<div class="row2"><input class="form-input" id="iDate" type="date"><input class="form-input" id="iTime" type="time"></div>
-      <input class="form-input feld-abstand" id="iTitle" placeholder="Programmpunkt">
-      <button class="btn btn-primary btn-block feld-abstand" id="iAdd" type="button">Hinzufügen</button>` : ''}
-      <div class="feld-abstand" id="iList">${itinCount ? itinDays.map(day => `
-        <div class="itin-day">
-          <div class="marke">${esc(day.heading)}</div>
-          <div class="rows">${day.items.map(it => {
-            const done = itineraryItemDone(tr,it);
-            return `<div class="row row--static${done?' done':''}" data-bereich="kalender">
-              <button class="kal-haken${done?' is-an':''}" type="button" data-itog="${esc(it.id||'')}"
-                aria-pressed="${done}" aria-label="${done?'Wieder öffnen':'Als erledigt markieren'}"></button>
-              <span class="row__body">
-                <span class="row__title">${esc(it.title)}</span>
-                ${it.tag ? `<span class="prog-tag">${esc(it.tag)}</span>` : ''}
-                ${it.notes ? `<span class="row__sub">${esc(it.notes)}</span>` : ''}
-                ${it.transport ? `<span class="row__sub">→ ${esc(it.transport)}</span>` : ''}
-              </span>
-              <span class="row__end">
-                ${it.timeLabel||it.time ? `<span class="row__time">${esc(it.timeLabel||it.time)}</span>` : ''}
-                ${leite ? `<button class="row__aktion row__aktion--gefahr" type="button" data-idel="${(tr.itinerary||[]).indexOf(it)}" title="Entfernen" aria-label="Entfernen"><svg class="ic" viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>` : ''}
-              </span>
-            </div>`;
-          }).join('')}</div>
-        </div>`).join('') : '<p class="empty-hint">Noch nichts geplant.</p>'}</div>
-    </div>
-
-    ${leite ? `<div class="sub-card"><div class="sub-title">Gast-Zugang</div>
-      <p class="blatt-text">Teile diesen Link nur mit Personen, die den Plan sehen und mit euch chatten dürfen.</p>
-      <button class="btn btn-primary btn-block" id="gShare" type="button">Gast-Link erstellen &amp; kopieren</button>
-      <div class="feld-abstand" id="gList"><p class="empty-hint">Lade Gäste…</p></div>
-    </div>` : ''}
-
-    <div class="sub-card"><div class="sub-title">Aufgaben</div>
-      <input class="form-input" id="aName" placeholder="Aufgabe / Besorgung">
-      <button class="btn btn-primary btn-block feld-abstand" id="aAdd" type="button">Hinzufügen</button>
-      <div class="feld-abstand" id="aList">${acts.length?acts.map(a=>`<div class="line ${a.done?'done':''}"><button class="kal-haken${a.done?' is-an':''}" type="button" data-tog="${a.id}" data-done="${a.done?1:0}" aria-pressed="${!!a.done}" aria-label="Erledigt"></button><span class="l-main"><span class="l-title">${esc(a.name)}</span></span><button class="row__aktion row__aktion--gefahr" type="button" data-adel="${a.id}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join(''):'<p class="empty-hint">Keine Aufgaben.</p>'}</div>
-    </div>
-
-    ${leite ? `<div class="sub-card"><div class="sub-title">Plan / Info-Seite</div>
-      <div class="tabs">
-        <button class="tab active" type="button" data-tp="paste">HTML</button><button class="tab" type="button" data-tp="upload">Datei</button><button class="tab" type="button" data-tp="url">Link</button></div>
-      <div data-tb="paste"><textarea class="form-textarea" id="pHtml" rows="3" placeholder="HTML…">${esc(tr.planHtml||'')}</textarea></div>
-      <div data-tb="upload" hidden><label class="drop" id="pDrop"><span id="pDropText">HTML-Datei wählen</span><input type="file" id="pFile" accept=".html,.htm,text/html" hidden></label><p class="gewaehlt" id="pChosen" hidden></p></div>
-      <div data-tb="url" hidden><input class="form-input" id="pUrl" type="url" placeholder="https://…" value="${esc(tr.planUrl||'')}"></div>
-      <div class="knopfreihe"><button class="btn btn-primary knopfreihe__breit" id="pSave" type="button">Speichern</button></div>
-    </div>` : ''}
-
-    <div class="sub-card"><div class="sub-title">Dateien</div>
-      <p class="blatt-text">Bilder werden automatisch verkleinert. Sehr grosse Dateien: lieber den Link-Tab oben nutzen.</p>
-      <label class="drop" id="fDrop"><span>Dateien wählen (PDF, Bild, …)</span><input type="file" id="fInput" multiple hidden></label>
-      <div class="progress" id="fProg" hidden><i></i></div>
-      <div class="feld-abstand" id="fList"></div>
-    </div>
-
-    ${leite ? '<button class="btn btn-danger btn-block" id="tdDelete" type="button">Termin löschen</button>' : ''}
-  `;
-  $('tdBack').onclick = backToGroup;
-  if ($('tdEdit')) $('tdEdit').onclick = () => openTripForm(tr);
-  $('tdIcs').onclick = () => downloadIcs([tr], (tr.name||'termin'));
-  if ($('pOpenTop')) $('pOpenTop').onclick = () => openPlan(tr);
-  if (leite) wireGuestSection(tr);
-  if ($('iAdd')) $('iAdd').onclick = async () => {
-    const title=$('iTitle').value.trim(); if(!title)return;
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-    const next=[...(tr.itinerary||[]), {id, title, date:$('iDate').value, time:$('iTime').value}];
-    await updateDoc(doc(db,'trips',tr.id),{itinerary:next}); tr.itinerary=next; renderTripDetail(tr,acts,files);
-  };
-  v.querySelectorAll('[data-idel]').forEach(b=>b.onclick=async()=>{
-    // Index ins gespeicherte Feld, nicht in die sortierte Ansicht.
-    const i=+b.dataset.idel; if(i<0) return;
-    const n=(tr.itinerary||[]).filter((_,j)=>j!==i);
-    await updateDoc(doc(db,'trips',tr.id),{itinerary:n}); tr.itinerary=n; renderTripDetail(tr,acts,files); });
-  v.querySelectorAll('[data-itog]').forEach(button => button.onclick = () => {
-    const item = (tr.itinerary||[]).find(entry=>entry.id===button.dataset.itog);
-    if (item) toggleItineraryItem(tr,item).then(()=>renderTripDetail(tr,acts,files));
-  });
-  $('aAdd').onclick = async () => { const name=$('aName').value.trim(); if(!name)return; await addDoc(collection(db,'activities'),{tripId:tr.id,name,done:false,createdAt:serverTimestamp()}); openTrip(tr.id); };
-  v.querySelectorAll('[data-tog]').forEach(b=>b.onclick=async()=>{ await updateDoc(doc(db,'activities',b.dataset.tog),{done:b.dataset.done!=='1'}); openTrip(tr.id); });
-  v.querySelectorAll('[data-adel]').forEach(b=>b.onclick=async()=>{ await deleteDoc(doc(db,'activities',b.dataset.adel)); openTrip(tr.id); });
-  v.querySelectorAll('[data-tp]').forEach(t=>t.onclick=()=>{ v.querySelectorAll('[data-tp]').forEach(x=>x.classList.toggle('active',x===t)); v.querySelectorAll('[data-tb]').forEach(b=>{ b.hidden = b.dataset.tb!==t.dataset.tp; }); });
-  let planFileHtml='';
-  if($('pFile')) $('pFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{planFileHtml=String(r.result||'');$('pChosen').textContent=f.name;$('pChosen').hidden=false;}; r.readAsText(f); };
-  if ($('pDrop')) $('pDrop').onclick=()=>$('pFile').click();
-  if ($('pSave')) $('pSave').onclick = async () => {
-    const active=[...v.querySelectorAll('[data-tp]')].find(x=>x.classList.contains('active')).dataset.tp;
-    let planHtml='',planUrl='';
-    if(active==='upload'&&planFileHtml)planHtml=planFileHtml; else if(active==='url')planUrl=$('pUrl').value.trim(); else planHtml=$('pHtml').value.trim();
-    // Einlesen: Programmpunkte aus der HTML ersetzen die vom letzten
-    // Einlesen desselben Plans; von Hand angelegte bleiben.
-    let itinerary = tr.itinerary || [];
-    if (planHtml) {
-      const { items } = parseItineraryHtml(planHtml, { baseDate: tr.startDate });
-      if (items.length) {
-        const manual = itinerary.filter(it => !it.autoImported);
-        itinerary = [...manual, ...items];
-      }
-    }
-    await updateDoc(doc(db,'trips',tr.id),{planHtml,planUrl,itinerary});
-    tr.planHtml=planHtml; tr.planUrl=planUrl; tr.itinerary=itinerary;
-    renderTripDetail(tr,acts,files);
-  };
-  let curFiles = files;
-  const bindFiles=()=>{ $('fList').innerHTML=renderFileList(curFiles);
-    v.querySelectorAll('[data-fopen]').forEach(b=>b.onclick=()=>openStored(curFiles[+b.dataset.fopen]));
-    v.querySelectorAll('[data-fdel]').forEach(b=>b.onclick=()=>removeFile(b.dataset.fdel,curFiles,bindFiles)); };
-  bindFiles();
-  $('fDrop').onclick=()=>$('fInput').click();
-  $('fInput').onchange=async e=>{ await uploadFiles(tr.id,'trip',[...e.target.files],curFiles); bindFiles(); $('fInput').value=''; };
-  if ($('tdDelete')) $('tdDelete').onclick = async () => {
-    if(!confirm('Diesen Termin löschen?'))return;
-    await tripLoeschen(tr.id);
-    backToGroup();
-  };
-}
-
+/* ── Dateien am eigenen Termin ── */
 function randToken(){ return Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(36)).join('').slice(0,16); }
-
-async function wireGuestSection(tr){
-  $('gShare').onclick = async () => {
-    let token = tr.guestToken;
-    if (!token) { token = randToken(); await updateDoc(doc(db,'trips',tr.id),{guestToken:token}); tr.guestToken = token; }
-    const url = `${location.origin}${location.pathname.replace(/planner\.html$/, 'guest.html')}?trip=${tr.id}&token=${token}`;
-    try { await navigator.clipboard.writeText(url); $('gShare').textContent = 'Link kopiert'; }
-    catch(e) { window.prompt('Link kopieren:', url); }
-    setTimeout(()=>{ if($('gShare')) $('gShare').textContent = 'Gast-Link erstellen & kopieren'; }, 2000);
-  };
-  await loadGuestList(tr);
-}
-
-async function loadGuestList(tr){
-  const list = $('gList');
-  if (!list) return;
-  try {
-    const aq = await getDocs(query(collection(db,'guestAccess'), where('tripId','==',tr.id)));
-    if (!aq.docs.length) { list.innerHTML = '<p class="empty-hint">Noch keine Gäste.</p>'; return; }
-    const rows = await Promise.all(aq.docs.map(async d => {
-      const g = d.data();
-      let name = g.uid, lastActiveAt = null;
-      try {
-        const p = await getDoc(doc(db,'guestProfiles',g.uid));
-        if (p.exists()) { name = p.data().name || p.data().email || g.uid; lastActiveAt = p.data().lastActiveAt || null; }
-      } catch(e) {}
-      return { uid: g.uid, name, docId: d.id, lastActiveAt };
-    }));
-    // Inaktive Gäste löscht Firestore nicht von selbst (dafür bräuchte es
-    // eine Cloud Function auf Blaze). "Zuletzt aktiv" ist der Ersatz.
-    const dayMs = 86400000;
-    list.innerHTML = rows.map(r => {
-      let sub = 'noch nie aktiv';
-      if (r.lastActiveAt?.toDate) {
-        const tage = Math.floor((Date.now() - r.lastActiveAt.toDate().getTime()) / dayMs);
-        sub = tage <= 0 ? 'heute aktiv' : `vor ${tage} Tag${tage===1?'':'en'} aktiv`;
-      }
-      const stale = r.lastActiveAt?.toDate && (Date.now() - r.lastActiveAt.toDate().getTime()) / dayMs > 30;
-      return `<div class="line">
-        <span class="l-main"><span class="l-title">${esc(r.name)}</span><span class="l-sub${stale?' is-alt':''}">${sub}</span></span>
-        <button class="row__aktion" type="button" data-gchat="${esc(r.uid)}" data-gname="${esc(r.name)}" title="Chat" aria-label="Chat"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
-        <button class="row__aktion row__aktion--gefahr" type="button" data-gdel="${esc(r.docId)}" title="Entfernen" aria-label="Entfernen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
-      </div>`;
-    }).join('');
-    list.querySelectorAll('[data-gchat]').forEach(b=>b.onclick=()=>{
-      const destination = `messages.html?to=${encodeURIComponent(b.dataset.gchat)}&name=${encodeURIComponent(b.dataset.gname)}`;
-      if (!window.tvzaNavigate?.(destination)) location.href = destination;
-    });
-    list.querySelectorAll('[data-gdel]').forEach(b=>b.onclick=async()=>{
-      if(!confirm('Gast-Zugang entfernen?')) return;
-      await deleteDoc(doc(db,'guestAccess',b.dataset.gdel));
-      loadGuestList(tr);
-    });
-  } catch(e) { reportClientError('calendar-guests-load',e); list.innerHTML = '<p class="empty-hint">Gäste konnten nicht geladen werden.</p>'; }
-}
 
 const DATEI_SYMBOL = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
 const BILD_SYMBOL = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
-function renderFileList(files){
-  if(!files||!files.length) return '<p class="empty-hint">Keine Dateien.</p>';
-  return files.map((f,i)=>`<div class="file-row"><span class="file-ic">${/image\//.test(f.type)?BILD_SYMBOL:DATEI_SYMBOL}</span>
-    <span class="item-body"><span class="l-title datei-name">${esc(f.name)}</span>
-    <span class="l-sub">${(f.size/1024).toFixed(0)} KB</span></span>
-    <button class="b b--secondary" type="button" data-fopen="${i}">Öffnen</button>
-    <button class="row__aktion row__aktion--gefahr" type="button" data-fdel="${esc(f.id||'')}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join('');
-}
 async function uploadFiles(parentId, scope, list, curFiles){
-  const prog=$('fProg'); if(prog) prog.hidden=false;
   for(const file of list){
     const st=await fileToStored(file);
     if(!st){ alert(`„${file.name}" ist zu gross für den Gratis-Speicher (max ~0,9 MB; Bilder werden automatisch verkleinert). Für grosse Dateien nutze den Link-Tab.`); continue; }
     try{ const r=await saveAttachment(parentId,scope,st); curFiles.push({id:r.id,...st}); }
     catch(e){ reportClientError('attachment-save',e); alert('Datei speichern fehlgeschlagen.'); }
   }
-  if(prog) prog.hidden=true;
 }
-async function removeFile(id, curFiles, rebind){ if(!id)return; if(!confirm('Datei löschen?'))return;
-  try{ await delAttachment(id); }catch(e){reportClientError('attachment-delete',e);} const i=curFiles.findIndex(f=>f.id===id); if(i>=0)curFiles.splice(i,1); rebind(); }
 
 /* ── Eigener Termin ── */
 function setDayPane(p){ dayPane=p; document.querySelectorAll('#dayForm .tab').forEach(t=>t.classList.toggle('active',t.dataset.pane===p)); document.querySelectorAll('#dayForm [data-body]').forEach(b=>{ b.hidden = b.dataset.body!==p; }); }
@@ -1190,143 +927,46 @@ async function openDayForm(existing){
 }
 function closeDayForm(){ $('dayFormBackdrop').classList.remove('visible'); $('dayForm').classList.remove('visible'); }
 
-/* ── Programm und Info-Seite ── */
-function safeExternalUrl(value) {
-  try {
-    const parsed = new URL(String(value||''));
-    return ['http:','https:'].includes(parsed.protocol) ? parsed.href : '';
-  } catch { return ''; }
-}
-function safePlanHtml(html) {
-  if (!html?.trim()) return '';
-  const parsed = new DOMParser().parseFromString(html,'text/html');
-  parsed.querySelectorAll('script,iframe,object,embed,form,base,meta[http-equiv="refresh"],link[rel="modulepreload"],link[rel="preload"]')
-    .forEach(element=>element.remove());
-  parsed.querySelectorAll('*').forEach(element=>{
-    [...element.attributes].forEach(attribute=>{
-      const name=attribute.name.toLowerCase(), value=attribute.value.trim();
-      if(name.startsWith('on') || name==='srcdoc') element.removeAttribute(attribute.name);
-      if(['href','src','xlink:href','action','formaction'].includes(name) && /^(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(value)) element.removeAttribute(attribute.name);
-      if(name==='style' && /expression\s*\(|url\s*\(\s*['"]?\s*javascript:/i.test(value)) element.removeAttribute(attribute.name);
-    });
-    if(element.tagName==='A'){
-      element.setAttribute('target','_blank');
-      element.setAttribute('rel','noopener noreferrer');
-    }
-  });
-  return '<!doctype html>'+parsed.documentElement.outerHTML;
-}
-function renderPlanViewer(tr) {
-  const items = tr.itinerary || [];
-  const grouped = groupByDay(items);
-  const doneCount = items.filter(item=>itineraryItemDone(tr,item)).length;
-  const pct = items.length ? Math.round(doneCount/items.length*100) : 0;
-  const range = tr.startDate
-    ? `${fmtDateKey(tr.startDate)}${tr.endDate&&tr.endDate!==tr.startDate?' – '+fmtDateKey(tr.endDate):''}`
-    : 'Ohne festes Datum';
-  $('viewerPlan').innerHTML = `<div class="plan-wrap">
-    <section class="plan-hero">
-      <div class="plan-hero__eyebrow">${esc(groupName(tr.familyId))}</div>
-      <h2>${esc(tr.name||'Programm')}</h2>
-      <div class="plan-hero__meta">${esc(range)}${tr.destination?' · '+esc(tr.destination):''}</div>
-      ${tr.notes?`<p class="plan-stop__notes">${esc(tr.notes)}</p>`:''}
-      <div class="plan-progress">
-        <div class="plan-progress__track"><span class="plan-progress__fill" style="width:${pct}%"></span></div>
-        <span class="plan-progress__text">${doneCount} / ${items.length} erledigt</span>
-      </div>
-    </section>
-    ${grouped.length ? grouped.map(day => {
-      const first = day.items[0] || {};
-      return `<section class="plan-day">
-        <header class="plan-day__head">
-          <div class="plan-day__date">${esc(day.heading)}</div>
-          ${first.dayTitle?`<div class="plan-day__title">${esc(first.dayTitle)}</div>`:''}
-          ${first.dayIntro?`<p class="plan-day__intro">${esc(first.dayIntro)}</p>`:''}
-        </header>
-        <div class="plan-stops">${day.items.map(item => {
-          const done = itineraryItemDone(tr,item);
-          const past = !!item.date && item.date < todayKey;
-          return `<article class="plan-stop${done?' is-done':''}">
-            <button class="kal-haken${done?' is-an':''}" type="button" data-plan-stop="${esc(item.id||'')}"
-              aria-pressed="${done}" aria-label="${done?'Wieder öffnen':'Als erledigt markieren'}"></button>
-            <div class="plan-stop__body">
-              <div class="plan-stop__top">
-                ${item.timeLabel||item.time?`<span class="plan-stop__time">${esc(item.timeLabel||item.time)}</span>`:''}
-                <span class="plan-stop__title">${esc(item.title||'Programmpunkt')}</span>
-                ${item.tag?`<span class="prog-tag">${esc(item.tag)}</span>`:''}
-                ${past&&!done?'<span class="plan-past">Vorbei</span>':''}
-              </div>
-              ${item.notes?`<div class="plan-stop__notes">${esc(item.notes)}</div>`:''}
-              ${item.transport?`<div class="plan-stop__transport">${esc(item.transport)}</div>`:''}
-            </div>
-          </article>`;
-        }).join('')}</div>
-      </section>`;
-    }).join('') : '<p class="empty-hint">Aus der HTML konnten noch keine Programmpunkte erkannt werden.</p>'}
-  </div>`;
-  $('viewerPlan').querySelectorAll('[data-plan-stop]').forEach(button => button.onclick = () => {
-    const item = (tr.itinerary||[]).find(entry=>entry.id===button.dataset.planStop);
-    if (item) toggleItineraryItem(tr,item);
-  });
-}
+/* ── Das Programm eines Eintrags (programm.js) ──
+   Dasselbe Blatt wie im Gruppe-Tab. Offen bleibt es über Änderungen
+   hinweg: ein Häkchen von jemand anderem erscheint, ohne zu schliessen. */
+let offenesProgramm = null;   // die ID des Eintrags, dessen Programm offen ist
 
-/* Eingelesenes HTML wird zum eigenen, geteilten Programm oben; das
-   bereinigte Original bleibt als zweite Ansicht erreichbar. */
-function openPlan(tr) {
-  if (!(tr.itinerary||[]).length) {
-    openViewer(tr.name,tr.planHtml,tr.planUrl);
-    return;
+function programmOptionenFuer(eintrag) {
+  const x = eintrag.ref;
+  if (eintrag.art === 'team') {
+    return {
+      schluessel:eintrag.id,
+      eyebrow:x.gruppenName || groupName(x.gid),
+      titel:x.titel,
+      zeitraum:zeitraum(x),
+      ort:x.ort || '',
+      notiz:x.notiz || '',
+      punkte:x.programm || [],
+      abfahrt:abfahrtVon(x, user.uid),
+      seite:{ html:x.planHtml || '', url:x.planUrl || '' },
+      weiter:{ text:tt('kal.zumTermin','Zum Termin'), beiKlick:() => zumTermin(x.gid, x.id) },
+    };
   }
-  openPlanTripId = tr.id;
-  $('viewerTitle').textContent=tr.name||'Programm';
-  const frame=$('viewerFrame'), plan=$('viewerPlan'), mode=$('viewerMode');
-  frame.hidden=true; frame.removeAttribute('src'); frame.removeAttribute('srcdoc');
-  plan.hidden=false;
-  renderPlanViewer(tr);
-  if(tr.planHtml||tr.planUrl){
-    mode.hidden=false;
-    mode.textContent='Original ansehen';
-    mode.onclick=()=>openViewer(tr.name,tr.planHtml,tr.planUrl,tr);
-  } else {
-    mode.hidden=true;
-    mode.onclick=null;
-  }
-  $('viewer').classList.add('visible');
+  return {
+    schluessel:eintrag.id,
+    eyebrow:groupName(x.familyId),
+    titel:x.name,
+    zeitraum:zeitraum({ von:eintrag.von, bis:eintrag.bis }),
+    ort:x.destination || '',
+    notiz:x.notes || '',
+    punkte:x.itinerary || [],
+    seite:{ html:x.planHtml || '', url:x.planUrl || '' },
+  };
 }
-
-function openViewer(title,html,url,returnTrip=null){
-  $('viewerTitle').textContent=title||'Info';
-  const f=$('viewerFrame'),plan=$('viewerPlan'),mode=$('viewerMode');
-  plan.hidden=true; f.hidden=false;
-  const safeUrl=safeExternalUrl(url);
-  if(safeUrl){
-    f.setAttribute('sandbox','allow-scripts allow-forms allow-popups');
-    f.removeAttribute('srcdoc'); f.src=safeUrl;
-  }
-  else {
-    f.setAttribute('sandbox','allow-popups');
-    f.removeAttribute('src');
-    const safeHtml = safePlanHtml(html) || '<p style="font-family:sans-serif;padding:24px">Keine Infos.</p>';
-    f.srcdoc = safeHtml;
-  }
-  if(returnTrip){
-    mode.hidden=false;
-    mode.textContent='Programm';
-    mode.onclick=()=>openPlan(returnTrip);
-  } else {
-    mode.hidden=true;
-    mode.onclick=null;
-  }
-  $('viewer').classList.add('visible');
+function programmOeffnen(eintrag) {
+  offenesProgramm = eintrag.id;
+  programmZeigen(programmOptionenFuer(eintrag));
 }
-function closeViewer(){
-  $('viewer').classList.remove('visible');
-  const f=$('viewerFrame');
-  f.removeAttribute('src'); f.removeAttribute('srcdoc'); f.hidden=true;
-  $('viewerPlan').hidden=true;
-  $('viewerMode').hidden=true;
-  $('viewerMode').onclick=null;
-  openPlanTripId=null;
+function offenesProgrammNeu() {
+  if (!offenesProgramm || !viewerOffen()) return;
+  const eintrag = aktuelleEintraege.get(offenesProgramm);
+  if (eintrag) programmNeuZeichnen(eintrag.id, programmOptionenFuer(eintrag));
 }
 
 /* ── ICS: der Abgleich, der mit jedem Kalender geht ── */
@@ -1339,15 +979,16 @@ function icsHerunterladen(body, name) {
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-/* Bis v.35.48.0 rief das .ics der Reise downloadIcs() — eine Funktion,
-   die es nicht gab (Falle 9). Der Knopf warf und tat nichts. */
-function downloadIcs(liste, name) {
-  const events = liste.map(item => ({ ...item, title:item.name, location:item.destination }));
-  icsHerunterladen(buildCalendarIcs({ events, reminders:[], calendarName:name }), name);
-}
+/* Die sichtbaren Kalender als eine Datei: eigene Termine, Erinnerungen,
+   die Termine der eingeschalteten Gruppen (ohne abgesagte) und Reisen,
+   die noch keine Termine sind. Bis v.35.49.0 fehlten die Gruppentermine. */
 function exportAllIcs() {
   const events = [
-    ...trips.map(item => ({ ...item, title:item.name, location:item.destination })),
+    ...groups.filter(item => !versteckteTeams.has(item.id))
+      .flatMap(item => (teamTermine.get(item.id) || [])
+        .filter(termin => !istAbgesagt(termin))
+        .map(termin => alsIcsEintrag(termin, item.id))),
+    ...sichtbareReisen().map(item => ({ ...item, title:item.name, location:item.destination })),
     ...(showPersonal ? days : []).map(item => ({ ...item, startDate:item.date, description:item.notes })),
   ];
   icsHerunterladen(buildCalendarIcs({
@@ -1437,7 +1078,6 @@ function wireUI(){
   $('createSheetClose').onclick=closeCreateSheet;
   $('createEventOption').onclick=()=>{ const tag=neuerTag(); closeCreateSheet(); sheetKey=tag; openDayForm(null); };
   $('createGroupEventOption').onclick=()=>{ const tag=neuerTag(); closeCreateSheet(); gruppenterminAnlegen(tag); };
-  $('createTripOption').onclick=()=>{ const tag=neuerTag(); closeCreateSheet(); sheetKey=tag; openTripForm(null); };
   $('createReminderOption').onclick=()=>{ const tag=neuerTag(); closeCreateSheet(); openReminderForm(null,tag); };
   $('mobileRemindersBtn').onclick=openReminderHub;
   $('reminderHubBackdrop').onclick=closeReminderHub;
@@ -1449,69 +1089,8 @@ function wireUI(){
   $('calendarImportBtn').onclick=()=>$('calendarImportFile').click();
   $('calendarImportFile').onchange=e=>{ const file=e.target.files?.[0]; if(file)importCalendarFile(file); };
   $('calendarExportBtn').onclick=exportAllIcs;
-  $('tripBackdrop').onclick=closeTripForm; $('tripFormClose').onclick=closeTripForm;
   $('reminderBackdrop').onclick=closeReminderForm; $('reminderFormClose').onclick=closeReminderForm;
-  $('dayFormBackdrop').onclick=closeDayForm; $('dayFormClose').onclick=closeDayForm; $('viewerClose').onclick=closeViewer;
-
-  document.querySelectorAll('#tpTabs .tab').forEach(t=>t.onclick=()=>setTripPlanPane(t.dataset.tpane));
-  $('tpDrop').onclick=()=>$('tpFile').click();
-  $('tpFile').onchange = e => {
-    const f=e.target.files[0]; if(!f) return;
-    const r=new FileReader();
-    r.onload=()=>{
-      newTripFileHtml=String(r.result||'');
-      $('tpChosen').textContent=f.name;
-      $('tpChosen').hidden=false;
-      describePlanHtml(newTripFileHtml);
-    };
-    r.readAsText(f);
-  };
-  $('tpHtml').addEventListener('input',()=>describePlanHtml($('tpHtml').value));
-  $('tripFormDelete').onclick = async () => {
-    if (!editTripId) return;
-    if (!confirm('Diesen Termin löschen?')) return;
-    try {
-      await tripLoeschen(editTripId);
-      closeTripForm();
-      backToGroup();
-    } catch(e) { reportClientError('calendar-trip-delete', e); alert('Löschen fehlgeschlagen.'); }
-  };
-  $('tripSave').onclick = async () => {
-    const name=$('tName').value.trim(); if(!name){alert('Bitte einen Titel eingeben.');return;}
-    const start=$('tStart').value;
-    if(!start){alert('Bitte ein Datum auswählen.');return;}
-    // "Bis" ist freiwillig — ohne Ende ist der Termin eintägig.
-    const startTime=$('tStartTime').value, endTime=$('tEndTime').value;
-    const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start,
-      startTime, endTime:endTime||startTime, notes:$('tNotes').value.trim(),
-      familyId:$('tGroup').value };
-    if (!data.familyId) { alert('Bitte einen Kalender auswählen.'); return; }
-    // Dasselbe Einlesen wie im Detail der Reise.
-    const activePane = document.querySelector('#tpTabs .tab.active')?.dataset.tpane || 'paste';
-    let planHtml='', planUrl='';
-    if (activePane==='upload' && newTripFileHtml) planHtml = newTripFileHtml;
-    else if (activePane==='url') planUrl = $('tpUrl').value.trim();
-    else planHtml = $('tpHtml').value.trim();
-    data.planHtml = planHtml; data.planUrl = planUrl;
-    let itinerary = editTripId ? editTripItinerary : [];
-    if (planHtml) {
-      const { items } = parseItineraryHtml(planHtml, { baseDate: data.startDate });
-      if (items.length) {
-        const manual = itinerary.filter(it => !it.autoImported);
-        itinerary = [...manual, ...items];
-      }
-    }
-    data.itinerary = itinerary;
-    $('tripSave').disabled=true;
-    try{
-      let id = editTripId;
-      if(editTripId) await updateDoc(doc(db,'trips',editTripId), data);
-      else { const ref = await addDoc(collection(db,'trips'), { ...data, createdBy:user.uid, createdAt:serverTimestamp() }); id = ref.id; }
-      closeTripForm();
-      await openTrip(id);
-    }catch(e){reportClientError('calendar-trip-save',e);alert('Speichern fehlgeschlagen.');}
-    $('tripSave').disabled=false;
-  };
+  $('dayFormBackdrop').onclick=closeDayForm; $('dayFormClose').onclick=closeDayForm;
 
   $('dayFormSave').onclick = async () => {
     const title=$('dTitle').value.trim(), date=$('dDate').value;
@@ -1593,8 +1172,7 @@ function wireUI(){
     stundeHoehe,
     beiEintrag:oeffne,
     beiErledigt:eintrag => setReminderCompletion(eintrag.ref, !eintrag.ref.completed),
-    beiStop:(eintrag, stop) => toggleItineraryItem(eintrag.ref, stop),
-    beiProgramm:eintrag => openPlan(eintrag.ref),
+    beiProgramm:programmOeffnen,
     beiNeu:tag => openCreateSheet(tag),
     beiTag:tag => {
       anchorKey = tag;
@@ -1625,12 +1203,11 @@ function wireUI(){
     renderCurrentView();
   });
 
-  document.addEventListener('keydown',e=>{ if(e.key!=='Escape')return;
-    if($('viewer').classList.contains('visible'))closeViewer();
-    else if($('reminderHubSheet').classList.contains('visible'))closeReminderHub();
+  /* Das Programm schliesst sein eigenes Blatt (programm.js). */
+  document.addEventListener('keydown',e=>{ if(e.key!=='Escape' || viewerOffen())return;
+    if($('reminderHubSheet').classList.contains('visible'))closeReminderHub();
     else if($('createSheet').classList.contains('visible'))closeCreateSheet();
     else if($('calendarSetupSheet').classList.contains('visible'))closeCalendarSetup();
     else if($('reminderSheet').classList.contains('visible'))closeReminderForm();
-    else if($('dayForm').classList.contains('visible'))closeDayForm();
-    else if($('tripSheet').classList.contains('visible'))closeTripForm(); });
+    else if($('dayForm').classList.contains('visible'))closeDayForm(); });
 }

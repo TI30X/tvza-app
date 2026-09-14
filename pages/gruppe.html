@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
   <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=7" />
+  <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
   <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
@@ -110,16 +111,24 @@
     <!-- Das Formular steht auf derselben Seite statt in einem Dialog:
          ein Rennen hat sechs Felder, und ein Dialog, der auf dem Handy
          die halbe Höhe frisst, macht daraus eine Rutschpartie. -->
+    <datalist id="titelVorschlaege"></datalist>
+    <datalist id="ortVorschlaege"></datalist>
+    <datalist id="packVorschlaege"></datalist>
+
     <section class="section" id="secForm" hidden>
       <div class="form-card">
-        <div class="form-title" data-i18n="grp.terminTitel">Neuer Termin</div>
+        <div class="form-title" id="formTitel">Neuer Termin</div>
 
         <!-- Die Art als Knoepfe, nicht als Auswahlfeld — man soll sehen,
              was es gibt. "Eigene" deckt, was keines der drei ist:
              Elternabend, Physio, Materialtest. Es verhaelt sich wie ein
              Training (ein Tag, eine Uhrzeit) und traegt sein eigenes Wort.
              fArt haelt die Art fuer den Rest des Codes. -->
-        <div class="form-group">
+        <!-- Was oft vorkommt, tippt man nicht jedes Mal neu: die häufigsten
+             Termine der Gruppe, ein Tipp füllt das Formular. -->
+        <div class="haeufig" id="fHaeufig" hidden></div>
+
+        <div class="form-group" id="grpArt">
           <div class="form-label" id="fArtLabel" data-i18n="grp.art">Art</div>
           <input type="hidden" id="fArt" value="training" />
           <div class="wahl" id="fArtWahl" role="radiogroup" aria-labelledby="fArtLabel"></div>
@@ -132,7 +141,7 @@
 
         <div class="form-group">
           <label class="form-label" for="fTitel" data-i18n="grp.titel">Titel</label>
-          <input class="form-input" id="fTitel" type="text" maxlength="120" placeholder="z.B. Kraft Beine" data-i18n-attr="placeholder:grp.titelPh" />
+          <input class="form-input" id="fTitel" type="text" maxlength="120" list="titelVorschlaege" placeholder="z.B. Kraft Beine" data-i18n-attr="placeholder:grp.titelPh" />
         </div>
 
         <!-- Von und daneben entweder Bis (Lager) oder Uhrzeit (alles
@@ -152,6 +161,10 @@
             <label class="form-label" for="fZeit" data-i18n="grp.zeit">Uhrzeit</label>
             <input class="form-input" id="fZeit" type="time" />
           </div>
+          <div class="form-group" id="grpBisZeit">
+            <label class="form-label" for="fBisZeit" data-i18n="prog.bisZeit">Ende</label>
+            <input class="form-input" id="fBisZeit" type="time" />
+          </div>
         </div>
 
         <div class="form-group" id="grpDisziplin" hidden>
@@ -167,7 +180,37 @@
 
         <div class="form-group">
           <label class="form-label" for="fOrt" data-i18n="grp.ort">Ort</label>
-          <input class="form-input" id="fOrt" type="text" maxlength="80" placeholder="z.B. Malbun" data-i18n-attr="placeholder:grp.ortPh" />
+          <input class="form-input" id="fOrt" type="text" maxlength="80" list="ortVorschlaege" placeholder="z.B. Malbun" data-i18n-attr="placeholder:grp.ortPh" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fNotiz" data-i18n="prog.bemerkung">Bemerkung</label>
+          <textarea class="form-textarea" id="fNotiz" rows="2" maxlength="2000"></textarea>
+        </div>
+
+        <!-- Die Seite zum Termin: eine Programm- oder Reiseseite als HTML
+             einfügen, hochladen oder verlinken. Firn liest die Punkte nach
+             Tagen heraus; das Original bleibt öffnbar. Zugeklappt, bis man
+             sie braucht — ein Training hat selten eine. -->
+        <button class="b b--secondary b--block" id="btnSeite" type="button" data-i18n="prog.seiteNeu">Programm aus einer Seite</button>
+        <div class="form-group prog-seite" id="grpSeite" hidden>
+          <div class="form-label" data-i18n="prog.seite">Programm aus einer Seite</div>
+          <div class="seg" id="fSeiteArt" role="group" aria-label="Programm aus einer Seite" data-i18n-attr="aria-label:prog.seite">
+            <button class="seg__item" type="button" data-seite-art="html" aria-pressed="true" data-i18n="prog.einfuegen">Einfügen</button>
+            <button class="seg__item" type="button" data-seite-art="datei" aria-pressed="false" data-i18n="prog.datei">Datei</button>
+            <button class="seg__item" type="button" data-seite-art="link" aria-pressed="false" data-i18n="prog.link">Link</button>
+          </div>
+          <div data-seite-teil="html">
+            <textarea class="form-textarea" id="fSeiteHtml" rows="3" placeholder="HTML der Seite einfügen" data-i18n-attr="placeholder:prog.htmlPh"></textarea>
+          </div>
+          <div data-seite-teil="datei" hidden>
+            <label class="prog-datei" for="fSeiteDatei" id="fSeiteDateiName">HTML-Datei wählen</label>
+            <input class="datei-feld" id="fSeiteDatei" type="file" accept=".html,.htm,text/html" />
+          </div>
+          <div data-seite-teil="link" hidden>
+            <input class="form-input" id="fSeiteLink" type="url" placeholder="https://…" />
+          </div>
+          <p class="prog-rueckmeldung" id="fSeiteStatus"></p>
         </div>
 
         <p class="empty-hint" id="formFehler" hidden></p>
@@ -234,6 +277,20 @@
         <button class="backlink" id="btnZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
         <div class="form-title" id="dTitel">—</div>
         <p class="empty-hint" id="dMeta"></p>
+        <p class="termin-notiz" id="dNotiz" hidden></p>
+        <p class="abfahrt-meine" id="abfahrtMeine" hidden></p>
+
+        <!-- Die Leitung bearbeitet, legt ein Programm an, lädt Gäste ein;
+             in den eigenen Kalender (.ics) nimmt ihn jeder. Seit v.35.50.0
+             kann ein Termin alles, was vorher nur die Reise konnte. -->
+        <div class="knopfreihe" id="terminKnoepfe">
+          <button class="b b--secondary" id="btnBearbeiten" type="button" hidden data-i18n="prog.bearbeiten">Bearbeiten</button>
+          <button class="b b--secondary" id="btnProgrammNeu" type="button" hidden data-i18n="prog.programmNeu">Programm anlegen</button>
+          <button class="b b--secondary" id="btnAbfahrten" type="button" hidden data-i18n="prog.abfahrtenEintragen">Abfahrten eintragen</button>
+          <button class="b b--secondary" id="btnPacklisteNeu" type="button" hidden data-i18n="prog.packlisteNeu">Packliste anlegen</button>
+          <button class="b b--secondary" id="btnGastLink" type="button" hidden>Gast-Link kopieren</button>
+          <button class="b b--secondary" id="btnIcs" type="button" data-i18n="prog.ics">In meinen Kalender</button>
+        </div>
 
         <div class="form-group" id="grpZusage">
           <div class="form-label" data-i18n="grp.deineAntwort">Deine Antwort</div>
@@ -243,6 +300,63 @@
             <button class="seg__item" type="button" data-antwort="nein" aria-pressed="false" data-i18n="grp.nein">Nein</button>
           </div>
           <p class="empty-hint" id="dZusagen"></p>
+        </div>
+
+        <!-- Das Programm: aus einer eingelesenen Seite oder von Hand,
+             nach Tagen, und jeder in der Gruppe hakt ab. -->
+        <div class="termin-teil" id="grpProgramm" hidden>
+          <div class="marke marke--reihe">
+            <span data-i18n="prog.programm">Programm</span>
+            <button class="b b--secondary" id="btnProgrammOeffnen" type="button" data-i18n="kal.programmOeffnen">Programm öffnen</button>
+          </div>
+          <div id="listProgramm"></div>
+          <!-- Neuer Punkt, oder — nach einem Tipp auf einen Punkt — dieser
+               zum Ändern. Nur die Leitung. -->
+          <div class="prog-neu" id="progNeu" hidden>
+            <input class="form-input" id="pTitel" type="text" maxlength="200" list="titelVorschlaege" placeholder="Programmpunkt" data-i18n-attr="placeholder:prog.punkt" />
+            <input class="form-input" id="pDatum" type="date" aria-label="Datum" data-i18n-attr="aria-label:prog.datum" />
+            <input class="form-input" id="pZeit" type="time" aria-label="Uhrzeit" data-i18n-attr="aria-label:grp.zeit" />
+            <textarea class="form-textarea" id="pNotiz" rows="2" maxlength="500" placeholder="Details, Treffpunkt …" data-i18n-attr="placeholder:prog.detailsPh"></textarea>
+            <div class="knopfreihe">
+              <button class="b b--secondary" id="btnPunkt" type="button">Hinzufügen</button>
+              <button class="b b--secondary" id="btnPunktAbbrechen" type="button" hidden data-i18n="common.abbrechen">Abbrechen</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Abfahrten je Person: die Leitung trägt ein, wann und wo jeder
+             losfährt. Wer mag, übernimmt Zeit und Ort erst für alle und
+             passt dann einzelne an. -->
+        <div class="termin-teil" id="grpAbfahrten" hidden>
+          <div class="marke" data-i18n="prog.abfahrten">Abfahrten</div>
+          <div class="rows" id="listAbfahrten"></div>
+          <div id="abfahrtenEditor" hidden>
+            <div class="abfahrt-zeile abfahrt-alle">
+              <span class="abfahrt-zeile__name" data-i18n="prog.fuerAlle">Für alle</span>
+              <input class="form-input" id="abfahrtAlleZeit" type="time" aria-label="Zeit für alle" data-i18n-attr="aria-label:prog.zeitAlle" />
+              <input class="form-input" id="abfahrtAlleOrt" type="text" maxlength="80" list="ortVorschlaege" placeholder="Ort für alle" data-i18n-attr="placeholder:prog.ortAlle" />
+            </div>
+            <div id="abfahrtZeilen"></div>
+            <div class="knopfreihe">
+              <button class="b b--primary" id="btnAbfahrtenSpeichern" type="button" data-i18n="common.speichern">Speichern</button>
+              <button class="b b--secondary" id="btnAbfahrtenAbbrechen" type="button" data-i18n="common.abbrechen">Abbrechen</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Die Packliste: die Punkte legt die Leitung an, abgehakt wird
+             für jede Person einzeln. Eigene Punkte sieht nur, wer sie
+             schreibt. -->
+        <div class="termin-teil" id="grpPackliste" hidden>
+          <div class="marke marke--reihe">
+            <span data-i18n="prog.packliste">Packliste</span>
+            <span id="packStand"></span>
+          </div>
+          <div class="rows" id="listPackliste"></div>
+          <form class="pack-neu" id="packNeu">
+            <input class="form-input" id="packName" type="text" maxlength="120" list="packVorschlaege" />
+            <button class="b b--secondary" type="submit" data-i18n="prog.hinzufuegen">Hinzufügen</button>
+          </form>
         </div>
 
         <!-- Hier stand das Ergebnis eines Rennens. Es gehoert aus zwei
@@ -258,8 +372,15 @@
           <div class="marke" data-i18n="grp.unterlagen">Unterlagen</div>
           <div class="rows" id="listAnhaenge"></div>
           <label class="b b--secondary b--block" for="anhangWahl" id="anhangKnopf" hidden data-i18n="grp.anhangNeu">Ausschreibung anhängen</label>
-          <input class="datei-feld" id="anhangWahl" type="file" accept="application/pdf,image/*" />
+          <input class="datei-feld" id="anhangWahl" type="file" />
           <p class="empty-hint" id="anhangFehler" hidden></p>
+        </div>
+
+        <!-- Gäste: wer den Link hat, sieht diesen Termin samt Programm,
+             ohne Mitglied zu sein, und kann mit dir schreiben. -->
+        <div class="termin-teil" id="grpGaeste" hidden>
+          <div class="marke" data-i18n="prog.gaeste">Gäste</div>
+          <div class="rows" id="listGaeste"></div>
         </div>
 
         <!-- Absagen ist nicht Loeschen: der Termin bleibt sichtbar,
@@ -463,6 +584,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=17"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=18"></script>
 </body>
 </html>

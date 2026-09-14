@@ -225,7 +225,27 @@ export function zeitraum(termin, locale = sprache()) {
       : `${kurz.format(von)} – ${kurz.format(bis)}`;
   }
 
-  return termin.zeit ? `${kurz.format(von)}, ${termin.zeit}` : kurz.format(von);
+  /* Ein Ende am Tag (bisZeit) hatte bis v.35.49.0 nur die Reise. */
+  const bisZeit = termin.zeit && termin.bisZeit ? `–${termin.bisZeit}` : '';
+  return termin.zeit ? `${kurz.format(von)}, ${termin.zeit}${bisZeit}` : kurz.format(von);
+}
+
+/* ── Brücke zu .ics ────────────────────────────────────────────────
+   Die Form, die buildCalendarIcs (calendar-interop.js) liest. Die
+   Reise hatte ihr ".ics"; seit sie ein Termin ist (v.35.50.0), hat es
+   jeder Termin. */
+export function alsIcsEintrag(termin, gid = '') {
+  const mehrtaegig = istMehrtaegig(termin);
+  return {
+    id: `${gid ? `${gid}-` : ''}${termin?.id || termin?.von}@firn`,
+    title: String(termin?.titel || '').trim() || 'Termin',
+    startDate: termin?.von,
+    endDate: mehrtaegig ? termin.bis : termin?.von,
+    startTime: mehrtaegig ? '' : (termin?.zeit || ''),
+    endTime: mehrtaegig ? '' : (termin?.bisZeit || ''),
+    location: termin?.ort || '',
+    description: termin?.notiz || '',
+  };
 }
 
 /* ── Brücke zur Tageszusammenfassung ───────────────────────────────
@@ -303,6 +323,10 @@ export function pruefe(termin) {
     else if (termin.bis < termin.von) fehler.push('Das Ende liegt vor dem Anfang.');
   }
   if (termin?.zeit && !/^\d{2}:\d{2}$/.test(termin.zeit)) fehler.push('Die Uhrzeit ist unlesbar.');
+  if (termin?.bisZeit) {
+    if (!/^\d{2}:\d{2}$/.test(termin.bisZeit)) fehler.push('Das Ende ist unlesbar.');
+    else if (termin.zeit && termin.bisZeit <= termin.zeit) fehler.push('Das Ende liegt vor dem Anfang.');
+  }
   if (termin?.disziplin && !DISZIPLINEN.includes(termin.disziplin)) {
     fehler.push('Unbekannte Disziplin.');
   }

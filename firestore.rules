@@ -319,6 +319,20 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/guestAccess/$(request.auth.uid + '_' + tripId));
     }
 
+    /* Ein Gast sieht einen Termin, wenn er einen Zugang zu GENAU diesem
+       Termin hat und dessen Token noch gilt (v.35.50.0). Der Zugang heisst
+       {uid}_{eid} — für eine übernommene Reise ist eid die Kennung der
+       Reise, und ihr alter Zugang trägt ihr Token, das der Termin
+       übernommen hat. Ein neues Token am Termin zieht alle Links zurück. */
+    function terminGast(eid, termin) {
+      return signedIn()
+        && termin.get('gastToken', '') is string
+        && termin.get('gastToken', '') != ''
+        && exists(/databases/$(database)/documents/guestAccess/$(request.auth.uid + '_' + eid))
+        && get(/databases/$(database)/documents/guestAccess/$(request.auth.uid + '_' + eid)).data.token
+          == termin.gastToken;
+    }
+
     // ── Family membership and invitations ───────────────────────
     match /memberInvites/{code} {
       allow get: if isAdmin()
@@ -575,13 +589,32 @@ service cloud.firestore {
       allow list: if isMember();
       allow create: if signedIn()
                     && request.resource.data.uid == request.auth.uid
-                    && docId == (request.resource.data.uid + '_' + request.resource.data.tripId)
-                    && request.resource.data.keys().hasOnly([
-                      'uid', 'tripId', 'token', 'createdAt'
-                    ])
-                    && exists(/databases/$(database)/documents/trips/$(request.resource.data.tripId))
-                    && request.resource.data.token
-                      == get(/databases/$(database)/documents/trips/$(request.resource.data.tripId)).data.guestToken;
+                    && (
+                      (
+                        docId == (request.resource.data.uid + '_' + request.resource.data.tripId)
+                        && request.resource.data.keys().hasOnly([
+                          'uid', 'tripId', 'token', 'createdAt'
+                        ])
+                        && exists(/databases/$(database)/documents/trips/$(request.resource.data.tripId))
+                        && request.resource.data.token
+                          == get(/databases/$(database)/documents/trips/$(request.resource.data.tripId)).data.guestToken
+                      )
+                      /* Seit v.35.50.0: ein Termin einer Gruppe (Reisen sind
+                         Termine geworden). Das Token muss das des Termins sein. */
+                      || (
+                        docId == (request.resource.data.uid + '_' + request.resource.data.eid)
+                        && request.resource.data.keys().hasOnly([
+                          'uid', 'gid', 'eid', 'token', 'createdAt'
+                        ])
+                        && request.resource.data.gid is string
+                        && request.resource.data.eid is string
+                        && request.resource.data.token is string
+                        && request.resource.data.token.size() > 0
+                        && exists(/databases/$(database)/documents/groups/$(request.resource.data.gid)/events/$(request.resource.data.eid))
+                        && request.resource.data.token
+                          == get(/databases/$(database)/documents/groups/$(request.resource.data.gid)/events/$(request.resource.data.eid)).data.get('gastToken', '')
+                      )
+                    );
       allow update: if false;
       allow delete: if isMember();
     }
@@ -1148,7 +1181,22 @@ service cloud.firestore {
           || (d.bezeichnung is string && d.bezeichnung.size() > 0 && d.bezeichnung.size() <= 40);
       }
 
-      allow get, list: if inGroup(gid);
+      /* Das Programm und die Seite, aus der es kommt (v.35.50.0, vorher
+         nur an der Reise), dazu Abfahrten je Person und die Packliste.
+         Dieselben Grenzen wie in programm.js: 300 Punkte, die Seite fast
+         so gross, wie das Dokument sein darf. Schreiben darf das alles nur
+         die Leitung — abgehakt wird ein Programm nicht (Michel). */
+      function programmGueltig(d) {
+        return (!('programm' in d) || (d.programm is list && d.programm.size() <= 300))
+          && (!('packliste' in d) || (d.packliste is list && d.packliste.size() <= 200))
+          && (!('abfahrten' in d) || (d.abfahrten is map && d.abfahrten.size() <= 300))
+          && (!('planHtml' in d) || (d.planHtml is string && d.planHtml.size() <= 900000))
+          && (!('planUrl' in d) || (d.planUrl is string && d.planUrl.size() <= 2000))
+          && (!('gastToken' in d) || (d.gastToken is string && d.gastToken.size() <= 64));
+      }
+
+      allow get: if inGroup(gid) || terminGast(eid, resource.data);
+      allow list: if inGroup(gid);
 
       allow create: if leadsGroup(gid)
                     && request.resource.data.art in ['training', 'lager', 'rennen']
@@ -1159,10 +1207,12 @@ service cloud.firestore {
                     && request.resource.data.von.matches('\\d{4}-\\d{2}-\\d{2}')
                     && request.resource.data.createdBy == request.auth.uid
                     && bezeichnungGueltig(request.resource.data)
+                    && programmGueltig(request.resource.data)
                     && request.resource.data.keys().hasOnly([
-                      'art', 'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
+                      'art', 'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'bisZeit', 'ort', 'notiz',
                       'disziplin', 'startnummer', 'ergebnis',
                       'abgesagt', 'absageGrund',
+                      'programm', 'planHtml', 'planUrl', 'gastToken', 'abfahrten', 'packliste',
                       'createdBy', 'createdAt'
                     ]);
 
@@ -1173,11 +1223,13 @@ service cloud.firestore {
       allow update: if leadsGroup(gid)
                     && request.resource.data.diff(resource.data).affectedKeys()
                       .hasOnly([
-                        'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
+                        'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'bisZeit', 'ort', 'notiz',
                         'disziplin', 'startnummer', 'ergebnis',
-                        'abgesagt', 'absageGrund'
+                        'abgesagt', 'absageGrund',
+                        'programm', 'planHtml', 'planUrl', 'gastToken', 'abfahrten', 'packliste'
                       ])
                     && bezeichnungGueltig(request.resource.data)
+                    && programmGueltig(request.resource.data)
                     && request.resource.data.titel is string
                     && request.resource.data.titel.size() > 0
                     && request.resource.data.titel.size() <= 120;
@@ -1317,6 +1369,9 @@ service cloud.firestore {
     match /groups/{gid}/events/{eid}/anhaenge/{id} {
       allow get, list: if inGroup(gid);
 
+      /* Unterlagen bringt die Leitung — auch seit Termine und Reisen eins
+         sind (v.35.50.0; an der Reise durfte das jedes Mitglied). Michel:
+         ändern soll nur, wer die Gruppe führt. */
       allow create, update: if leadsGroup(gid)
                     && request.resource.data.name is string
                     && request.resource.data.name.size() > 0
@@ -1330,6 +1385,27 @@ service cloud.firestore {
                     ]);
 
       allow delete: if leadsGroup(gid);
+    }
+
+    /* Die Packliste: die Punkte legt die Leitung am Termin an
+       (packliste), abgehakt wird für jede Person einzeln — hier, unter
+       ihrer uid, wie bei den Zusagen. Dazu darf jede ihre eigenen Punkte
+       schreiben (eigene). Lesen darf man den eigenen Stand; die Leitung
+       alle, damit sie sieht, wer noch nicht gepackt hat. */
+    match /groups/{gid}/events/{eid}/gepackt/{uid} {
+      allow get: if inGroup(gid) && (request.auth.uid == uid || leadsGroup(gid));
+      allow list: if leadsGroup(gid);
+
+      allow create, update: if inGroup(gid)
+                            && request.auth.uid == uid
+                            && request.resource.data.uid == uid
+                            && request.resource.data.erledigt is map
+                            && request.resource.data.erledigt.size() <= 400
+                            && (!('eigene' in request.resource.data)
+                                || (request.resource.data.eigene is list && request.resource.data.eigene.size() <= 100))
+                            && request.resource.data.keys().hasOnly(['uid', 'erledigt', 'eigene', 'am']);
+
+      allow delete: if (inGroup(gid) && request.auth.uid == uid) || leadsGroup(gid);
     }
 
     /* Zusagen. Jeder antwortet fuer sich, und die Dokument-ID ist die

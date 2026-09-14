@@ -36,8 +36,9 @@
 import { db } from './firebase-config.js';
 import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
-  onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp,
+  onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp, deleteField, addDoc, setDoc,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { reiseUebernehmen } from './reise-uebernahme.js';
 import { nameVon, kreisMitglieder } from './personen.js';
 import { bekannteAus } from './bekannte.js';
 
@@ -447,6 +448,14 @@ export async function terminAnlegen(gid, uid, termin) {
       notiz: termin.notiz,
       disziplin: termin.disziplin,
       startnummer: termin.startnummer,
+      /* Was bis v.35.49.0 nur die Reise konnte (programm.js): Ende am
+         Tag, das Programm und die Seite, aus der es kommt. */
+      bisZeit: termin.bisZeit,
+      programm: Array.isArray(termin.programm) && termin.programm.length ? termin.programm : null,
+      planHtml: termin.planHtml,
+      planUrl: termin.planUrl,
+      packliste: Array.isArray(termin.packliste) && termin.packliste.length ? termin.packliste : null,
+      abfahrten: termin.abfahrten && Object.keys(termin.abfahrten).length ? termin.abfahrten : null,
       createdBy: uid,
       createdAt: serverTimestamp(),
     }))
@@ -457,18 +466,131 @@ export async function terminAnlegen(gid, uid, termin) {
 /* 'art' fehlt bewusst: aus einem Rennen ein Training zu machen liesse
    Startnummer und Ergebnis sinnlos daneben stehen. Wer sich vertan
    hat, löscht und legt neu an — dieselbe Überlegung wie bei der
-   Gruppenart. Die Regeln lehnen es ohnehin ab. */
+   Gruppenart. Die Regeln lehnen es ohnehin ab.
+
+   Ein leeres Feld wird GELÖSCHT, nicht als '' geschrieben — aus
+   demselben Grund wie bei ohneLeere: zeit:'' hiesse "es gibt eine
+   Uhrzeit, sie ist bloss leer". */
+export const TERMIN_AENDERBAR = Object.freeze([
+  'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'bisZeit', 'ort', 'notiz',
+  'disziplin', 'startnummer', 'ergebnis', 'programm', 'planHtml', 'planUrl',
+  'abfahrten', 'packliste',
+]);
 export function terminAendern(gid, eid, patch) {
-  const erlaubt = ['titel', 'von', 'bis', 'zeit', 'ort', 'notiz',
-                   'disziplin', 'startnummer', 'ergebnis'];
-  const daten = Object.fromEntries(
-    Object.entries(patch).filter(([k]) => erlaubt.includes(k)));
+  const daten = {};
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (!TERMIN_AENDERBAR.includes(k)) continue;
+    const leer = v === '' || v === null || v === undefined || (Array.isArray(v) && !v.length)
+      || (v && typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length);
+    daten[k] = leer ? deleteField() : (typeof v === 'string' ? v.trim() : v);
+  }
   if (!Object.keys(daten).length) return Promise.resolve();
   return updateDoc(terminRef(gid, eid), daten);
 }
 
-export function terminLoeschen(gid, eid) {
+/* Mit dem Termin gehen seine Unterlagen und die Haken der Packliste.
+   Firestore löscht Untersammlungen nicht mit — ohne das blieben sie als
+   Waisen liegen (die Zusagen bleiben: sie sind klein, und ein
+   versehentlich gelöschter Termin verliert so nicht auch noch, wer
+   zugesagt hatte). */
+export async function terminLoeschen(gid, eid) {
+  for (const unter of ['anhaenge', 'gepackt']) {
+    const snap = await getDocs(collection(db, 'groups', gid, 'events', eid, unter)).catch(() => null);
+    await Promise.all((snap?.docs || []).map(d => deleteDoc(d.ref).catch(() => {})));
+  }
   return deleteDoc(terminRef(gid, eid));
+}
+
+/* ── Das Programm am Termin (programm.js) ──────────────────────────
+   Die Punkte pflegt die Leitung — abgehakt wird ein Programm nicht
+   (Michel, v.35.50.0): was vorbei ist, ist vorbei. */
+
+export function programmSetzen(gid, eid, programm) {
+  return updateDoc(terminRef(gid, eid), {
+    programm: Array.isArray(programm) && programm.length ? programm : deleteField(),
+  });
+}
+
+/* ── Die Packliste ─────────────────────────────────────────────────
+   Die Punkte ("Yogamatte", "Aussen-Turnschuhe") legt die Leitung am
+   Termin an (packliste). Abgehakt wird für jede Person einzeln, unter
+   ihrer uid — dort stehen auch Punkte, die sie nur für sich dazuschreibt. */
+
+const gepacktRef = (gid, eid, uid) => doc(db, 'groups', gid, 'events', eid, 'gepackt', uid);
+
+export function beobachteGepackt(gid, eid, uid, cb) {
+  return onSnapshot(
+    gepacktRef(gid, eid, uid),
+    snap => cb(snap.exists() ? snap.data() : { uid, erledigt: {}, eigene: [] }),
+    () => cb({ uid, erledigt: {}, eigene: [] }),
+  );
+}
+
+export function gepacktSetzen(gid, eid, uid, { erledigt = {}, eigene = [] } = {}) {
+  return setDoc(gepacktRef(gid, eid, uid), {
+    uid, erledigt, eigene: eigene.slice(0, 100), am: Date.now(),
+  });
+}
+
+/** Wie viele schon alles gepackt haben — für die Leitung. */
+export async function ladeGepackt(gid, eid) {
+  const snap = await getDocs(collection(db, 'groups', gid, 'events', eid, 'gepackt'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/* ── Gäste ─────────────────────────────────────────────────────────
+   Wer den Link hat (guest.html?g=&termin=&token=), legt ein Gastkonto
+   an und sieht GENAU diesen Termin: Programm, Seite, einen Chat mit der
+   Person, die ihn angelegt hat. Das Token steht am Termin (gastToken);
+   die Regel vergleicht es bei jedem Lesen, also zieht ein neues Token
+   alle alten Links zurück. Übernommene Reisen tragen das Token der
+   Reise weiter — ihre alten Links (guest.html?trip=) gehen weiter. */
+
+export function gastTokenSetzen(gid, eid, token) {
+  return updateDoc(terminRef(gid, eid), { gastToken: token });
+}
+
+export async function ladeGaeste(eid) {
+  const [neu, alt] = await Promise.all([
+    getDocs(query(collection(db, 'guestAccess'), where('eid', '==', eid))),
+    /* Gäste einer übernommenen Reise: dieselbe Kennung, alte Form. */
+    getDocs(query(collection(db, 'guestAccess'), where('tripId', '==', eid))).catch(() => null),
+  ]);
+  const zugaenge = [...neu.docs, ...(alt?.docs || [])].map(d => ({ docId: d.id, ...d.data() }));
+  return Promise.all(zugaenge.map(async z => {
+    const p = await getDoc(doc(db, 'guestProfiles', z.uid)).catch(() => null);
+    const profil = p?.exists() ? p.data() : {};
+    return { ...z, name: profil.name || profil.email || z.uid, lastActiveAt: profil.lastActiveAt || null };
+  }));
+}
+
+export function gastEntfernen(docId) {
+  return deleteDoc(doc(db, 'guestAccess', docId));
+}
+
+/* ── Reisen werden Termine (reise-uebernahme.js) ───────────────────
+   Die Leitung übernimmt die Reisen ihrer Gruppe, sobald sie Kalender
+   oder Gruppe öffnet. Einmal je Sitzung und Reise versucht — scheitert
+   es, geht es beim nächsten Öffnen weiter. */
+
+const FS = {
+  doc, collection, getDoc, getDocs, query, where, setDoc, updateDoc, serverTimestamp,
+};
+const inUebernahme = new Set();
+
+export function eineReiseUebernehmen(reise, uid, gruppenart) {
+  if (!reise?.id || reise.uebernommen || inUebernahme.has(reise.id)) return Promise.resolve(false);
+  inUebernahme.add(reise.id);
+  return reiseUebernehmen({ db, fs: FS, reise, uid, gruppenart });
+}
+
+export async function reisenDerGruppeUebernehmen(gid, uid, gruppenart) {
+  const snap = await getDocs(query(collection(db, 'trips'), where('familyId', '==', gid)));
+  let n = 0;
+  for (const d of snap.docs) {
+    if (await eineReiseUebernehmen({ id: d.id, ...d.data() }, uid, gruppenart)) n += 1;
+  }
+  return n;
 }
 
 /* ── Kalender-Abo ──────────────────────────────────────────────────
@@ -725,8 +847,39 @@ export function alsDataUrl(datei) {
   });
 }
 
+/* Ein Foto vom Handy hat drei, vier Megabyte — verkleinert passt es.
+   Die Reise tat das schon (fileToStored im Kalender); seit Termine und
+   Reisen eins sind (v.35.50.0), laden auch Mitglieder Bilder an einen
+   Termin, und die sollen nicht an der Grenze scheitern. */
+function bildAlsDataUrl(datei) {
+  return new Promise(fertig => {
+    const bild = new Image();
+    const adresse = URL.createObjectURL(datei);
+    bild.onload = () => {
+      URL.revokeObjectURL(adresse);
+      const zeichne = (kante, guete) => {
+        const faktor = Math.min(1, kante / Math.max(bild.width, bild.height));
+        const leinwand = document.createElement('canvas');
+        leinwand.width = Math.round(bild.width * faktor);
+        leinwand.height = Math.round(bild.height * faktor);
+        leinwand.getContext('2d').drawImage(bild, 0, 0, leinwand.width, leinwand.height);
+        try { return leinwand.toDataURL('image/jpeg', guete); } catch { return ''; }
+      };
+      for (const [kante, guete] of [[1600, 0.82], [1400, 0.7], [1200, 0.6], [1000, 0.5]]) {
+        const url = zeichne(kante, guete);
+        if (url && url.length <= ANHANG_MAX) { fertig({ url, laenge: url.length }); return; }
+      }
+      fertig(null);
+    };
+    bild.onerror = () => { URL.revokeObjectURL(adresse); fertig(null); };
+    bild.src = adresse;
+  });
+}
+
 export async function anhangSpeichern(gid, eid, uid, datei, id = null) {
-  const { url, laenge } = await alsDataUrl(datei);
+  const bild = String(datei?.type || '').startsWith('image/') && (datei.size || 0) > ANHANG_MAX * 0.7
+    ? await bildAlsDataUrl(datei) : null;
+  const { url, laenge } = bild || await alsDataUrl(datei);
   const ref = id
     ? anhangRef(gid, eid, id)
     : doc(collection(db, 'groups', gid, 'events', eid, 'anhaenge'));
@@ -734,7 +887,7 @@ export async function anhangSpeichern(gid, eid, uid, datei, id = null) {
   await writeBatch(db)
     .set(ref, {
       name: String(datei.name || 'Ausschreibung').slice(0, 200),
-      type: datei.type || 'application/pdf',
+      type: bild ? 'image/jpeg' : (datei.type || 'application/pdf'),
       size: laenge,
       dataUrl: url,
       by: uid,

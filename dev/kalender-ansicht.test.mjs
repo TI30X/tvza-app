@@ -53,9 +53,10 @@ test('die Liste: Monate, heute, freie Tage — und ein Lager als eine Karte', ()
   assert.equal(lager.length, 1, 'das Lager steht einmal');
   assert.ok(lager[0].closest('.kal-eintrag').classList.contains('is-mehrtaegig'));
   assert.match(lager[0].textContent, /4 Tage/);
-  // Das Programm steht mit seinem Punkt, abhakbar, und öffnet sich.
-  assert.ok(d.querySelector('[data-stop="reise:r|i1"]'));
-  assert.ok(d.querySelector('[data-programm="reise:r"]'));
+  // Das Programm steht mit seinem Punkt; ein Tipp öffnet es — abgehakt
+  // wird ein Programm nicht (v.35.50.0).
+  assert.ok(d.querySelector('.kal-stop[data-programm="reise:r"]'));
+  assert.equal(d.querySelector('.kal-stop .kal-haken, [data-stop]'), null);
 });
 
 test('die Liste: ein leerer heutiger Tag bietet an, etwas einzutragen — und freie Tage sind gezählt', () => {
@@ -116,7 +117,6 @@ test('ein Tipp kommt beim richtigen Eintrag an — auch nach dem Neuzeichnen', (
     aktuell: () => map,
     beiEintrag: e => log.push(`auf:${e.id}`),
     beiErledigt: e => log.push(`hak:${e.id}`),
-    beiStop: (e, s) => log.push(`stop:${e.id}:${s.id}`),
     beiProgramm: e => log.push(`programm:${e.id}`),
     beiTag: tag => log.push(`tag:${tag}`),
     beiNeu: tag => log.push(`neu:${tag}`),
@@ -127,14 +127,14 @@ test('ein Tipp kommt beim richtigen Eintrag an — auch nach dem Neuzeichnen', (
   const klick = sel => el.querySelector(sel).dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   klick('[data-erledigt="erinnerung:w"]');
   klick('[data-eintrag="team:g1:k"]');
-  klick('[data-stop="reise:r|i1"]');
-  klick('[data-programm="reise:r"]');
+  klick('.kal-stop[data-programm="reise:r"]');
+  klick('.kal-link[data-programm="reise:r"]');
   // Neu gezeichnet, mit geänderten Daten: der Klick findet den neuen Stand.
   map = new Map([...map].map(([id, e]) => [id, id === 'team:g1:k' ? { ...e, titel: 'Kondi (verschoben)' } : e]));
   zeichne();
   klick('[data-eintrag="team:g1:k"]');
   klick('.kal-tag.is-heute .kal-tag__datum');
   assert.deepEqual(log, [
-    'hak:erinnerung:w', 'auf:team:g1:k', 'stop:reise:r:i1', 'programm:reise:r', 'auf:team:g1:k', 'neu:2026-09-14',
+    'hak:erinnerung:w', 'auf:team:g1:k', 'programm:reise:r', 'programm:reise:r', 'auf:team:g1:k', 'neu:2026-09-14',
   ], 'kein zweiter Zuhörer, und jeder Tipp an seinem Ziel');
 });

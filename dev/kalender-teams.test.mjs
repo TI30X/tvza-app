@@ -145,12 +145,14 @@ test('ein Team-Termin oeffnet die Terminkarte, nie das Formular fuer eigene Term
   /* Alles, was nicht Reise oder Erinnerung ist, landete einmal im
      Formular für eigene Termine — ein Team-Termin wäre dort als eigener
      Termin bearbeitbar erschienen. Der Team-Termin kommt zuerst. */
-  assert.match(quelle, /function oeffne\(eintrag\) \{\s*if \(eintrag\.art === 'team'\) \{ zeigeTeamTermin\(eintrag\); return; \}/);
+  /* Seit v.35.50.0: mit Programm das Programm, sonst die Karte — beides
+     vor dem Formular für eigene Termine. */
+  assert.match(quelle, /function oeffne\(eintrag\) \{\s*if \(eintrag\.art === 'team' \|\| eintrag\.art === 'reise'\) \{[\s\S]*?if \(eintrag\.art === 'team'\) zeigeTeamTermin\(eintrag\); else zeigeReise\(eintrag\);\s*return;\s*\}/);
   assert.match(quelle, /\[data-source-team\]/, 'Teams lassen sich nicht einzeln ausschalten');
   assert.match(quelle, /teamsAus:\[\.\.\.versteckteTeams\]/, 'die Wahl wird nicht gemerkt');
   /* Die Karte ist frage() aus dialog.js, kein Browserfenster. */
   const karte = quelle.match(/async function zeigeTeamTermin\(eintrag\) \{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(karte, /await frage\(\{/);
   assert.doesNotMatch(karte, /\bconfirm\(|\balert\(/);
-  assert.match(karte, /aktiveGruppeSetzen\(eintrag\.ref\.gid\)/, '"Zur Gruppe" muss die richtige Gruppe oeffnen');
+  assert.match(karte, /zumTermin\(eintrag\.ref\.gid, eintrag\.ref\.id\)/, '"Zum Termin" muss die richtige Gruppe und den Termin oeffnen');
 });

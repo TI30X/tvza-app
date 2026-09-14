@@ -122,6 +122,17 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const anhangUmbenennen = ${merke('anhangUmbenennen')};
     export const anhangLoeschen = ${merke('anhangLoeschen')};
     export const alsBlob = () => null;
+    /* Was der Termin von der Reise uebernommen hat (v.35.50.0). */
+    export const terminAendern = ${merke('terminAendern')};
+    export const programmSetzen = ${merke('programmSetzen')};
+    /* Die eigene Packliste: globalThis.__gepackt legt der Test an. */
+    export const beobachteGepackt = (gid, eid, uid, cb) => { setTimeout(() => cb(globalThis.__gepackt || { uid, erledigt: {}, eigene: [] }), 0); return () => {}; };
+    export const gepacktSetzen = ${merke('gepacktSetzen')};
+    export const ladeGepackt = async () => [];
+    export const gastTokenSetzen = ${merke('gastTokenSetzen')};
+    export const ladeGaeste = async () => globalThis.__gaeste || [];
+    export const gastEntfernen = ${merke('gastEntfernen')};
+    export const reisenDerGruppeUebernehmen = ${merke('reisenDerGruppeUebernehmen')};
     /* Kontakte: globalThis.__kontakte = { uid: {...} } legt der Test an. */
     export const ladeKontakt = async (gid, uid) => ({ ...(globalThis.__kontakte?.[uid] || {}), uid });
     export const ladeKontakte = async () =>
@@ -203,7 +214,11 @@ async function lade({
   globalThis.document = window.document;
   globalThis.localStorage = window.localStorage;
   globalThis.location = window.location;
+  /* Das Einlesen einer Programmseite (itinerary.js) parst HTML. */
+  globalThis.DOMParser = window.DOMParser;
   globalThis.__fehler = [];
+  globalThis.__gepackt = null;
+  globalThis.__gaeste = [];
   globalThis.__aufrufe = [];
   globalThis.__termine = termine;
   globalThis.__antwort = { gruppeAnlegen: 'g-neu' };
@@ -245,6 +260,8 @@ async function lade({
     .replace(`'../../gruppenwahl.js'`, `'${datei('assets/js/gruppenwahl.js')}'`)
     .replace(`'../../kontakte.js'`, `'${datei('assets/js/kontakte.js')}'`)
     .replace(`'../../termine.js'`, `'${datei('assets/js/termine.js')}'`)
+    .replace(`'../../programm.js'`, `'${datei('assets/js/programm.js')}'`)
+    .replace(`'../../calendar-interop.js'`, `'${datei('assets/js/calendar-interop.js')}'`)
     .replace(`'../../einheit.js'`, `'${datei('assets/js/einheit.js')}'`)
     .replace(`'../../zuordnung.js'`, `'${datei('assets/js/zuordnung.js')}'`)
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)

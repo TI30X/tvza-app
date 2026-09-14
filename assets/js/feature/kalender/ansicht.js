@@ -8,8 +8,10 @@
 
      data-eintrag="id"   ein Eintrag — öffnen
      data-erledigt="id"  eine Erinnerung abhaken
-     data-stop="id|stopId"  einen Programmpunkt abhaken
-     data-programm="id"  das Programm eines Eintrags öffnen
+     data-programm="id"  das Programm eines Eintrags öffnen — auch ein
+                         einzelner Programmpunkt (abgehakt wird ein Programm
+                         seit v.35.50.0 nicht mehr: was vorbei ist, blendet
+                         sich von selbst ab)
      data-tag="iso"      einen Tag wählen (Monat, Kopf des Rasters)
      data-neu="iso"      an diesem Tag etwas anlegen
      data-slot="iso"     ins leere Raster getippt — mit Uhrzeit
@@ -76,21 +78,21 @@ function wann(e, x) {
   return `<strong>${esc(e.zeit)}</strong>${e.bisZeit && e.bisZeit !== e.zeit ? `<span>${esc(e.bisZeit)}</span>` : ''}`;
 }
 
-function stopZeile(e, stop, erledigt) {
-  return `<div class="kal-stop${erledigt ? ' is-erledigt' : ''}">
-    <button class="kal-haken${erledigt ? ' is-an' : ''}" type="button" data-stop="${esc(e.id)}|${esc(stop.id || '')}"
-      aria-pressed="${erledigt}" aria-label="${esc(erledigt ? t('kal.wiederOffen', 'Wieder öffnen') : t('kal.abhaken', 'Abhaken'))}"></button>
+/* Ein Plan ist kein Zettel zum Abhaken (Michel, v.35.50.0): um 7:00 ist
+   die Abfahrt um 7:00 vorbei, ohne dass jemand sie durchstreicht. */
+function stopZeile(e, stop, vorbei) {
+  return `<button class="kal-stop${vorbei ? ' is-vorbei' : ''}" type="button" data-programm="${esc(e.id)}">
     <span class="kal-stop__zeit">${esc(stop.timeLabel || stop.time || '')}</span>
     <span class="kal-stop__titel">${esc(stop.title || t('kal.punkt', 'Programmpunkt'))}</span>
-  </div>`;
+  </button>`;
 }
 
 /**
  * Ein Eintrag als Zeile der Liste (auch unter dem Monat am Handy).
  * @param x  { e, rolle, tagNr, tage, stops } aus agenda(), oder nur { e }
- * @param opt.erledigtVon  (eintrag, stop) → bool — ob ein Programmpunkt abgehakt ist
+ * @param opt.vorbeiVon  (eintrag, stop) → bool — ob ein Programmpunkt vorbei ist
  */
-export function eintragZeile(x, { erledigtVon = () => false } = {}) {
+export function eintragZeile(x, { vorbeiVon = () => false } = {}) {
   const e = x.e;
   const klassen = ['kal-eintrag', `kal-eintrag--${e.art}`];
   if (e.abgesagt) klassen.push('is-abgesagt');
@@ -101,7 +103,7 @@ export function eintragZeile(x, { erledigtVon = () => false } = {}) {
         aria-pressed="${e.erledigt}" aria-label="${esc(e.erledigt ? t('kal.wiederOffen', 'Wieder öffnen') : t('kal.abhaken', 'Abhaken'))}"></button>`
     : '';
   const stops = x.stops?.length
-    ? `<div class="kal-stops">${x.stops.map(stop => stopZeile(e, stop, erledigtVon(e, stop))).join('')}
+    ? `<div class="kal-stops">${x.stops.map(stop => stopZeile(e, stop, vorbeiVon(e, stop))).join('')}
         <button class="kal-link" type="button" data-programm="${esc(e.id)}">${esc(t('kal.programmOeffnen', 'Programm öffnen'))}</button></div>`
     : '';
   return `<div class="${klassen.join(' ')}" style="--farbe:${esc(e.farbe || 'var(--accent)')}">
@@ -123,7 +125,7 @@ export function eintragZeile(x, { erledigtVon = () => false } = {}) {
  * einem freien Tag steht, wie viele frei sind — so sieht man die
  * ruhige Woche, statt sie zu übersehen.
  */
-export function agendaHtml(tage, { erledigtVon } = {}) {
+export function agendaHtml(tage, { vorbeiVon } = {}) {
   if (!tage.length) {
     return `<div class="kal-leer kal-leer--gross">
       <p>${esc(t('kal.nichtsGeplant', 'Nichts geplant.'))}</p>
@@ -139,7 +141,7 @@ export function agendaHtml(tage, { erledigtVon } = {}) {
       teile.push(`<div class="kal-frei">${esc(t('kal.frei', '{n} Tage frei', { n: tag.freiDavor }))}</div>`);
     }
     const inhalt = tag.eintraege.length
-      ? tag.eintraege.map(x => eintragZeile(x, { erledigtVon })).join('')
+      ? tag.eintraege.map(x => eintragZeile(x, { vorbeiVon })).join('')
       : `<div class="kal-leer"><span>${esc(t('kal.nichtsHeute', 'Heute ist nichts geplant.'))}</span>
           <button class="kal-link" type="button" data-neu="${tag.tag}">${esc(t('kal.eintragen', 'Eintragen'))}</button></div>`;
     teile.push(`<section class="kal-tag${tag.heute ? ' is-heute' : ''}${tag.vergangen ? ' is-vergangen' : ''}" data-tagblock="${tag.tag}">
@@ -210,7 +212,7 @@ export function monatHtml(wochen, { gewaehlt = '', kompakt = false, spurenMax = 
 }
 
 /** Die Einträge an einem Tag, für die Liste unter dem Monat am Handy. */
-export function tagesListeHtml(tag, eintraege, { erledigtVon } = {}) {
+export function tagesListeHtml(tag, eintraege, { vorbeiVon } = {}) {
   const hier = eintraege.filter(e => e.von <= tag && e.bis >= tag);
   const kopf = `<h3 class="kal-tagkopf">${esc(fmt(tag, { weekday: 'long', day: 'numeric', month: 'long' }))}
     <button class="kal-link" type="button" data-neu="${tag}">${esc(t('kal.eintragen', 'Eintragen'))}</button></h3>`;
@@ -220,7 +222,7 @@ export function tagesListeHtml(tag, eintraege, { erledigtVon } = {}) {
     return eintragZeile({
       e, rolle: tage > 1 ? (e.von === tag ? 'beginn' : 'laeuft') : 'einzeln',
       tagNr: tageZwischen(e.von, tag) + 1, tage, stops: stopsAm(e, tag),
-    }, { erledigtVon });
+    }, { vorbeiVon });
   }).join('');
 }
 
@@ -281,22 +283,15 @@ export function zeitHtml(raster, { heute = '', jetzt = null } = {}) {
  * des letzten Zeichnens als Map id → Eintrag — so passt ein Klick auch
  * nach dem Neuzeichnen zum richtigen Eintrag.
  */
-export function verdrahten(el, { aktuell, beiEintrag, beiErledigt, beiStop, beiProgramm, beiTag, beiNeu, beiSlot, stundeHoehe }) {
+export function verdrahten(el, { aktuell, beiEintrag, beiErledigt, beiProgramm, beiTag, beiNeu, beiSlot, stundeHoehe }) {
   if (el.dataset.verdrahtet) return;
   el.dataset.verdrahtet = '1';
   el.addEventListener('click', event => {
-    const ziel = event.target.closest('[data-erledigt],[data-stop],[data-programm],[data-mehr],[data-eintrag],[data-neu],[data-tag],[data-slot]');
+    const ziel = event.target.closest('[data-erledigt],[data-programm],[data-mehr],[data-eintrag],[data-neu],[data-tag],[data-slot]');
     if (!ziel || !el.contains(ziel)) return;
     const map = aktuell();
     const d = ziel.dataset;
     if (d.erledigt) { const e = map.get(d.erledigt); if (e) beiErledigt?.(e); return; }
-    if (d.stop) {
-      const [id, stopId] = d.stop.split('|');
-      const e = map.get(id);
-      const stop = e?.stops?.find(s => s.id === stopId);
-      if (e && stop) beiStop?.(e, stop);
-      return;
-    }
     if (d.programm) { const e = map.get(d.programm); if (e) beiProgramm?.(e); return; }
     if (d.mehr) { event.stopPropagation(); beiTag?.(d.mehr, { mehr: true }); return; }
     if (d.eintrag) { const e = map.get(d.eintrag); if (e) beiEintrag?.(e); return; }

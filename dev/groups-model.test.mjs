@@ -261,7 +261,8 @@ test('families bleibt unberührt, solange nichts migriert ist', async () => {
 test('Termine schreibt die Leitung, lesen alle Mitglieder', async () => {
   const block = matchBlock(await readRules(), '/groups/{gid}/events/{eid}');
 
-  assert.match(allowClause(block, 'get, list'), /inGroup\(gid\)/);
+  assert.match(allowClause(block, 'get'), /inGroup\(gid\)/);
+  assert.match(allowClause(block, 'list'), /^ if inGroup\(gid\);/, 'auflisten nur Mitglieder — ein Gast sieht genau einen Termin');
   for (const verb of ['create', 'update', 'delete']) {
     assert.match(allowClause(block, verb), /leadsGroup\(gid\)/,
       `${verb} muss der Leitung vorbehalten bleiben`);

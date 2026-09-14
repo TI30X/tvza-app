@@ -1,0 +1,230 @@
+/* ══════════════════════════════════════════════════════════════════
+   Das Programm eines Termins (assets/js/programm.js).
+
+   Bis v.35.49.0 gehörte das zur Reise und stand in planner.css. Seit
+   Termine und Reisen ein Modell sind (v.35.50.0), zeigen Kalender und
+   Gruppe-Tab dasselbe Programm — beide laden diese Datei.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Über der Seite: Programm oder Original ────────────────────────── */
+
+.viewer { position: fixed; inset: 0; z-index: 80; display: none; flex-direction: column; background: var(--bg); }
+.viewer.visible { display: flex; }
+.viewer-bar { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); background: var(--surface); }
+.viewer-bar .vt { flex: 1; min-width: 0; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.viewer-zu {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r-icon);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.viewer-knopf {
+  flex: none;
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.viewer-knopf:hover { background: var(--surface-2); }
+.viewer-frame { flex: 1; width: 100%; border: 0; background: white; }
+.viewer-plan { flex: 1; overflow: auto; padding: var(--s5) clamp(14px, 4vw, 32px) var(--s7); }
+
+.plan-wrap { width: min(760px, 100%); margin: 0 auto; }
+.plan-hero { margin-bottom: var(--s4); padding: var(--s4); border: 1px solid var(--border); border-radius: var(--r-panel); background: var(--surface); }
+.plan-hero__eyebrow { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.plan-hero h2 { margin: var(--s1) 0; font: 700 clamp(22px, 5vw, 32px)/1.15 Georgia, 'Times New Roman', serif; }
+.plan-hero__meta { color: var(--ink-soft); font-size: 13px; }
+.plan-day { margin-bottom: var(--s4); overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-panel); background: var(--surface); }
+.plan-day__head { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.plan-day__date { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.plan-day__title { margin-top: 3px; font-size: 16px; font-weight: 800; }
+.plan-day__intro { margin: var(--s1) 0 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.45; }
+.plan-stops { padding: 2px var(--s4); }
+/* Ein Programm wird nicht abgehakt: vorbei ist leiser (nicht
+   durchgestrichen), der nächste Punkt trägt die Farbe. */
+.plan-stop { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--s4) 0; border-top: 1px solid var(--border); }
+.plan-stop:first-child { border-top: 0; }
+.plan-stop.is-vorbei { opacity: .5; }
+.plan-stop__zeit { flex: 0 0 3.2rem; padding-top: 2px; color: var(--ink-soft); font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.plan-stop.is-naechster .plan-stop__zeit { color: var(--accent); }
+.plan-stop__body { flex: 1; min-width: 0; }
+.plan-stop__top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); margin-bottom: var(--s1); }
+.plan-stop__title { font-size: 16px; font-weight: 800; }
+.plan-abfahrt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2);
+  margin: var(--s3) 0 0;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-icon);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 13px;
+}
+.plan-abfahrt strong { color: var(--ink); font-size: 15px; }
+.plan-stop__notes, .plan-stop__transport { margin-top: var(--s2); color: var(--ink-soft); font-size: 14px; line-height: 1.52; }
+.plan-stop__transport { position: relative; padding-left: var(--s4); }
+.plan-stop__transport::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-weight: 800; }
+
+/* ── Der Haken: nur die eigene Packliste ─────────────────────────────── */
+
+.haken {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: 2px solid color-mix(in oklab, var(--farbe, var(--accent)) 70%, var(--border));
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  cursor: pointer;
+}
+.haken.is-an {
+  border-color: var(--farbe, var(--accent));
+  background: var(--farbe, var(--accent));
+}
+.haken.is-an::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 6px;
+  height: 11px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.prog-marke {
+  display: inline-flex;
+  margin-left: var(--s1);
+  padding: 2px var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.prog-naechster {
+  display: inline-flex;
+  padding: 2px var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.prog-punkt .prog-naechster { align-self: flex-start; margin-top: 2px; }
+
+/* ── Im Termin: Programm, Packliste, Abfahrten, Gäste ──────────────── */
+
+.prog-tag-gruppe + .prog-tag-gruppe { margin-top: var(--s3); }
+.prog-punkt { gap: var(--s3); }
+.prog-punkt .prog-zeit { flex: 0 0 2.9rem; font-size: 12px; }
+.prog-punkt.is-vorbei { opacity: .5; }
+.prog-punkt.is-naechster { border-color: var(--accent); }
+.prog-punkt.is-naechster .prog-zeit { color: var(--accent); }
+.pack-punkt { gap: var(--s3); }
+.pack-punkt.is-an .row__title { color: var(--ink-soft); }
+.pack-punkt .prog-marke { margin-left: 0; }
+.termin-teil { margin-top: var(--s5); }
+.termin-teil > .marke--reihe { margin-bottom: var(--s2); }
+.termin-notiz { margin: var(--s2) 0 0; font-size: 14px; line-height: 1.5; white-space: pre-line; }
+.prog-neu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 7rem);
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+.prog-neu > .form-input:first-child,
+.prog-neu > .form-textarea,
+.prog-neu > .b,
+.prog-neu > .knopfreihe { grid-column: 1 / -1; }
+.prog-neu > .knopfreihe { margin-top: 0; }
+.pack-neu { display: flex; gap: var(--s2); margin-top: var(--s3); }
+.pack-neu > .form-input { flex: 1; min-width: 0; }
+
+/* Abfahrten: eine Zeile je Person, am Handy Name über Zeit und Ort. */
+.abfahrt-zeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6.5rem minmax(0, 1.4fr);
+  align-items: center;
+  gap: var(--s2);
+}
+.abfahrt-zeile + .abfahrt-zeile { margin-top: var(--s2); }
+.abfahrt-zeile__name { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.abfahrt-alle { padding-bottom: var(--s2); border-bottom: 1px solid var(--border); margin-bottom: var(--s2); }
+.abfahrt-meine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s2);
+  margin: var(--s3) 0 0;
+  padding: var(--s3);
+  border-radius: var(--r-row);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 13px;
+}
+.abfahrt-meine strong { color: var(--ink); font-size: 16px; }
+
+/* Häufige Termine: ein Tipp füllt das Formular. */
+.haeufig { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); }
+.haeufig__knopf {
+  padding: var(--s1) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.haeufig__knopf:hover { border-color: var(--accent); color: var(--accent); }
+.haeufig__knopf small { color: var(--ink-soft); font-weight: 500; }
+
+@media (max-width: 520px) {
+  .abfahrt-zeile { grid-template-columns: 6.5rem minmax(0, 1fr); }
+  .abfahrt-zeile__name { grid-column: 1 / -1; }
+}
+
+/* Die Seite im Formular: einfügen, hochladen oder verlinken. */
+.prog-seite { margin-top: var(--s3); }
+.prog-seite > .seg { margin-bottom: var(--s2); }
+.prog-datei {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s4);
+  border: 2px dashed var(--border);
+  border-radius: var(--r-icon);
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+}
+.prog-rueckmeldung { min-height: 18px; margin: var(--s2) 0 0; color: var(--ink-soft); font-size: 12px; }
+.prog-rueckmeldung.is-gut { color: var(--success, var(--accent)); font-weight: 700; }
+.prog-rueckmeldung.is-warnung { color: var(--warning, var(--danger)); }
+
+@media (max-width: 899px) {
+  .viewer-bar { padding: var(--s2) var(--s3); }
+  .viewer-plan { padding: var(--s3) var(--s3) var(--s6); }
+}

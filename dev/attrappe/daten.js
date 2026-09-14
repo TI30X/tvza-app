@@ -10,7 +10,7 @@
    beim nächsten Laden auf diese Startdaten zurück. Von Hand:
    attrappeZuruecksetzen() in der Konsole. */
 
-export const VERSION = 5;
+export const VERSION = 7;
 
 export const KONTEN = {
   michel: { email: 'michel@firn.test', name: 'Michel van Zanten' },
@@ -86,7 +86,19 @@ export async function startDaten() {
     'groups/g1/members/lea': { uid: 'lea', rolle: 'mitglied', seit: zeit(-40) },
 
     'groups/g1/events/t1': { art: 'training', titel: 'Kondi Halle', von: tag(1), zeit: '18:00', ort: 'Malbun', erstelltVon: 'michel', createdAt: zeit(-3) },
-    'groups/g1/events/t2': { art: 'lager', titel: 'Herbstlager Saas-Fee', von: tag(4), bis: tag(7), ort: 'Saas-Fee', erstelltVon: 'michel', createdAt: zeit(-3) },
+    /* Ein Lager mit Programm (v.35.50.0: Termine tragen, was vorher nur die Reise konnte). */
+    'groups/g1/events/t2': {
+      art: 'lager', titel: 'Herbstlager Saas-Fee', von: tag(4), bis: tag(7), ort: 'Saas-Fee', createdBy: 'michel', createdAt: zeit(-3),
+      notiz: 'Treffpunkt Bahnhof Visp.',
+      programm: [
+        { id: 'l1', date: tag(4), time: '07:00', title: 'Abfahrt Buchs' },
+        { id: 'l2', date: tag(4), time: '14:00', title: 'Freies Fahren' },
+        { id: 'l3', date: tag(5), time: '08:30', title: 'Riesenslalom-Training' },
+        { id: 'l4', date: tag(7), time: '16:00', title: 'Heimreise' },
+      ],
+      abfahrten: { timo: { zeit: '06:30', ort: 'Bahnhof Buchs' }, lea: { zeit: '06:45', ort: 'Sargans' }, michel: { zeit: '06:30', ort: 'Bahnhof Buchs' } },
+      packliste: [{ id: 'k1', name: 'Skischuhe' }, { id: 'k2', name: 'RS-Ski' }, { id: 'k3', name: 'Yogamatte' }, { id: 'k4', name: 'Aussen-Turnschuhe' }],
+    },
     'groups/g1/events/t3': { art: 'rennen', titel: 'FIS RS Pitztal', von: tag(18), zeit: '09:30', disziplin: 'RS', erstelltVon: 'michel', createdAt: zeit(-3) },
 
     'groups/g1/plaene/p1': { titel: 'KW 31 · TW 12', fuer: 'timo', json: JSON.stringify(kw31), erstelltVon: 'michel', erstelltAm: zeit(-10) },
@@ -106,13 +118,16 @@ export async function startDaten() {
     'groups/g2/events/f1': { art: 'training', bezeichnung: 'Geburtstag', titel: 'Grosis Geburtstag', von: tag(3), zeit: '12:00', ort: 'Vaduz', erstelltVon: 'michel', createdAt: zeit(-5) },
     'trips/r1': {
       name: 'Herbstferien Toskana', familyId: 'g2', destination: 'Castiglione', startDate: tag(24), endDate: tag(30),
-      notes: 'Ferienhaus ab 15 Uhr.', createdBy: 'michel', createdAt: zeit(-20),
+      notes: 'Ferienhaus ab 15 Uhr.', createdBy: 'michel', createdAt: zeit(-20), guestToken: 'reise-token',
       itinerary: [
         { id: 'i1', date: tag(24), time: '06:30', title: 'Abfahrt Schaan' },
         { id: 'i2', date: tag(24), time: '15:00', title: 'Schlüssel abholen' },
         { id: 'i3', date: tag(26), time: '10:00', title: 'Siena, Führung' },
       ],
     },
+
+    /* Eine Aufgabe an der Reise — die Leitung übernimmt beides beim Öffnen. */
+    'activities/a1': { tripId: 'r1', name: 'Vignette kaufen', done: false },
 
     /* Timothys eigene Termine und Erinnerungen — zwei überschneiden sich. */
     'calendarDays/c1': { ownerUid: 'timo', title: 'Zahnarzt', date: tag(2), startTime: '10:00', endTime: '11:00', location: 'Schaan' },

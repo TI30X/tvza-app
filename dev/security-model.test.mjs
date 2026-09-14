@@ -186,11 +186,16 @@ test('dashboard loads trips per group instead of the whole collection', async ()
 test('uploaded calendar HTML cannot run with TVZA origin privileges', async () => {
   const planner = await read('pages/planner.html');
   assert.doesNotMatch(planner, /sandbox="[^"]*allow-same-origin/);
-  assert.match(planner, /function safeExternalUrl\(value\)/);
-  assert.match(planner, /\['http:','https:'\]\.includes\(parsed\.protocol\)/);
-  assert.match(planner, /function safePlanHtml\(html\)/);
-  assert.match(planner, /script,iframe,object,embed,form,base/);
-  assert.match(planner, /name\.startsWith\('on'\)/);
+  /* Seit v.35.50.0 bereinigt programm.js für Kalender, Gruppe und Gast. */
+  const programm = await read('assets/js/programm.js');
+  assert.match(programm, /export function sichereAdresse\(wert\)/);
+  assert.match(programm, /\['http:', 'https:'\]\.includes\(url\.protocol\)/);
+  assert.match(programm, /export function sicheresHtml\(html\)/);
+  assert.match(programm, /script,iframe,object,embed,form,base/);
+  assert.match(programm, /name\.startsWith\('on'\)/);
+  assert.match(programm, /rahmen\.setAttribute\('sandbox', 'allow-popups'\);/);
+  assert.doesNotMatch(programm, /allow-same-origin/);
+  assert.match(await read('assets/js/feature/gast/gast.js'), /f\.srcdoc = sicheresHtml\(anzeige\.planHtml\)/);
 });
 
 test('visible version and service-worker cache stay aligned', async () => {

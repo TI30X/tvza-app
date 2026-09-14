@@ -32,7 +32,14 @@ import {
   terminAbsagen, absageZuruecknehmen,
   ladeAnhaenge, anhangSpeichern, anhangUmbenennen, anhangLoeschen, alsBlob,
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet, eigeneKarte,
+  terminAendern, programmSetzen, beobachteGepackt, gepacktSetzen,
+  gastTokenSetzen, ladeGaeste, gastEntfernen, reisenDerGruppeUebernehmen,
 } from '../../groups.js';
+import {
+  seiteLesen, programmMitSeite, neuerPunkt, punktSetzen, punkteHtml, jetztFuer,
+  abfahrtVon, abfahrtenSauber, packlisteFuer, neuerPackpunkt, haeufigste,
+  programmZeigen, programmNeuZeichnen, sichereAdresse, SEITE_MAX, PACKLISTE_MAX,
+} from '../../programm.js';
 import {
   wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag, planTageMitDatum, ersetztePlaene,
 } from '../../wochenplan.js';
@@ -44,8 +51,9 @@ import {
 } from '../../kontakte.js';
 import {
   zeitraum, artWort, artName, BEREICH_DER_ART, pruefe, isoTag,
-  artenFuer, kenntDisziplinen, istAbgesagt,
+  artenFuer, kenntDisziplinen, istAbgesagt, alsIcsEintrag,
 } from '../../termine.js';
+import { buildCalendarIcs } from '../../calendar-interop.js';
 import {
   rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
 } from '../../fispunkte.js';
@@ -137,6 +145,9 @@ async function zeichneMitglieder() {
   const liste = $('listMitglieder');
   try {
     mitglieder = sortiere(await ladeMitglieder(aktiv.id));
+    /* Die Abfahrten nennen Namen — ist ein Termin schon offen, bevor die
+       Mitglieder da sind, stünde dort sonst "Unbekannt". */
+    if (offen && !abfahrtenBearbeiten) zeichneAbfahrten();
 
     $('mitgliederTitel').textContent = wort(aktiv.art, 'mitglieder');
     liste.innerHTML = mitglieder.map(m => mitgliedZeile(m, aktiv.art)).join('');
@@ -900,9 +911,17 @@ async function zeichneZusagen() {
   }
 }
 
+/* Der offene Termin wird bei jeder Änderung neu gezeichnet (beobachte-
+   Termine). Was nur beim ÖFFNEN geschehen soll — die Aufgaben abonnieren,
+   die Gäste laden —, hängt an offenId. */
+let offenId = null;
+
 function detailOeffnen(eid) {
   offen = termine.find(t => t.id === eid) || null;
   if (!offen) return;
+  const neuGeoeffnet = offenId !== offen.id;
+  if (neuGeoeffnet) { programmLeerZeigen = false; packlisteLeerZeigen = false; abfahrtenBearbeiten = false; punktAbbrechen(); }
+  offenId = offen.id;
 
   const darfFuehren = leitet(aktiv?.meineRolle);
   const abgesagt = istAbgesagt(offen);
@@ -921,6 +940,25 @@ function detailOeffnen(eid) {
   $('dTitel').textContent = offen.titel;
   $('dMeta').textContent = teile.filter(Boolean).join(' · ');
   $('dMeta').hidden = false;
+  const notiz = String(offen.notiz || '').trim();
+  $('dNotiz').textContent = notiz;
+  $('dNotiz').hidden = !notiz;
+
+  /* Bearbeiten, Programm, Gäste: die Leitung (v.35.50.0 — bis dahin
+     liess sich ein Termin nur löschen und neu anlegen). */
+  $('btnBearbeiten').hidden = !darfFuehren;
+  $('btnGastLink').hidden = !darfFuehren;
+  $('btnAbfahrten').hidden = !darfFuehren;
+  $('btnGastLink').textContent = t('prog.gastLink', 'Gast-Link kopieren');
+  zeichneProgramm();
+  zeichneAbfahrten();
+  zeichnePackliste();
+  if (neuGeoeffnet) {
+    packlisteHoeren();
+    zeichneGaeste();
+    /* Ein Termin beginnt oben — auch wenn man aus der Woche weit unten kam. */
+    window.scrollTo?.(0, 0);
+  }
 
   /* Bei einem abgesagten Termin ist die Frage "kommst du?" gegenstandslos. */
   zeige('grpZusage', !abgesagt);
@@ -945,6 +983,10 @@ function detailOeffnen(eid) {
 
 function detailSchliessen() {
   offen = null;
+  offenId = null;
+  gepacktAbmelden?.();
+  gepacktAbmelden = null;
+  gepackt = null;
   zeige('secDetail', false);
   zeige('secWoche', !!aktiv);
   zeige('secMitglieder', !!aktiv);
@@ -978,11 +1020,17 @@ async function antworten(antwort) {
 
 let anhaenge = [];
 
+/* Unterlagen bringt und ändert die Leitung — auch seit Termine und
+   Reisen eins sind (v.35.50.0). Michel: ändern soll nur, wer führt. */
+const darfAnhang = () => leitet(aktiv?.meineRolle);
+
 function anhangZeile(a) {
   const kb = Math.round((a.size || 0) / 1024);
+  const typ = String(a.type || '');
+  const zeichen = typ.includes('pdf') ? 'PDF' : typ.startsWith('image/') ? t('grp.bild', 'Bild') : t('grp.datei', 'Datei');
   return `
-    <div class="row" data-anhang="${escHtml(a.id)}" data-bereich="kalender">
-      <span class="row__icon">PDF</span>
+    <div class="row${darfAnhang(a) ? '' : ' row--static'}" data-anhang="${escHtml(a.id)}" data-bereich="kalender">
+      <span class="row__icon">${escHtml(zeichen)}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(a.name)}</span>
         <span class="row__sub">${escHtml(`${kb} KB`)}</span>
@@ -996,17 +1044,16 @@ function anhangZeile(a) {
 async function zeichneAnhaenge() {
   if (!offen || !aktiv) return;
   const liste = $('listAnhaenge');
-  const darfFuehren = leitet(aktiv.meineRolle);
 
   zeige('grpAnhaenge', true);
-  $('anhangKnopf').hidden = !darfFuehren;
+  $('anhangKnopf').hidden = !darfAnhang();
 
   try { anhaenge = await ladeAnhaenge(aktiv.id, offen.id); }
   catch (e) { reportClientError('gruppe/anhaenge', e); anhaenge = []; }
 
   liste.innerHTML = anhaenge.length
     ? anhaenge.map(anhangZeile).join('')
-      + (darfFuehren
+      + (anhaenge.some(darfAnhang)
         ? `<p class="empty-hint">${escHtml(t('grp.anhangTipp', 'Zum Umbenennen oder Entfernen auf den Namen tippen.'))}</p>`
         : '')
     : `<p class="empty-hint">${escHtml(t('grp.keineUnterlagen', 'Noch keine Unterlagen.'))}</p>`;
@@ -1025,9 +1072,9 @@ function anhangOeffnen(id) {
 }
 
 async function anhangVerwalten(id) {
-  if (!offen || !aktiv || !leitet(aktiv.meineRolle)) return;
+  if (!offen || !aktiv) return;
   const a = anhaenge.find(x => x.id === id);
-  if (!a) return;
+  if (!a || !darfAnhang(a)) return;
 
   const name = await eingabe({
     ...geteilt(t('grp.frageAnhangName',
@@ -1068,6 +1115,504 @@ async function anhangHochladen(datei) {
        brauchbar — den soll der Nutzer sehen, nicht einen Ersatzsatz. */
     feld.textContent = e?.message || t('grp.f.datei', 'Die Datei konnte nicht angehängt werden.');
     feld.hidden = false;
+  }
+}
+
+/* ── Das Programm am Termin ────────────────────────────────────────
+   Bis v.35.49.0 hatte das nur die Reise, und die Reise stand nie hier.
+   Jetzt: Punkte nach Tagen (aus einer eingelesenen Seite oder von Hand).
+   Die Leitung legt sie an und ändert sie; abgehakt wird nichts — was
+   vorbei ist, blendet sich von selbst ab, und der nächste Punkt ist
+   markiert (Michel). "Programm öffnen" zeigt es gross mit dem Original. */
+
+let programmLeerZeigen = false;   // die Leitung hat "Programm anlegen" gedrückt
+let punktInArbeit = null;         // der Punkt, der gerade geändert wird
+const programmSchluessel = () => `termin:${aktiv?.id}:${offen?.id}`;
+
+function programmOptionen() {
+  const termin = offen;
+  return {
+    schluessel: programmSchluessel(),
+    eyebrow: aktiv?.name || '',
+    titel: termin.titel,
+    zeitraum: zeitraum(termin),
+    ort: termin.ort || '',
+    notiz: termin.notiz || '',
+    punkte: termin.programm || [],
+    abfahrt: abfahrtVon(termin, user.uid),
+    seite: { html: termin.planHtml || '', url: termin.planUrl || '' },
+  };
+}
+
+function zeichneProgramm() {
+  if (!offen || !aktiv) return;
+  const darfFuehren = leitet(aktiv.meineRolle);
+  const punkte = offen.programm || [];
+  const seite = !!(offen.planHtml || offen.planUrl);
+  const zeigen = punkte.length > 0 || seite || (darfFuehren && programmLeerZeigen);
+  zeige('grpProgramm', zeigen);
+  $('btnProgrammNeu').hidden = !darfFuehren || zeigen;
+  if (!zeigen) return;
+  $('btnProgrammOeffnen').hidden = !punkte.length && !seite;
+  $('listProgramm').innerHTML = punkte.length || !darfFuehren
+    ? punkteHtml(punkte, { jetzt: jetztFuer(new Date()), bearbeitbar: darfFuehren })
+    : '';
+  zeige('progNeu', darfFuehren);
+  if (darfFuehren && !$('pDatum').value) $('pDatum').value = offen.von || '';
+  $('btnPunkt').textContent = punktInArbeit ? t('common.speichern', 'Speichern') : t('prog.hinzufuegen', 'Hinzufügen');
+  $('btnPunktAbbrechen').hidden = !punktInArbeit;
+  programmNeuZeichnen(programmSchluessel(), programmOptionen());
+}
+
+/* Ein Tipp auf einen Punkt (Leitung): er steht zum Ändern in den Feldern. */
+function punktBearbeiten(id) {
+  const p = (offen?.programm || []).find(x => x.id === id);
+  if (!p) return;
+  punktInArbeit = p;
+  $('pTitel').value = p.title || '';
+  $('pDatum').value = p.date || '';
+  $('pZeit').value = p.time || '';
+  $('pNotiz').value = p.notes || '';
+  zeichneProgramm();
+  $('pTitel').focus();
+}
+
+function punktAbbrechen() {
+  punktInArbeit = null;
+  for (const id of ['pTitel', 'pZeit', 'pNotiz']) if ($(id)) $(id).value = '';
+  if ($('btnPunkt')) zeichneProgramm();
+}
+
+async function punktSpeichern() {
+  if (!offen || !aktiv) return;
+  const titel = $('pTitel').value.trim();
+  if (!titel) { $('pTitel').focus(); return; }
+  const termin = offen;
+  /* Geändert wird der Punkt als eigener: ein neues Einlesen der Seite
+     ersetzt ihn dann nicht mehr (programmMitSeite). */
+  const punkt = neuerPunkt({
+    id: punktInArbeit?.id || '',
+    date: $('pDatum').value, time: $('pZeit').value, title: titel, notes: $('pNotiz').value,
+  });
+  const neu = punktSetzen(termin.programm, punkt);
+  $('btnPunkt').disabled = true;
+  try {
+    await programmSetzen(aktiv.id, termin.id, neu);
+    termin.programm = neu;
+    punktAbbrechen();
+    $('pTitel').focus();
+  } catch (e) {
+    reportClientError('gruppe/punkt', e);
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
+  } finally {
+    $('btnPunkt').disabled = false;
+  }
+}
+
+async function punktEntfernen(id) {
+  if (!offen || !aktiv) return;
+  const termin = offen;
+  const neu = (termin.programm || []).filter(p => p.id !== id);
+  try {
+    await programmSetzen(aktiv.id, termin.id, neu);
+    termin.programm = neu;
+    if (punktInArbeit?.id === id) punktAbbrechen();
+    zeichneProgramm();
+  } catch (e) {
+    reportClientError('gruppe/punkt-weg', e);
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
+  }
+}
+
+/* ── Abfahrten ─────────────────────────────────────────────────────
+   Wann und wo jeder losfährt — die Leitung trägt es ein, jeder sieht
+   oben im Termin seine eigene. Die Leitung sieht die ganze Liste. */
+
+let abfahrtenBearbeiten = false;
+
+function zeichneAbfahrten() {
+  if (!offen || !aktiv) return;
+  const darfFuehren = leitet(aktiv.meineRolle);
+  const meine = abfahrtVon(offen, user.uid);
+  const feld = $('abfahrtMeine');
+  feld.innerHTML = meine
+    ? `<span>${escHtml(t('prog.deineAbfahrt', 'Deine Abfahrt'))}</span><strong>${escHtml([meine.zeit, meine.ort].filter(Boolean).join(' · '))}</strong>`
+    : '';
+  feld.hidden = !meine;
+
+  const alle = Object.entries(offen.abfahrten || {});
+  zeige('grpAbfahrten', darfFuehren && (alle.length > 0 || abfahrtenBearbeiten));
+  if (!darfFuehren) return;
+  $('btnAbfahrten').textContent = alle.length
+    ? t('prog.abfahrtenAendern', 'Abfahrten ändern')
+    : t('prog.abfahrtenEintragen', 'Abfahrten eintragen');
+  const name = uid => mitglieder.find(m => m.uid === uid)?.name || t('grp.unbekannt', 'Unbekannt');
+  $('listAbfahrten').innerHTML = abfahrtenBearbeiten ? '' : alle
+    .sort((a, b) => `${a[1].zeit || ''}${name(a[0])}`.localeCompare(`${b[1].zeit || ''}${name(b[0])}`))
+    .map(([uid, a]) => `<div class="row row--static">
+      <span class="row__time prog-zeit">${escHtml(a.zeit || '')}</span>
+      <span class="row__body"><span class="row__title">${escHtml(name(uid))}</span>
+        ${a.ort ? `<span class="row__sub">${escHtml(a.ort)}</span>` : ''}</span>
+    </div>`).join('');
+  zeige('abfahrtenEditor', abfahrtenBearbeiten);
+}
+
+function abfahrtenOeffnen() {
+  if (!offen || !aktiv || !leitet(aktiv.meineRolle)) return;
+  abfahrtenBearbeiten = true;
+  const stand = offen.abfahrten || {};
+  $('abfahrtAlleZeit').value = '';
+  $('abfahrtAlleOrt').value = '';
+  $('abfahrtZeilen').innerHTML = sortiere(mitglieder).map(m => {
+    const a = stand[m.uid] || {};
+    return `<div class="abfahrt-zeile" data-abfahrt="${escHtml(m.uid)}">
+      <span class="abfahrt-zeile__name">${escHtml(m.name || '')}</span>
+      <input class="form-input" type="time" data-feld="zeit" value="${escHtml(a.zeit || '')}" aria-label="${escHtml(t('grp.zeit', 'Uhrzeit'))}" />
+      <input class="form-input" type="text" maxlength="80" list="ortVorschlaege" data-feld="ort" value="${escHtml(a.ort || '')}" aria-label="${escHtml(t('grp.ort', 'Ort'))}" />
+    </div>`;
+  }).join('');
+  zeichneAbfahrten();
+  zeige('grpAbfahrten', true);
+  $('abfahrtAlleZeit').focus();
+}
+
+/* "Für alle": füllt jede Zeile — danach passt man einzelne an. */
+function abfahrtFuerAlle(feld, wert) {
+  document.querySelectorAll(`#abfahrtZeilen [data-feld="${feld}"]`).forEach(el => { el.value = wert; });
+}
+
+async function abfahrtenSpeichern() {
+  if (!offen || !aktiv) return;
+  const eingabe = {};
+  document.querySelectorAll('#abfahrtZeilen [data-abfahrt]').forEach(zeile => {
+    eingabe[zeile.dataset.abfahrt] = {
+      zeit: zeile.querySelector('[data-feld="zeit"]').value,
+      ort: zeile.querySelector('[data-feld="ort"]').value,
+    };
+  });
+  const abfahrten = abfahrtenSauber(eingabe);
+  const termin = offen;
+  $('btnAbfahrtenSpeichern').disabled = true;
+  try {
+    await terminAendern(aktiv.id, termin.id, { abfahrten });
+    termin.abfahrten = abfahrten;
+    abfahrtenBearbeiten = false;
+    zeichneAbfahrten();
+    zeichneProgramm();
+  } catch (e) {
+    reportClientError('gruppe/abfahrten', e);
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
+  } finally {
+    $('btnAbfahrtenSpeichern').disabled = false;
+  }
+}
+
+/* ── Die Packliste ─────────────────────────────────────────────────
+   Die Punkte ("Yogamatte", "Aussen-Turnschuhe") legt die Leitung an und
+   ändert sie; abgehakt wird für jede Person einzeln (gepackt/{uid}), und
+   wer mag, schreibt sich eigene Punkte dazu, die nur er sieht. */
+
+let packlisteLeerZeigen = false;
+let gepackt = null;
+let gepacktAbmelden = null;
+
+function packlisteHoeren() {
+  gepacktAbmelden?.();
+  gepackt = null;
+  if (!offen || !aktiv) return;
+  const eid = offen.id;
+  gepacktAbmelden = beobachteGepackt(aktiv.id, eid, user.uid, stand => {
+    if (offen?.id !== eid) return;
+    gepackt = stand;
+    zeichnePackliste();
+  });
+}
+
+function zeichnePackliste() {
+  if (!offen || !aktiv) return;
+  const darfFuehren = leitet(aktiv.meineRolle);
+  const punkte = packlisteFuer(offen, gepackt);
+  const zeigen = punkte.length > 0 || (darfFuehren && packlisteLeerZeigen);
+  zeige('grpPackliste', zeigen);
+  $('btnPacklisteNeu').hidden = !darfFuehren || zeigen;
+  if (!zeigen) return;
+  const an = punkte.filter(p => p.an).length;
+  $('packStand').textContent = punkte.length ? t('prog.gepacktStand', '{n} / {m}', { n: an, m: punkte.length }) : '';
+  $('packName').placeholder = darfFuehren
+    ? t('prog.packPhLeitung', 'Für alle, z.B. Yogamatte')
+    : t('prog.packPhEigen', 'Nur für dich, z.B. Ladekabel');
+  $('listPackliste').innerHTML = punkte.map(p => {
+    const aendern = p.eigen || darfFuehren;
+    return `<div class="row row--static pack-punkt${p.an ? ' is-an' : ''}">
+      <button class="haken${p.an ? ' is-an' : ''}" type="button" data-pack-haken="${escHtml(p.id)}"
+        aria-pressed="${p.an}" aria-label="${escHtml(p.an ? t('prog.wiederOffen', 'Wieder öffnen') : t('prog.gepackt', 'Gepackt'))}"></button>
+      <span class="row__body">
+        <span class="row__title">${escHtml(p.name)}</span>
+        ${p.eigen ? `<span class="row__sub">${escHtml(t('prog.nurFuerDich', 'nur für dich'))}</span>` : ''}
+      </span>
+      ${aendern ? `<span class="row__end">
+        <button class="row__aktion" type="button" data-pack-aendern="${escHtml(p.id)}"
+          title="${escHtml(t('prog.bearbeiten', 'Bearbeiten'))}" aria-label="${escHtml(t('prog.bearbeiten', 'Bearbeiten'))}"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+      </span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+const eigenerStand = () => ({ erledigt: { ...(gepackt?.erledigt || {}) }, eigene: [...(gepackt?.eigene || [])] });
+
+async function eigenenStandSchreiben(stand) {
+  const vorher = gepackt;
+  gepackt = { ...(gepackt || {}), ...stand };
+  zeichnePackliste();
+  try {
+    await gepacktSetzen(aktiv.id, offen.id, user.uid, stand);
+  } catch (e) {
+    reportClientError('gruppe/gepackt', e);
+    gepackt = vorher;
+    zeichnePackliste();
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
+  }
+}
+
+async function packlisteSchreiben(liste) {
+  const termin = offen;
+  try {
+    await terminAendern(aktiv.id, termin.id, { packliste: liste });
+    termin.packliste = liste;
+    zeichnePackliste();
+  } catch (e) {
+    reportClientError('gruppe/packliste', e);
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
+  }
+}
+
+async function packpunktHinzufuegen(event) {
+  event?.preventDefault();
+  if (!offen || !aktiv) return;
+  const name = $('packName').value.trim();
+  if (!name) { $('packName').focus(); return; }
+  const punkt = neuerPackpunkt(name);
+  $('packName').value = '';
+  /* Die Leitung schreibt für alle, alle anderen für sich. */
+  if (leitet(aktiv.meineRolle)) {
+    await packlisteSchreiben([...(offen.packliste || []), punkt].slice(0, PACKLISTE_MAX));
+  } else {
+    const stand = eigenerStand();
+    stand.eigene.push(punkt);
+    await eigenenStandSchreiben(stand);
+  }
+  $('packName').focus();
+}
+
+async function packAktion(event) {
+  if (!offen || !aktiv) return;
+  const haken = event.target.closest('[data-pack-haken]');
+  if (haken) {
+    const stand = eigenerStand();
+    const id = haken.dataset.packHaken;
+    stand.erledigt[id] = !stand.erledigt[id];
+    await eigenenStandSchreiben(stand);
+    return;
+  }
+  const aendern = event.target.closest('[data-pack-aendern]');
+  if (!aendern) return;
+  const id = aendern.dataset.packAendern;
+  const eigen = (gepackt?.eigene || []).find(p => p.id === id);
+  const gemeinsam = (offen.packliste || []).find(p => p.id === id);
+  const punkt = eigen || gemeinsam;
+  if (!punkt || (!eigen && !leitet(aktiv.meineRolle))) return;
+  const name = await eingabe({
+    ...geteilt(t('prog.frageAendern', 'Punkt ändern.\n\nLeer lassen und OK drücken, um ihn zu entfernen.')),
+    wert: punkt.name,
+    maxlength: 120,
+  });
+  if (name === null) return;
+  const neu = name.trim();
+  if (eigen) {
+    const stand = eigenerStand();
+    stand.eigene = neu
+      ? stand.eigene.map(p => (p.id === id ? { ...p, name: neu.slice(0, 120) } : p))
+      : stand.eigene.filter(p => p.id !== id);
+    if (!neu) delete stand.erledigt[id];
+    await eigenenStandSchreiben(stand);
+  } else {
+    await packlisteSchreiben(neu
+      ? offen.packliste.map(p => (p.id === id ? { ...p, name: neu.slice(0, 120) } : p))
+      : offen.packliste.filter(p => p.id !== id));
+  }
+}
+
+/* ── Was oft vorkommt ──────────────────────────────────────────────
+   Michel: was man oft einträgt, soll nicht jedes Mal neu von Hand gehen.
+   Die Vorschlagslisten (Titel, Orte, Packpunkte) kommen aus dem, was die
+   Gruppe schon hat; im Formular stehen die häufigsten Termine zum
+   Antippen — ein Tipp füllt Art, Titel, Zeit und Ort. */
+
+function vorschlaegeFuellen() {
+  const liste = (id, werte) => {
+    const el = $(id);
+    if (el) el.innerHTML = werte.map(w => `<option value="${escHtml(w)}"></option>`).join('');
+  };
+  liste('titelVorschlaege', haeufigste([
+    ...termine.map(x => x.titel),
+    ...termine.flatMap(x => (x.programm || []).map(p => p.title)),
+  ], 30));
+  liste('ortVorschlaege', haeufigste([
+    ...termine.map(x => x.ort),
+    ...termine.flatMap(x => Object.values(x.abfahrten || {}).map(a => a.ort)),
+  ], 30));
+  liste('packVorschlaege', haeufigste(termine.flatMap(x => (x.packliste || []).map(p => p.name)), 30));
+}
+
+/** Die häufigsten Termine der Gruppe — gleiche Art, gleiches Wort, gleicher
+ *  Titel, gleiche Zeit und gleicher Ort, mindestens zweimal. */
+function haeufigeTermine(max = 6) {
+  const zaehler = new Map();
+  for (const x of termine) {
+    if (!x?.titel) continue;
+    const schluessel = [x.art, x.bezeichnung || '', x.titel, x.zeit || '', x.bisZeit || '', x.ort || ''].join('|');
+    const eintrag = zaehler.get(schluessel) || { termin: x, n: 0 };
+    eintrag.n += 1;
+    zaehler.set(schluessel, eintrag);
+  }
+  return [...zaehler.values()].filter(e => e.n >= 2)
+    .sort((a, b) => b.n - a.n || String(a.termin.titel).localeCompare(String(b.termin.titel)))
+    .slice(0, max).map(e => e.termin);
+}
+
+let vorlagen = [];
+function zeichneHaeufige() {
+  vorlagen = bearbeitet ? [] : haeufigeTermine();
+  const box = $('fHaeufig');
+  box.innerHTML = vorlagen.map((x, i) => `<button class="haeufig__knopf" type="button" data-vorlage="${i}">
+    ${escHtml(x.titel)}${x.zeit || x.ort ? ` <small>${escHtml([x.zeit, x.ort].filter(Boolean).join(' · '))}</small>` : ''}
+  </button>`).join('');
+  box.hidden = !vorlagen.length;
+}
+
+function vorlageUebernehmen(i) {
+  const x = vorlagen[i];
+  if (!x) return;
+  if (x.bezeichnung) {
+    setzeArtWahl('eigene');
+    $('fArt').value = x.art;
+    $('fBezeichnung').value = x.bezeichnung;
+    formAnpassen();
+  } else {
+    setzeArtWahl(x.art);
+  }
+  $('fTitel').value = x.titel || '';
+  $('fZeit').value = x.zeit || '';
+  $('fBisZeit').value = x.bisZeit || '';
+  $('fOrt').value = x.ort || '';
+  if (x.disziplin) $('fDisziplin').value = x.disziplin;
+  formAnpassen();
+  $('fVon').focus();
+}
+
+/* ── Gäste ─────────────────────────────────────────────────────────
+   Ein Link, mit dem jemand ohne Mitgliedschaft genau diesen Termin
+   sieht — Programm, Seite, und einen Chat mit der Person, die ihn
+   angelegt hat. Wie bis v.35.49.0 an der Reise. */
+
+/* Der Termin für den eigenen Kalender — die Reise hatte ihr ".ics". */
+function icsHerunterladen() {
+  if (!offen) return;
+  const inhalt = buildCalendarIcs({ events: [alsIcsEintrag(offen, aktiv?.id)], calendarName: aktiv?.name || 'Firn' });
+  const adresse = URL.createObjectURL(new Blob([inhalt], { type: 'text/calendar;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = adresse;
+  a.download = `${String(offen.titel || 'termin').replace(/[^\w.-]+/g, '-')}.ics`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(adresse), 1000);
+}
+
+function neuesToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(12)))
+    .map(b => b.toString(36)).join('').slice(0, 16);
+}
+
+async function zeichneGaeste() {
+  zeige('grpGaeste', false);
+  if (!offen || !aktiv || !leitet(aktiv.meineRolle)) return;
+  const eid = offen.id;
+  let liste = [];
+  try { liste = await ladeGaeste(eid); }
+  catch (e) { reportClientError('gruppe/gaeste', e); }
+  if (offen?.id !== eid) return;
+  const tagMs = 86400000;
+  $('listGaeste').innerHTML = liste.map(g => {
+    const zuletzt = g.lastActiveAt?.toDate ? g.lastActiveAt.toDate().getTime() : 0;
+    const tage = zuletzt ? Math.floor((Date.now() - zuletzt) / tagMs) : null;
+    const sub = tage === null ? t('prog.nieAktiv', 'noch nie aktiv')
+      : tage <= 0 ? t('prog.heuteAktiv', 'heute aktiv')
+      : t('prog.aktivVor', 'vor {n} Tagen aktiv', { n: tage });
+    return `<div class="row row--static">
+      <span class="row__body">
+        <span class="row__title">${escHtml(g.name)}</span>
+        <span class="row__sub">${escHtml(sub)}</span>
+      </span>
+      <span class="row__end">
+        <button class="row__aktion" type="button" data-gast-chat="${escHtml(g.uid)}" data-gast-name="${escHtml(g.name)}"
+          title="${escHtml(t('prog.chat', 'Nachricht'))}" aria-label="${escHtml(t('prog.chat', 'Nachricht'))}"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+        <button class="row__aktion row__aktion--gefahr" type="button" data-gast-weg="${escHtml(g.docId)}"
+          title="${escHtml(t('prog.entfernen', 'Entfernen'))}" aria-label="${escHtml(t('prog.entfernen', 'Entfernen'))}"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
+      </span>
+    </div>`;
+  }).join('');
+  zeige('grpGaeste', liste.length > 0);
+}
+
+async function gastAktion(event) {
+  const chat = event.target.closest('[data-gast-chat]');
+  if (chat) {
+    const ziel = `./messages.html?to=${encodeURIComponent(chat.dataset.gastChat)}&name=${encodeURIComponent(chat.dataset.gastName)}`;
+    if (!window.tvzaNavigate?.(ziel)) location.href = ziel;
+    return;
+  }
+  const weg = event.target.closest('[data-gast-weg]');
+  if (!weg) return;
+  if (!await frage({
+    titel: t('prog.frageGastWeg', 'Gast-Zugang entfernen?'),
+    ja: t('grp.entfernenKurz', 'Entfernen'), gefahr: true,
+  })) return;
+  try {
+    await gastEntfernen(weg.dataset.gastWeg);
+    await zeichneGaeste();
+  } catch (e) {
+    reportClientError('gruppe/gast-weg', e);
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
+  }
+}
+
+async function gastLinkKopieren() {
+  if (!offen || !aktiv) return;
+  const knopf = $('btnGastLink');
+  const termin = offen;
+  try {
+    let token = termin.gastToken;
+    if (!token) {
+      token = neuesToken();
+      await gastTokenSetzen(aktiv.id, termin.id, token);
+      termin.gastToken = token;
+    }
+    const link = new URL(`guest.html?g=${encodeURIComponent(aktiv.id)}&termin=${encodeURIComponent(termin.id)}&token=${encodeURIComponent(token)}`, location.href).href;
+    try {
+      await navigator.clipboard.writeText(link);
+      knopf.textContent = t('prog.linkKopiert', 'Link kopiert');
+      setTimeout(() => { knopf.textContent = t('prog.gastLink', 'Gast-Link kopieren'); }, 2000);
+    } catch {
+      /* Ohne Zwischenablage (Rahmen, altes Safari): der Link zum
+         Markieren, statt eines Browserfensters (Falle 7). */
+      await eingabe({
+        titel: t('prog.gastLink', 'Gast-Link kopieren'),
+        text: t('prog.gastLinkText', 'Wer diesen Link hat, sieht den Termin mit Programm und kann dir schreiben.'),
+        wert: link,
+      });
+    }
+  } catch (e) {
+    reportClientError('gruppe/gast-link', e);
+    await meldung({ titel: t('grp.f.allgemein', 'Das hat nicht geklappt.') });
   }
 }
 
@@ -1127,6 +1672,9 @@ function formAnpassen() {
   const art = $('fArt').value;
   zeige('grpBis', art === 'lager');
   zeige('grpZeit', art !== 'lager');
+  /* Ein Ende am Tag erst, wenn es einen Anfang gibt — sonst stünde neben
+     "Von" wieder eine leere Hälfte. */
+  zeige('grpBisZeit', art !== 'lager' && !!($('fZeit').value || $('fBisZeit').value));
   /* Die Disziplin hängt an der GRUPPENART, nicht an der Terminart. Ein
      Hyrox-Wettkampf im Gym hat ein Ergebnis, aber keinen FIS-Faktor —
      das Feld stünde dort sinnlos da. */
@@ -1148,7 +1696,70 @@ function setzeArtWahl(wahl) {
   formAnpassen();
 }
 
-function formOeffnen(datum) {
+/* Der Termin im Formular: null für einen neuen. Bearbeiten gibt es seit
+   v.35.50.0 — bis dahin liess sich ein Termin nur löschen und neu
+   anlegen, die Reise dagegen bearbeiten. */
+let bearbeitet = null;
+
+/* ── Die Seite zum Termin ──────────────────────────────────────────
+   Einfügen, Datei oder Link — wie bei der Reise. Aus HTML (eingefügt
+   oder als Datei) liest Firn das Programm nach Tagen; ein Link wird nur
+   geöffnet. */
+let seiteArt = 'html';
+let seiteDateiHtml = '';
+
+function setzeSeiteArt(art) {
+  seiteArt = art;
+  document.querySelectorAll('#fSeiteArt [data-seite-art]').forEach(k => {
+    k.setAttribute('aria-pressed', String(k.dataset.seiteArt === art));
+  });
+  document.querySelectorAll('#grpSeite [data-seite-teil]').forEach(teil => {
+    teil.hidden = teil.dataset.seiteTeil !== art;
+  });
+  seiteRueckmeldung();
+}
+
+function seiteRueckmeldung() {
+  const feld = $('fSeiteStatus');
+  feld.className = 'prog-rueckmeldung';
+  if (seiteArt === 'link') {
+    feld.textContent = t('prog.hinweisLink', 'Die Seite wird verlinkt und lässt sich öffnen. Programmpunkte liest Firn aus eingefügtem HTML oder einer Datei.');
+    return;
+  }
+  const html = seiteArt === 'datei' ? seiteDateiHtml : $('fSeiteHtml').value;
+  if (!html.trim()) {
+    feld.textContent = t('prog.hinweis', 'Firn liest Tage und Programmpunkte heraus; die Seite selbst bleibt öffnbar. Skripte laufen nicht mit.');
+    return;
+  }
+  const { punkte, tage } = seiteLesen(html, $('fVon').value);
+  if (punkte.length) {
+    feld.classList.add('is-gut');
+    feld.textContent = t('prog.erkannt', 'Erkannt: {n} Programmpunkte an {m} Tagen.', { n: punkte.length, m: tage });
+  } else {
+    feld.classList.add('is-warnung');
+    feld.textContent = t('prog.nichtsErkannt', 'Die Seite wird gespeichert und lässt sich öffnen, aber Programmpunkte waren keine zu finden.');
+  }
+}
+
+function seiteZeigenImFormular(an) {
+  zeige('grpSeite', an);
+  $('btnSeite').hidden = an;
+  if (an) seiteRueckmeldung();
+}
+
+/** Was im Formular als Seite steht: { planHtml, planUrl }. Zugeklappt
+ *  bleibt die Seite, wie sie war. */
+function seiteAusFormular() {
+  if ($('grpSeite').hidden) {
+    return { planHtml: bearbeitet?.planHtml || '', planUrl: bearbeitet?.planUrl || '' };
+  }
+  if (seiteArt === 'link') return { planHtml: '', planUrl: $('fSeiteLink').value.trim() };
+  if (seiteArt === 'datei') return { planHtml: seiteDateiHtml || bearbeitet?.planHtml || '', planUrl: '' };
+  return { planHtml: $('fSeiteHtml').value.trim(), planUrl: '' };
+}
+
+function formOeffnen(datum, termin = null) {
+  bearbeitet = termin && typeof termin === 'object' && termin.id ? termin : null;
   /* Was die Gruppe anbietet, entscheidet die Gruppenart: eine Familie
      braucht keinen Wettkampf-Eintrag. Die Knoepfe entstehen darum im
      Code und nicht im Markup — mit der Farbe ihrer Art, damit man sie
@@ -1160,25 +1771,61 @@ function formOeffnen(datum) {
     `<button class="wahl__knopf" type="button" role="radio" aria-checked="false"
              data-art-wahl="eigene">${escHtml(t('grp.artEigene', 'Eigene …'))}</button>`,
   ].join('');
-  $('fBezeichnung').value = '';
-  setzeArtWahl(artenFuer(aktiv?.art)[0] || 'training');
-  $('fTitel').value = '';
+  $('formTitel').textContent = bearbeitet
+    ? t('prog.terminBearbeiten', 'Termin bearbeiten')
+    : t('grp.terminTitel', 'Neuer Termin');
+
+  const x = bearbeitet || {};
+  $('fBezeichnung').value = x.bezeichnung || '';
+  if (bearbeitet) {
+    /* Die Art bleibt, wie sie ist (die Regel lässt sie nicht ändern) —
+       nur ihr eigenes Wort lässt sich anpassen. */
+    artWahl = x.bezeichnung ? 'eigene' : x.art;
+    $('fArt').value = x.art;
+    zeige('grpBezeichnung', !!x.bezeichnung);
+  } else {
+    setzeArtWahl(artenFuer(aktiv?.art)[0] || 'training');
+  }
+  zeige('grpArt', !bearbeitet);
+  $('fTitel').value = x.titel || '';
   /* "+" an einem Tag der Woche bringt sein Datum mit; der Knopf unter
      der Woche bringt ein Klick-Ereignis, und dann gilt heute. */
-  $('fVon').value = typeof datum === 'string' && datum ? datum : isoTag();
-  $('fBis').value = '';
-  $('fZeit').value = '';
-  $('fDisziplin').value = '';
-  $('fOrt').value = '';
+  $('fVon').value = x.von || (typeof datum === 'string' && datum ? datum : isoTag());
+  $('fBis').value = x.bis || '';
+  $('fZeit').value = x.zeit || '';
+  $('fBisZeit').value = x.bisZeit || '';
+  $('fDisziplin').value = x.disziplin || '';
+  $('fOrt').value = x.ort || '';
+  $('fNotiz').value = x.notiz || '';
+
+  seiteDateiHtml = '';
+  $('fSeiteDatei').value = '';
+  $('fSeiteDateiName').textContent = t('prog.dateiWaehlen', 'HTML-Datei wählen');
+  $('fSeiteHtml').value = x.planHtml || '';
+  $('fSeiteLink').value = x.planUrl || '';
+  setzeSeiteArt(x.planUrl && !x.planHtml ? 'link' : 'html');
+  seiteZeigenImFormular(!!(x.planHtml || x.planUrl));
+
   $('formFehler').hidden = true;
   formAnpassen();
+  vorschlaegeFuellen();
+  zeichneHaeufige();
   zeige('secForm', true);
   zeige('secWoche', false);
+  zeige('secDetail', false);
   $('fTitel').focus();
 }
 
 function formSchliessen() {
   zeige('secForm', false);
+  /* Wer aus einem Termin heraus bearbeitet hat, kommt dorthin zurück. */
+  if (bearbeitet && offen) {
+    bearbeitet = null;
+    detailOeffnen(offen.id);
+    zeige('secDetail', true);
+    return;
+  }
+  bearbeitet = null;
   zeige('secWoche', !!aktiv);
 }
 
@@ -1194,9 +1841,17 @@ function formLesen() {
        hat, weil der Browser einen alten Wert behalten hat. */
     bis: art === 'lager' ? ($('fBis').value || null) : null,
     zeit: art === 'lager' ? null : ($('fZeit').value || null),
+    bisZeit: art === 'lager' || !$('fZeit').value ? null : ($('fBisZeit').value || null),
     disziplin: art === 'rennen' ? ($('fDisziplin').value || null) : null,
     ort: $('fOrt').value.trim() || null,
+    notiz: $('fNotiz').value.trim() || null,
   };
+}
+
+function formFehler(text) {
+  const feld = $('formFehler');
+  feld.textContent = text;
+  feld.hidden = false;
 }
 
 async function terminSpeichern() {
@@ -1206,33 +1861,48 @@ async function terminSpeichern() {
   /* "Eigene" ohne Wort waere ein Training, das so tut, als sei es etwas
      anderes. Das Feld steht offen da — also danach fragen. */
   if (artWahl === 'eigene' && !entwurf.bezeichnung) {
-    const feld = $('formFehler');
-    feld.textContent = t('grp.f.bezeichnung', 'Wie heisst diese Art von Termin?');
-    feld.hidden = false;
+    formFehler(t('grp.f.bezeichnung', 'Wie heisst diese Art von Termin?'));
     $('fBezeichnung').focus();
     return;
   }
 
   const fehler = pruefe(entwurf);
-  if (fehler.length) {
-    const feld = $('formFehler');
-    feld.textContent = fehler[0];
-    feld.hidden = false;
+  if (fehler.length) { formFehler(fehler[0]); return; }
+
+  const seite = seiteAusFormular();
+  if (seite.planUrl && !sichereAdresse(seite.planUrl)) {
+    formFehler(t('prog.f.link', 'Der Link muss mit https:// beginnen.'));
     return;
   }
+  if (seite.planHtml.length > SEITE_MAX) {
+    formFehler(t('prog.f.gross', 'Die Seite ist zu gross — verlinke sie lieber.'));
+    return;
+  }
+  /* Eine neue oder geänderte Seite ersetzt die Punkte vom letzten
+     Einlesen; von Hand angelegte bleiben (programmMitSeite). */
+  const vorher = bearbeitet?.programm || [];
+  const seiteNeu = seite.planHtml && seite.planHtml !== (bearbeitet?.planHtml || '');
+  const programm = seiteNeu ? programmMitSeite(vorher, seite.planHtml, entwurf.von) : vorher;
+  const daten = { ...entwurf, ...seite, programm };
 
   const btn = $('btnSpeichern');
   btn.disabled = true;
   try {
-    await terminAnlegen(aktiv.id, user.uid, entwurf);
+    if (bearbeitet) {
+      await terminAendern(aktiv.id, bearbeitet.id, daten);
+      /* Der eigene Stand gleich, ohne auf das Abo zu warten. */
+      Object.assign(bearbeitet, daten);
+    } else {
+      const id = await terminAnlegen(aktiv.id, user.uid, daten);
+      /* Mit Programm geht der neue Termin gleich auf — dort sieht man,
+         was aus der Seite geworden ist. Sonst meldet beobachteTermine
+         ihn in der Woche. */
+      if (programm.length && id) terminAusAdresse = id;
+    }
     formSchliessen();
-    /* Kein Neuzeichnen von Hand: beobachteTermine meldet den neuen
-       Termin von selbst. */
   } catch (e) {
     reportClientError('gruppe/termin', e);
-    const feld = $('formFehler');
-    feld.textContent = t('grp.f.terminSpeichern', 'Der Termin konnte nicht gespeichert werden.');
-    feld.hidden = false;
+    formFehler(t('grp.f.terminSpeichern', 'Der Termin konnte nicht gespeichert werden.'));
   } finally {
     btn.disabled = false;
   }
@@ -2023,6 +2693,66 @@ async function einladen() {
   });
   $('btnLoeschen')?.addEventListener('click', terminEntfernen);
 
+  /* Was der Termin von der Reise übernommen hat (v.35.50.0). */
+  $('btnBearbeiten')?.addEventListener('click', () => { if (offen) formOeffnen(null, offen); });
+  $('btnProgrammNeu')?.addEventListener('click', () => {
+    programmLeerZeigen = true;
+    zeichneProgramm();
+    $('pTitel')?.focus();
+  });
+  $('btnProgrammOeffnen')?.addEventListener('click', () => { if (offen) programmZeigen(programmOptionen()); });
+  $('listProgramm')?.addEventListener('click', event => {
+    const weg = event.target.closest('[data-punkt-weg]');
+    if (weg) { punktEntfernen(weg.dataset.punktWeg); return; }
+    const punkt = event.target.closest('[data-punkt]');
+    if (punkt) punktBearbeiten(punkt.dataset.punkt);
+  });
+  $('btnPunkt')?.addEventListener('click', punktSpeichern);
+  $('btnPunktAbbrechen')?.addEventListener('click', punktAbbrechen);
+  $('pTitel')?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); punktSpeichern(); }
+  });
+  $('btnAbfahrten')?.addEventListener('click', abfahrtenOeffnen);
+  $('btnAbfahrtenAbbrechen')?.addEventListener('click', () => { abfahrtenBearbeiten = false; zeichneAbfahrten(); });
+  $('btnAbfahrtenSpeichern')?.addEventListener('click', abfahrtenSpeichern);
+  $('abfahrtAlleZeit')?.addEventListener('input', event => abfahrtFuerAlle('zeit', event.target.value));
+  $('abfahrtAlleOrt')?.addEventListener('input', event => abfahrtFuerAlle('ort', event.target.value));
+  $('btnPacklisteNeu')?.addEventListener('click', () => {
+    packlisteLeerZeigen = true;
+    zeichnePackliste();
+    $('packName')?.focus();
+  });
+  $('packNeu')?.addEventListener('submit', packpunktHinzufuegen);
+  $('listPackliste')?.addEventListener('click', packAktion);
+  $('fHaeufig')?.addEventListener('click', event => {
+    const knopf = event.target.closest('[data-vorlage]');
+    if (knopf) vorlageUebernehmen(Number(knopf.dataset.vorlage));
+  });
+  $('btnGastLink')?.addEventListener('click', gastLinkKopieren);
+  $('btnIcs')?.addEventListener('click', icsHerunterladen);
+  $('listGaeste')?.addEventListener('click', gastAktion);
+
+  $('btnSeite')?.addEventListener('click', () => { seiteZeigenImFormular(true); $('fSeiteHtml')?.focus(); });
+  $('fSeiteArt')?.addEventListener('click', event => {
+    const art = event.target.closest('[data-seite-art]')?.dataset.seiteArt;
+    if (art) setzeSeiteArt(art);
+  });
+  $('fSeiteHtml')?.addEventListener('input', seiteRueckmeldung);
+  $('fSeiteDatei')?.addEventListener('change', event => {
+    const datei = event.target.files?.[0];
+    if (!datei) return;
+    const leser = new FileReader();
+    leser.onload = () => {
+      seiteDateiHtml = String(leser.result || '');
+      $('fSeiteDateiName').textContent = datei.name;
+      seiteRueckmeldung();
+    };
+    leser.readAsText(datei);
+  });
+  /* Die Tage einer Seite ohne Jahreszahl rechnet Firn vom Von-Datum aus. */
+  $('fVon')?.addEventListener('change', () => { if (!$('grpSeite').hidden) seiteRueckmeldung(); });
+  $('fZeit')?.addEventListener('input', formAnpassen);
+
   $('btnBeitreten')?.addEventListener('click', codeEinloesen);
   $('btnWeitereNeu')?.addEventListener('click', neueGruppe);
   $('btnWeitereCode')?.addEventListener('click', codeEinloesen);
@@ -2120,6 +2850,12 @@ function hoereAufTermine() {
 
   if (!aktiv) return;
   const fuer = aktiv.id;
+  /* Die Reisen dieser Gruppe werden Termine (reise-uebernahme.js) — bei
+     der Leitung, im Hintergrund, einmal je Sitzung und Reise. */
+  if (leitet(aktiv.meineRolle)) {
+    reisenDerGruppeUebernehmen(fuer, user.uid, aktiv.art)
+      .catch(e => reportClientError('gruppe/reisen-uebernehmen', e));
+  }
   terminAbo = beobachteTermine(fuer, liste => {
     /* Eine späte Antwort der vorigen Gruppe darf die aktuelle nicht
        überschreiben. */
@@ -2132,8 +2868,13 @@ function hoereAufTermine() {
     }
     if (offen && !termine.some(t => t.id === offen.id)) detailSchliessen();
     /* Wurde der offene Termin geaendert — etwa abgesagt —, muss die
-       Detailansicht ihren Stand nachziehen. */
-    else if (offen) { const neu = termine.find(t => t.id === offen.id); if (neu) detailOeffnen(neu.id); }
+       Detailansicht ihren Stand nachziehen. Steht er gerade im
+       Formular, bleibt das Formular vorn. */
+    else if (offen) {
+      const neu = termine.find(t => t.id === offen.id);
+      if (neu && $('secForm').hidden) detailOeffnen(neu.id);
+      else if (neu) offen = neu;
+    }
     zeichneWoche();
   });
 }

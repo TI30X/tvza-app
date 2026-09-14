@@ -14,7 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { JSDOM } from 'jsdom';
 
@@ -44,14 +44,17 @@ const FIRESTORE = `
   export const query = c => c, orderBy = () => ({});
   export async function getDoc(ref) {
     const wert = ref.pfad.startsWith('trips/') ? g().reise
+               : ref.pfad.startsWith('groups/') ? (g().termine || {})[ref.pfad] || null
                : ref.pfad.startsWith('users/') ? (g().familie ? {} : null) : null;
+    (g().gelesen ||= []).push(ref.pfad);
     return { exists: () => !!wert, data: () => wert };
   }
   export async function getDocs(q) {
     if (g().ladeFehler) throw new Error('permission-denied');
     return snap(g().projekte || []);
   }
-  export async function setDoc() {} export async function updateDoc() {}
+  export async function setDoc(ref, daten) { (g().geschrieben ||= []).push([ref.pfad, daten]); }
+  export async function updateDoc() {}
   export async function addDoc() { return { id: 'x' }; }
   export function onSnapshot(q, cb) { setTimeout(() => cb(snap(g().nachrichten || [])), 0); return () => {}; }
   export const serverTimestamp = () => null, increment = n => n;
@@ -65,13 +68,17 @@ async function lade({ seite, skript, url, ...gast }) {
   globalThis.document = window.document;
   globalThis.localStorage = window.localStorage;
   globalThis.location = window.location;
+  globalThis.DOMParser = window.DOMParser;
   globalThis.__gast = gast;
 
   const quelle = (await readFile(join(root, skript), 'utf8'))
     .replace(`'../../firebase-config.js'`, `'${dataUrl(CONFIG)}'`)
     .replace(`'${SDK}firebase-firestore.js'`, `'${dataUrl(FIRESTORE)}'`)
     .replace(`'${SDK}firebase-auth.js'`, `'${dataUrl(AUTH)}'`)
-    .replace(`'${SDK}firebase-app.js'`, `'${dataUrl(APP)}'`);
+    .replace(`'${SDK}firebase-app.js'`, `'${dataUrl(APP)}'`)
+    /* Das Programm (seit v.35.50.0 geteilt mit Kalender und Gruppe) ist
+       echter Code. */
+    .replace(`'../../programm.js'`, `'${pathToFileURL(join(root, 'assets/js/programm.js')).href}'`);
   assert.doesNotMatch(quelle, /gstatic/, 'ein SDK-Import ist nicht ersetzt');
   await import(dataUrl(`${quelle}\n// Lauf ${++lauf}`));
   for (let i = 0; i < 20; i++) await new Promise(r => setTimeout(r, 5));
@@ -132,7 +139,9 @@ test('Gast: angemeldet steht die Reise mit Programm und Chat — ohne style="…
   assert.equal(karte.querySelector('.gast-ziel')?.textContent, 'Ascona');
   assert.equal(karte.querySelector('.gast-notiz')?.textContent, 'Bahnhof, 8 Uhr');
   assert.ok(karte.querySelector('#gViewOriginal.gast-original'));
-  assert.equal(doc.querySelectorAll('#itinList .g-day').length, 2);
+  /* Nach Tagen, wie in der Gruppe: ein Tag mit Datum, einer ohne. */
+  assert.equal(doc.querySelectorAll('#itinList .prog-tag-gruppe').length, 2);
+  assert.equal(doc.querySelector('#itinList [data-punkt-haken]'), null, 'ein Gast hakt nichts ab');
   assert.deepEqual([...doc.querySelectorAll('.g-bubble')].map(b => b.className), ['g-bubble them', 'g-bubble me']);
   assert.equal(doc.querySelector('main [style]'), null, 'gezeichnetes Markup traegt wieder style="…"');
 });
@@ -141,6 +150,51 @@ test('Gast: eine Reise ohne Programm und ohne Absender zeigt den Hinweis und kei
   const doc = await gast({ nutzer: { uid: 'gast1' }, reise: { name: 'Leer' } });
   assert.ok(doc.querySelector('#itinList .empty-hint.gast-leer'));
   assert.equal(doc.getElementById('chatCard').hidden, true);
+});
+
+/* Seit v.35.50.0 sind Reisen Termine einer Gruppe. */
+const TERMIN = {
+  titel: 'Toskana', ort: 'Castiglione', notiz: 'Ab 15 Uhr', createdBy: 'michel', gastToken: 'abc',
+  planHtml: '<h1>Plan</h1><script>alert(1)</script><a href="javascript:alert(2)">x</a>',
+  programm: [{ id: 'i1', date: '2026-10-01', time: '06:30', title: 'Abfahrt' }, { id: 'i2', date: '2026-10-03', title: 'Siena' }],
+  programmErledigt: { i1: true },
+};
+
+test('Gast: ein Termin-Link öffnet genau diesen Termin, mit Zugang {uid}_{termin}', async () => {
+  const g = {
+    nutzer: { uid: 'gast1', email: 'g@b.test' },
+    termine: { 'groups/g2/events/e1': TERMIN },
+  };
+  const doc = await gast({ url: 'https://firn.test/pages/guest.html?g=g2&termin=e1&token=abc', ...g });
+  assert.deepEqual(sichtbar(doc), ['dashboard']);
+  assert.equal(doc.querySelector('#tripCard .form-title')?.textContent, 'Toskana');
+  assert.equal(doc.querySelector('#tripCard .gast-ziel')?.textContent, 'Castiglione');
+  assert.equal(doc.querySelectorAll('#itinList .prog-punkt').length, 2);
+  assert.equal(doc.querySelectorAll('#itinList .prog-punkt.is-naechster').length, 1, 'der nächste Punkt ist markiert');
+
+  const zugang = globalThis.__gast.geschrieben.find(([pfad]) => pfad.startsWith('guestAccess/'));
+  assert.equal(zugang[0], 'guestAccess/gast1_e1');
+  assert.deepEqual(Object.keys(zugang[1]).sort(), ['createdAt', 'eid', 'gid', 'token', 'uid']);
+  assert.equal(zugang[1].gid, 'g2');
+
+  /* Das Original: bereinigt, ohne Skript und ohne javascript:-Link. */
+  doc.getElementById('gViewOriginal').click();
+  const srcdoc = doc.getElementById('gViewerFrame').getAttribute('srcdoc') || '';
+  assert.ok(srcdoc.includes('<h1>Plan</h1>'), 'die Seite selbst fehlt');
+  assert.doesNotMatch(srcdoc, /<script|javascript:/i);
+});
+
+test('Gast: ein alter Reiselink zeigt den Termin, wenn die Reise übernommen ist', async () => {
+  const doc = await gast({
+    nutzer: { uid: 'gast1' },
+    reise: { ...REISE, uebernommen: true, familyId: 'g2' },
+    termine: { 'groups/g2/events/t1': { ...TERMIN, titel: 'Tessin als Termin' } },
+  });
+  assert.deepEqual(sichtbar(doc), ['dashboard']);
+  assert.equal(doc.querySelector('#tripCard .form-title')?.textContent, 'Tessin als Termin');
+  assert.ok(globalThis.__gast.gelesen.includes('groups/g2/events/t1'));
+  const zugang = globalThis.__gast.geschrieben.find(([pfad]) => pfad.startsWith('guestAccess/'));
+  assert.equal(zugang[0], 'guestAccess/gast1_t1', 'der alte Zugang gilt, weil der Termin die Kennung der Reise trägt');
 });
 
 const oeffentlich = (o = {}) => lade({

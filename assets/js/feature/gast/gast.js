@@ -7,9 +7,16 @@
 
    Bis v.35.35.0 stand dieser Code als Inline-Modul in der Seite. Die
    Umschalter setzen jetzt `hidden` statt style.display — das Kit
-   haelt [hidden] mit !important, und die Seite traegt kein style="…". */
+   haelt [hidden] mit !important, und die Seite traegt kein style="…".
+
+   Seit v.35.50.0 sind Reisen Termine einer Gruppe. Ein neuer Link
+   traegt ?g=&termin=&token= und oeffnet genau diesen Termin (die Regel:
+   terminGast). Ein alter Reiselink (?trip=) geht weiter: ist die Reise
+   uebernommen, steht der Termin unter derselben Kennung, und der alte
+   Zugang mit dem alten Token gilt auch fuer ihn. */
 
 import { auth, db, escHtml } from '../../firebase-config.js';
+import { punkteHtml, jetztFuer, sicheresHtml, sichereAdresse } from '../../programm.js';
 import {
   doc, getDoc, setDoc, updateDoc, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, increment
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -23,12 +30,28 @@ const params = new URLSearchParams(location.search);
    da ist, steht Deutsch, nie der Schluessel. */
 const T = (key, deutsch) => window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch) : deutsch;
 
-// Trip/token travel via the URL on first open; stashed in localStorage so
-// a guest can come back later without the full link.
-const tripId = params.get('trip') || localStorage.getItem('tvza.guestTrip') || '';
-const token  = params.get('token') || localStorage.getItem('tvza.guestToken') || '';
-if (params.get('trip'))  localStorage.setItem('tvza.guestTrip', tripId);
-if (params.get('token')) localStorage.setItem('tvza.guestToken', token);
+/* Ziel und Token kommen beim ersten Oeffnen mit der Adresse und werden
+   gemerkt, damit ein Gast spaeter ohne den ganzen Link zurueckfindet. */
+const merke = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const gemerkt = k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } };
+const ausAdresse = {
+  trip: params.get('trip') || '',
+  gid: params.get('g') || '',
+  eid: params.get('termin') || '',
+  token: params.get('token') || '',
+};
+const neuerLink = !!ausAdresse.token && (!!ausAdresse.trip || (!!ausAdresse.gid && !!ausAdresse.eid));
+const tripId = neuerLink ? ausAdresse.trip : gemerkt('tvza.guestTrip');
+const gid = neuerLink ? ausAdresse.gid : gemerkt('tvza.guestGruppe');
+const eid = neuerLink ? ausAdresse.eid : gemerkt('tvza.guestTermin');
+const token = neuerLink ? ausAdresse.token : gemerkt('tvza.guestToken');
+if (neuerLink) {
+  merke('tvza.guestTrip', tripId);
+  merke('tvza.guestGruppe', gid);
+  merke('tvza.guestTermin', eid);
+  merke('tvza.guestToken', token);
+}
+const zielGueltig = () => !!token && (!!tripId || (!!gid && !!eid));
 
 function show(id) {
   ['loading', 'requestForm', 'wrongAccount', 'invalidLink', 'dashboard']
@@ -50,62 +73,89 @@ async function ensureGuestAccess(user, name) {
     // family spot guests inactive 30+ days in the Gast-Zugang list.
     await updateDoc(profRef, { lastActiveAt: serverTimestamp() }).catch(() => {});
   }
-  const accessRef = doc(db, 'guestAccess', `${user.uid}_${tripId}`);
+  /* Ein Termin (neuer Link) oder eine Reise (alter Link) — der Zugang
+     heisst {uid}_{kennung}, und die Regel prueft das Token. */
+  const kennung = eid || tripId;
+  const accessRef = doc(db, 'guestAccess', `${user.uid}_${kennung}`);
   // Defensive: falls das get (z.B. durch alte Rules) scheitert, trotzdem
   // versuchen, den Zugang anzulegen — create validiert ohnehin das Token.
   const accessSnap = await getDoc(accessRef).catch(() => null);
   if (!accessSnap || !accessSnap.exists()) {
-    await setDoc(accessRef, { uid: user.uid, tripId, token, createdAt: serverTimestamp() });
+    await setDoc(accessRef, eid
+      ? { uid: user.uid, gid, eid, token, createdAt: serverTimestamp() }
+      : { uid: user.uid, tripId, token, createdAt: serverTimestamp() });
   }
 }
 
-/* Die Reise wird einmal geholt und bei jedem Sprachwechsel neu
+/* Was die Seite zeigt — aus einem Termin oder einer (alten) Reise. */
+function ausTermin(x) {
+  return {
+    titel: x.titel, ort: x.ort, notiz: x.notiz, punkte: x.programm || [],
+    planHtml: x.planHtml, planUrl: x.planUrl, createdBy: x.createdBy, quelle: x,
+  };
+}
+function ausReise(x) {
+  return {
+    titel: x.name, ort: x.destination, notiz: x.notes, punkte: x.itinerary || [],
+    planHtml: x.planHtml, planUrl: x.planUrl, createdBy: x.createdBy, quelle: x,
+  };
+}
+
+/* Der Termin wird einmal geholt und bei jedem Sprachwechsel neu
    gezeichnet — ohne erneutes Lesen und ohne neuen tripViews-Eintrag. */
 let geladeneReise = null;
-function zeichneReise(trip) {
+function zeichneReise(anzeige) {
   $('tripCard').innerHTML = `
-    <p class="form-title">${escHtml(trip.name || T('gast.reise', 'Reise'))}</p>
-    ${trip.destination ? `<p class="gast-ziel">${escHtml(trip.destination)}</p>` : ''}
-    ${trip.notes ? `<p class="gast-notiz">${escHtml(trip.notes)}</p>` : ''}
-    ${(trip.planHtml || trip.planUrl) ? `<button class="btn btn-primary btn-block gast-original" id="gViewOriginal">${T('gast.original', 'Original-Design ansehen')}</button>` : ''}
+    <p class="form-title">${escHtml(anzeige.titel || T('gast.reise', 'Reise'))}</p>
+    ${anzeige.ort ? `<p class="gast-ziel">${escHtml(anzeige.ort)}</p>` : ''}
+    ${anzeige.notiz ? `<p class="gast-notiz">${escHtml(anzeige.notiz)}</p>` : ''}
+    ${(anzeige.planHtml || anzeige.planUrl) ? `<button class="btn btn-primary btn-block gast-original" id="gViewOriginal">${T('gast.original', 'Original-Design ansehen')}</button>` : ''}
   `;
   if ($('gViewOriginal')) $('gViewOriginal').onclick = () => {
+    /* Bereinigt wie im Kalender (programm.js): keine Skripte, keine
+       fremden Adressen ausser http(s). */
     const f = $('gViewerFrame');
-    if (trip.planUrl) { f.removeAttribute('srcdoc'); f.src = trip.planUrl; }
-    else { f.removeAttribute('src'); f.srcdoc = trip.planHtml || ''; }
+    const adresse = sichereAdresse(anzeige.planUrl);
+    if (adresse) { f.removeAttribute('srcdoc'); f.src = adresse; }
+    else { f.removeAttribute('src'); f.srcdoc = sicheresHtml(anzeige.planHtml); }
     $('gViewer').classList.add('visible');
   };
 
-  const itin = (trip.itinerary || []).slice()
-    .sort((a, b) => ((a.date || '') + (a.time || '')).localeCompare((b.date || '') + (b.time || '')));
-  const byDay = {};
-  itin.forEach(it => { (byDay[it.date || ''] = byDay[it.date || ''] || []).push(it); });
-  const dayKeys = Object.keys(byDay).sort();
-  $('itinList').innerHTML = dayKeys.length ? dayKeys.map(d => `
-    <div class="g-day">${d ? escHtml(d) : T('gast.ohneDatum', 'Ohne Datum')}</div>
-    ${byDay[d].map(it => `
-      <div class="line">
-        <span class="l-main">
-          <span class="l-title">${it.time ? escHtml(it.time) + ' — ' : ''}${escHtml(it.title)}</span>
-          ${it.notes ? `<span class="l-sub">${escHtml(it.notes)}</span>` : ''}
-        </span>
-      </div>`).join('')}
-  `).join('') : `<p class="empty-hint gast-leer">${T('gast.keinProgramm', 'Noch kein Programm hinterlegt.')}</p>`;
+  /* Nach Tagen, wie in der Gruppe; was vorbei ist, blendet sich ab. */
+  $('itinList').innerHTML = anzeige.punkte.length
+    ? punkteHtml(anzeige.punkte, { jetzt: jetztFuer(new Date()) })
+    : `<p class="empty-hint gast-leer">${T('gast.keinProgramm', 'Noch kein Programm hinterlegt.')}</p>`;
+}
+
+async function ladeAnzeige() {
+  if (eid) {
+    const snap = await getDoc(doc(db, 'groups', gid, 'events', eid));
+    return snap.exists() ? ausTermin(snap.data()) : null;
+  }
+  const tripSnap = await getDoc(doc(db, 'trips', tripId));
+  if (!tripSnap.exists()) return null;
+  const trip = tripSnap.data();
+  /* Eine uebernommene Reise zeigt ihren Termin — der alte Zugang gilt
+     dort, weil der Termin Kennung und Token der Reise traegt. */
+  if (trip.uebernommen && trip.familyId) {
+    const termin = await getDoc(doc(db, 'groups', trip.familyId, 'events', tripId)).catch(() => null);
+    if (termin?.exists()) return ausTermin(termin.data());
+  }
+  return ausReise(trip);
 }
 
 async function loadDashboard(user) {
-  const tripSnap = await getDoc(doc(db, 'trips', tripId));
-  if (!tripSnap.exists()) { show('invalidLink'); return; }
-  const trip = tripSnap.data();
-  geladeneReise = trip;
-  zeichneReise(trip);
+  const anzeige = await ladeAnzeige();
+  if (!anzeige) { show('invalidLink'); return; }
+  geladeneReise = anzeige;
+  zeichneReise(anzeige);
 
   // Log that this guest viewed the trip — family can see this, guest can't.
-  addDoc(collection(db, 'tripViews'), { tripId, guestUid: user.uid, viewedAt: serverTimestamp() }).catch(() => {});
+  addDoc(collection(db, 'tripViews'), { tripId: eid || tripId, guestUid: user.uid, viewedAt: serverTimestamp() }).catch(() => {});
 
-  if (trip.createdBy) {
+  if (anzeige.createdBy) {
     $('chatCard').hidden = false;
-    wireChat(user.uid, trip.createdBy);
+    wireChat(user.uid, anzeige.createdBy);
   }
   show('dashboard');
 }
@@ -191,7 +241,7 @@ async function isFamilyAccount(uid) {
 
 let guestAuthInProgress = false;
 async function init() {
-  if (!tripId || !token) { show('invalidLink'); return; }
+  if (!zielGueltig()) { show('invalidLink'); return; }
   applyMode();
 
   onAuthStateChanged(auth, async user => {

@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.35.49.0';
+const CACHE = 'tvza-v.35.50.0';
 // Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
@@ -26,12 +26,13 @@ const SHELL = [
   './assets/css/kit.css?v=17',
   './assets/css/feature/willkommen.css?v=3',
   './assets/css/legacy.css?v=1',
-  './assets/css/feature/calendar.css?v=17',
+  './assets/css/feature/calendar.css?v=18',
   './assets/css/feature/matura.css?v=4',
   './assets/css/feature/access.css?v=2',
   './assets/css/feature/food.css?v=2',
   './assets/css/feature/ski.css?v=3',
-  './assets/css/feature/planner.css?v=3',
+  './assets/css/feature/planner.css?v=4',
+  './assets/css/feature/programm.css?v=1',
   './assets/css/ui-fx.css',
   './assets/icons/firn.svg',
   // Nur das kleine Symbol in den Vorrat: das grosse braucht nur,
@@ -41,7 +42,7 @@ const SHELL = [
   // Der Start traegt seinen Code seit v.35.19.0 in eigenen Dateien.
   './assets/js/feature/start/start.js?v=14',
   './assets/js/feature/start/wetter-chip.js?v=8',
-  './assets/js/feature/start/heute.js?v=10',
+  './assets/js/feature/start/heute.js?v=11',
   './assets/js/i18n.js?v=1',
   // Sprachdateien gehoeren in den Vorrat: sonst laesst sich offline
   // zwar umschalten, aber der Katalog fehlt und alles bleibt deutsch.
@@ -62,6 +63,8 @@ const SHELL = [
   './assets/js/notifications.js',
   './assets/js/foods.js',
   './assets/js/itinerary.js',
+  './assets/js/programm.js',
+  './assets/js/reise-uebernahme.js',
   './assets/js/calendar-interop.js',
   './assets/js/calendar-view.js',
   './assets/js/matura-sync.js',
@@ -81,7 +84,7 @@ const SHELL = [
   './assets/js/personen.js',
   './assets/js/bekannte.js',
   './assets/js/kalender-teams.js',
-  './assets/js/feature/kalender/kalender.js?v=2',
+  './assets/js/feature/kalender/kalender.js?v=3',
   './assets/js/feature/kalender/eintraege.js',
   './assets/js/feature/kalender/ansicht.js',
   './assets/js/gruppenwahl.js',
@@ -94,7 +97,7 @@ const SHELL = [
   './assets/js/briefing.js',
   './assets/js/nav.js?v=16',
   './assets/js/groups.js',
-  './assets/js/feature/gruppe/gruppe.js?v=17',
+  './assets/js/feature/gruppe/gruppe.js?v=18',
   './assets/css/feature/gruppe.css?v=7',
   './assets/js/feature/ski/ski.js?v=1',
   './pages/gruppe.html',
@@ -107,7 +110,7 @@ const SHELL = [
   './pages/messages.html',
   './pages/planner.html',
   './pages/guest.html',
-  './assets/js/feature/gast/gast.js?v=1',
+  './assets/js/feature/gast/gast.js?v=2',
   './assets/css/feature/gast.css?v=1',
   './pages/maturaarbeit.html',
   './pages/maturaarbeit-tracker.html',

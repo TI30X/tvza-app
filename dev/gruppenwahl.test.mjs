@@ -183,5 +183,6 @@ test('ein Merker fuer die aktive Gruppe, und wer ihn setzt, meldet es', async ()
   assert.match(fn, /localStorage\.setItem\(SCHLUESSEL/);
   assert.match(fn, /new CustomEvent\('firn-gruppe'/);
   /* Die Terminkarte im Kalender fuehrt ueber denselben Merker zur Gruppe. */
-  assert.match(await lies('assets/js/feature/kalender/kalender.js'), /aktiveGruppeSetzen\(eintrag\.ref\.gid\)/);
+  /* Seit v.35.50.0 direkt in den Termin (zumTermin), über denselben Merker. */
+  assert.match(await lies('assets/js/feature/kalender/kalender.js'), /function zumTermin\(gid, eid\) \{\s*aktiveGruppeSetzen\(gid\);/);
 });

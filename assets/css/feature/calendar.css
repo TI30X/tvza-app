@@ -439,14 +439,22 @@
 }
 .kal-stop {
   display: grid;
-  grid-template-columns: auto 44px minmax(0, 1fr);
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items: center;
   gap: var(--s2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
   font-size: 13px;
+  text-align: left;
+  cursor: pointer;
 }
 .kal-stop__zeit { color: var(--ink-soft); font-weight: 700; font-variant-numeric: tabular-nums; }
 .kal-stop__titel { font-weight: 600; overflow-wrap: anywhere; }
-.kal-stop.is-erledigt .kal-stop__titel { color: var(--ink-soft); text-decoration: line-through; }
+/* Vorbei ist vorbei — leiser, nicht durchgestrichen. */
+.kal-stop.is-vorbei { opacity: 0.5; }
 .kal-stops > .kal-link { align-self: flex-start; margin-left: calc(-1 * var(--s2)); }
 
 /* ── Monat ─────────────────────────────────────────────────────────── */
