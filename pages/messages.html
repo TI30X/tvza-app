@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=20" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=21" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <title>Nachrichten — Firn</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
@@ -176,6 +176,8 @@
 
     const $ = id => document.getElementById(id);
     const convId = (a, b) => [a, b].sort().join('__');
+    /* Sichtbar: der Tab ist vorne UND der Router hat den Chat nicht geparkt. */
+    const sichtbar = () => !document.hidden && !document.documentElement.hasAttribute('data-tvza-geparkt');
     const initials = n => (n || '?').trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase() || '?';
     const otherOf = data => (data.participants || []).find(u => u !== me);
 
@@ -295,7 +297,7 @@
         const last = msgs[msgs.length - 1];
         if (last && last.sender === other) showTyping(false);
         // keep marking read while the thread is open
-        if (!document.hidden) updateDoc(doc(db, 'dms', cid), { ['unread.' + me]: 0 }).catch(() => {});
+        if (sichtbar()) updateDoc(doc(db, 'dms', cid), { ['unread.' + me]: 0 }).catch(() => {});
       }, err => {
         reportClientError('messages-thread-load', err);
         $('msgs').innerHTML = `<div class="dm-empty">Nachrichten konnten nicht geladen werden.</div>`;
@@ -376,6 +378,14 @@
        ohne das bliebe drüben ein "true" stehen, bis das Netz greift. */
     window.addEventListener('pagehide', stopTypingNow);
     document.addEventListener('visibilitychange', () => { if (document.hidden) stopTypingNow(); });
+    /* Der Router lässt den Chat stehen, wenn man woanders hingeht
+       (v.35.53.0) — unsichtbar, aber für den Browser nicht "hidden".
+       Solange er geparkt ist, markiert er nichts als gelesen und tippt
+       nicht; kommt man zurück in einen offenen Thread, ist er gelesen. */
+    window.addEventListener('tvza-sichtbar', e => {
+      if (!e.detail?.sichtbar) { stopTypingNow(); return; }
+      if (activeOther) updateDoc(doc(db, 'dms', convId(me, activeOther)), { ['unread.' + me]: 0 }).catch(() => {});
+    });
     input.addEventListener('input', () => {
       autoSize(); sendBtn.disabled = !input.value.trim();
       /* Jede Änderung zählt — Tippen wie Löschen. Vorher hing es am
@@ -511,6 +521,6 @@
       }
     }
   </script>
-  <script type="module" src="../assets/js/nav.js?v=17"></script>
+  <script type="module" src="../assets/js/nav.js?v=18"></script>
 </body>
 </html>

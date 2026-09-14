@@ -128,15 +128,60 @@ export function wort(doc = document) {
   return span;
 }
 
-/* ── Firn überall (v.35.51.0) ─────────────────────────────────────
-   Von v.35.48.0 bis v.35.50.0 waren Start, Kalender und Chat für den
-   TVZA-Kreis "TVZA" (das Zuhause), und oben links stand dann TVZA statt
-   Firn. Michel: "die Application heisst Firn — und jetzt zeigen wir
-   TVZA oben links". Entschieden: Firn überall. Die Leiste zeigt immer
-   Firn (shell.js), TVZA steht nur noch als Etikett an den persönlichen
-   Bereichen — ihre Seiten tragen data-marke="TVZA" für Tab, Titel und
-   Versionszeile. softwareZeigen() bleibt für den Fall, dass die Leiste
-   je wieder umschalten soll. */
+/* ── Eine Marke je Person (v.35.52.0) ──────────────────────────────
+   Von v.35.48.0 bis v.35.51.0 wechselte die Marke mit der SEITE: Start,
+   Kalender und Chat waren für den TVZA-Kreis "TVZA" (das Zuhause), die
+   Gruppe Firn — oben links stand mal das eine, mal das andere. Michel:
+   "die Application heisst Firn — und jetzt zeigen wir TVZA oben links",
+   dann: "für Familie TVZA, für alle anderen Firn. TVZA ist wirklich nur
+   für Familie und Freunde."
+
+   Darum hängt die Marke jetzt an der PERSON, nicht an der Seite: wer im
+   TVZA-Kreis ist, sieht überall TVZA (Leiste, Tab, Titel, Versionszeile),
+   alle anderen überall Firn. Kein Umschalten zwischen Seiten. Bis das
+   Profil da ist, gilt, was dieses Gerät zuletzt wusste — sonst blitzte
+   bei Freunden und Familie erst Firn auf. softwareZeigen() bleibt für
+   den Fall, dass sich die Marke ändert (jemand kommt in den Kreis). */
+
+const MARKE = 'firn.marke';
+let marke = null;
+
+/** Die Marke der angemeldeten Person: TVZA im Kreis, sonst Firn. */
+export function markeSetzen(imKreis) {
+  marke = imKreis ? TVZA : FIRN;
+  try { globalThis.localStorage?.setItem(MARKE, marke); } catch { /* ohne Speicher eben ohne Erinnerung */ }
+  return marke;
+}
+export function aktuelleMarke() {
+  if (marke) return marke;
+  try { return globalThis.localStorage?.getItem(MARKE) === TVZA ? TVZA : FIRN; } catch { return FIRN; }
+}
+/** Nur für Tests: vergisst die Marke. */
+export function _markeVergessen() { marke = null; }
+
+export const tvzaSymbol = href => String(href || '').replace(/firn\.svg(\?|$)/, 'tvza.svg$1');
+export const tvzaTitel = titel => String(titel || '').replace(/Firn$/, 'TVZA');
+
+/**
+ * Macht eine Seite zur TVZA-Seite, wenn die Person im Kreis ist: Marke,
+ * Tab-Symbol, Titel und Versionszeile. Der Titel verliert dabei sein
+ * data-i18n — sonst setzte der Katalog, der später kommt, "Firn" zurück
+ * (Falle 5). Für alle anderen bleibt die Seite, wie sie ist.
+ */
+export function seiteMarkieren(doc = document) {
+  if (aktuelleMarke() !== TVZA || !doc?.body) return false;
+  doc.body.dataset.marke = 'TVZA';
+  const link = doc.querySelector('link[rel="icon"]');
+  if (link) link.setAttribute('href', tvzaSymbol(link.getAttribute('href')));
+  const titel = doc.querySelector('title');
+  if (titel && /Firn$/.test(doc.title)) {
+    titel.removeAttribute('data-i18n');
+    doc.title = tvzaTitel(doc.title);
+  }
+  const version = doc.querySelector('.fx-version');
+  if (version) version.textContent = version.textContent.replace(/^Firn/, 'TVZA');
+  return true;
+}
 
 /** Zu welcher Software ein Dokument gehört — die Seite sagt es selbst. */
 export function softwareVon(doc) {

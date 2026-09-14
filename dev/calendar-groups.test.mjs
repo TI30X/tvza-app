@@ -50,7 +50,11 @@ test('der Kalender verwaltet keine eigenen Gruppen mehr — das tut der Gruppe-T
   assert.doesNotMatch(planner, /(updateDoc|addDoc|setDoc)\(\s*(doc|collection)\(db,\s*'families'/,
     'der Kalender schreibt wieder in families');
   assert.doesNotMatch(planner, /'familyDirectory'/, 'Beitritt per Namenssuche ist zurueck');
-  assert.match(planner, /function zurGruppenseite\(\) \{ location\.href = '\.\/gruppe\.html'; \}/);
+  assert.match(planner, /function zurGruppenseite\(\) \{ zurSeite\('\.\/gruppe\.html'\); \}/);
+  /* Über den Router (v.35.53.0): location.href lud die Gruppe in den
+     Rahmen des Kalenders — mit zweiter Leiste und zweitem Kopf darin. */
+  assert.match(planner, /function zurSeite\(ziel\) \{\s*if \(!window\.tvzaNavigate\?\.\(new URL\(ziel, location\.href\)\.href\)\) location\.href = ziel;/);
+  assert.doesNotMatch(planner, /location\.href = [`']\.\/gruppe\.html/, 'eine Stelle geht wieder am Router vorbei');
   assert.match(planner, /\$\('manageGroupsBtn'\)\.onclick=zurGruppenseite/);
   assert.match(planner, /\$\('settingsGroupsBtn'\)\.onclick=zurGruppenseite/);
   /* Eine Farbe je Gruppe, fuer Reisen und Termine dieselbe — und
@@ -73,7 +77,7 @@ test('in eine Gruppe trägt nur ihre Leitung ein — wer mehrere leitet, wählt'
   assert.match(waehlen, /if \(liste\.length <= 1\) return liste\[0\]\?\.id \|\| null;/);
   assert.match(waehlen, /waehle\(\{/);
   // Ein Gruppentermin entsteht im Gruppe-Tab, nicht als Reise im Kalender.
-  assert.match(quelle, /location\.href = `\.\/gruppe\.html\?g=\$\{encodeURIComponent\(gid\)\}&neu=\$\{encodeURIComponent\(tag\)\}`;/);
+  assert.match(quelle, /zurSeite\(`\.\/gruppe\.html\?g=\$\{encodeURIComponent\(gid\)\}&neu=\$\{encodeURIComponent\(tag\)\}`\);/);
   const gruppe = await readFile(join(root, 'assets/js/feature/gruppe/gruppe.js'), 'utf8');
   assert.match(gruppe, /if \(neuAusAdresse && aktiv\) \{[\s\S]*?if \(leitet\(aktiv\.meineRolle\)\) formOeffnen\(tag\);/);
   // Bearbeiten und Gast-Link: nur die Leitung (die Regel verlangt es).

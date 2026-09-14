@@ -59,7 +59,7 @@ import {
 /* Die Hülle: Leiste, Router, Konto, Namenskarte. Früher ein zweites
    <script type="module"> in der Seite — die Seiten-Invariante erlaubt
    eins. */
-import '../../nav.js?v=17';
+import '../../nav.js?v=18';
 
 const tt = (key, deutsch, vars) => (window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch, vars)
   : String(deutsch).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz)));
@@ -228,7 +228,7 @@ async function resolveGroups() {
       ja:tt('kal.zurGruppe','Zur Gruppe'),
       nein:tt('a11y.schliessen','Schliessen'),
     });
-    if (hin) { location.href = './gruppe.html'; return; }
+    if (hin) { zurSeite('./gruppe.html'); return; }
   }
   watchGroups();
 }
@@ -299,7 +299,7 @@ function abfahrtText(termin) {
    dorthin führt "Zum Termin", nicht nur auf die Seite. */
 function zumTermin(gid, eid) {
   aktiveGruppeSetzen(gid);
-  location.href = `./gruppe.html?g=${encodeURIComponent(gid)}&termin=${encodeURIComponent(eid)}`;
+  zurSeite(`./gruppe.html?g=${encodeURIComponent(gid)}&termin=${encodeURIComponent(eid)}`);
 }
 /* Eine Reise, die noch niemand übernommen hat, ohne Programm. */
 async function zeigeReise(eintrag) {
@@ -426,7 +426,14 @@ function renderCalendarSources() {
    Gruppe-Tab. Bis v.35.31.0 hatte der Kalender eine zweite Verwaltung
    fuer seine Kalendergruppen — Mitglieder, Rollen, Beitrittsanfragen,
    Einladungslink, Farbe —, alles doppelt und alles auf families. */
-function zurGruppenseite() { location.href = './gruppe.html'; }
+function zurGruppenseite() { zurSeite('./gruppe.html'); }
+
+/* Im Rahmen des Routers über den Router (v.35.53.0): location.href lud
+   die Gruppe IN den Rahmen, ohne tvzaFrame — mit zweiter Leiste und
+   zweitem Kopf darin. */
+function zurSeite(ziel) {
+  if (!window.tvzaNavigate?.(new URL(ziel, location.href).href)) location.href = ziel;
+}
 
 /* ── Wer darf in eine Gruppe eintragen? ───────────────────────────
    Die Leitung: Kopf und Trainer (v.35.49.0). Mitglieder lesen, sagen zu,
@@ -455,7 +462,7 @@ async function gruppenterminAnlegen(tag) {
   const gid = await gruppeZumEintragen(geleiteteTeams());
   if (!gid) return;
   aktiveGruppeSetzen(gid);
-  location.href = `./gruppe.html?g=${encodeURIComponent(gid)}&neu=${encodeURIComponent(tag)}`;
+  zurSeite(`./gruppe.html?g=${encodeURIComponent(gid)}&neu=${encodeURIComponent(tag)}`);
 }
 /* Wechselt jemand die aktive Gruppe (Leiste, Gruppe-Tab), wandert der
    "Standard" fuer neue Reisen mit. */

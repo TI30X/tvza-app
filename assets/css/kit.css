@@ -2548,9 +2548,20 @@ body.reorder-editing .module-tile::after {
   pointer-events: none;
 }
 .tvza-route-frame.is-leaving {
+  z-index: 34;
   opacity: 0;
   transform: translateX(-8px);
   pointer-events: none;
+}
+/* Geparkt (v.35.53.0): die Seite steht und lebt weiter, nur unsichtbar
+   — mit ihrer vollen Grösse, damit sie darin richtig misst (display:none
+   gäbe ihr null Pixel, und der Kalender stellte die Liste falsch). */
+.tvza-route-frame.is-parked {
+  z-index: 33;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
 }
 @media (max-width:899px) {
   .tvza-route-frame.is-entering.from-right { transform:translateX(10%); }

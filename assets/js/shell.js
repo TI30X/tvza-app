@@ -17,11 +17,11 @@
    Loaded as a module, because it reads MODULES from firebase-config.
    ══════════════════════════════════════════════════════════════════ */
 
-import { auth, MODULES, enabledModules } from './firebase-config.js';
+import { auth, MODULES, enabledModules, imKreis } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { frage } from './dialog.js';
-import { mountAppRouter } from './router.js?v=13';
-import { zeichen, wort, softwareZeigen, FIRN } from './wechsel.js';
+import { mountAppRouter, basisTitel, basisTitelWahl } from './router.js?v=14';
+import { zeichen, wort, softwareZeigen, markeSetzen, aktuelleMarke, seiteMarkieren } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
 // The module skips content frames, so routed pages mount exactly one bell.
@@ -340,10 +340,12 @@ export function mountRail({ profile = null } = {}) {
       </button>
     </div>`;
   nav.querySelector('.nav__fuss').prepend(kontoKnopf('leiste'));
-  /* Oben links steht immer Firn (v.35.51.0, Michel: "die Application
-     heisst Firn"). Von v.35.48.0 bis v.35.50.0 stand dort für den
-     TVZA-Kreis auf Start, Kalender und Chat TVZA. */
-  const software = FIRN;
+  /* Die Marke hängt an der Person (wechsel.js, v.35.52.0): im TVZA-Kreis
+     überall TVZA, sonst überall Firn. Ohne geladenes Profil gilt, was
+     das Gerät zuletzt wusste. */
+  if (profile && Object.keys(profile).length) markeSetzen(imKreis(profile));
+  seiteMarkieren(document);
+  const software = aktuelleMarke();
   const kopfZeichen = zeichen(software);
   kopfZeichen.classList.add('nav__zeichen');
   const kopfWort = wort();
@@ -360,9 +362,8 @@ export function mountRail({ profile = null } = {}) {
   nav.addEventListener('click', event => {
     if (event.target.closest('a[aria-current="page"]')) event.preventDefault();
   });
-  /* Die Leiste steht in Firn; kam man eben von einer Seite, deren
-     Leiste noch TVZA zeigte (vor v.35.51.0), verwandelt sie sich einmal
-     zurück. */
+  /* Beim Bauen ohne Bewegung; ändert sich die Marke später (Profil
+     kommt, jemand ist neu im Kreis), verwandelt sich die Leiste einmal. */
   softwareZeigen(software);
   mountAppRouter(nav);
   verkabelLeiste();
@@ -448,7 +449,7 @@ function gruppeInDerLeiste(nav) {
         event.preventDefault();
         groups.aktiveGruppeSetzen(zeile.dataset.gruppeId);
         /* Auf der Gruppenseite schaltet firn-gruppe um; sonst dorthin. */
-        if (activeTab() !== 'gruppe') location.href = tab.href;
+        if (activeTab() !== 'gruppe') zurGruppe(tab.href);
       });
       wechsel.onclick = async () => {
         const { gruppeWaehlen } = await import('./gruppenwahl.js');
@@ -457,10 +458,16 @@ function gruppeInDerLeiste(nav) {
         });
         /* Auf der Gruppenseite zeichnet die Seite selbst neu (sie hoert
            auf firn-gruppe); von anderswo fuehrt die Wahl dorthin. */
-        if (gid && activeTab() !== 'gruppe') location.href = tab.href;
+        if (gid && activeTab() !== 'gruppe') zurGruppe(tab.href);
       };
     } catch { /* siehe oben: der Tab bleibt, wie er ist */ }
   });
+}
+
+/* Zur Gruppe: über den Router, wenn er läuft — sonst lud der Wechsel
+   aus der Leiste die ganze Seite neu (v.35.53.0). */
+function zurGruppe(href) {
+  if (!window.tvzaNavigate?.(href)) location.href = href;
 }
 
 /* Einstellungen muessen sich von jeder Seite oeffnen lassen. Bisher
@@ -544,6 +551,12 @@ export function kontoKnopf(ort) {
 /* Name und Kuerzel nachtragen, sobald das Profil da ist. Die Leiste
    steht vorher schon — sie wartet nicht auf Firestore. */
 export function setzeKonto(profile, mail) {
+  /* Kommt das Profil erst nach der Leiste, zieht die Marke nach. */
+  if (profile && Object.keys(profile).length) {
+    markeSetzen(imKreis(profile));
+    seiteMarkieren(document);
+    softwareZeigen(aktuelleMarke());
+  }
   const name = String(profile?.displayName || profile?.name || '').trim()
     || (() => { try { return localStorage.getItem('tvza-name') || ''; } catch { return ''; } })();
   const adresse = mail || auth?.currentUser?.email || konto.mail || '';
@@ -565,8 +578,29 @@ export function setzeKonto(profile, mail) {
  */
 export function setShellTitle(text) {
   const wert = String(text ?? '');
+  /* Im Rahmen des Routers ist dieser Kopf versteckt; sichtbar ist der
+     oben, und der erfährt den Titel über eine Nachricht (v.35.53.0 —
+     seit die Gruppe im Rahmen läuft). Oben merkt ihn sich der Router,
+     damit er nach dem Besuch einer anderen Seite wieder dasteht. */
+  if (imRahmen()) {
+    window.parent.postMessage({ type:'tvza-titel', text:wert }, location.origin);
+    return;
+  }
+  basisTitel(wert);
   const el = document.querySelector('.appbar__title, .appbar__greet');
   if (el) el.textContent = wert;
+}
+
+const imRahmen = () => window.parent !== window &&
+  new URLSearchParams(location.search).get('tvzaFrame') === '1';
+
+/* Der Gruppenwechsel im Kopf, wenn die Seite im Rahmen läuft: oben wird
+   getippt, hier gewählt. */
+let titelWahl = null;
+if (typeof window !== 'undefined' && imRahmen()) {
+  window.addEventListener('message', event => {
+    if (event.origin === location.origin && event.data?.type === 'tvza-titel-klick') titelWahl?.();
+  });
 }
 
 /**
@@ -577,21 +611,14 @@ export function setShellTitle(text) {
  * wieder nur Text. Nach mountShell aufrufen — das baut den Kopf neu.
  */
 export function setShellTitleWahl(handler, beschriftung = '') {
-  const el = document.querySelector('.appbar__title');
-  if (!el) return;
-  el.classList.toggle('appbar__title--wahl', !!handler);
-  if (handler) {
-    el.setAttribute('role', 'button');
-    el.tabIndex = 0;
-    el.setAttribute('aria-haspopup', 'dialog');
-    if (beschriftung) el.title = beschriftung;
-  } else {
-    for (const a of ['role', 'tabindex', 'aria-haspopup', 'title']) el.removeAttribute(a);
+  titelWahl = handler || null;
+  if (imRahmen()) {
+    window.parent.postMessage({ type:'tvza-titel-wahl', an:!!handler, beschriftung }, location.origin);
+    return;
   }
-  el.onclick = handler ? () => handler() : null;
-  el.onkeydown = handler
-    ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handler(); } }
-    : null;
+  /* Oben: der Router hält den Kopf — auch wenn gerade ein Rahmen ihn
+     trägt, gilt die Wahl wieder, sobald man hierher zurückkommt. */
+  basisTitelWahl(handler, beschriftung);
 }
 
 /**

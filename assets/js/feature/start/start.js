@@ -32,8 +32,8 @@ import {
   doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from '../../shell.js?v=18';
-import { initialsOf } from '../../nav.js?v=17';
+import { ICONS, icon } from '../../shell.js?v=19';
+import { initialsOf } from '../../nav.js?v=18';
 import { frage } from '../../dialog.js';
 import { meineGruppen, leitet, kontakte } from '../../groups.js';
 import { nameAus } from '../../bekannte.js';

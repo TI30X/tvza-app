@@ -338,6 +338,16 @@ export function aktiveGruppeSetzen(gid) {
   }
 }
 
+/* Seit die Seiten im Router stehen bleiben (v.35.53.0), leben mehrere
+   Dokumente nebeneinander: die Seite oben und die geparkten Rahmen. Wer
+   in einem die Gruppe wechselt, schreibt den Merker — die anderen hören
+   es über 'storage' und schalten mit um, sonst zeigte die geparkte
+   Gruppe beim Zurückkommen noch die alte. */
+globalThis.window?.addEventListener?.('storage', event => {
+  if (event.key !== SCHLUESSEL) return;
+  globalThis.window.dispatchEvent(new CustomEvent('firn-gruppe', { detail: { gid: event.newValue || '' } }));
+});
+
 /* Die gemerkte Gruppe kann verschwunden sein: verlassen, entfernt,
    gelöscht. Dann fällt die Wahl auf die erste vorhandene, statt einen
    leeren Tab zu zeigen. */

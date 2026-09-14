@@ -101,12 +101,15 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(nav, /link\.as\s*=\s*'document'/);
   /* Der Router haengt an der Leiste, und die Leiste baut shell.js. */
   assert.match(shell, /mountAppRouter\(nav\)/);
-  assert.match(router, /className = `tvza-route-frame is-entering/);
+  /* Ein Rahmen entsteht geparkt und gleitet von dort herein (v.35.53.0). */
+  assert.match(router, /wrap\.className = 'tvza-route-frame is-parked'/);
+  assert.match(router, /wrap\.classList\.add\('is-entering', direction < 0 \? 'from-left' : 'from-right'\)/);
   assert.doesNotMatch(router, /tvza-route-(?:loader|skeleton)/);
   assert.match(router, /waitForCompleteContent/);
   assert.match(router, /classList\.contains\('fx-loading'\)/);
   assert.match(router, /dataset\.routeReady === 'false'/);
-  assert.match(router, /setTimeout\(revealTogether, 80\)/);
+  assert.match(router, /Promise\.race\(\[eintrag\.bereit, new Promise\(r => setTimeout\(r, HOECHSTENS_WARTEN\)\)\]\)/);
+  assert.match(router, /function revealTogether\(\)/);
   assert.doesNotMatch(router, /tvza-base-entering/);
   assert.doesNotMatch(css, /tvzaBaseReveal/);
   assert.match(router, /history\.pushState/);
@@ -139,6 +142,71 @@ test('app destinations are prefetched and use a progressive page transition', as
   assert.match(router, /direction < 0 \? 'from-left' : 'from-right'/);
   assert.match(css, /\.tvza-route-frame\.is-entering\.from-right/);
   assert.match(css, /\.tvza-route-frame\.is-leaving\.to-right/);
+});
+
+/* Michel (v.35.53.0): "man muss 1,5 Sekunden warten, bis es von Start zu
+   Kalender wechselt, und wenn man zu Gruppe wechselt, wird die ganze
+   Seite neu geladen — dadurch gehen alle Animationen verloren". */
+test('verlassene Seiten bleiben stehen, die Tabs laden vor, die Gruppe läuft im Rahmen', async () => {
+  const [router, shell, css, groups, chat] = await Promise.all([
+    read('assets/js/router.js'),
+    read('assets/js/shell.js'),
+    read('assets/css/kit.css'),
+    read('assets/js/groups.js'),
+    read('pages/messages.html'),
+  ]);
+  const { passenderRahmen, zuVerdraengen } = await import('../assets/js/router.js');
+
+  // Die Gruppe lädt der Router — keine ganze neue Seite mehr.
+  assert.match(router, /const APP_FILES = new Set\(\[[\s\S]*'gruppe\.html',[\s\S]*?\]\);/);
+
+  // Ein Tab findet seine Seite wieder, auch wenn sie mit ?termin= offen war;
+  // eine bestimmte Adresse nur genau sich selbst.
+  const gruppe = { key:'/pages/gruppe.html?g=a&termin=b', pfad:'/pages/gruppe.html', search:'?g=a&termin=b' };
+  const kalender = { key:'/pages/planner.html', pfad:'/pages/planner.html', search:'' };
+  const vorrat = [gruppe, kalender];
+  assert.equal(passenderRahmen(vorrat, { key:'/pages/gruppe.html', pfad:'/pages/gruppe.html', search:'' }), gruppe);
+  assert.equal(passenderRahmen(vorrat, { key:'/pages/planner.html', pfad:'/pages/planner.html', search:'' }), kalender);
+  assert.equal(passenderRahmen(vorrat, { key:'/pages/gruppe.html?g=a&termin=c', pfad:'/pages/gruppe.html', search:'?g=a&termin=c' }), null);
+  assert.equal(passenderRahmen(vorrat, { key:'/pages/messages.html', pfad:'/pages/messages.html', search:'' }), null);
+
+  // Höchstens so viele geparkte; weg gehen die am längsten nicht gesehenen,
+  // nie der gezeigte und nie einer, der noch lädt.
+  const r = (n, zustand, zuletzt) => ({ key:n, pfad:n, zustand, zuletzt });
+  const liste = [r('a', 'geparkt', 5), r('b', 'aktiv', 1), r('c', 'geparkt', 2), r('d', 'laedt', 0), r('e', 'geparkt', 9)];
+  assert.deepEqual(zuVerdraengen(liste, 2).map(x => x.key), ['c']);
+  assert.deepEqual(zuVerdraengen(liste, 5), []);
+
+  // Geparkt heisst unsichtbar, aber mit Grösse (sonst misst die Seite null).
+  const parkRegel = css.match(/\.tvza-route-frame\.is-parked \{[^}]*\}/)?.[0] || '';
+  assert.match(parkRegel, /visibility: hidden/);
+  assert.doesNotMatch(parkRegel, /display:\s*none/);
+  assert.match(router, /eintrag\.wrap\.inert = true/);
+
+  // Vorladen: die Tabs nach dem Laden, nicht im Datensparmodus, und was
+  // der Finger berührt.
+  assert.match(router, /nav\.querySelectorAll\('a\[data-nav-tab\]'\)/);
+  assert.match(router, /netz\.saveData/);
+  assert.match(router, /nav\.addEventListener\('touchstart', absicht/);
+
+  // Titel und Gruppenwechsel der Seite im Rahmen erscheinen oben.
+  assert.match(shell, /window\.parent\.postMessage\(\{ type:'tvza-titel', text:wert \}/);
+  assert.match(shell, /window\.parent\.postMessage\(\{ type:'tvza-titel-wahl'/);
+  assert.match(shell, /event\.data\?\.type === 'tvza-titel-klick'\) titelWahl\?\.\(\)/);
+  assert.match(router, /typ === 'tvza-titel' \|\| typ === 'tvza-titel-wahl'/);
+  assert.match(router, /nachricht\(eintrag, \{ type:'tvza-titel-klick' \}\)/);
+  // Der Wechsel aus der Leiste geht über den Router.
+  assert.doesNotMatch(shell, /location\.href = tab\.href/);
+  // Ein geparkter Rahmen hört den Gruppenwechsel über 'storage'.
+  assert.match(groups, /addEventListener\?\.\('storage', event => \{\s*if \(event\.key !== SCHLUESSEL\) return;/);
+  // Ein geparkter Chat markiert nichts als gelesen.
+  assert.match(chat, /const sichtbar = \(\) => !document\.hidden && !document\.documentElement\.hasAttribute\('data-tvza-geparkt'\)/);
+  assert.match(chat, /if \(sichtbar\(\)\) updateDoc/);
+  assert.match(router, /toggleAttribute\('data-tvza-geparkt', !sichtbar\)/);
+  // Seiten ausserhalb des Routers öffnen oben, nicht im Rahmen.
+  assert.match(router, /window\.top\.location\.href = ganz\.href/);
+  // Nur der gezeigte Rahmen darf einen Wechsel verlangen.
+  assert.match(router, /if \(quelle && quelle !== currentFrame\) return;/);
 });
 
 test('embedded settings can share Firestore and shared rows keep icon plus person', async () => {

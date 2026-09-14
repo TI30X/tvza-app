@@ -4,7 +4,7 @@
    (matura-sync.js). Die Leiste kommt aus nav.js — bis v.35.33.0 ein
    zweites Modul-Tag in der Seite. */
 
-import '../../nav.js?v=17';
+import '../../nav.js?v=18';
 import { requireAuth } from '../../firebase-config.js';
 import { connectMaturaProgress } from '../../matura-sync.js';
 import { richteTrackerEin } from './tracker-ansicht.js';

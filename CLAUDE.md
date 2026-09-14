@@ -24,14 +24,20 @@ Anmeldung, aber nicht als ein Produkt.
   Bereiche in einen Rahmen lädt und die Seite oben stehen bleibt, übernimmt
   `tabFolgen()` in `router.js` Symbol und Titel der Seite im Rahmen.
 
-  **Oben links steht immer Firn** (v.35.52.0). Michel: „die Application
-  heisst Firn — und jetzt zeigen wir TVZA oben links"; entschieden: Firn
-  überall. TVZA steht nur noch als Etikett an den persönlichen Bereichen
-  (ihre Seiten tragen `data-marke="TVZA"` für Tab, Titel, Versionszeile;
-  auf Start die Marke „TVZA" über dem Eigenen). Die Leiste zeigt immer
-  Firn (`const software = FIRN` in `mountRail()`), der Router schaltet
-  sie nicht mehr mit der Seite um. Die Verwandlung unten bleibt im Code
-  (`softwareZeigen`), falls die Leiste je wieder umschalten soll.
+  **Die Marke hängt an der Person, nicht an der Seite** (v.35.53.0).
+  Michel: „es sollte für Familie TVZA sein, aber für alle anderen Firn —
+  TVZA ist wirklich nur für Familie und Freunde". Wer im TVZA-Kreis ist,
+  sieht ÜBERALL TVZA (Zeichen oben links, Tab-Symbol, „— TVZA" im Titel,
+  Versionszeile), alle anderen überall Firn. `markeSetzen(imKreis(profile))`
+  in `mountRail()` und `setzeKonto()`, gemerkt in
+  `localStorage['firn.marke']`, damit die Leiste vor dem Profil schon
+  richtig steht; `seiteMarkieren()` in `wechsel.js` schreibt Symbol,
+  Titel (samt Entfernen von `data-i18n`, sonst setzt der Katalog „Firn"
+  zurück) und Versionszeile; `tabFolgen()` tut dasselbe für die Seite im
+  Rahmen. **Warum jemand TVZA sieht, steht nirgends** (Michel: „muss aber
+  nirgends stehen") — kein Wort über Preise oder Freigaben in der
+  Oberfläche. Zwischendurch, in v.35.52.0, stand überall Firn; davor
+  wechselte die Marke mit der Seite.
 
   **Der Wechsel war sichtbar** (`assets/js/wechsel.js`, v.35.40.0–v.35.51.0): an der
   Grenze Firn ↔ TVZA wird oben in der Leiste der Berg zum T, „Firn" blendet
@@ -44,11 +50,9 @@ Anmeldung, aber nicht als ein Produkt.
   im Dokument, kein `<img>`. Die Verwandlung rechnet zwischen den Ecken von
   je drei Vierecken; `dev/wechsel.test.mjs` prüft, dass beide Enden genau
   `firn.svg` und `tvza.svg` sind — wer eines der Symbole ändert, muss
-  `FORMEN` mitziehen. Die Gruppe (auch Einheit, Video) lädt der Router
-  nicht im Rahmen, sondern als neue Seite; damit der Wechsel auch dort
-  sichtbar ist, merkt sich die Sitzung die letzte Software
-  (`sessionStorage['firn.software']`), und die neue Seite beginnt, wo die
-  alte aufhörte.
+  `FORMEN` mitziehen. Die Verwandlung bleibt im Code (`softwareZeigen`)
+  und läuft heute nur, wenn sich die Marke einer Person ändert (jemand
+  kommt in den Kreis).
 
 - **Der TVZA-Kreis** (v.35.48.0): TVZA ist für Freunde und Familie, nicht
   für jeden, der einem Verein beitritt. Im Kreis ist, wen der Admin
@@ -61,8 +65,8 @@ Anmeldung, aber nicht als ein Produkt.
 
   **Das „Zuhause" ist weg** (v.35.52.0). Von v.35.48.0 bis v.35.51.0 waren
   Start, Kalender und Chat für den Kreis TVZA (`data-zuhause`,
-  `zuhauseMarkieren()`) — oben links stand dann TVZA. Seit „Firn überall"
-  ist keine Seite mehr ein Zuhause. Der Kreis entscheidet weiter, wer die
+  `zuhauseMarkieren()`), die Gruppe Firn. Seit v.35.53.0 entscheidet die
+  Person (siehe oben), keine Seite. Der Kreis entscheidet weiter, wer die
   TVZA-Bereiche bekommt; auf Start steht für den Kreis zuerst das Eigene
   (mit der Marke „TVZA"), darunter die Firn-Bereiche mit dem Zeichen
   „Firn". `dev/kreis.test.mjs`.
@@ -73,7 +77,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.52.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.53.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -101,7 +105,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-66 Testdateien, **721 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+66 Testdateien, **722 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -543,6 +547,44 @@ doppelt (`sichtbareReisen()`). Der Kalender legt keine Reisen mehr an —
 Tests: `termine-reisen` (Programm, Übernahme, Regeln, Gruppe-Tab),
 `gast-seite`.
 
+**18. Der Router lässt Seiten stehen** (v.35.53.0). Michel: „man muss 1,5
+Sekunden warten, bis es von Start zu Kalender wechselt, und wenn man zu
+Gruppe wechselt, wird die ganze Seite neu geladen — dadurch gehen alle
+Animationen verloren". Bis dahin baute `router.js` für jeden Wechsel einen
+neuen Rahmen, lud die Seite samt Firebase neu und wartete bis zu sechs
+Sekunden auf `routeReady`; die Gruppe stand nicht in `APP_FILES` und kam
+als ganze neue Seite. Jetzt:
+
+- Ein verlassener Rahmen wird **geparkt** (`.is-parked`: `visibility:
+  hidden`, nicht `display:none` — die Seite darin muss weiter messen
+  können) und beim nächsten Besuch sofort gezeigt. Höchstens
+  `VORRAT_MAX` geparkte, weg geht der am längsten nicht gesehene
+  (`zuVerdraengen`); eine Seite läuft nur einmal (`passenderRahmen`: ein
+  Tab nimmt auch die Gruppe, die mit `?termin=` offen war).
+- Die vier Tabs lädt der Router nach dem Laden der Reihe nach vor — nur von
+  einer Seite des Routers aus (nicht in Einheit/Video) und nicht im
+  Datensparmodus —, dazu jeden Link der Leiste, den der Finger berührt. Ein
+  neuer Rahmen erscheint spätestens `HOECHSTENS_WARTEN` (700 ms) nach dem
+  Laden.
+- **Mehrere Dokumente leben nebeneinander.** Darum: der Gruppenwechsel
+  erreicht die anderen über das `storage`-Ereignis (`groups.js`); ein
+  geparkter Rahmen bekommt `tvza-sichtbar` und trägt
+  `html[data-tvza-geparkt]` — der Chat markiert dann nichts als gelesen
+  (für den Browser ist ein unsichtbarer Rahmen nicht `hidden`); nur der
+  gezeigte Rahmen darf einen Wechsel verlangen.
+- Titel und Gruppenwechsel einer Seite im Rahmen gehen über
+  `setShellTitle`/`setShellTitleWahl` als `tvza-titel`/`tvza-titel-wahl`
+  nach oben, ein Tipp als `tvza-titel-klick` zurück. Die Seite oben
+  merkt sich ihren eigenen Kopf (`basisTitel`, `basisTitelWahl`).
+- **Nie `location.href` auf eine Seite des Routers** aus einer Seite, die im
+  Rahmen laufen kann — das lädt sie IN den Rahmen, ohne `tvzaFrame`, mit
+  zweiter Leiste und zweitem Kopf. `window.tvzaNavigate?.(url) ||
+  (location.href = url)`. Links auf Seiten ausserhalb (Einheit, Video)
+  öffnet die Brücke oben (`window.top`).
+
+Tests: `navigation.test.mjs` („verlassene Seiten bleiben stehen …"),
+`calendar-groups`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -654,7 +696,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.52.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.53.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

@@ -57,7 +57,7 @@ const GLOBAL = new Set(`
   Float64Array ArrayBuffer DataView Reflect Proxy globalThis performance
   crypto WebSocket Worker Notification scrollTo open close print
   createImageBitmap OffscreenCanvas VideoFrame Audio speechSynthesis
-  SpeechSynthesisUtterance CSS NaN Infinity
+  SpeechSynthesisUtterance CSS NaN Infinity requestIdleCallback cancelIdleCallback
 `.split(/\s+/).filter(Boolean));
 
 /* Namen, die dieses Modul irgendwo einfuehrt — ohne Rücksicht auf den
