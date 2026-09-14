@@ -18,6 +18,7 @@ const MIGRIERT = [
   'pages/maturaarbeit-tracker.html',
   'pages/guest.html',
   'public.html',
+  'pages/planner.html',
 ];
 
 // U+2605/2606 (★/☆) excluded deliberately: they predate emoji, render as

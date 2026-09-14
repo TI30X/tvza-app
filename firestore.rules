@@ -1352,18 +1352,41 @@ service cloud.firestore {
                     || leadsGroup(gid);
     }
 
+    /* In eine Gruppe tragen Kopf und Trainer ein (v.35.49.0) — fuer ihre
+       Termine galt das schon (leadsGroup), fuer die Reisen nicht: jedes
+       Mitglied konnte in jede seiner Gruppen eine anlegen, aendern,
+       verschieben und loeschen. Eine alte Familie, die ihr Kopf noch
+       nicht als Gruppe uebernommen hat, leitet ihr Kopf oder ihre
+       Verwaltung, wie vorher. */
+    function tripLeitung(gid) {
+      return gid is string
+        && gid.size() > 0
+        && (
+          leadsGroup(gid)
+          || (!exists(/databases/$(database)/documents/groups/$(gid)) && managesFamily(gid))
+        );
+    }
+
     match /trips/{tripId} {
       allow get: if tripGruppe(resource.data.get('familyId', ''))
                  || hasGuestAccess(tripId);
       allow list: if tripGruppe(resource.data.get('familyId', ''));
-      allow create: if tripGruppe(request.resource.data.get('familyId', ''))
+      allow create: if tripLeitung(request.resource.data.get('familyId', ''))
                     && request.resource.data.createdBy == request.auth.uid;
-      // Moving a trip is allowed only between groups the caller belongs to.
-      allow update: if tripGruppe(resource.data.get('familyId', ''))
-                    && tripGruppe(request.resource.data.get('familyId', ''))
-                    && request.resource.data.get('createdBy', '')
-                      == resource.data.get('createdBy', '');
-      allow delete: if tripGruppe(resource.data.get('familyId', ''));
+      // Verschieben nur zwischen Gruppen, die man leitet. Mitglieder haken
+      // Programmpunkte ab — und sonst nichts.
+      allow update: if (
+                      tripLeitung(resource.data.get('familyId', ''))
+                      && tripLeitung(request.resource.data.get('familyId', ''))
+                      && request.resource.data.get('createdBy', '')
+                        == resource.data.get('createdBy', '')
+                    )
+                    || (
+                      tripGruppe(resource.data.get('familyId', ''))
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['itineraryDone', 'itineraryUpdatedAt'])
+                    );
+      allow delete: if tripLeitung(resource.data.get('familyId', ''));
     }
 
     match /activities/{id} {

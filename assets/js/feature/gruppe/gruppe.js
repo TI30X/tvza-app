@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle } from '../../shell.js?v=16';
+import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=17';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -77,6 +77,12 @@ let terminAbo = null;   // onSnapshot-Abmeldung der aktuellen Gruppe
 const adresse = new URLSearchParams(location.search);
 let gruppeAusAdresse = adresse.get('g') || '';
 let terminAusAdresse = adresse.get('termin') || '';
+/* ?g=<gruppe>&neu=<tag>: "Gruppentermin" im Kalender (v.35.49.0) öffnet
+   hier das Formular für einen neuen Termin an diesem Tag — bei der
+   Leitung. Ein Mitglied, das so hierher kommt, sieht einfach die Gruppe. */
+let neuAusAdresse = /^\d{4}-\d{2}-\d{2}$/.test(adresse.get('neu') || '') ? adresse.get('neu') : '';
+/* ?anlegen=1: "+ Neue Gruppe" in der Leiste am Laptop (v.35.49.0). */
+let anlegenAusAdresse = adresse.get('anlegen') === '1';
 
 /* ── Darstellung ───────────────────────────────────────────────────*/
 
@@ -711,20 +717,17 @@ async function mehrereVeroeffentlichen() {
 /* Die Karte oben: wo man gerade ist, in der Farbe der Gruppe (dieselbe
    wie im Kalender), mit der eigenen Rolle und wie viele Gruppen es
    noch gibt. Ein Tipp oeffnet die Wahl. */
+/* Wechseln: über den Namen der Gruppe im Kopf — ein Tipp, dann die
+   Karten aus gruppenwahl.js. Bis v.35.48.0 stand dafür eine eigene,
+   grosse Karte oben auf der Seite (Michel: "so eine grosse Zeile nur zum
+   Gruppenwechsel scheint mir zu umständlich"). Am Laptop stehen die
+   Gruppen ausserdem als Liste in der Leiste. */
 function zeichneWechsel() {
-  const mehrere = gruppen.length > 1;
-  zeige('secWechsel', mehrere);
-  if (!mehrere || !aktiv) return;
-
-  const bild = $('wechselBild');
-  bild.textContent = kuerzel(aktiv.name);
-  bild.setAttribute('style', gruppenStil(gruppen)(aktiv.id));
-  $('wechselName').textContent = aktiv.name || t('nav.gruppe', 'Gruppe');
-  const weitere = gruppen.length - 1;
-  const mehr = window.TVZAI18n?.format?.plural && window.TVZAI18n.t('grp.weitere.other') !== 'grp.weitere.other'
-    ? window.TVZAI18n.format.plural('grp.weitere', weitere)
-    : (weitere === 1 ? '1 weitere Gruppe' : `${weitere} weitere Gruppen`);
-  $('wechselMehr').textContent = [wort(aktiv.art, aktiv.meineRolle), mehr].filter(Boolean).join(' · ');
+  const mehrere = gruppen.length > 1 && !!aktiv;
+  setShellTitleWahl(
+    mehrere ? () => gruppeWaehlen(gruppen, aktiv?.id, { rolleWort: wort, setzen: aktiveGruppeSetzen }) : null,
+    t('grp.wechseln', 'Gruppe wechseln'),
+  );
 }
 
 /* Der Wechsel kommt von der Karte hier ODER von der Leiste. Beide gehen
@@ -748,6 +751,7 @@ function zeichne() {
   zeige('secWoche', hat);
   zeige('secMitglieder', hat);
   zeige('secAktionen', darfFuehren);
+  zeige('secWeitere', hat);
   zeichneWechsel();
 
   /* Wer nicht führt, sieht den Knopf gar nicht erst. Die Regeln lehnen
@@ -796,14 +800,17 @@ function neueGruppe() {
   setzeNeueArt('kader');
   $('neuName').value = '';
   $('neuFehler').hidden = true;
-  zeige('secLeer', false);
+  /* Wer schon eine Gruppe hat, legt die neue ohne die alte darunter an —
+     sonst läse sich das Formular wie ein Teil der aktiven Gruppe. */
+  for (const id of ['secLeer', 'secWoche', 'secMitglieder', 'secAktionen', 'secWeitere']) zeige(id, false);
   zeige('secGruppeNeu', true);
+  window.scrollTo(0, 0);
   $('neuName').focus();
 }
 
 function neueGruppeSchliessen() {
   zeige('secGruppeNeu', false);
-  zeige('secLeer', !aktiv);
+  zeichne();
 }
 
 async function gruppeErstellen(event) {
@@ -1835,8 +1842,10 @@ async function codeEinloesen() {
   const sauber = code.trim();
   if (!sauber) return;
 
+  /* Der Knopf steht im leeren Zustand; von "mit Code beitreten" unten
+     aus gibt es ihn nicht sichtbar — dann eben ohne Sperre. */
   const btn = $('btnBeitreten');
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
   try {
     const gid = await beitreten(sauber, user.uid);
     aktiveGruppeSetzen(gid);
@@ -1847,7 +1856,7 @@ async function codeEinloesen() {
       text: e?.message || '',
     });
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -2015,6 +2024,8 @@ async function einladen() {
   $('btnLoeschen')?.addEventListener('click', terminEntfernen);
 
   $('btnBeitreten')?.addEventListener('click', codeEinloesen);
+  $('btnWeitereNeu')?.addEventListener('click', neueGruppe);
+  $('btnWeitereCode')?.addEventListener('click', codeEinloesen);
   $('listMitglieder')?.addEventListener('click', event => {
     const uid = event.target.closest('[data-person]')?.dataset.person;
     if (uid) personOeffnen(uid);
@@ -2067,8 +2078,6 @@ async function einladen() {
   $('btnEntfernen')?.addEventListener('click', personEntfernen);
   $('btnUebergeben')?.addEventListener('click', leitungUebergeben);
 
-  $('btnWechsel')?.addEventListener('click', () =>
-    gruppeWaehlen(gruppen, aktiv?.id, { rolleWort: wort, setzen: aktiveGruppeSetzen }));
   window.addEventListener('firn-gruppe', event => wechsleZu(event.detail?.gid));
 
   beobachteMeineGruppen(user.uid, liste => {
@@ -2082,6 +2091,15 @@ async function einladen() {
     aktiv = waehleAktive(liste);
     if (aktiv?.id !== vorher) hoereAufTermine();
     zeichne();
+    if (neuAusAdresse && aktiv) {
+      const tag = neuAusAdresse;
+      neuAusAdresse = '';
+      if (leitet(aktiv.meineRolle)) formOeffnen(tag);
+    }
+    if (anlegenAusAdresse) {
+      anlegenAusAdresse = false;
+      neueGruppe();
+    }
   });
 }());
 

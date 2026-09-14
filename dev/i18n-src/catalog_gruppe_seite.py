@@ -67,9 +67,8 @@ KEYS = {
 'grp.bis': ('Bis', 'To', 'Au', 'Al', 'Do', 'Tot', 'Hasta'),
 'grp.zeit': ('Uhrzeit', 'Time', 'Heure', 'Ora', 'Godzina', 'Tijd', 'Hora'),
 'grp.ort': ('Ort', 'Place', 'Lieu', 'Luogo', 'Miejsce', 'Plaats', 'Lugar'),
-'grp.ortPh': ('kann leer bleiben', 'can stay empty', 'peut rester vide',
-              'può restare vuoto', 'może zostać puste', 'mag leeg blijven',
-              'puede quedar vacío'),
+'grp.ortPh': ('z.B. Malbun', 'e.g. Malbun', 'p. ex. Malbun',
+              'ad es. Malbun', 'np. Malbun', 'bijv. Malbun', 'p. ej. Malbun'),
 
 # ── Disziplinen ───────────────────────────────────────────────────
 # Die Kuerzel im value bleiben (SL/RS/SG/DH) — nur die Woerter wandern.

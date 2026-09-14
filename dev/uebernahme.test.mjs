@@ -149,7 +149,8 @@ test('der Kalender zeigt jede Gruppe einmal: uebernommene Familien nur als Grupp
 });
 
 test('der Kalender uebernimmt beim Oeffnen und verwaltet selbst nichts mehr', async () => {
-  const planner = await readFile(join(root, 'pages/planner.html'), 'utf8');
+  /* Seit v.35.49.0 steht der Code des Kalenders in feature/kalender/. */
+  const planner = await readFile(join(root, 'assets/js/feature/kalender/kalender.js'), 'utf8');
   assert.match(planner, /groups = vereinigeGruppen\(teams, familien\);/);
   assert.match(planner, /uebernimmFamilien\(teamIds\);/);
   /* Erst vereinigen, wenn BEIDE Listen da sind: sonst hielte der Kalender

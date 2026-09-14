@@ -41,6 +41,13 @@ export const SEITEN_MODULE = {
   /* Seit v.35.36.0 die Gastseite und die oeffentliche Projektseite. */
   'pages/guest.html': ['assets/js/feature/gast/gast.js'],
   'public.html': ['assets/js/feature/oeffentlich/oeffentlich.js'],
+  /* Seit v.35.49.0 der Kalender: sein Code stand als Inline-Modul in der
+     Seite und liegt jetzt in assets/js/feature/kalender/. */
+  'pages/planner.html': [
+    'assets/js/feature/kalender/kalender.js',
+    'assets/js/feature/kalender/ansicht.js',
+    'assets/js/feature/kalender/eintraege.js',
+  ],
 };
 
 /**

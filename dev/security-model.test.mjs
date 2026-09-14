@@ -116,7 +116,8 @@ test('calendar group data is scoped to the group, not to the whole family', asyn
   const trips = rules.match(/match \/trips\/\{tripId\} \{([\s\S]*?)\n    \}/)?.[1] || '';
   assert.ok(trips);
   assert.match(trips, /allow list: if tripGruppe\(resource\.data\.get\('familyId', ''\)\)/);
-  assert.match(trips, /allow create: if tripGruppe\(request\.resource\.data\.get\('familyId', ''\)\)/);
+  /* Lesen darf die Gruppe, anlegen ihre Leitung (v.35.49.0). */
+  assert.match(trips, /allow create: if tripLeitung\(request\.resource\.data\.get\('familyId', ''\)\)/);
   assert.doesNotMatch(trips, /inFamily\(/, 'eine Reiseregel prueft wieder nur die alte Familie');
   assert.match(rules, /function canUseTrip\(tripId\)[\s\S]*?tripGruppe\(/);
 

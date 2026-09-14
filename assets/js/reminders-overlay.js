@@ -285,9 +285,9 @@ function buildOverlay() {
       <label class="global-reminder-field"><span>Titel</span><input id="globalReminderTitle" type="text"></label>
       <div class="global-reminder-fields">
         <label class="global-reminder-field"><span>Datum</span><input id="globalReminderDate" type="date"></label>
-        <label class="global-reminder-field"><span>Zeit (optional)</span><input id="globalReminderTime" type="time"></label>
+        <label class="global-reminder-field"><span>Zeit</span><input id="globalReminderTime" type="time"></label>
       </div>
-      <label class="global-reminder-field"><span>Notiz (optional)</span><textarea id="globalReminderNotes" rows="3"></textarea></label>
+      <label class="global-reminder-field"><span>Notiz</span><textarea id="globalReminderNotes" rows="3"></textarea></label>
       <button class="global-reminder-save" id="globalReminderSave" type="button">Speichern</button>
       <button class="global-reminder-complete" id="globalReminderComplete" type="button" hidden>
         <span aria-hidden="true">✓</span><span id="globalReminderCompleteLabel">Als erledigt markieren</span>

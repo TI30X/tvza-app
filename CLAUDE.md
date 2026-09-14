@@ -60,7 +60,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.48.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.49.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -88,7 +88,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-62 Testdateien, **664 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+64 Testdateien, **693 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -176,7 +176,8 @@ Inline-Modulen. Seit v.35.11.0 liegen die in `assets/js/feature/start/`.
 Die beiden Matura-Seiten folgten mit v.35.34.0 (`feature/matura/`, je ein
 `…-ansicht.js` ohne Firebase und ein Einstieg), die Gastseite und die
 öffentliche Projektseite mit v.35.36.0 (`feature/gast/`,
-`feature/oeffentlich/`). Wer eine Seite umzieht, nimmt sie in `MIGRIERT`
+`feature/oeffentlich/`), der Kalender mit v.35.49.0 (`feature/kalender/`,
+von 2500 Zeilen auf 290 — siehe Falle 16). Wer eine Seite umzieht, nimmt sie in `MIGRIERT`
 (`kit-conformance.test.mjs`) auf, und die Tests lesen sie über
 `leserMitStart` samt Modulen. Zustände schaltet `hidden`, nicht
 `style.display` — das Kit hält `[hidden]` mit `!important`. Ein
@@ -321,8 +322,14 @@ beides und ist gegengeprüft.
 und Verein ist, hat EINE aktive Gruppe (`localStorage['firn.gruppe']`, gesetzt
 nur über `aktiveGruppeSetzen()`), und die meldet `firn-gruppe` — Leiste und
 Gruppenseite schalten darauf um. Gewählt wird über `gruppenwahl.js` (Karten aus
-`waehle()` in `dialog.js`): am Laptop „Gruppe wechseln“ unter dem Gruppe-Tab,
-am Handy die Karte oben auf der Gruppenseite. Den Tab beschriftet
+`waehle()` in `dialog.js`). Seit v.35.49.0: am Laptop stehen die Gruppen als
+Liste unter dem Tab (der dann „Gruppen“ heisst), ein Klick wechselt, zugeklappt
+bleibt „Gruppe wechseln“; am Handy ist der Name der Gruppe im Kopf der Wechsel
+(`setShellTitleWahl()` in `shell.js`). Die grosse Karte oben auf der
+Gruppenseite ist weg — Michel: zu umständlich für einen Wechsel. Eine weitere
+Gruppe anlegen oder mit Code beitreten: leise, als Zeile am Ende der
+Gruppenseite und als „+ Neue Gruppe“ in der Liste der Leiste (`?anlegen=1`) —
+Athleten brauchen das selten. Bis dahin ging beides nur ohne Gruppe. Den Tab beschriftet
 `gruppeInDerLeiste()` in `shell.js`, nicht mehr `nav.js` — das lief auf der
 Gruppenseite gar nicht. Die Farbe einer Gruppe kommt aus `teamFarben()`
 (`kalender-teams.js`): im Kalender und im Wechsler dieselbe, und zwei Gruppen
@@ -332,6 +339,16 @@ Der Kalender zeigt die Termine ALLER Gruppen als eigene Quellen (einzeln
 ausschaltbar; gemerkt werden die ausgeschalteten, damit ein neues Team sofort
 sichtbar ist). Ein Team-Termin öffnet dort eine Karte mit „Zur Gruppe“;
 bearbeitet wird er nur in der Gruppe.
+
+**In eine Gruppe trägt nur ihre Leitung ein** (Kopf und Trainer,
+v.35.49.0). Für Termine galt das in den Regeln schon (`leadsGroup`); für die
+Reisen (`trips`) nicht — jedes Mitglied konnte in jede seiner Gruppen eine
+anlegen, ändern, verschieben, löschen. Jetzt `tripLeitung()`; Mitglieder
+haken nur Programmpunkte ab (`itineraryDone`). Im Kalender sieht
+„Gruppentermin“ und „Reise mit Programm“ nur, wer etwas leitet; wer mehreres
+leitet, wählt die Gruppe. Ein Gruppentermin entsteht im Gruppe-Tab
+(`gruppe.html?g=…&neu=<tag>` öffnet dort das Formular), nicht mehr als Reise,
+die im Gruppe-Tab nie auftauchte.
 
 **13. Es gibt EIN Gruppenmodell — die Kalendergruppen sind übernommen.** Bis
 v.35.31.0 führte der Kalender eine zweite Verwaltung auf `families`
@@ -404,6 +421,31 @@ fremden Kadern. Seit v.35.47.0:
 
 `dev/datenschutz.test.mjs` hält Regeln und Oberfläche fest, auch die drei
 begründeten Stellen, die ein fremdes Profil anfassen dürfen.
+
+**16. Der Kalender rechnet in Zeiträumen, nicht in Tagen.** Bis v.35.48.0
+legte er jeden Eintrag in eine Tabelle je TAG (`eventMap`, `dayProgramMap`):
+ein Lager stand viermal in der Liste und als vier Schnipsel im Monat, zwei
+Termine um 10 Uhr lagen übereinander, und beim ersten Öffnen fragte er
+„Google Kalender oder Outlook?“. Seit v.35.49.0 in `assets/js/feature/kalender/`:
+
+- `eintraege.js` (rein): ein Eintrag ist ein Zeitraum von…bis. `agenda()`
+  legt ein Lager EINMAL an seinen Anfang und heute noch einmal („Tag 2/4“),
+  eine offene Erinnerung von früher als überfällig zu heute, und zählt freie
+  Tage; `monatsWochen()` gibt Balken über Tage in Spuren; `zeitRaster()`
+  stellt Überschneidungen nebeneinander.
+- `ansicht.js` zeichnet Liste, Monat (am Handy Punkte je Tag, die Einträge
+  des gewählten Tags darunter), Tag/3 Tage/Woche — und hängt EINEN Zuhörer an
+  die Bühne (`verdrahten`); ein Klick findet seinen Eintrag über die Liste
+  des letzten Zeichnens.
+- `kalender.js`: Daten, Blätter, Verdrahtung. Am Handy ist die Seite eine
+  App: Befehlsleiste fest, nur die Bühne scrollt. Die Liste steht beim
+  Öffnen auf heute; ein zweiter Stellversuch nach einem Neuzeichnen darf die
+  Liste nicht nach oben reissen (`ziel.isConnected`) — genau das passierte
+  im Rundgang.
+- Keine Hinweise wie „(optional)“ oder „kann leer bleiben“ an Feldern — was
+  nicht verlangt ist, sieht man (Michel). Beispiele („z.B. Malbun“) ja.
+
+Tests: `kalender-eintraege`, `kalender-ansicht` (jsdom), `calendar-groups`.
 
 ## Ausrollen
 
@@ -499,12 +541,14 @@ Zwei Dinge, die leicht übersehen werden:
   einmal als Admin die App öffnen, damit die Karten nachgetragen sind.
   v.35.48.0 (TVZA-Kreis, `kreis/{uid}`) gehört in dieselbe Runde: bis die
   Regeln stehen, scheitert im Admin nur das Speichern einer Person (der
-  Stapel schreibt die Kreisliste mit).
+  Stapel schreibt die Kreisliste mit). Beide ausgerollt am 13.09.2026.
+  v.35.49.0 (`tripLeitung()`: Reisen schreibt die Leitung) verschärft nur —
+  der Code verlangt die neue Regel nicht, sie kann nach dem Code kommen.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.48.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.49.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

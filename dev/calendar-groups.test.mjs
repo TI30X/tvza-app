@@ -1,3 +1,13 @@
+/* Der Kalender und die Gruppen — und was er am Handy verspricht.
+
+   Seit v.35.49.0 steht der Code in assets/js/feature/kalender/ (der
+   Leser holt ihn über start-quelle.mjs zur Seite dazu). Bis dahin
+   hielten die Tests hier vor allem Zeichenketten aus 1500 Zeilen CSS
+   fest — "grid-template-columns:repeat(11,…)" und dergleichen. Das
+   schützte keinen Code, es fror ihn ein (CLAUDE.md, Falle 9). Jetzt
+   stehen hier die Zusagen; was die Ansichten rechnen, prüft
+   kalender-eintraege.test.mjs, was sie zeichnen, kalender-ansicht.test.mjs. */
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -6,9 +16,9 @@ import { dirname, join } from 'node:path';
 import { leserMitStart } from './start-quelle.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-/* Liest index.html samt ihren Modulen — der Code der Startseite
-   liegt seit v.35.11.0 in assets/js/feature/start/. */
+/* Liest eine Seite samt ihren Modulen — siehe start-quelle.mjs. */
 const read = leserMitStart(root);
+const kalender = () => readFile(join(root, 'assets/js/feature/kalender/kalender.js'), 'utf8');
 
 test('calendar discovers every group membership instead of one profile familyId', async () => {
   const planner = await read('pages/planner.html');
@@ -40,34 +50,67 @@ test('der Kalender verwaltet keine eigenen Gruppen mehr — das tut der Gruppe-T
   assert.doesNotMatch(planner, /'familyDirectory'/, 'Beitritt per Namenssuche ist zurueck');
   assert.match(planner, /function zurGruppenseite\(\) \{ location\.href = '\.\/gruppe\.html'; \}/);
   assert.match(planner, /\$\('manageGroupsBtn'\)\.onclick=zurGruppenseite/);
-  assert.match(planner, /\$\('addGroupBtn'\)\.onclick=zurGruppenseite/);
+  assert.match(planner, /\$\('settingsGroupsBtn'\)\.onclick=zurGruppenseite/);
   /* Eine Farbe je Gruppe, fuer Reisen und Termine dieselbe — und
      dieselbe wie im Gruppenwechsler. */
   assert.match(planner, /gruppenFarben = teamFarben\(groups, GROUP_COLORS\)/);
   assert.doesNotMatch(planner, /id="tSwatch"|id="dSwatch"/);
 });
 
-test('desktop planner sheets are centered and Outlook has a week-selecting mini calendar', async () => {
+/* Michel: "Nur Trainer oder Admins einer Gruppe sollten in der Lage sein,
+   Termine in die Gruppe zu setzen. Und was ist, wenn man Teil mehrerer
+   Gruppen ist?" (v.35.49.0) */
+test('in eine Gruppe trägt nur ihre Leitung ein — wer mehrere leitet, wählt', async () => {
+  const quelle = await kalender();
+  assert.match(quelle, /function darfLeiten\(gid\) \{\s*const team = teams\.find\(g => g\.id === gid\);\s*if \(team\) return leitet\(team\.meineRolle\);/);
+  // Die Knöpfe gibt es nur, wenn man etwas leitet.
+  assert.match(quelle, /\$\('createGroupEventOption'\)\.hidden = !geleiteteTeams\(\)\.length;/);
+  assert.match(quelle, /\$\('createTripOption'\)\.hidden = !geleiteteGruppen\(\)\.length;/);
+  // Wer mehrere leitet, wählt; die aktive steht vorne.
+  const waehlen = quelle.match(/async function gruppeZumEintragen\(liste\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(waehlen, /if \(liste\.length <= 1\) return liste\[0\]\?\.id \|\| null;/);
+  assert.match(waehlen, /waehle\(\{/);
+  // Ein Gruppentermin entsteht im Gruppe-Tab, nicht als Reise im Kalender.
+  assert.match(quelle, /location\.href = `\.\/gruppe\.html\?g=\$\{encodeURIComponent\(gid\)\}&neu=\$\{encodeURIComponent\(tag\)\}`;/);
+  const gruppe = await readFile(join(root, 'assets/js/feature/gruppe/gruppe.js'), 'utf8');
+  assert.match(gruppe, /if \(neuAusAdresse && aktiv\) \{[\s\S]*?if \(leitet\(aktiv\.meineRolle\)\) formOeffnen\(tag\);/);
+  // Eine Reise: nur in Gruppen, die man leitet; ändern und löschen die Leitung.
+  assert.match(quelle, /const waehlbar = geleiteteGruppen\(\);/);
+  assert.match(quelle, /const leite = darfLeiten\(tr\.familyId\);/);
+  assert.match(quelle, /\$\{leite \? '<button class="btn btn-danger btn-block" id="tdDelete"/);
+
+  // Und die Regel, die es hält.
+  const rules = await readFile(join(root, 'firestore.rules'), 'utf8');
+  const trips = rules.match(/match \/trips\/\{tripId\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  assert.match(trips, /allow create: if tripLeitung\(request\.resource\.data\.get\('familyId', ''\)\)/);
+  assert.match(trips, /allow delete: if tripLeitung\(resource\.data\.get\('familyId', ''\)\);/);
+  assert.match(trips, /affectedKeys\(\)\s*\.hasOnly\(\['itineraryDone', 'itineraryUpdatedAt'\]\)/,
+    'Mitglieder haken Programmpunkte ab — und sonst nichts');
+  assert.match(rules, /function tripLeitung\(gid\) \{[\s\S]*?leadsGroup\(gid\)\s*\|\| \(!exists\(\/databases\/\$\(database\)\/documents\/groups\/\$\(gid\)\) && managesFamily\(gid\)\)/);
+});
+
+test('Blätter stehen am Laptop in der Mitte, und der Mini-Monat wählt Wochen', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
-    read('assets/css/feature/calendar.css'),
+    read('assets/css/feature/planner.css'),
   ]);
   assert.match(planner, /id="miniCalendars"/);
   assert.match(planner, /data-mini-week/);
-  assert.match(css, /\.planner-page \.sheet \{[^}]*top:50%/s);
-  assert.match(css, /transform:translate\(-50%,-50%\)/);
+  assert.match(css, /\.planner-page \.sheet \{[^}]*top: 50%/s);
+  assert.match(css, /transform: translate\(-50%, -50%\)/);
 });
 
-test('calendar actions use aligned icons and compact calendars remain readable', async () => {
-  const [planner, css] = await Promise.all([
+test('Knöpfe tragen das eine Plus, und Kleines bleibt lesbar', async () => {
+  const [planner, blaetter, css] = await Promise.all([
     read('pages/planner.html'),
+    read('assets/css/feature/planner.css'),
     read('assets/css/feature/calendar.css'),
   ]);
   assert.doesNotMatch(planner, />\+\s*(?:Neuer Termin|Erinnerung|Termin|Gruppe)/);
   assert.match(planner, /class="ui-plus calendar-action-icon/);
-  assert.match(css, /\.calendar-action-icon::before,[\s\S]*top:\s*50%;[\s\S]*left:\s*50%/);
-  assert.match(css, /\.mini-calendar-day,[\s\S]*font-size:12px/);
-  assert.match(css, /\.calendar-month \.evchip \{[\s\S]*font-size:12px/);
+  assert.match(blaetter, /\.calendar-action-icon::before,[\s\S]*top:\s*50%;[\s\S]*left:\s*50%/);
+  assert.match(css, /\.mini-tag \{[\s\S]*?font-size: 12px/);
+  assert.match(css, /\.kal-balken \{[\s\S]*?font-size: 12px/);
 });
 
 /* Hier stand bis v.35.31.0 ein Test auf die Avatare in der Mitglieder-
@@ -93,106 +136,65 @@ test('imported programs stay in TVZA and share completion state live', async () 
   assert.match(planner, /function openPlan\(tr\)/);
   assert.match(planner, /mode\.textContent='Original ansehen'/);
   assert.doesNotMatch(planner, /function openPlanFull\(/);
+  // Abgehakt wird in der Liste, im Programm und im Detail — alles über dieselbe Funktion.
+  assert.match(planner, /beiStop:\(eintrag, stop\) => toggleItineraryItem\(eintrag\.ref, stop\)/);
 });
 
-test('mobile calendar starts with the readable list view', async () => {
+test('am Handy beginnt der Kalender mit der Liste, auf heute gestellt', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
     read('assets/css/feature/calendar.css'),
   ]);
-
   assert.match(planner, /const isMobileCalendar = \(\) => matchMedia\('\(max-width:899px\)'\)\.matches/);
-  assert.match(planner, /isMobileCalendar\(\)[\s\S]*mobileView[\s\S]*'agenda'/);
+  assert.match(planner, /return erlaubt\.includes\(view\) \? view : \(handy \? 'agenda' : 'month'\);/);
   assert.match(planner, /data-calendar-view="agenda"[^>]*>Liste</);
-  assert.match(planner, /data-agenda-focus/);
-  assert.match(planner, /tail\.style\.height = `\$\{Math\.max\(0, scroller\.clientHeight - markerRect\.height - 8\)\}px`/);
-  assert.match(planner, /adjustedMarkerRect\.top - scrollerRect\.top - 8/);
-  assert.match(planner, /scroller\.scrollTop = Math\.max\(0, top\)/);
+  // Die Hülle wartet, bis die Liste steht.
   assert.match(planner, /dataset\.routeReady = 'false'/);
   assert.match(planner, /dataset\.routeReady = 'true'/);
-  assert.match(css, /\.calendar-agenda \{[\s\S]*overflow-y:auto/);
-  assert.match(css, /\.calendar-agenda\.is-positioning \{ visibility:hidden; \}/);
+  // Heute steht oben — auch wenn danach wenig kommt (der Auslauf).
+  assert.match(planner, /el\.querySelector\('\.kal-tag\.is-heute'\)/);
+  assert.match(planner, /auslauf\.style\.height = `\$\{Math\.max\(0, el\.clientHeight - rest - 8\)\}px`;/);
+  // Ein neues Zeichnen, das inzwischen kam, reisst die Liste nicht nach oben.
+  assert.match(planner, /if \(ziel && !ziel\.isConnected\) return;/);
+  assert.doesNotMatch(planner, /scrollIntoView/, 'im Rahmen des Routers scrollte das die Seite dahinter mit');
+  // Die Bühne scrollt, Leiste und Ansichten bleiben stehen.
+  assert.match(css, /@media \(max-width: 899px\) \{[\s\S]*body\.planner-page\[data-calendar-workspace="true"\] \{\s*height: 100vh;\s*overflow: hidden;/);
+  assert.match(css, /\.kal-buehne \{\s*flex: 1;\s*overflow-y: auto;/);
 });
 
-test('mobile creation and reminders stay above long calendar content', async () => {
-  const [planner, css] = await Promise.all([
+test('am Handy: Erstellen und Erinnerungen bleiben erreichbar', async () => {
+  const [planner, css, blaetter] = await Promise.all([
     read('pages/planner.html'),
     read('assets/css/feature/calendar.css'),
+    read('assets/css/feature/planner.css'),
   ]);
-
-  assert.match(planner, /id="createEventOption"/);
-  assert.match(planner, /id="createReminderOption"/);
-  assert.match(planner, /id="mobileRemindersBtn"/);
-  assert.match(planner, /class="calendar-thumb-actions"/);
-  assert.match(planner, /id="mobileCalAddBtn"/);
-  assert.match(planner, /class="mobile-reminder-label"[^>]*>Erinnerungen</);
-  assert.match(planner, /id="mobileReminderCount"/);
-  assert.match(planner, /id="reminderHubList"/);
+  for (const id of ['createEventOption', 'createGroupEventOption', 'createTripOption', 'createReminderOption',
+                    'mobileRemindersBtn', 'mobileReminderCount', 'mobileCalAddBtn', 'reminderHubList', 'reminderHubAdd', 'reminderComplete']) {
+    assert.match(planner, new RegExp(`id="${id}"`), `${id} fehlt`);
+  }
   assert.match(planner, /id="reminderHubList"[\s\S]*id="reminderHubAdd"/);
   assert.match(planner, /document\.body\.dataset\.calendarView = curView/);
-  assert.match(planner, /agenda-today-anchor" data-agenda-focus[\s\S]*agenda-today-marker"><strong>Heute<\/strong>/);
-  assert.match(planner, /\$\('calendarBelow'\)\.style\.display='none'/);
-  assert.match(css, /\.mobile-reminder-button \{[\s\S]*display:none/);
-  assert.match(css, /#calendarBelow \{ display:none; \}/);
-  assert.match(css, /data-calendar-view="agenda"[\s\S]*calendar-commandbar__nav \{\s*display:none/);
-  assert.match(css, /@media \(max-width:899px\)/);
-  assert.match(css, /grid-template-columns:minmax\(0,1fr\) var\(--calendar-thumb-size\)/);
-  assert.match(css, /html\.tvza-content-frame \.calendar-thumb-actions \{\s*bottom:2\.5%/);
-  assert.match(css, /body\.planner-page\.has-nav \{[\s\S]*overflow:hidden/);
-  assert.match(css, /#groupView \.calendar-stage \{[\s\S]*flex:1;[\s\S]*overflow:hidden/);
-  assert.match(css, /\.calendar-agenda \{[\s\S]*height:100%;[\s\S]*overflow-y:auto/);
-  assert.match(css, /--calendar-mobile-control:clamp/);
-  assert.match(css, /padding-bottom:clamp\(112px, 31vw, 148px\)/);
-  assert.match(css, /grid-template-columns:repeat\(11,minmax\(0,1fr\)\) var\(--calendar-mobile-control\)/);
-  assert.match(css, /\.calendar-commandbar__settings \{[\s\S]*justify-self:end/);
-  assert.match(css, /"title title title title title title title title title title title settings"\s*"today today today views views views views views views \. \. \."/);
-  assert.match(css, /data-calendar-workspace="true"] \.main \{\s*overflow:hidden/);
-  assert.match(planner, /class="agenda-scroll-tail"/);
-  assert.match(css, /\.agenda-scroll-tail \{[\s\S]*52dvh/);
-  assert.doesNotMatch(planner, /id="reminderHubSheet">\s*<div class="grip"/);
-  assert.doesNotMatch(planner, /id="reminderSheet">\s*<div class="grip"/);
-  assert.match(planner, /id="reminderComplete"/);
   assert.match(planner, /setReminderCompletion\(existing, !existing\.completed\)/);
-  assert.match(planner, /function reminderListHtml\(\) \{\s*const visible = reminders;/);
   assert.match(planner, /item\.completed = completed;\s*renderReminders\(\);/);
-  assert.match(planner, /agenda-completed-badge/);
-  assert.match(planner, /function focusAgendaOnToday\(box\)/);
-  assert.match(planner, /calendarEntryFocusPending = true, initialGroupsLoaded = false, initialRemindersLoaded = false/);
-  assert.match(planner, /function focusCalendarEntryWhenReady\(\)/);
-  assert.match(planner, /!initialGroupsLoaded \|\| !initialRemindersLoaded/);
-  assert.match(planner, /anchorKey = todayKey;\s*agendaShouldFocusToday = true;\s*renderCurrentView\(\);/);
-  assert.doesNotMatch(planner, /if \(!agendaShouldFocusToday \|\| !isMobileCalendar\(\)\) return/);
-  assert.match(planner, /class="agenda-today-anchor" data-agenda-focus/);
-  assert.doesNotMatch(planner, /class="agenda-today-marker" data-agenda-focus/);
-  assert.match(css, /\.agenda-today-anchor \{[\s\S]*height:0/);
-  assert.match(css, /@media \(min-width:900px\)[\s\S]*#groupView \.calendar-workspace \{[\s\S]*display:flex;[\s\S]*height:clamp\(600px,calc\(100dvh - 120px\),900px\)/);
-  assert.match(css, /@media \(min-width:900px\)[\s\S]*#groupView \.calendar-stage \{[\s\S]*flex:1;[\s\S]*overflow:hidden/);
-  assert.match(css, /@media \(min-width:900px\)[\s\S]*#groupView \.calendar-view \{[\s\S]*height:100%;[\s\S]*overflow:auto/);
-  assert.match(planner, /const containsToday = from<=todayKey/);
-  assert.match(planner, /class="agenda-scroll-head"/);
-  assert.match(planner, /class="agenda-scroll-tail"/);
-  assert.match(planner, /scroller\.scrollTop = Math\.max\(0, top\)/);
-  assert.doesNotMatch(planner, /target\.scrollIntoView/);
-  assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
-  assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*overflow:hidden;[\s\S]*display:flex/);
-  assert.match(css, /\.planner-page \.reminder-hub-sheet \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
-  assert.match(css, /\.planner-page #reminderHubBackdrop \{[\s\S]*bottom:var\(--tvza-shell-bottom/);
-  assert.match(css, /html\.tvza-content-frame \.planner-page #reminderHubBackdrop \{ bottom:0; \}/);
-  assert.match(css, /\.reminder-hub-sheet \.reminder-hub-list \{[\s\S]*overflow-y:auto/);
-  assert.match(css, /\.reminder-hub-add \{[\s\S]*border-radius:var\(--r-pill\)/);
-  assert.match(css, /\.reminder-hub-sheet \.reminder-row__title \{[\s\S]*font-weight:800/);
-  assert.match(css, /\.planner-page \.reminder-form-sheet \{[\s\S]*overflow-y:auto/);
   assert.match(planner, /requestedAction === 'reminder-new'/);
+  assert.match(planner, /setTimeout\(openReminderHub, 100\)/);
+  // Der runde Knopf steht über der Tab-Leiste, im Rahmen am Rand.
+  assert.match(css, /\.kal-fab \{[\s\S]*?position: fixed;[\s\S]*?bottom: calc\(var\(--tvza-shell-bottom, calc\(var\(--nav-hoehe\) \+ env\(safe-area-inset-bottom\)\)\) \+ var\(--s4\)\);/);
+  assert.match(css, /html\.tvza-content-frame \.kal-fab \{ bottom: var\(--s4\); \}/);
+  // Blätter öffnen über der Tab-Leiste, nicht dahinter.
+  assert.match(blaetter, /\.planner-page \.sheet \{\s*bottom: var\(--tvza-shell-bottom/);
+  assert.match(blaetter, /\.sheet \{[\s\S]*?visibility: hidden;/, 'ein geschlossenes Blatt lag über der Tab-Leiste (v.35.46.0)');
 });
 
-test('mobile month uses only required weeks and wraps event labels', async () => {
+test('der Monat am Handy: Punkte je Tag, die Einträge des Tags darunter', async () => {
   const [planner, css] = await Promise.all([
     read('pages/planner.html'),
     read('assets/css/feature/calendar.css'),
   ]);
-
-  assert.match(planner, /const totalCells = Math\.ceil\(\(offset \+ dim\) \/ 7\) \* 7/);
-  assert.match(planner, /for\(let i=0;i<totalCells;i\+\+\)/);
-  assert.match(css, /-webkit-line-clamp:2/);
-  assert.match(css, /\.calendar-month \.cell\.has-events/);
+  const monat = planner.match(/function renderMonat\(el, liste\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(monat, /const kompakt = isMobileCalendar\(\);/);
+  assert.match(monat, /tagesListeHtml\(anchorKey, liste, \{ erledigtVon \}\)/);
+  // Ein Tag im Monat wählt am Handy den Tag, am Laptop öffnet er ihn.
+  assert.match(planner, /if \(curView === 'month' && isMobileCalendar\(\)\) renderCurrentView\(\);\s*else setView\('day'\);/);
+  assert.match(css, /\.kal-monatsraster\.is-kompakt \.kal-mtag\.is-gewaehlt \.kal-mtag__num/);
 });

@@ -62,12 +62,19 @@ const ohneKommentare = q => q.replace(/\/\*[\s\S]*?\*\//g, ' ');
 /** Alles, was eine Variable setzen kann: Markup inline, Module per setProperty. */
 async function markup() {
   const raus = [];
-  for (const ort of ['.', 'pages', 'assets/js']) {
+  /* assets/js samt Unterordnern: die Seitenmodule in feature/ setzen
+     ihre Variablen genauso (seit v.35.49.0 etwa --farbe je Eintrag im
+     Kalender). */
+  async function lesen(ort, tief) {
     const verzeichnis = join(WURZEL, ort);
-    for (const name of await readdir(verzeichnis)) {
-      if (/[.](html|js)$/.test(name)) raus.push(await readFile(join(verzeichnis, name), 'utf8'));
+    for (const e of await readdir(verzeichnis, { withFileTypes: true })) {
+      if (e.isDirectory() && tief) await lesen(join(ort, e.name), tief);
+      else if (/[.](html|js)$/.test(e.name)) raus.push(await readFile(join(verzeichnis, e.name), 'utf8'));
     }
   }
+  await lesen('.', false);
+  await lesen('pages', false);
+  await lesen('assets/js', true);
   return raus;
 }
 

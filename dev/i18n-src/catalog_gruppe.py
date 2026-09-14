@@ -23,6 +23,13 @@ KEYS = {
 # Der dritte Tab traegt im Betrieb den NAMEN der Gruppe. Diese
 # Beschriftung erscheint nur, solange keine geladen ist.
 'nav.gruppe':   ('Gruppe', 'Group', 'Groupe', 'Gruppo', 'Grupa', 'Groep', 'Grupo'),
+# Die Liste der Gruppen in der Leiste am Laptop (v.35.49.0).
+'nav.gruppen':  ('Gruppen', 'Groups', 'Groupes', 'Gruppi', 'Grupy', 'Groepen', 'Grupos'),
+'nav.neueGruppe':('Neue Gruppe', 'New group', 'Nouveau groupe', 'Nuovo gruppo', 'Nowa grupa', 'Nieuwe groep', 'Nuevo grupo'),
+# Leise am Ende der Gruppenseite: eine weitere Gruppe (v.35.49.0).
+'grp.weitere':  ('Weitere Gruppe:', 'Another group:', 'Autre groupe :', 'Altro gruppo:', 'Kolejna grupa:', 'Nog een groep:', 'Otro grupo:'),
+'grp.weitereNeu':('erstellen', 'create', 'créer', 'crea', 'utwórz', 'aanmaken', 'crear'),
+'grp.weitereCode':('mit Code beitreten', 'join with a code', 'rejoindre avec un code', 'unisciti con un codice', 'dołącz kodem', 'met code lid worden', 'unirse con un código'),
 'nav.chat':     ('Chat', 'Chat', 'Discussion', 'Chat', 'Czat', 'Chat', 'Chat'),
 
 # ── Rollen im Rennkader ───────────────────────────────────────────

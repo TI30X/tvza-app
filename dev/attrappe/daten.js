@@ -10,7 +10,7 @@
    beim nächsten Laden auf diese Startdaten zurück. Von Hand:
    attrappeZuruecksetzen() in der Konsole. */
 
-export const VERSION = 4;
+export const VERSION = 5;
 
 export const KONTEN = {
   michel: { email: 'michel@firn.test', name: 'Michel van Zanten' },
@@ -91,5 +91,35 @@ export async function startDaten() {
 
     'groups/g1/plaene/p1': { titel: 'KW 31 · TW 12', fuer: 'timo', json: JSON.stringify(kw31), erstelltVon: 'michel', erstelltAm: zeit(-10) },
     'groups/g1/plaene/p2': { titel: 'Diese Woche', fuer: 'alle', json: JSON.stringify(jetzt), erstelltVon: 'michel', erstelltAm: zeit(-1) },
+    'groups/g1/events/t4': { art: 'training', titel: 'Techniktraining Gletscher', von: tag(2), zeit: '07:30', ort: 'Hintertux', erstelltVon: 'michel', createdAt: zeit(-2) },
+
+    /* Die Familie — eine Gruppe der Art familie, mit einer Reise samt
+       Programm (v.35.49.0: damit der Kalender etwas zu zeigen hat). */
+    'groups/g2': {
+      name: 'Familie van Zanten', art: 'familie', headUid: 'michel',
+      bereiche: { termine: true, projekte: true, chat: true },
+      inviteToken: 'familie', createdAt: zeit(-200),
+    },
+    'groups/g2/members/michel': { uid: 'michel', rolle: 'head', seit: zeit(-200) },
+    'groups/g2/members/timo': { uid: 'timo', rolle: 'mitglied', seit: zeit(-200) },
+    'groups/g2/members/anna': { uid: 'anna', rolle: 'mitglied', seit: zeit(-200) },
+    'groups/g2/events/f1': { art: 'training', bezeichnung: 'Geburtstag', titel: 'Grosis Geburtstag', von: tag(3), zeit: '12:00', ort: 'Vaduz', erstelltVon: 'michel', createdAt: zeit(-5) },
+    'trips/r1': {
+      name: 'Herbstferien Toskana', familyId: 'g2', destination: 'Castiglione', startDate: tag(24), endDate: tag(30),
+      notes: 'Ferienhaus ab 15 Uhr.', createdBy: 'michel', createdAt: zeit(-20),
+      itinerary: [
+        { id: 'i1', date: tag(24), time: '06:30', title: 'Abfahrt Schaan' },
+        { id: 'i2', date: tag(24), time: '15:00', title: 'Schlüssel abholen' },
+        { id: 'i3', date: tag(26), time: '10:00', title: 'Siena, Führung' },
+      ],
+    },
+
+    /* Timothys eigene Termine und Erinnerungen — zwei überschneiden sich. */
+    'calendarDays/c1': { ownerUid: 'timo', title: 'Zahnarzt', date: tag(2), startTime: '10:00', endTime: '11:00', location: 'Schaan' },
+    'calendarDays/c2': { ownerUid: 'timo', title: 'Physio', date: tag(2), startTime: '10:30', endTime: '11:15' },
+    'calendarDays/c3': { ownerUid: 'timo', title: 'Matura-Abgabe Entwurf', date: tag(10) },
+    'users/timo/reminders/e1': { title: 'Lizenz verlängern', date: tag(-2), completed: false, createdAt: zeit(-9) },
+    'users/timo/reminders/e2': { title: 'Wachs kaufen', date: tag(0), time: '17:00', completed: false, createdAt: zeit(-1) },
+    'users/timo/reminders/e3': { title: 'Startnummer abholen', date: tag(0), completed: true, createdAt: zeit(-4) },
   };
 }

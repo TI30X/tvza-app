@@ -311,7 +311,8 @@ export function mountRail({ profile = null } = {}) {
        data-nav-tab="${t.id}" title="${t.label}" data-i18n-attr="title:${TAB_I18N[t.id]}"
        ${t.id === active ? 'aria-current="page"' : ''}>
       ${icon(t.icon, 20)}
-      <span class="nav__wort" data-i18n="${TAB_I18N[t.id]}">${t.label}</span>
+      <span class="nav__wort" data-i18n="${TAB_I18N[t.id]}">${t.label}</span>${t.id === 'gruppe' ? `
+      <span class="nav__wort nav__wort--mehrere" data-i18n="nav.gruppen">${label('nav.gruppen', 'Gruppen')}</span>` : ''}
       ${t.id === 'chat' ? '<span class="nav__dot" hidden></span><span class="nav__count" hidden></span>' : ''}
     </a>${t.id === 'gruppe' ? `
     <button class="nav__wechsel" type="button" data-gruppe-wechsel hidden
@@ -319,7 +320,8 @@ export function mountRail({ profile = null } = {}) {
             data-i18n-attr="title:grp.wechseln;aria-label:grp.wechseln" aria-label="${label('grp.wechseln', 'Gruppe wechseln')}">
       ${icon('wechsel', 16)}
       <span class="nav__wort" data-i18n="grp.wechseln">${label('grp.wechseln', 'Gruppe wechseln')}</span>
-    </button>` : ''}`).join('');
+    </button>
+    <div class="nav__gruppen" data-gruppen-liste hidden></div>` : ''}`).join('');
 
   /* Das Zeichen steht links vom Wort und bleibt stehen, wenn die
      Leiste zuklappt — in 64 Pixeln bricht "Firn" um, das Zeichen
@@ -375,6 +377,12 @@ export function mountRail({ profile = null } = {}) {
    Der Gruppe-Tab traegt den Namen der aktiven Gruppe, und wer in mehr
    als einer ist, bekommt darunter "Gruppe wechseln".
 
+   Am Laptop stehen die Gruppen seit v.35.49.0 als Liste unter dem Tab
+   (der dann "Gruppen" heisst): wer in Kader und Familie ist, wechselt
+   mit einem Klick, statt erst einen Dialog zu oeffnen. Darunter, leise,
+   "+ Neue Gruppe" — Athleten brauchen das selten, darum kein Knopf.
+   Zugeklappt und am Handy bleibt der Wechsel wie er war.
+
    Das stand bis v.35.30.0 in nav.js — und nav.js laeuft auf der
    Gruppenseite, im Training, in Einheit und Video gar nicht. Dort hiess
    der Tab darum "Gruppe", anderswo "BSV Kader". Jetzt baut die Leiste
@@ -386,6 +394,7 @@ export function mountRail({ profile = null } = {}) {
 function gruppeInDerLeiste(nav) {
   const tab = nav.querySelector('[data-nav-tab="gruppe"]');
   const wechsel = nav.querySelector('[data-gruppe-wechsel]');
+  const liste = nav.querySelector('[data-gruppen-liste]');
   if (!tab || !wechsel || typeof auth?.onAuthStateChanged !== 'function') return;
 
   let gruppen = [];
@@ -398,10 +407,29 @@ function gruppeInDerLeiste(nav) {
     if (!user) return;
     try {
       const groups = await import('./groups.js');
+      const wahl = await import('./gruppenwahl.js');
       zeichne = () => {
         const aktiv = groups.waehleAktive(gruppen);
         const feld = tab.querySelector('.nav__wort');
         wechsel.hidden = gruppen.length < 2;
+        tab.classList.toggle('hat-gruppenliste', gruppen.length > 1);
+        if (liste) {
+          const stil = wahl.gruppenStil(gruppen);
+          const hier = activeTab() === 'gruppe';
+          /* Ohne Gruppe zeigt die Gruppenseite selbst, wie man eine anlegt. */
+          liste.hidden = !gruppen.length;
+          liste.innerHTML = (gruppen.length > 1 ? gruppen.map(g => `
+            <a class="nav__gruppe${g.id === aktiv?.id ? ' is-aktiv' : ''}" href="${esc(tab.getAttribute('href'))}"
+               data-gruppe-id="${esc(g.id)}" title="${esc(g.name || '')}" style="${stil(g.id)}"
+               ${g.id === aktiv?.id && hier ? 'aria-current="page"' : ''}>
+              <span class="nav__gruppe-zeichen" aria-hidden="true">${esc(wahl.kuerzel(g.name))}</span>
+              <span class="nav__gruppe-name">${esc(g.name || label('nav.gruppe', 'Gruppe'))}</span>
+            </a>`).join('') : '') + `
+            <a class="nav__gruppe nav__gruppe--neu" href="${esc(tab.getAttribute('href'))}?anlegen=1" data-gruppe-neu>
+              <span class="nav__gruppe-zeichen" aria-hidden="true">+</span>
+              <span class="nav__gruppe-name">${esc(label('nav.neueGruppe', 'Neue Gruppe'))}</span>
+            </a>`;
+        }
         if (!feld) return;
         if (!aktiv) {
           /* Ohne Gruppe bleibt die Rueckfallbeschriftung — der Tab fuehrt
@@ -417,6 +445,14 @@ function gruppeInDerLeiste(nav) {
         tab.title = aktiv.name;
       };
       abo = groups.beobachteMeineGruppen(user.uid, liste => { gruppen = liste; zeichne(); });
+      liste?.addEventListener('click', event => {
+        const zeile = event.target.closest('[data-gruppe-id]');
+        if (!zeile) return;
+        event.preventDefault();
+        groups.aktiveGruppeSetzen(zeile.dataset.gruppeId);
+        /* Auf der Gruppenseite schaltet firn-gruppe um; sonst dorthin. */
+        if (activeTab() !== 'gruppe') location.href = tab.href;
+      });
       wechsel.onclick = async () => {
         const { gruppeWaehlen } = await import('./gruppenwahl.js');
         const gid = await gruppeWaehlen(gruppen, groups.waehleAktive(gruppen)?.id, {
@@ -534,6 +570,31 @@ export function setShellTitle(text) {
   const wert = String(text ?? '');
   const el = document.querySelector('.appbar__title, .appbar__greet');
   if (el) el.textContent = wert;
+}
+
+/**
+ * Macht den Titel im Kopf zu einem Knopf mit Winkel — die Gruppenseite
+ * wechselt so ihre Gruppe (v.35.49.0). Bis dahin stand dafür eine eigene,
+ * grosse Karte oben auf der Seite; Michel: "so eine grosse Zeile nur zum
+ * Gruppenwechsel scheint mir zu umständlich". Ohne handler ist der Titel
+ * wieder nur Text. Nach mountShell aufrufen — das baut den Kopf neu.
+ */
+export function setShellTitleWahl(handler, beschriftung = '') {
+  const el = document.querySelector('.appbar__title');
+  if (!el) return;
+  el.classList.toggle('appbar__title--wahl', !!handler);
+  if (handler) {
+    el.setAttribute('role', 'button');
+    el.tabIndex = 0;
+    el.setAttribute('aria-haspopup', 'dialog');
+    if (beschriftung) el.title = beschriftung;
+  } else {
+    for (const a of ['role', 'tabindex', 'aria-haspopup', 'title']) el.removeAttribute(a);
+  }
+  el.onclick = handler ? () => handler() : null;
+  el.onkeydown = handler
+    ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handler(); } }
+    : null;
 }
 
 /**

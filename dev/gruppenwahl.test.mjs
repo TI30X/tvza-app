@@ -85,32 +85,38 @@ test('waehle() antwortet mit der gewaehlten Karte, ein Abbruch mit null', async 
 
 /* ── Die Gruppenseite ─────────────────────────────────────────────── */
 
-test('mit einer Gruppe gibt es nichts zu wechseln — und keine Karte dafuer', async () => {
+/* Seit v.35.49.0 wechselt man über den Namen der Gruppe im Kopf — die
+   grosse Karte oben auf der Seite ist weg (Michel: "so eine grosse Zeile
+   nur zum Gruppenwechsel scheint mir zu umständlich"). */
+const titel = doc => doc.querySelector('.appbar__title');
+
+test('mit einer Gruppe gibt es nichts zu wechseln — der Titel ist nur Text', async () => {
   const { doc, zurueck } = await starteGruppe({ gruppen: [ZWEI[0]] });
   try {
-    assert.equal(doc.getElementById('secWechsel').hidden, true);
+    await warte(() => titel(doc)?.textContent === 'BSV Kader');
+    assert.equal(titel(doc).classList.contains('appbar__title--wahl'), false);
+    assert.equal(doc.getElementById('secWechsel'), null, 'die grosse Karte ist zurück');
   } finally { zurueck(); }
 });
 
-test('mit zwei Gruppen zeigt eine Karte, wo man ist, und wechselt ueber Karten', async () => {
+test('mit zwei Gruppen ist der Name im Kopf der Wechsel', async () => {
   const { doc, zurueck } = await starteGruppe({ gruppen: ZWEI });
   try {
-    assert.equal(doc.getElementById('secWechsel').hidden, false);
-    assert.equal(doc.getElementById('wechselName').textContent, 'BSV Kader');
-    assert.match(doc.getElementById('wechselMehr').textContent, /1 weitere Gruppe/);
-    assert.match(doc.getElementById('wechselBild').getAttribute('style') || '', /--tint:#/);
+    await warte(() => titel(doc)?.classList.contains('appbar__title--wahl'));
+    assert.equal(titel(doc).textContent, 'BSV Kader');
+    assert.equal(titel(doc).getAttribute('role'), 'button');
     assert.equal(doc.getElementById('grpWahl'), null, 'das Auswahlfeld des Browsers ist weg');
 
-    klick(doc.getElementById('btnWechsel'));
+    klick(titel(doc));
     await warte(() => doc.querySelectorAll('dialog .wahlkarte').length === 2);
     const karten = doc.querySelectorAll('dialog .wahlkarte');
-    assert.equal(karten.length, 2);
     assert.equal(karten[0].getAttribute('aria-checked'), 'true');
+    assert.match(karten[0].querySelector('.wahlkarte__bild').getAttribute('style') || '', /--tint:#/,
+      'die Karte trägt die Farbe der Gruppe — dieselbe wie im Kalender');
 
     klick(karten[1]);
-    await warte(() => doc.getElementById('wechselName').textContent === 'SC Einsiedeln');
-    assert.equal(doc.getElementById('wechselName').textContent, 'SC Einsiedeln',
-      'die Seite zeigt nach der Wahl die andere Gruppe');
+    await warte(() => titel(doc).textContent === 'SC Einsiedeln');
+    assert.equal(titel(doc).textContent, 'SC Einsiedeln', 'die Seite zeigt nach der Wahl die andere Gruppe');
     assert.deepEqual(aufrufe('aktiveGruppeSetzen').at(-1), ['aktiveGruppeSetzen', 'g2'],
       'die Wahl wird gemerkt — derselbe Merker wie in der Leiste');
   } finally { zurueck(); }
@@ -120,28 +126,35 @@ test('ein Wechsel aus der Leiste schaltet die offene Gruppenseite mit um', async
   const { doc, window, zurueck } = await starteGruppe({ gruppen: ZWEI });
   try {
     window.dispatchEvent(new window.CustomEvent('firn-gruppe', { detail: { gid: 'g2' } }));
-    await warte(() => doc.getElementById('wechselName').textContent === 'SC Einsiedeln');
-    assert.equal(doc.getElementById('wechselName').textContent, 'SC Einsiedeln');
+    await warte(() => titel(doc)?.textContent === 'SC Einsiedeln');
+    assert.equal(titel(doc).textContent, 'SC Einsiedeln');
     /* Eine unbekannte Gruppe (gerade angelegt, Snapshot unterwegs) laesst
        die Seite, wie sie ist, statt ins Leere zu schalten. */
     window.dispatchEvent(new window.CustomEvent('firn-gruppe', { detail: { gid: 'gibt-es-nicht' } }));
     await new Promise(r => setTimeout(r, 20));
-    assert.equal(doc.getElementById('wechselName').textContent, 'SC Einsiedeln');
+    assert.equal(titel(doc).textContent, 'SC Einsiedeln');
   } finally { zurueck(); }
 });
 
-test('die Karte beschriftet der Code — kein data-i18n darauf (Falle 5)', async () => {
+test('eine weitere Gruppe: leise am Ende der Seite, nicht als Knopf', async () => {
+  const { doc, zurueck } = await starteGruppe({ gruppen: [ZWEI[0]] });
+  try {
+    await warte(() => !doc.getElementById('secWeitere').hidden);
+    klick(doc.getElementById('btnWeitereNeu'));
+    assert.equal(doc.getElementById('secGruppeNeu').hidden, false, 'das Formular geht auf');
+    assert.equal(doc.getElementById('secWoche').hidden, true, 'ohne die alte Gruppe darunter');
+    klick(doc.getElementById('btnGruppeNeuZurueck'));
+    assert.equal(doc.getElementById('secWoche').hidden, false, 'zurück steht die Gruppe wieder da');
+  } finally { zurueck(); }
   const html = await lies('pages/gruppe.html');
-  for (const id of ['wechselName', 'wechselMehr', 'wechselBild']) {
-    const tag = html.match(new RegExp(`<[a-z]+[^>]*id="${id}"[^>]*>`))?.[0];
-    assert.ok(tag, `#${id} fehlt`);
-    assert.doesNotMatch(tag, /data-i18n/);
-  }
+  assert.match(html, /<p class="grp-weitere" id="secWeitere" hidden>/);
+  assert.doesNotMatch(html.slice(html.indexOf('id="secWeitere"'), html.indexOf('</p>', html.indexOf('id="secWeitere"'))), /class="b /,
+    'das ist ein Link, kein Knopf — Athleten brauchen es selten');
 });
 
 /* ── Die Leiste und der Merker ────────────────────────────────────── */
 
-test('die Leiste hat "Gruppe wechseln" unter dem Gruppe-Tab, nur am Laptop', async () => {
+test('die Leiste listet am Laptop die Gruppen, zugeklappt bleibt "Gruppe wechseln"', async () => {
   const [shell, kit] = await Promise.all([lies('assets/js/shell.js'), lies('assets/css/kit.css')]);
   assert.match(shell, /<button class="nav__wechsel" type="button" data-gruppe-wechsel hidden/,
     'erst sichtbar, wenn es mehr als eine Gruppe gibt');
@@ -152,6 +165,16 @@ test('die Leiste hat "Gruppe wechseln" unter dem Gruppe-Tab, nur am Laptop', asy
   const grund = kit.indexOf('.nav__wechsel { display: none; }');
   const laptop = kit.indexOf('.nav__wechsel:not([hidden])');
   assert.ok(grund > 0 && laptop > grund, 'die Handy-Regel fehlt oder steht nach der Laptop-Regel');
+
+  /* Seit v.35.49.0: aufgeklappt eine Liste der Gruppen, ein Klick wechselt;
+     darunter leise "+ Neue Gruppe". Die Liste gibt es nur am Laptop. */
+  assert.match(shell, /<div class="nav__gruppen" data-gruppen-liste hidden><\/div>/);
+  assert.match(shell, /tab\.classList\.toggle\('hat-gruppenliste', gruppen\.length > 1\)/);
+  assert.match(shell, /data-gruppe-neu/);
+  assert.match(shell, /\?anlegen=1/);
+  assert.match(kit, /\.nav__gruppen, \.nav__wort--mehrere \{ display: none; \}/);
+  assert.match(kit, /body:not\(\.nav-schmal\) \.nav__wechsel:not\(\[hidden\]\) \{ display: none; \}/);
+  assert.match(kit, /body\.nav-schmal \.nav__gruppen \{ display: none; \}/);
 });
 
 test('ein Merker fuer die aktive Gruppe, und wer ihn setzt, meldet es', async () => {
@@ -160,5 +183,5 @@ test('ein Merker fuer die aktive Gruppe, und wer ihn setzt, meldet es', async ()
   assert.match(fn, /localStorage\.setItem\(SCHLUESSEL/);
   assert.match(fn, /new CustomEvent\('firn-gruppe'/);
   /* Die Terminkarte im Kalender fuehrt ueber denselben Merker zur Gruppe. */
-  assert.match(await lies('pages/planner.html'), /aktiveGruppeSetzen\(event\.ref\.gid\)/);
+  assert.match(await lies('assets/js/feature/kalender/kalender.js'), /aktiveGruppeSetzen\(eintrag\.ref\.gid\)/);
 });

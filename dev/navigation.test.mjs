@@ -491,7 +491,7 @@ test('der Kopf beginnt an derselben Kante wie der Inhalt', async () => {
   assert.ok(kopfRand, 'Rand des Kopfs nicht gefunden');
   assert.ok(mainLaptop, 'Rand von .main am Laptop nicht gefunden');
   assert.equal(kopfRand, mainLaptop, 'Kopf und Inhalt haben am Laptop verschiedene Raender');
-  assert.match(kalender, /--kopf-breite:1440px;/);
+  assert.match(kalender, /--kopf-breite:\s*1440px;/);
   assert.match(matura, /--kopf-breite: none;/);
 });
 

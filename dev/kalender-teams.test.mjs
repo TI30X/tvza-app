@@ -118,37 +118,39 @@ test('tageVon ist gedeckelt, auch bei einem verschriebenen Jahr', () => {
   assert.deepEqual(tageVon({ von: '2026-02-28', bis: '2026-03-01' }), ['2026-02-28', '2026-03-01']);
 });
 
-/* ── Die Anbindung in planner.html ───────────────────────────────── */
+/* ── Die Anbindung im Kalender (feature/kalender/kalender.js) ────── */
+
+const kalender = () => readFile(join(root, 'assets/js/feature/kalender/kalender.js'), 'utf8');
 
 test('der Kalender liest die Teams und gibt ihre Termine in alle Ansichten', async () => {
-  const planner = await readFile(join(root, 'pages/planner.html'), 'utf8');
-  assert.match(planner, /import \{[^}]*beobachteMeineGruppen[^}]*beobachteTermine[^}]*\} from '\.\.\/assets\/js\/groups\.js'/);
-  assert.match(planner, /from '\.\.\/assets\/js\/kalender-teams\.js'/);
-  assert.match(planner, /\bwatchTeams\(\);/, 'watchTeams wird nie aufgerufen');
+  const quelle = await kalender();
+  assert.match(quelle, /import \{[^}]*beobachteMeineGruppen[^}]*beobachteTermine[^}]*\} from '\.\.\/\.\.\/groups\.js'/);
+  assert.match(quelle, /from '\.\.\/\.\.\/kalender-teams\.js'/);
+  assert.match(quelle, /\bwatchTeams\(\);/, 'watchTeams wird nie aufgerufen');
 
-  /* eventMap (Monat, Tagesblatt) und dayProgramMap (Liste, Woche, Tag)
-     muessen beide die Team-Eintraege aufnehmen — fehlt einer, fehlen
-     die Termine in der halben App. */
-  for (const fn of ['eventMap', 'dayProgramMap']) {
-    const rumpf = planner.match(new RegExp(`function ${fn}\\(\\) \\{[\\s\\S]*?\\n    \\}`))?.[0] || '';
-    assert.match(rumpf, /teamMap\(\)/, `${fn} nimmt die Team-Termine nicht auf`);
+  /* Bis v.35.48.0 gab es zwei Tabellen (eventMap, dayProgramMap), und
+     jede musste die Team-Termine aufnehmen — fehlte eine, fehlten die
+     Termine in der halben App. Seit v.35.49.0 zeichnen alle Ansichten
+     aus EINER Liste; die Teams gehen in sie hinein. */
+  assert.match(quelle, /teams:groups\.filter\(item => !versteckteTeams\.has\(item\.id\)\)\s*\.map\(gruppe => \(\{ gruppe, termine:teamTermine\.get\(gruppe\.id\) \|\| \[\] \}\)\)/);
+  const zeichnen = quelle.match(/function renderCurrentView\(\) \{[\s\S]*?\n\}/)?.[0] || '';
+  assert.match(zeichnen, /const liste = eintraegeJetzt\(\);/);
+  for (const ansicht of ['renderListe', 'renderMonat', 'renderZeit']) {
+    assert.match(zeichnen, new RegExp(`${ansicht}\\(el, liste\\)`), `${ansicht} zeichnet nicht aus der einen Liste`);
   }
 });
 
 test('ein Team-Termin oeffnet die Terminkarte, nie das Formular fuer eigene Termine', async () => {
-  const planner = await readFile(join(root, 'pages/planner.html'), 'utf8');
-  /* Alles, was nicht trip oder reminder ist, landete bisher in
-     openDayForm — ein Team-Termin waere dort als eigener Termin
-     bearbeitbar erschienen. */
-  assert.match(planner, /function openCalendarEvent\(event\) \{\s*if\(event\.kind==='team'\)/);
-  assert.match(planner, /if\(e\.kind==='team'\) \{ zeigeTeamTermin\(e\); return; \}/);
-  assert.match(planner, /if\(e\.kind==='team'\)\{ act=/);
-  assert.match(planner, /\[data-source-team\]/, 'Teams lassen sich nicht einzeln ausschalten');
-  assert.match(planner, /teamsAus:\[\.\.\.versteckteTeams\]/, 'die Wahl wird nicht gemerkt');
-  /* Die Karte ist frage() aus dialog.js, kein Browserfenster. (Der
-     Planner hat an aelteren Stellen noch confirm() — hier nicht.) */
-  const karte = planner.match(/async function zeigeTeamTermin\(event\) \{[\s\S]*?\n    \}/)?.[0] || '';
+  const quelle = await kalender();
+  /* Alles, was nicht Reise oder Erinnerung ist, landete einmal im
+     Formular für eigene Termine — ein Team-Termin wäre dort als eigener
+     Termin bearbeitbar erschienen. Der Team-Termin kommt zuerst. */
+  assert.match(quelle, /function oeffne\(eintrag\) \{\s*if \(eintrag\.art === 'team'\) \{ zeigeTeamTermin\(eintrag\); return; \}/);
+  assert.match(quelle, /\[data-source-team\]/, 'Teams lassen sich nicht einzeln ausschalten');
+  assert.match(quelle, /teamsAus:\[\.\.\.versteckteTeams\]/, 'die Wahl wird nicht gemerkt');
+  /* Die Karte ist frage() aus dialog.js, kein Browserfenster. */
+  const karte = quelle.match(/async function zeigeTeamTermin\(eintrag\) \{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(karte, /await frage\(\{/);
   assert.doesNotMatch(karte, /\bconfirm\(|\balert\(/);
-  assert.match(karte, /aktiveGruppeSetzen\(event\.ref\.gid\)/, '"Zur Gruppe" muss die richtige Gruppe oeffnen');
+  assert.match(karte, /aktiveGruppeSetzen\(eintrag\.ref\.gid\)/, '"Zur Gruppe" muss die richtige Gruppe oeffnen');
 });

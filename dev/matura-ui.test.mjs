@@ -105,7 +105,8 @@ test('Maturaarbeit progress migrates safely and syncs per user', async () => {
 test('all production add actions use the same two-pixel plus', async () => {
   const [style, calendar, index, food, ski, watch, planner] = await Promise.all([
     read('assets/css/kit.css'),
-    read('assets/css/feature/calendar.css'),
+    /* Seit v.35.49.0 stehen die Knöpfe des Kalenders in planner.css. */
+    read('assets/css/feature/planner.css'),
     read('index.html'),
     read('pages/foodtracker.html'),
     read('pages/skitracker.html'),
@@ -113,7 +114,7 @@ test('all production add actions use the same two-pixel plus', async () => {
     read('pages/planner.html'),
   ]);
 
-  // .ui-plus (kit.css) and .calendar-action-icon (feature/calendar.css)
+  // .ui-plus (kit.css) and .calendar-action-icon (feature/planner.css)
   // used to share one fused CSS rule; Phase A split them into two files
   // with duplicated declarations, so each is checked in its own file now.
   assert.match(style, /\.ui-plus \{[\s\S]*width:\s*16px;[\s\S]*height:\s*16px;/);
@@ -125,6 +126,7 @@ test('all production add actions use the same two-pixel plus', async () => {
     assert.match(html, /class="ui-plus"/);
   }
   const plannerIcons = [...planner.matchAll(/class="([^"]*calendar-action-icon[^"]*)"/g)];
-  assert.ok(plannerIcons.length >= 7);
+  /* Erstellen (Laptop), der runde Knopf (Handy), neue Erinnerung. */
+  assert.ok(plannerIcons.length >= 3);
   plannerIcons.forEach(match => assert.match(match[1], /\bui-plus\b/));
 });

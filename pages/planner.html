@@ -12,444 +12,144 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=16" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=17" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=16" />
-  <link rel="stylesheet" href="../assets/css/feature/planner.css?v=2" />
-  <title>Kalender &amp; Erinnerungen — Firn</title>
-  <style>
-    .seg { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:3px; gap:2px; }
-    .seg button { border:0; background:transparent; color:var(--ink-soft); font:inherit; font-weight:700; font-size:13px;
-      padding:7px 16px; border-radius: var(--r-pill); cursor:pointer; }
-    .seg button.active { background:var(--surface); color:var(--ink); }
-
-    .grp-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r2); padding:16px; margin-bottom:16px; }
-    .grp-top { display:flex; align-items:center; gap:10px; }
-    .grp-name { font-size:17px; font-weight:700; flex:1; }
-    .member-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-    .chip { background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-pill); padding:4px 10px; font-size:12px; color:var(--ink); }
-    .chip.me { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); }
-    .grp-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
-
-    .toolbar { display:flex; align-items:center; gap:8px; margin:14px 0; flex-wrap:wrap; }
-    .icon-pill { width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center;
-      border:1px solid var(--border); border-radius:var(--r1); background:var(--surface); color:var(--ink); cursor:pointer; font-size:18px; }
-    .icon-pill:active { transform:scale(.96); }
-    .pill { border:1px solid var(--border); background:var(--surface); color:var(--ink); border-radius: var(--r-pill);
-      padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
-    .pill.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-    .pill.danger { background:var(--danger,#c0392b); color:#fff; border-color:transparent; }
-    .month-title { font-size:18px; font-weight:700; min-width:140px; text-align:center; }
-    .spacer { flex:1; }
-
-    .weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:6px; }
-    .weekdays span { text-align:center; font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; }
-    .grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
-    .cell { position:relative; min-height:60px; border:1px solid var(--border); border-radius: var(--r-icon); background:var(--surface);
-      padding:5px; cursor:pointer; display:flex; flex-direction:column; overflow:hidden; }
-    .cell:active { background:var(--surface-2); }
-    .cell.other { opacity:.4; }
-    .cell.today { border-color:var(--accent); border-width:2px; padding:4px; }
-    .daynum { font-size:13px; font-weight:700; }
-    .cell.today .daynum { color:var(--accent); }
-    .chips { margin-top:auto; }
-    .evchip { display:block; max-width:100%; box-sizing:border-box; font-size:10px; line-height:1.3; border-radius:var(--r-icon); padding:1px 4px; margin-top:2px; color:#fff;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .more { font-size:9px; color:var(--ink-soft); }
-    .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; font-size:12px; color:var(--ink-soft); }
-    .legend i { display:inline-block; width:9px; height:9px; border-radius:var(--r-pill); margin-right:5px; }
-
-    .agenda-group { margin-bottom:22px; }
-    .agenda-group.is-past .agenda-date { color:var(--ink-soft); }
-    .agenda-date { font-size:12px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.055em; margin-bottom:8px; }
-    .item-card { display:flex; gap:12px; align-items:flex-start; background:var(--surface); border:1px solid var(--border);
-      border-radius: var(--r-row); padding:13px; margin-bottom:9px; cursor:pointer; }
-    .item-bar { width:4px; align-self:stretch; border-radius:var(--r-pill); flex:0 0 auto; }
-    .item-body { flex:1; min-width:0; }
-    .item-title { font-size:15px; font-weight:700; }
-    .item-meta { font-size:12px; color:var(--ink-soft); margin-top:2px; }
-    .empty-hint { text-align:center; color:var(--ink-soft); font-size:14px; padding:30px 12px; }
-
-    /* Consolidated day-program rows in the list view — one row per
-       itinerary stop, grouped under the trip within that day's group. */
-    .item-card--program { flex-direction:column; align-items:stretch; cursor:default; }
-    .program-summary { display:flex; align-items:center; gap:12px; }
-    .program-progress { margin-left:auto; color:var(--ink-soft); font-size:12px; font-weight:700; white-space:nowrap; }
-    .prog-list { margin-top:12px; display:flex; flex-direction:column; border-top:1px solid var(--border); }
-    .prog-row { display:flex; align-items:flex-start; gap:11px; padding:12px 0; border-bottom:1px solid var(--border); }
-    .prog-row:last-child { border-bottom:0; padding-bottom:2px; }
-    .prog-row.is-done .prog-title { text-decoration:line-through; color:var(--ink-soft); }
-    .prog-row.is-done .prog-row__body { opacity:.62; }
-    .prog-check, .plan-check {
-      width:28px; height:28px; flex:0 0 auto; border:2px solid var(--border); border-radius:var(--r-pill);
-      background:var(--surface); color:#fff; display:inline-flex; align-items:center; justify-content:center;
-      cursor:pointer; font:800 14px/1 inherit;
-    }
-    .prog-check.is-done, .plan-check.is-done { background:var(--accent); border-color:var(--accent); }
-    .prog-row__body { flex:1; min-width:0; }
-    .prog-row__top { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-    .prog-time { font-size:13px; font-weight:800; color:var(--ink-soft); min-width:42px; flex:0 0 auto; }
-    .prog-title { font-size:15px; font-weight:750; color:var(--ink); }
-    .prog-tag { display:inline-flex; border-radius:var(--r-pill); padding:2px 7px; background:var(--accent-bg); color:var(--accent); font-size:10px; font-weight:800; }
-    .prog-notes, .prog-transport { font-size:13.5px; color:var(--ink-soft); margin-top:5px; line-height:1.5; }
-    .prog-transport { display:flex; gap:5px; }
-    .program-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-    .plan-import-note { margin-top:9px; color:var(--ink-soft); font-size:12px; }
-
-    .fab-row { display:flex; gap:10px; margin-bottom:16px; }
-    .fab-row .pill { flex:1; text-align:center; padding:12px; }
-
-    /* sheets */
-    .backdrop { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; z-index:60; }
-    .backdrop.visible { display:block; }
-    .sheet { position:fixed; left:0; right:0; bottom:0; z-index:61; background:var(--surface); border-radius:var(--r-panel) var(--r-panel) 0 0;
-      padding:18px 18px calc(22px + env(safe-area-inset-bottom)); max-height:88vh; overflow:auto;
-      transform:translateY(100%); transition:transform .3s cubic-bezier(.22,.61,.36,1); max-width:680px; margin:0 auto; }
-    .sheet.visible { transform:translateY(0); }
-    .grip { width:38px; height:4px; border-radius:var(--r-pill); background:var(--border); margin:0 auto 12px; }
-    .sheet-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; }
-    .sheet-title { font-size:17px; font-weight:700; }
-    .field { margin-bottom:12px; }
-    .field label { display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:5px; }
-    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .swatches { display:flex; gap:9px; flex-wrap:wrap; }
-    .swatch { width:30px; height:30px; border-radius:var(--r-pill); cursor:pointer; border:3px solid transparent; }
-    .swatch.sel { border-color:var(--ink); }
-    .tabs { display:flex; gap:6px; margin-bottom:8px; }
-    .tab { flex:1; font:inherit; font-size:12px; font-weight:700; padding:8px; border-radius: var(--r-icon); border:1px solid var(--border);
-      background:var(--surface); color:var(--ink-soft); cursor:pointer; }
-    .tab.active { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); }
-    .drop { display:flex; align-items:center; justify-content:center; padding:18px; border:2px dashed var(--border);
-      border-radius: var(--r-icon); color:var(--ink-soft); font-size:13px; cursor:pointer; text-align:center; }
-
-    .sub-card { background:var(--surface-2); border:1px solid var(--border); border-radius: var(--r-row); padding:14px; margin-bottom:12px; }
-    .sub-title { font-size:13px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px; }
-    .line { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--border); }
-    .line:first-child { border-top:0; }
-    .line .l-main { flex:1; min-width:0; }
-    .line .l-title { font-size:14px; font-weight:600; }
-    .line .l-sub { font-size:12px; color:var(--ink-soft); }
-    .mini { border:0; background:transparent; cursor:pointer; color:var(--ink-soft); font-size:16px; padding:6px; }
-    .check { width:20px; height:20px; border:2px solid var(--border); border-radius: var(--r-icon); flex:0 0 auto; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
-    .check.done { background:var(--accent); border-color:var(--accent); color:#fff; }
-    .done .l-title { text-decoration:line-through; color:var(--ink-soft); }
-
-    .file-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--border); }
-    .file-row:first-child { border-top:0; }
-    .file-ic { width:34px; height:34px; border-radius: var(--r-icon); background:var(--accent-bg); color:var(--accent);
-      display:inline-flex; align-items:center; justify-content:center; font-size:16px; flex:0 0 auto; }
-    .progress { height:4px; background:var(--surface); border-radius:var(--r-pill); overflow:hidden; margin-top:6px; }
-    .progress i { display:block; height:100%; width:0; background:var(--accent); transition:width .2s ease; }
-
-    .viewer { position:fixed; inset:0; background:var(--bg); display:none; z-index:80; flex-direction:column; }
-    .viewer.visible { display:flex; }
-    .viewer-bar { display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--border); }
-    .viewer-bar .vt { flex:1; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    #viewerFrame { flex:1; border:0; width:100%; background:#fff; }
-    .viewer-plan { flex:1; overflow:auto; padding:20px clamp(14px,4vw,32px) 48px; }
-    .plan-wrap { width:min(760px,100%); margin:0 auto; }
-    .plan-hero { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel); padding:18px; margin-bottom:16px; }
-    .plan-hero__eyebrow { color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
-    .plan-hero h2 { font:700 clamp(22px,5vw,32px)/1.15 Georgia,'Times New Roman',serif; margin:5px 0; }
-    .plan-hero__meta { color:var(--ink-soft); font-size:13px; }
-    .plan-progress { display:flex; align-items:center; gap:12px; margin-top:15px; }
-    .plan-progress__track { height:8px; flex:1; border-radius:var(--r-pill); background:var(--surface-2); overflow:hidden; }
-    .plan-progress__fill { display:block; height:100%; border-radius:inherit; background:var(--accent); }
-    .plan-progress__text { color:var(--ink-soft); font-size:12px; font-weight:800; white-space:nowrap; }
-    .plan-day { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-panel); margin-bottom:14px; overflow:hidden; }
-    .plan-day__head { padding:14px 16px; background:var(--surface-2); border-bottom:1px solid var(--border); }
-    .plan-day__date { color:var(--accent); font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
-    .plan-day__title { margin-top:3px; font-size:16px; font-weight:800; }
-    .plan-day__intro { margin:5px 0 0; color:var(--ink-soft); font-size:12.5px; line-height:1.45; }
-    .plan-stops { padding:2px 16px; }
-    .plan-stop { display:flex; align-items:flex-start; gap:12px; padding:14px 0; border-top:1px solid var(--border); }
-    .plan-stop:first-child { border-top:0; }
-    .plan-stop.is-done .plan-stop__body { opacity:.6; }
-    .plan-stop.is-done .plan-stop__title { text-decoration:line-through; }
-    .plan-stop__body { flex:1; min-width:0; }
-    .plan-stop__top { display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:4px; }
-    .plan-stop__time { color:var(--ink-soft); font-size:12.5px; font-weight:800; padding:3px 8px; border:1px solid var(--border); border-radius:var(--r-icon); }
-    .plan-stop__title { font-size:16px; font-weight:800; }
-    .plan-stop__notes, .plan-stop__transport { color:var(--ink-soft); font-size:14px; line-height:1.52; margin-top:6px; }
-    .plan-stop__transport { padding-left:18px; position:relative; }
-    .plan-stop__transport::before { content:'→'; position:absolute; left:0; color:var(--accent); font-weight:800; }
-    .plan-past { color:var(--ink-soft); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
-
-    .info-banner { background:var(--accent-bg); color:var(--accent); border:1px solid var(--border); border-radius: var(--r-icon);
-      padding:10px 12px; font-size:12px; margin-bottom:12px; display:none; }
-    .info-banner.show { display:block; }
-    #calView, #listView, .planner-panel {
-      background:var(--surface); border:1px solid var(--border);
-      border-radius:var(--r2); padding:16px; margin-bottom:16px;
-    }
-    .planner-section-head { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-    .planner-section-head > div { flex:1; min-width:0; }
-    .planner-section-head .marke { margin-bottom:3px; }
-    .planner-section-head h2 { font-size:17px; line-height:1.25; }
-    .reminder-list { display:flex; flex-direction:column; }
-    .reminder-row {
-      display:flex; align-items:center; gap:11px; min-height:54px;
-      padding:9px 0; border-top:1px solid var(--border);
-    }
-    .reminder-row:first-child { border-top:0; }
-    .reminder-row__body { flex:1; min-width:0; }
-    .reminder-row__title { display:block; font-size:14px; font-weight:700; }
-    .reminder-row__meta { display:block; color:var(--ink-soft); font-size:12px; margin-top:2px; }
-    .reminder-row.is-done .reminder-row__title { text-decoration:line-through; color:var(--ink-soft); }
-    .reminder-row.is-overdue .reminder-row__meta { color:var(--danger); font-weight:700; }
-    .reminder-check {
-      width:24px; height:24px; flex:0 0 auto; border:2px solid var(--border);
-      border-radius:var(--r-pill); background:var(--surface); color:#fff;
-      display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
-    }
-    .reminder-check.is-done { background:var(--accent); border-color:var(--accent); }
-    .provider-row { display:flex; gap:7px; flex-wrap:wrap; margin:10px 0 14px; }
-    .provider-chip {
-      display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border);
-      background:var(--surface-2); color:var(--ink); border-radius:var(--r-pill);
-      padding:6px 10px; font-size:12px; font-weight:700;
-    }
-    .sync-copy { color:var(--ink-soft); font-size:13px; line-height:1.5; }
-    .sync-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-    .sync-status { min-height:18px; color:var(--ink-soft); font-size:12px; margin-top:9px; }
-    .evchip b { font-weight:800; }
-    @media (min-width:900px) {
-      .cell { min-height:104px; padding:7px; }
-      .daynum { font-size:14px; }
-      .evchip { font-size:11px; padding:3px 5px; }
-      #calView, #listView, .planner-panel { padding:20px; }
-    }
-    @media (max-width:899px) {
-      #listView { padding:0; border:0; background:transparent; }
-      .agenda-date { position:sticky; top:0; z-index:2; padding:9px 3px 7px; background:var(--bg); margin:0; }
-      .item-card--program { border-radius:var(--r-panel); padding:14px; }
-      .program-summary { align-items:flex-start; }
-      .program-progress { font-size:11px; }
-      .prog-row { padding:13px 0; }
-      .prog-check, .plan-check { width:30px; height:30px; }
-      .prog-row__top { display:block; }
-      .prog-time { display:block; margin-bottom:2px; }
-      .viewer-bar { padding:10px 12px; }
-      .viewer-plan { padding:12px 10px 36px; }
-      .plan-hero { padding:15px; }
-      .plan-day__head { padding:13px 14px; }
-      .plan-stops { padding:2px 14px; }
-    }
-  </style>
+  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=17" />
+  <link rel="stylesheet" href="../assets/css/feature/planner.css?v=3" />
+  <title data-i18n="kal.seitentitel">Kalender — Firn</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
 </head>
 <body class="planner-page" data-zuhause>
   <div class="app">
-    <div class="offline-banner" id="offlineBanner"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> Offline – Änderungen werden später synchronisiert</div>
+    <div class="offline-banner" id="offlineBanner"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a1 1 0 0 0-.9 1.7L9 11l-2 3H4l1 3 3 1 1-3 3-2 3.1 5.1a1 1 0 0 0 1.7-.9z"/></svg> <span data-i18n="app.offline">Offline – Daten werden synchronisiert, sobald du wieder online bist</span></div>
 
-    <header class="appbar appbar--bereich" data-bereich="kalender">
+    <!-- Ein Tab hat keinen Zurück-Pfeil und kein Sonne/Mond (CLAUDE.md,
+         Falle 7). Beides stand hier bis v.35.48.0 und blitzte beim Laden
+         auf, bevor die Hülle den Kopf übernahm. -->
+    <header class="appbar">
       <div class="appbar__inner">
-        <a href="../index.html" class="appbar__btn back-btn" id="backBtn" aria-label="Zurück" data-i18n-attr="aria-label:a11y.zurueck"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
-        <span class="appbar__title" id="pageTitle" data-i18n="mod.trip.name">Kalender &amp; Erinnerungen</span>
-        <span class="appbar__end">
-          <button class="appbar__btn" id="themeToggle" title="Theme wechseln" data-i18n-attr="title:pg.theme"></button>
-        </span>
+        <span class="appbar__title" data-i18n="nav.kalender">Kalender</span>
+        <span class="appbar__end"></span>
       </div>
-      <div class="appbar__accent"></div>
-      <!-- #backBtnLabel is kept because the page script writes the current
-           view's name into it; it is not shown in the new header. -->
-      <span id="backBtnLabel" hidden>Start</span>
     </header>
 
     <main class="main">
-      <!-- No group -->
-      <!-- Ohne Gruppe: EIN Weg hinein, in den Gruppe-Tab. Bis v.35.31.0
-           standen hier ein eigenes Anlegen und ein Beitritt per Namenssuche
-           fuer die Kalendergruppen — ein zweites Gruppensystem. -->
-      <div id="noGroup" style="display:none">
-        <div class="grp-card">
-          <p class="sub-title" data-i18n="cal.keineGruppe">Noch keine Gruppe</p>
-          <p class="calendar-setup-copy" data-i18n="cal.keineGruppeSub">Reisen und Termine teilst du in einer Gruppe. Lege eine an oder tritt mit einem Code bei.</p>
-          <a class="btn btn-primary btn-block" id="noGroupLink" href="./gruppe.html" data-i18n="cal.zurGruppenseite">Gruppe anlegen oder beitreten</a>
-        </div>
-      </div>
-
-      <!-- Group main -->
-      <div id="groupView" style="display:none">
-        <div class="calendar-layout">
-          <aside class="calendar-sidebar" aria-label="Kalender auswählen" data-i18n-attr="aria-label:cal.kalenderWaehlen">
-            <div class="calendar-side-card mini-calendar-card">
-              <div id="miniCalendars"></div>
-            </div>
-            <button class="btn btn-primary btn-block calendar-action-with-icon" id="addTripBtn" type="button">
-              <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-              <span data-i18n="cal.neuerTermin">Neuer Termin</span>
-            </button>
-            <div class="calendar-side-card calendar-source-card">
-              <div class="calendar-side-title"><span data-i18n="cal.meine">Meine Kalender</span></div>
-              <div id="calendarSources"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
-              <div class="calendar-side-actions">
-                <button class="pill calendar-action-with-icon" id="addGroupBtn" type="button">
-                  <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-                  <span data-i18n="cal.gruppeHinzufuegen">Gruppe hinzufügen</span>
-                </button>
-                <button class="pill" id="manageGroupsBtn" type="button" data-i18n="cal.gruppenVerwalten">Gruppen verwalten</button>
-              </div>
-            </div>
-          </aside>
-
-          <section class="calendar-workspace" id="calendarWorkspace">
-            <div class="calendar-commandbar">
-              <div class="calendar-commandbar__nav">
-                <button class="icon-pill" id="prevBtn" aria-label="Vorheriger Zeitraum" data-i18n-attr="aria-label:cal.vorheriger">‹</button>
-                <button class="icon-pill" id="nextBtn" aria-label="Nächster Zeitraum" data-i18n-attr="aria-label:cal.naechster">›</button>
-              </div>
-              <button class="pill calendar-commandbar__today" id="todayBtn" type="button" data-i18n="home.heute">Heute</button>
-              <h2 class="calendar-commandbar__title" id="monthTitle">—</h2>
-              <button class="icon-pill calendar-commandbar__settings" id="calendarSettingsBtn" type="button" aria-label="Kalenderdarstellung" data-i18n-attr="aria-label:cal.darstellung">
-                <svg class="ic" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
-              </button>
-              <div class="calendar-commandbar__views">
-                <div class="view-picker">
-                  <button class="pill view-picker__button" id="viewPickerBtn" type="button" aria-haspopup="menu" aria-expanded="false">
-                    <span id="viewPickerLabel" data-i18n="cal.monat">Monat</span>
-                    <svg class="ic view-picker__chevron" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
-                  </button>
-                  <div class="view-menu" id="viewMenu" role="menu" hidden>
-                    <button type="button" data-calendar-view="day" data-i18n="cal.tag">Tag</button>
-                    <button type="button" data-calendar-view="3day" data-i18n="cal.dreiTage">3 Tage</button>
-                    <button type="button" data-calendar-view="workweek" data-i18n="cal.arbeitswoche">Arbeitswoche</button>
-                    <button type="button" data-calendar-view="week" data-i18n="cal.woche">Woche</button>
-                    <button type="button" data-calendar-view="month" data-i18n="cal.monat">Monat</button>
-                    <button type="button" data-calendar-view="agenda" id="agendaViewOption" data-i18n="cal.liste">Liste</button>
-                  </div>
-                </div>
-                <button class="pill primary calendar-commandbar__create" id="calAddBtn" type="button">
-                  <span class="ui-plus calendar-action-icon calendar-commandbar__plus" aria-hidden="true"></span>
-                  <span class="calendar-commandbar__create-label" data-i18n="cal.erstellen">Erstellen</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="calendar-mobile-sources" id="calendarMobileSources"></div>
-
-            <div class="calendar-stage">
-              <div class="calendar-view calendar-month" id="calView">
-                <div class="weekdays"><span data-i18n="cal.mo">Mo</span><span data-i18n="cal.di">Di</span><span data-i18n="cal.mi">Mi</span><span data-i18n="cal.do">Do</span><span data-i18n="cal.fr">Fr</span><span data-i18n="cal.sa">Sa</span><span data-i18n="cal.so">So</span></div>
-                <div class="grid" id="grid"><div class="spinner" style="grid-column:1/-1" data-i18n="common.laden">Lade…</div></div>
-              </div>
-
-              <div class="calendar-view" id="timeView" hidden>
-                <div class="time-calendar-wrap" id="timeCalendar"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
-              </div>
-
-              <div class="calendar-view calendar-agenda" id="listView" hidden>
-                <div id="agenda"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
-              </div>
-            </div>
-
-            <div class="calendar-thumb-actions" aria-label="Schnellaktionen" data-i18n-attr="aria-label:cal.schnellaktionen">
-              <button class="pill mobile-reminder-button" id="mobileRemindersBtn" type="button" aria-label="Erinnerungen öffnen" data-i18n-attr="aria-label:cal.erinnerungenOeffnen">
-                <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
-                <span class="mobile-reminder-label" data-i18n="cal.erinnerungen">Erinnerungen</span>
-                <span class="mobile-reminder-count" id="mobileReminderCount" hidden></span>
-              </button>
-              <button class="pill primary calendar-mobile-create" id="mobileCalAddBtn" type="button" aria-label="Erstellen" data-i18n-attr="aria-label:cal.erstellen">
-                <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-              </button>
-            </div>
-          </section>
-        </div>
-      </div>
-
-      <div class="calendar-below" id="calendarBelow">
-        <section class="planner-panel" id="reminderSection">
-          <div class="planner-section-head">
-            <div>
-              <p class="marke" data-i18n="cal.erinnerungen">Erinnerungen</p>
-              <h2 data-i18n="cal.wasNaechstes">Was als Nächstes ansteht</h2>
-            </div>
-            <button class="pill primary calendar-action-with-icon" id="addReminderBtn" type="button">
-              <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-              <span data-i18n="cal.erinnerung">Erinnerung</span>
-            </button>
+      <!-- Der Kalender (seit v.35.49.0 neu gebaut, feature/kalender/).
+           Links am Laptop die Seitenleiste, rechts die Fläche mit der
+           Befehlsleiste und der Bühne, auf der die Ansicht steht. -->
+      <div class="kal" id="kalender">
+        <aside class="kal-seite" aria-label="Kalender auswählen" data-i18n-attr="aria-label:cal.kalenderWaehlen">
+          <button class="b b--primary kal-seite__neu" id="addTripBtn" type="button">
+            <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
+            <span data-i18n="cal.erstellen">Erstellen</span>
+          </button>
+          <div class="kal-karte" id="miniCalendars"></div>
+          <div class="kal-karte">
+            <p class="marke" data-i18n="cal.meine">Meine Kalender</p>
+            <div class="kal-quellenliste" id="calendarSources"></div>
+            <button class="kal-link" id="manageGroupsBtn" type="button" data-i18n="cal.gruppenVerwalten">Gruppen verwalten</button>
           </div>
-          <div class="reminder-list" id="reminderList"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
+          <div class="kal-karte">
+            <div class="marke marke--reihe">
+              <span data-i18n="cal.erinnerungen">Erinnerungen</span>
+              <button class="kal-link" id="addReminderBtn" type="button" data-i18n="kal.neu">Neu</button>
+            </div>
+            <div class="reminder-list" id="reminderList"></div>
+          </div>
+        </aside>
+
+        <section class="kal-flaeche" id="calendarWorkspace">
+          <div class="kal-leiste">
+            <div class="kal-leiste__nav">
+              <button class="kal-knopf" id="prevBtn" type="button" aria-label="Vorheriger Zeitraum" data-i18n-attr="aria-label:cal.vorheriger">
+                <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button class="kal-knopf" id="nextBtn" type="button" aria-label="Nächster Zeitraum" data-i18n-attr="aria-label:cal.naechster">
+                <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+              <button class="kal-heute" id="todayBtn" type="button" data-i18n="home.heute">Heute</button>
+            </div>
+            <h2 class="kal-leiste__titel" id="monthTitle">—</h2>
+            <div class="kal-ansichten" id="viewSwitch" role="group" aria-label="Ansicht" data-i18n-attr="aria-label:kal.ansicht">
+              <button type="button" data-calendar-view="agenda" data-i18n="cal.liste">Liste</button>
+              <button type="button" data-calendar-view="day" data-i18n="cal.tag">Tag</button>
+              <button type="button" data-calendar-view="3day" data-i18n="cal.dreiTage">3 Tage</button>
+              <button type="button" data-calendar-view="week" data-i18n="cal.woche">Woche</button>
+              <button type="button" data-calendar-view="month" data-i18n="cal.monat">Monat</button>
+            </div>
+            <div class="kal-leiste__rechts">
+              <button class="kal-knopf kal-erinnerungen" id="mobileRemindersBtn" type="button" aria-label="Erinnerungen öffnen">
+                <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M10 6h11M10 12h11M10 18h11"/><path d="m3 6 1.5 1.5L7 4.5M3 12l1.5 1.5L7 10.5M3 18l1.5 1.5L7 16.5"/></svg>
+                <span class="kal-zahl" id="mobileReminderCount" hidden></span>
+              </button>
+              <button class="kal-knopf" id="calendarSettingsBtn" type="button" aria-label="Kalender einstellen" data-i18n-attr="aria-label:kal.einstellen">
+                <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="kal-quellen" id="calendarMobileSources"></div>
+
+          <div class="kal-buehne" id="kalBuehne" aria-live="polite">
+            <div class="spinner" data-i18n="common.laden">Lade…</div>
+          </div>
         </section>
 
-        <section class="planner-panel" id="calendarSync">
-          <div class="planner-section-head">
-            <div>
-              <p class="marke" data-i18n="cal.abgleichen">Kalender abgleichen</p>
-              <h2 data-i18n="cal.mitAnderen">Mit anderen Kalendern</h2>
-            </div>
-          </div>
-          <p class="sync-copy" data-i18n="cal.icsHinweis">ICS funktioniert mit Google, Outlook/Exchange, Apple und Samsung.</p>
-          <div class="sync-actions">
-            <button class="pill primary" id="calendarImportBtn" type="button" data-i18n="cal.icsImport">ICS importieren</button>
-            <button class="pill" id="calendarExportBtn" type="button" data-i18n="cal.tvzaExport">Kalender exportieren</button>
-            <input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden />
-          </div>
-          <p class="sync-status" id="calendarSyncStatus"></p>
-          <p class="sync-copy" data-i18n="cal.zweiweg">Automatische Zweiweg-Synchronisierung benötigt später die geschützte Serververbindung.</p>
-        </section>
+        <button class="kal-fab" id="mobileCalAddBtn" type="button" aria-label="Erstellen" data-i18n-attr="aria-label:cal.erstellen">
+          <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
+        </button>
       </div>
 
-      <!-- Trip detail -->
-      <div id="tripDetail" style="display:none"></div>
+      <!-- Ein geteilter Termin mit Programm, Gästen, Aufgaben und Dateien.
+           Steht an der Stelle des Kalenders, bis man zurückgeht. -->
+      <div id="tripDetail" hidden></div>
     </main>
   </div>
-  <!-- Day detail sheet -->
-  <div class="backdrop" id="dayBackdrop"></div>
-  <div class="sheet" id="daySheet">
-    <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" id="dayTitle">—</span>
-      <span style="display:flex;gap:6px">
-        <button class="pill calendar-action-with-icon" id="daySheetReminder">
-          <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-          <span data-i18n="cal.erinnerung">Erinnerung</span>
-        </button>
-        <button class="pill primary calendar-action-with-icon" id="daySheetAdd">
-          <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-          <span data-i18n="cal.termin">Termin</span>
-        </button>
-      </span></div>
-    <div id="dayEvents"></div>
-  </div>
 
-  <!-- One entry point for both kinds of calendar content -->
+  <!-- Erstellen: EIN Einstieg für alles, was man anlegen kann. -->
   <div class="backdrop" id="createBackdrop"></div>
   <div class="sheet create-sheet" id="createSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.erstellen">Erstellen</span>
-      <button class="icon-pill" id="createSheetClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <p class="create-sheet__copy" data-i18n="cal.wasHinzufuegen">Was möchtest du hinzufügen?</p>
+    <div class="sheet-head"><span class="sheet-title" id="createSheetTitle">Erstellen</span>
+      <button class="icon-pill" id="createSheetClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="create-options">
       <button class="create-option" id="createEventOption" type="button">
         <span class="create-option__icon create-option__icon--event" aria-hidden="true">
           <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
         </span>
         <span><strong data-i18n="cal.persoenlich">Persönlicher Termin</strong><small data-i18n="cal.persoenlichSub">Nur in deinem eigenen Kalender</small></span>
-        <span aria-hidden="true">›</span>
+        <svg class="ic create-option__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
       </button>
       <button class="create-option" id="createGroupEventOption" type="button">
         <span class="create-option__icon create-option__icon--event" aria-hidden="true">
           <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </span>
-        <span><strong data-i18n="cal.gruppentermin">Gruppentermin</strong><small data-i18n="cal.gruppenterminSub">Ein gemeinsames Ereignis oder Programm</small></span>
-        <span aria-hidden="true">›</span>
+        <span><strong data-i18n="cal.gruppentermin">Gruppentermin</strong><small data-i18n="kal.gruppenterminSub">Training, Lager, Rennen — für alle in der Gruppe</small></span>
+        <svg class="ic create-option__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+      <button class="create-option" id="createTripOption" type="button">
+        <span class="create-option__icon create-option__icon--event" aria-hidden="true">
+          <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/><path d="M3 12h18"/></svg>
+        </span>
+        <span><strong data-i18n="kal.reise">Reise mit Programm</strong><small data-i18n="kal.reiseSub">Mehrere Tage, mit Programm, Gästen und Dateien</small></span>
+        <svg class="ic create-option__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
       </button>
       <button class="create-option" id="createReminderOption" type="button">
         <span class="create-option__icon create-option__icon--reminder" aria-hidden="true">
           <svg class="ic" viewBox="0 0 24 24" width="22" height="22"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
         </span>
         <span><strong data-i18n="cal.erinnerung">Erinnerung</strong><small data-i18n="cal.erinnerungSub">Etwas, das du nicht vergessen möchtest</small></span>
-        <span aria-hidden="true">›</span>
+        <svg class="ic create-option__chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
       </button>
     </div>
   </div>
 
-  <!-- Reminders remain reachable without scrolling past the calendar -->
+  <!-- Erinnerungen: am Handy über die Glocke, ohne am Kalender vorbei zu scrollen. -->
   <div class="backdrop" id="reminderHubBackdrop"></div>
   <div class="sheet reminder-hub-sheet" id="reminderHubSheet">
     <div class="sheet-head"><span class="sheet-title" data-i18n="cal.erinnerungen">Erinnerungen</span>
-      <button class="icon-pill" id="reminderHubClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+      <button class="icon-pill" id="reminderHubClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
     <div class="reminder-list reminder-hub-list" id="reminderHubList"></div>
     <button class="btn btn-primary btn-block calendar-action-with-icon reminder-hub-add" id="reminderHubAdd" type="button">
       <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
@@ -457,2053 +157,137 @@
     </button>
   </div>
 
-  <!-- Trip form sheet -->
+  <!-- Ein Termin der Gruppe (Reise, Ausflug, Programm) -->
   <div class="backdrop" id="tripBackdrop"></div>
   <div class="sheet" id="tripSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" id="tripFormTitle" data-i18n="cal.neuerTermin">Neuer Termin</span>
-      <button class="icon-pill" id="tripFormClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <div class="field"><label data-i18n="cal.titel">Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" data-i18n-attr="placeholder:cal.bspTitel" /></div>
-    <div class="field"><label data-i18n="cal.zielOrt">Ziel / Ort (optional)</label><input class="form-input" id="tDest" placeholder="Ort / Region — kann leer bleiben" data-i18n-attr="placeholder:cal.bspOrt" /></div>
-    <div class="field"><label data-i18n="cal.kalender">Kalender</label><select class="form-input" id="tGroup"></select></div>
+    <div class="sheet-head"><span class="sheet-title" id="tripFormTitle">Neuer Termin</span>
+      <button class="icon-pill" id="tripFormClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="field"><label for="tName" data-i18n="cal.titel">Titel</label><input class="form-input" id="tName" placeholder="z.B. Sommerferien Italien, Geburtstag…" data-i18n-attr="placeholder:cal.bspTitel" /></div>
+    <div class="field"><label for="tDest" data-i18n="cal.zielOrt">Ziel / Ort</label><input class="form-input" id="tDest" placeholder="z.B. Saas-Fee" data-i18n-attr="placeholder:cal.bspOrt" /></div>
+    <div class="field"><label for="tGroup" data-i18n="cal.kalender">Kalender</label><select class="form-input" id="tGroup"></select></div>
     <div class="row2">
-      <div class="field"><label data-i18n="cal.von">Von</label><input class="form-input" id="tStart" type="date" /></div>
-      <div class="field"><label data-i18n="cal.bis">Bis (optional)</label><input class="form-input" id="tEnd" type="date" placeholder="leer = eintägig" data-i18n-attr="placeholder:cal.bspLeer"></div>
+      <div class="field"><label for="tStart" data-i18n="cal.von">Von</label><input class="form-input" id="tStart" type="date" /></div>
+      <div class="field"><label for="tEnd" data-i18n="cal.bis">Bis</label><input class="form-input" id="tEnd" type="date" /></div>
     </div>
     <div class="row2">
-      <div class="field"><label data-i18n="cal.startzeit">Startzeit (optional)</label><input class="form-input" id="tStartTime" type="time" /></div>
-      <div class="field"><label data-i18n="cal.endzeit">Endzeit (optional)</label><input class="form-input" id="tEndTime" type="time" /></div>
+      <div class="field"><label for="tStartTime" data-i18n="cal.startzeit">Startzeit</label><input class="form-input" id="tStartTime" type="time" /></div>
+      <div class="field"><label for="tEndTime" data-i18n="cal.endzeit">Endzeit</label><input class="form-input" id="tEndTime" type="time" /></div>
     </div>
-    <div class="field"><label data-i18n="cal.notizen">Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
+    <div class="field"><label for="tNotes" data-i18n="cal.notizen">Notizen</label><textarea class="form-textarea" id="tNotes" rows="2"></textarea></div>
     <div class="field">
-      <label data-i18n="cal.programm">Programm / Info-Seite (optional)</label>
+      <label data-i18n="cal.programm">Programm / Info-Seite</label>
       <div class="tabs" id="tpTabs">
-        <button class="tab active" data-tpane="paste">HTML</button>
-        <button class="tab" data-tpane="upload" data-i18n="cal.datei">Datei (.html)</button>
-        <button class="tab" data-tpane="url" data-i18n="cal.link">Link</button>
+        <button class="tab active" type="button" data-tpane="paste">HTML</button>
+        <button class="tab" type="button" data-tpane="upload" data-i18n="cal.datei">Datei (.html)</button>
+        <button class="tab" type="button" data-tpane="url" data-i18n="cal.link">Link</button>
       </div>
       <div data-tbody="paste"><textarea class="form-textarea" id="tpHtml" rows="4" placeholder="HTML hier einfügen — wird automatisch nach Tagen aufgeteilt…" data-i18n-attr="placeholder:cal.bspHtmlTage"></textarea></div>
-      <div data-tbody="upload" style="display:none"><label class="drop" id="tpDrop"><span id="tpDropText" data-i18n="cal.htmlWaehlen">HTML-Datei wählen</span><input type="file" id="tpFile" accept=".html,.htm,text/html" hidden /></label><p id="tpChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
-      <div data-tbody="url" style="display:none"><input class="form-input" id="tpUrl" type="url" placeholder="https://…"></div>
-      <p class="html-import-feedback" id="tpImportStatus" data-i18n="cal.htmlHinweis">Erkannte Tage und Programmpunkte erscheinen automatisch in der Terminübersicht. Die Originalseite bleibt zusätzlich öffnbar; enthaltene Skripte werden aus Sicherheitsgründen nicht ausgeführt.</p>
+      <div data-tbody="upload" hidden><label class="drop" id="tpDrop"><span id="tpDropText" data-i18n="cal.htmlWaehlen">HTML-Datei wählen</span><input type="file" id="tpFile" accept=".html,.htm,text/html" hidden /></label><p class="gewaehlt" id="tpChosen" hidden></p></div>
+      <div data-tbody="url" hidden><input class="form-input" id="tpUrl" type="url" placeholder="https://…"></div>
+      <p class="html-import-feedback" id="tpImportStatus"></p>
     </div>
-    <button class="btn btn-primary btn-block" id="tripSave" data-i18n="common.speichern">Speichern</button>
-    <button class="btn btn-danger btn-block" id="tripFormDelete" style="display:none;margin-top:8px" data-i18n="cal.terminLoeschen">Termin löschen</button>
+    <button class="btn btn-primary btn-block" id="tripSave" type="button" data-i18n="common.speichern">Speichern</button>
+    <button class="btn btn-danger btn-block blatt-loeschen" id="tripFormDelete" type="button" hidden data-i18n="cal.terminLoeschen">Termin löschen</button>
   </div>
 
-  <!-- Calendar style/setup sheet -->
+  <!-- Einstellungen des Kalenders: Farbe und der Abgleich mit anderen
+       Kalendern. Bis v.35.48.0 stand hier beim ersten Öffnen die Frage
+       "Google Kalender oder Outlook?" — bevor man den Kalender überhaupt
+       gesehen hatte. -->
   <div class="backdrop" id="calendarSetupBackdrop"></div>
   <div class="sheet calendar-setup-sheet" id="calendarSetupSheet">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" data-i18n="cal.anfuehlen">Wie soll sich dein Kalender anfühlen?</span>
-      <button class="icon-pill" id="calendarSetupClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen">×</button></div>
-    <p class="calendar-setup-copy" data-i18n="cal.anfuehlenSub">Wähle die Umgebung, die du bereits kennst. Du kannst dies jederzeit über „Darstellung“ ändern.</p>
-    <div class="calendar-style-options">
-      <button class="calendar-style-card" type="button" data-style="google">
-        <strong>Google Kalender</strong>
-        <span data-i18n="cal.googleSub">Ruhige Flächen, runde Bedienelemente und „Terminübersicht“.</span>
-        <span class="calendar-style-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-      </button>
-      <button class="calendar-style-card" type="button" data-style="outlook">
-        <strong>Outlook</strong>
-        <span data-i18n="cal.outlookSub">Kompakter, geradliniger und mit „Arbeitswoche“ als Start.</span>
-        <span class="calendar-style-preview" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-      </button>
-    </div>
-    <fieldset class="calendar-color-setting">
-      <legend data-i18n="cal.farbe">Farbe für „Persönlich &amp; Erinnerungen“</legend>
-      <p data-i18n="cal.farbeSub">Termine übernehmen immer die Farbe ihres Kalenders.</p>
+    <div class="sheet-head"><span class="sheet-title" data-i18n="kal.einstellungen">Kalender</span>
+      <button class="icon-pill" id="calendarSetupClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <section class="blatt-teil">
+      <p class="marke" data-i18n="cal.farbe">Farbe für „Persönlich &amp; Erinnerungen“</p>
+      <p class="blatt-text" data-i18n="cal.farbeSub">Termine übernehmen immer die Farbe ihres Kalenders.</p>
       <div class="calendar-color-options" id="personalCalendarColors"></div>
-    </fieldset>
-    <label class="calendar-feature-setting" for="showGroupFeatures">
-      <span>
-        <strong data-i18n="cal.gruppenAnzeigen">Gruppenfunktionen anzeigen</strong>
-        <small data-i18n="cal.gruppenAnzeigenSub">Wenn du noch keiner Gruppe angehörst, werden Optionen zum Erstellen und Beitreten im Kalender angezeigt.</small>
-      </span>
-      <input id="showGroupFeatures" type="checkbox" role="switch" />
-    </label>
-    <button class="btn btn-primary btn-block" id="calendarSetupSave" type="button" data-i18n="cal.uebernehmen">Übernehmen</button>
+    </section>
+    <section class="blatt-teil">
+      <p class="marke" data-i18n="cal.abgleichen">Kalender abgleichen</p>
+      <p class="blatt-text" data-i18n="cal.icsHinweis">ICS funktioniert mit Google, Outlook/Exchange, Apple und Samsung.</p>
+      <div class="knopfreihe">
+        <button class="b b--secondary" id="calendarImportBtn" type="button" data-i18n="cal.icsImport">ICS importieren</button>
+        <button class="b b--secondary" id="calendarExportBtn" type="button" data-i18n="cal.tvzaExport">Kalender exportieren</button>
+        <input id="calendarImportFile" type="file" accept=".ics,text/calendar" hidden />
+      </div>
+      <p class="blatt-text" id="calendarSyncStatus" role="status"></p>
+    </section>
+    <section class="blatt-teil">
+      <p class="marke" data-i18n="nav.gruppe">Gruppe</p>
+      <p class="blatt-text" data-i18n="kal.gruppenHinweis">Gruppen legst du im Gruppe-Tab an, trittst dort bei und verwaltest sie. Ihre Termine stehen hier von selbst.</p>
+      <button class="b b--secondary" id="settingsGroupsBtn" type="button" data-i18n="cal.gruppenVerwalten">Gruppen verwalten</button>
+    </section>
   </div>
 
-  <!-- Reminder form sheet -->
+  <!-- Eine Erinnerung -->
   <div class="backdrop" id="reminderBackdrop"></div>
   <div class="sheet reminder-form-sheet" id="reminderSheet">
-    <div class="sheet-head"><span class="sheet-title" id="reminderFormTitle" data-i18n="cal.neueErinnerung">Neue Erinnerung</span>
-      <button class="icon-pill" id="reminderFormClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <div class="field"><label data-i18n="cal.titel">Titel</label><input class="form-input" id="rTitle" placeholder="z.B. Versicherung bezahlen" data-i18n-attr="placeholder:cal.bspErinnerung" /></div>
+    <div class="sheet-head"><span class="sheet-title" id="reminderFormTitle">Neue Erinnerung</span>
+      <button class="icon-pill" id="reminderFormClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="field"><label for="rTitle" data-i18n="cal.titel">Titel</label><input class="form-input" id="rTitle" placeholder="z.B. Versicherung bezahlen" data-i18n-attr="placeholder:cal.bspErinnerung" /></div>
     <div class="row2">
-      <div class="field"><label data-i18n="cal.datum">Datum</label><input class="form-input" id="rDate" type="date" /></div>
-      <div class="field"><label data-i18n="cal.zeit">Zeit (optional)</label><input class="form-input" id="rTime" type="time" /></div>
+      <div class="field"><label for="rDate" data-i18n="cal.datum">Datum</label><input class="form-input" id="rDate" type="date" /></div>
+      <div class="field"><label for="rTime" data-i18n="cal.zeit">Zeit</label><input class="form-input" id="rTime" type="time" /></div>
     </div>
-    <div class="field"><label data-i18n="cal.notiz">Notiz (optional)</label><textarea class="form-textarea" id="rNotes" rows="3"></textarea></div>
-    <button class="btn btn-primary btn-block" id="reminderSave" data-i18n="common.speichern">Speichern</button>
+    <div class="field"><label for="rNotes" data-i18n="cal.notiz">Notiz</label><textarea class="form-textarea" id="rNotes" rows="3"></textarea></div>
+    <button class="btn btn-primary btn-block" id="reminderSave" type="button" data-i18n="common.speichern">Speichern</button>
     <button class="btn btn-block reminder-complete-button" id="reminderComplete" type="button" hidden>
       <svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-      <span id="reminderCompleteLabel" data-i18n="cal.erledigt">Als erledigt markieren</span>
+      <span id="reminderCompleteLabel">Als erledigt markieren</span>
     </button>
-    <button class="btn btn-danger btn-block" id="reminderDelete" style="display:none;margin-top:8px" data-i18n="cal.erinnerungLoeschen">Erinnerung löschen</button>
+    <button class="btn btn-danger btn-block blatt-loeschen" id="reminderDelete" type="button" hidden data-i18n="cal.erinnerungLoeschen">Erinnerung löschen</button>
   </div>
 
-  <!-- Personal calendar event form sheet -->
+  <!-- Ein eigener Termin -->
   <div class="backdrop" id="dayFormBackdrop"></div>
   <div class="sheet" id="dayForm">
     <div class="grip"></div>
-    <div class="sheet-head"><span class="sheet-title" id="dayFormTitle" data-i18n="cal.persoenlich">Persönlicher Termin</span>
-      <button class="icon-pill" id="dayFormClose" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
-    <div class="field"><label data-i18n="cal.titel">Titel</label><input class="form-input" id="dTitle" placeholder="z.B. Geburtstag, Konzert…" data-i18n-attr="placeholder:cal.bspGeburtstag" /></div>
-    <div class="field"><label data-i18n="cal.datum">Datum</label><input class="form-input" id="dDate" type="date" /></div>
+    <div class="sheet-head"><span class="sheet-title" id="dayFormTitle">Persönlicher Termin</span>
+      <button class="icon-pill" id="dayFormClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="field"><label for="dTitle" data-i18n="cal.titel">Titel</label><input class="form-input" id="dTitle" placeholder="z.B. Geburtstag, Konzert…" data-i18n-attr="placeholder:cal.bspGeburtstag" /></div>
     <div class="row2">
-      <div class="field"><label data-i18n="cal.beginn">Beginn (optional)</label><input class="form-input" id="dStartTime" type="time" /></div>
-      <div class="field"><label data-i18n="cal.ende">Ende (optional)</label><input class="form-input" id="dEndTime" type="time" /></div>
+      <div class="field"><label for="dDate" data-i18n="cal.datum">Datum</label><input class="form-input" id="dDate" type="date" /></div>
+      <div class="field"><label for="dEndDate" data-i18n="cal.bis">Bis</label><input class="form-input" id="dEndDate" type="date" /></div>
     </div>
-    <div class="field"><label data-i18n="cal.ort">Ort (optional)</label><input class="form-input" id="dLocation" /></div>
-    <div class="field"><label data-i18n="cal.notiz">Notiz (optional)</label><textarea class="form-textarea" id="dNotes" rows="3"></textarea></div>
+    <div class="row2">
+      <div class="field"><label for="dStartTime" data-i18n="cal.beginn">Beginn</label><input class="form-input" id="dStartTime" type="time" /></div>
+      <div class="field"><label for="dEndTime" data-i18n="cal.ende">Ende</label><input class="form-input" id="dEndTime" type="time" /></div>
+    </div>
+    <div class="field"><label for="dLocation" data-i18n="cal.ort">Ort</label><input class="form-input" id="dLocation" /></div>
+    <div class="field"><label for="dNotes" data-i18n="cal.notiz">Notiz</label><textarea class="form-textarea" id="dNotes" rows="3"></textarea></div>
     <div class="field">
-      <label data-i18n="cal.infoSeite">Info-Seite (optional)</label>
+      <label data-i18n="cal.infoSeite">Info-Seite</label>
       <div class="tabs">
-        <button class="tab active" data-pane="paste">HTML</button>
-        <button class="tab" data-pane="upload" data-i18n="cal.datei">Datei (.html)</button>
-        <button class="tab" data-pane="url" data-i18n="cal.link">Link</button>
+        <button class="tab active" type="button" data-pane="paste">HTML</button>
+        <button class="tab" type="button" data-pane="upload" data-i18n="cal.datei">Datei (.html)</button>
+        <button class="tab" type="button" data-pane="url" data-i18n="cal.link">Link</button>
       </div>
       <div data-body="paste"><textarea class="form-textarea" id="dHtml" rows="4" placeholder="HTML hier einfügen…" data-i18n-attr="placeholder:cal.bspHtml"></textarea></div>
-      <div data-body="upload" style="display:none"><label class="drop" id="dDrop"><span id="dDropText" data-i18n="cal.htmlWaehlen">HTML-Datei wählen</span><input type="file" id="dHtmlFile" accept=".html,.htm,text/html" hidden /></label><p id="dHtmlChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
-      <div data-body="url" style="display:none"><input class="form-input" id="dUrl" type="url" placeholder="https://…" /></div>
+      <div data-body="upload" hidden><label class="drop" id="dDrop"><span id="dDropText" data-i18n="cal.htmlWaehlen">HTML-Datei wählen</span><input type="file" id="dHtmlFile" accept=".html,.htm,text/html" hidden /></label><p class="gewaehlt" id="dHtmlChosen" hidden></p></div>
+      <div data-body="url" hidden><input class="form-input" id="dUrl" type="url" placeholder="https://…" /></div>
     </div>
     <div class="field">
       <label data-i18n="cal.dateienAnhaengen">Dateien anhängen</label>
-      <div class="info-banner" id="dayStoreWarn" data-i18n="cal.uploadHinweis">Datei-Uploads brauchen Firebase Storage. Sobald es aktiviert ist, funktioniert dies automatisch.</div>
-      <label class="drop" id="dFileDrop"><span data-i18n="cal.dateiWaehlen">📎 Datei wählen (PDF, Bild, …)</span><input type="file" id="dFiles" multiple hidden /></label>
-      <div id="dFileList" style="margin-top:8px"></div>
+      <label class="drop" id="dFileDrop"><span data-i18n="cal.dateiWaehlen">Datei wählen (PDF, Bild, …)</span><input type="file" id="dFiles" multiple hidden /></label>
+      <div class="dateiliste" id="dFileList"></div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn btn-primary" id="dayFormSave" style="flex:1" data-i18n="common.speichern">Speichern</button>
-      <button class="btn btn-danger" id="dayFormDelete" style="display:none" data-i18n="cal.loeschen">Löschen</button>
+    <div class="knopfreihe">
+      <button class="btn btn-primary knopfreihe__breit" id="dayFormSave" type="button" data-i18n="common.speichern">Speichern</button>
+      <button class="btn btn-danger" id="dayFormDelete" type="button" hidden data-i18n="cal.loeschen">Löschen</button>
     </div>
   </div>
 
-  <!-- HTML viewer -->
+  <!-- Programm und Info-Seite -->
   <div class="viewer" id="viewer">
-    <div class="viewer-bar"><button class="icon-pill" id="viewerClose">‹</button><span class="vt" id="viewerTitle" data-i18n="cal.info">Info</span>
-      <button id="viewerMode" type="button" class="pill" hidden data-i18n="cal.original">Original</button></div>
+    <div class="viewer-bar"><button class="icon-pill" id="viewerClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><span class="vt" id="viewerTitle">Info</span>
+      <button id="viewerMode" type="button" class="pill" hidden>Original</button></div>
     <div class="viewer-plan" id="viewerPlan" hidden></div>
     <iframe id="viewerFrame" sandbox="allow-popups" referrerpolicy="no-referrer" hidden></iframe>
   </div>
 
-  <script type="module">
-    import { auth, db, app, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError } from '../assets/js/firebase-config.js';
-    import { parseItineraryHtml, groupByDay } from '../assets/js/itinerary.js';
-    import { buildCalendarIcs, parseCalendarIcs } from '../assets/js/calendar-interop.js';
-    import {
-      CALENDAR_VIEWS, CALENDAR_STYLES, CALENDAR_COLORS, DEFAULT_CALENDAR_COLOR,
-      addCalendarDays, startOfCalendarWeek,
-      datesForCalendarView, moveCalendarAnchor, calendarRangeTitle,
-      normalizeCalendarColor, calendarColorInk, normalizeCalendarPreference
-    } from '../assets/js/calendar-view.js';
-    import {
-      collection, addDoc, getDocs, getDoc, query, where, doc, setDoc, updateDoc, deleteDoc,
-      onSnapshot, serverTimestamp, writeBatch
-    } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    /* EIN Gruppenmodell: groups/{gid}. Die alten Kalendergruppen
-       (families) werden beim Oeffnen vom Kopf uebernommen (uebernahme.js)
-       und stehen bis dahin als Quelle mit ihren Reisen daneben. */
-    import {
-      beobachteMeineGruppen, beobachteTermine, aktiveGruppeSetzen, aktiveGruppeId, VORGABE_BEREICHE
-    } from '../assets/js/groups.js';
-    import { teamEintraege, teamTerminText, teamFarben } from '../assets/js/kalender-teams.js';
-    import { familieUebernehmen, sollUebernehmen, vereinigeGruppen } from '../assets/js/uebernahme.js';
-    import { frage } from '../assets/js/dialog.js';
-    const tt = (key, deutsch, vars) => window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch, vars) : deutsch;
-
-    const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-    const WD = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-
-    const $ = id => document.getElementById(id);
-    const pad = n => String(n).padStart(2,'0');
-    const keyOf = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
-    const tdy = new Date(); const todayKey = keyOf(tdy.getFullYear(), tdy.getMonth(), tdy.getDate());
-    /* The app shell keeps this route hidden until the initial calendar data
-       has been rendered and the list is already positioned on today. */
-    document.documentElement.dataset.routeReady = 'false';
-    const fmtDateKey = k => { if(!k) return ''; const [y,m,d]=k.split('-').map(Number); const dt=new Date(y,m-1,d); return `${WD[dt.getDay()].slice(0,2)}, ${d}. ${MONTHS[m-1]}`; };
-    const esc = s => escHtml(s);
-    /* ── Files on the FREE plan: stored in Firestore (no Cloud Storage / Blaze).
-       Images are downscaled+compressed so they fit. Big files → use the Link tab. */
-    const MAX_FILE = 900 * 1024;
-    function readAsDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result||'')); r.onerror=rej; r.readAsDataURL(file); }); }
-    function compressImage(file, maxDim, quality){ return new Promise(resolve=>{ const img=new Image(); const url=URL.createObjectURL(file);
-      img.onload=()=>{ let w=img.width,h=img.height; const sc=Math.min(1,maxDim/Math.max(w,h)); w=Math.round(w*sc); h=Math.round(h*sc);
-        const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); URL.revokeObjectURL(url);
-        try{ resolve(c.toDataURL('image/jpeg',quality)); }catch(e){ resolve(null); } };
-      img.onerror=()=>{ URL.revokeObjectURL(url); resolve(null); }; img.src=url; }); }
-    async function fileToStored(file){
-      if(/^image\//.test(file.type)){ let q=0.82, d=await compressImage(file,1400,q);
-        while(d && d.length>MAX_FILE && q>0.4){ q-=0.15; d=await compressImage(file,1200,q); }
-        if(d && d.length<=MAX_FILE) return {name:file.name, type:'image/jpeg', size:d.length, dataUrl:d}; return null; }
-      const d=await readAsDataURL(file); return d.length<=MAX_FILE ? {name:file.name, type:file.type||'', size:d.length, dataUrl:d} : null;
-    }
-    function dataUrlToBlob(d){ const [h,b]=d.split(','); const mime=(h.match(/:(.*?);/)||[])[1]||'application/octet-stream'; const bin=atob(b); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i); return new Blob([arr],{type:mime}); }
-    function openStored(f){ if(!f)return; try{ const u=URL.createObjectURL(dataUrlToBlob(f.dataUrl)); window.open(u,'_blank','noopener'); }catch(e){ reportClientError('attachment-open', e); } }
-    async function loadAttachments(parentId){ try{ const s=await getDocs(query(collection(db,'attachments'), where('parent','==',parentId))); return s.docs.map(d=>({id:d.id,...d.data()})); }catch(e){ reportClientError('attachments-load', e); return []; } }
-    async function saveAttachment(parentId, scope, st){ return addDoc(collection(db,'attachments'), {parent:parentId, scope, name:st.name, type:st.type, size:st.size, dataUrl:st.dataUrl, by:user.uid, at:Date.now()}); }
-    async function delAttachment(id){ return deleteDoc(doc(db,'attachments',id)); }
-
-    const GROUP_COLORS = CALENDAR_COLORS.map(color => color.value);
-    let user, profile, group = null, groups = [], groupsUnsub = null, reminderUnsub = null, tripUnsubs = [];
-    let trips = [], allTrips = [], days = [], reminders = [];
-    let visibleGroupIds = new Set(), showPersonal = true;
-    /* Teams: gespeichert werden die AUSGESCHALTETEN. Wer einem neuen Team
-       beitritt, sieht dessen Termine sofort, statt sie erst suchen und
-       einschalten zu muessen. */
-    let teams = [], teamTermine = new Map(), teamAbos = new Map(), versteckteTeams = new Set();
-    /* familien: die alten Kalendergruppen, in denen man steht. groups ist
-       die Vereinigung: alle Gruppen, dazu jede Familie, die (noch) keine
-       Gruppe ist. Beide Quellen kommen getrennt an; erst wenn beide da
-       sind, wird vereinigt. */
-    let familien = [], teamsGeladen = false, familienGeladen = false, gruppenFarben = new Map();
-    let anchorKey = todayKey, curView = 'month';
-    let calendarPreference = {
-      style:'google',
-      view:'month',
-      personalColor:DEFAULT_CALENDAR_COLOR,
-      showGroupFeatures:false
-    };
-    let calendarPreferenceExists = false;
-    let editTripId = null, editDayId = null, editReminderId = null, dayPane = 'paste', dayUploadHtml = '', sheetKey = null;
-    let pendingDayFiles = [], dayFiles = [], openPlanTripId = null, agendaShouldFocusToday = true;
-    let calendarEntryFocusPending = true, initialGroupsLoaded = false, initialRemindersLoaded = false;
-
-    init();
-
-    async function init() {
-      user = await requireAuth('../login.html');
-      wireOfflineBanner();
-      profile = await getProfile(user);
-      loadCalendarPreference();
-      wireUI();
-      watchReminders();
-      watchTeams();
-      await resolveGroups();
-      const requestedAction = new URLSearchParams(location.search).get('open');
-      if (!calendarPreferenceExists && !requestedAction) setTimeout(() => openCalendarSetup(true), 180);
-      if (requestedAction === 'reminder-new') {
-        setTimeout(() => openReminderForm(null,todayKey), 100);
-      } else if (requestedAction === 'reminders' || location.hash === '#reminders') {
-        setTimeout(openReminderHub, 100);
-      }
-    }
-
-    /* ── Calendar preferences ── */
-    const preferenceKey = () => `tvza-calendar-preference-${user.uid}`;
-    const mobileViewKey = () => `tvza-mobile-calendar-view-${user.uid}`;
-    const sourceKey = () => `tvza-calendar-sources-${user.uid}`;
-    const isMobileCalendar = () => matchMedia('(max-width:899px)').matches;
-    function loadCalendarPreference() {
-      let raw = {};
-      try {
-        const saved = localStorage.getItem(preferenceKey());
-        calendarPreferenceExists = !!saved;
-        raw = saved ? JSON.parse(saved) : {};
-      } catch {}
-      calendarPreference = normalizeCalendarPreference(raw);
-      let mobileView = '';
-      try { mobileView = localStorage.getItem(mobileViewKey()) || ''; } catch {}
-      curView = isMobileCalendar()
-        ? (CALENDAR_VIEWS.some(option=>option.key===mobileView) ? mobileView : 'agenda')
-        : calendarPreference.view;
-      applyCalendarPreference();
-    }
-    function applyCalendarPreference() {
-      document.body.dataset.calendarStyle = calendarPreference.style;
-      $('agendaViewOption').textContent = CALENDAR_STYLES[calendarPreference.style].agendaLabel;
-      document.querySelectorAll('[data-style]').forEach(card =>
-        card.classList.toggle('is-selected', card.dataset.style === calendarPreference.style)
-      );
-      $('showGroupFeatures').checked = calendarPreference.showGroupFeatures;
-      updateNoGroupVisibility();
-      renderPersonalColorOptions();
-      renderCalendarSources();
-      renderCurrentView();
-    }
-    function renderColorOptions(container, selected, dataAttribute, disabled = false) {
-      if (!container) return;
-      container.innerHTML = CALENDAR_COLORS.map(color => `
-        <button class="calendar-color${color.value===selected?' is-selected':''}" type="button"
-          ${dataAttribute}="${color.value}" style="--choice-color:${color.value};--choice-ink:${color.ink}"
-          aria-label="${color.label}" title="${color.label}"${disabled?' disabled':''}>
-          <span aria-hidden="true">${color.value===selected?'✓':''}</span>
-        </button>`).join('');
-    }
-    function renderPersonalColorOptions() {
-      renderColorOptions($('personalCalendarColors'), calendarPreference.personalColor, 'data-personal-color');
-      $('personalCalendarColors')?.querySelectorAll('[data-personal-color]').forEach(button => button.onclick = () => {
-        calendarPreference.personalColor = normalizeCalendarColor(button.dataset.personalColor);
-        renderPersonalColorOptions();
-        renderCalendarSources();
-        renderCurrentView();
-      });
-    }
-    function saveCalendarPreference() {
-      calendarPreference = normalizeCalendarPreference({ ...calendarPreference, view:curView });
-      try { localStorage.setItem(preferenceKey(), JSON.stringify(calendarPreference)); } catch {}
-      calendarPreferenceExists = true;
-      applyCalendarPreference();
-    }
-    function openCalendarSetup(firstRun = false) {
-      $('calendarSetupSheet').dataset.firstRun = String(firstRun);
-      $('calendarSetupClose').style.visibility = firstRun ? 'hidden' : '';
-      $('calendarSetupBackdrop').classList.add('visible');
-      $('calendarSetupSheet').classList.add('visible');
-    }
-    function closeCalendarSetup() {
-      $('calendarSetupBackdrop').classList.remove('visible');
-      $('calendarSetupSheet').classList.remove('visible');
-    }
-
-    /* ── Gruppen ──
-       Eine Farbe je Gruppe, aus teamFarben: dieselbe wie im Wechsler und
-       fuer Reisen und Termine derselben Gruppe, und zwei Gruppen einer
-       Person nie gleich. Gerechnet wird in vereinige(), nicht je Eintrag. */
-    const groupColor = id => gruppenFarben.get(id) || GROUP_COLORS[0];
-    const groupName = id => groups.find(item => item.id === id)?.name || tt('nav.gruppe','Gruppe');
-    const personalCalendarColor = () => normalizeCalendarColor(calendarPreference.personalColor);
-    const eventColorVars = color => `--event-color:${normalizeCalendarColor(color)};--event-ink:${calendarColorInk(normalizeCalendarColor(color))}`;
-
-    /* Die alten Einladungslinks (?invite=&token=) trugen in eine
-       Kalendergruppe hinein. Die gibt es als eigenes Modell nicht mehr —
-       eingeladen wird im Gruppe-Tab mit einem Code. Ein alter Link
-       fuehrt darum dorthin, statt still in families zu schreiben. */
-    async function resolveGroups() {
-      const params = new URLSearchParams(location.search);
-      if (params.get('invite') && params.get('token')) {
-        history.replaceState({}, '', location.pathname);
-        const hin = await frage({
-          titel:tt('cal.alterLinkTitel','Dieser Einladungslink ist veraltet'),
-          text:tt('cal.alterLink','Kalendergruppen sind jetzt Gruppen. Bitte um einen neuen Einladungscode und tritt im Gruppe-Tab bei.'),
-          ja:tt('kal.zurGruppe','Zur Gruppe'),
-          nein:tt('a11y.schliessen','Schliessen'),
-        });
-        if (hin) { location.href = './gruppe.html'; return; }
-      }
-      watchGroups();
-    }
-
-    /* Sichtbar ist jede Gruppe, die nicht ausgeschaltet ist. Gemerkt
-       werden die AUSGESCHALTETEN — eine neue Gruppe ist sofort zu sehen. */
-    function loadVisibleSources() {
-      let saved = null;
-      try { saved = JSON.parse(localStorage.getItem(sourceKey()) || 'null'); } catch {}
-      versteckteTeams = new Set(Array.isArray(saved?.teamsAus) ? saved.teamsAus : []);
-      showPersonal = saved?.personal !== false;
-      visibleGroupIds = new Set(groups.map(item => item.id).filter(id => !versteckteTeams.has(id)));
-    }
-    function saveVisibleSources() {
-      try {
-        localStorage.setItem(sourceKey(), JSON.stringify({
-          personal:showPersonal,
-          teamsAus:[...versteckteTeams],
-        }));
-      } catch {}
-    }
-
-    /* ── Teams: die Gruppen mit ihren Terminen ──
-       Eine Quelle je Gruppe, live: wer im Gruppe-Tab einen Termin
-       eintraegt, sieht ihn hier ohne Neuladen. Die Abos werden je Gruppe
-       gefuehrt, damit ein Beitritt oder Austritt nur die eine Gruppe
-       an- oder abmeldet. */
-    function watchTeams() {
-      loadVisibleSources();
-      beobachteMeineGruppen(user.uid, liste => {
-        teams = liste;
-        teamsGeladen = true;
-        const ids = new Set(liste.map(item => item.id));
-        for (const [gid, abmelden] of teamAbos) {
-          if (ids.has(gid)) continue;
-          abmelden();
-          teamAbos.delete(gid);
-          teamTermine.delete(gid);
-        }
-        for (const gid of ids) {
-          if (teamAbos.has(gid)) continue;
-          teamAbos.set(gid, beobachteTermine(gid, termine => {
-            teamTermine.set(gid, termine);
-            renderCurrentView();
-          }));
-        }
-        vereinige();
-      });
-    }
-    /* Ueber ALLE Gruppen gerechnet (auch die noch nicht uebernommenen
-       Familien), damit die Farben dieselben sind wie in groupColor. */
-    const teamMap = () => teamEintraege(groups, teamTermine, { versteckt:versteckteTeams, palette:GROUP_COLORS });
-    async function zeigeTeamTermin(event) {
-      const zurGruppe = await frage({
-        titel:event.title,
-        text:teamTerminText(event),
-        ja:tt('kal.zurGruppe','Zur Gruppe'),
-        nein:tt('a11y.schliessen','Schliessen'),
-      });
-      if (!zurGruppe) return;
-      aktiveGruppeSetzen(event.ref.gid);
-      location.href = './gruppe.html';
-    }
-    /* Die alten Kalendergruppen, in denen man steht. Sie werden nicht mehr
-       verwaltet — nur noch gelesen, bis der Kopf sie uebernommen hat. */
-    function watchGroups() {
-      if (groupsUnsub) groupsUnsub();
-      groupsUnsub = onSnapshot(
-        query(collection(db,'families'), where('members','array-contains',user.uid)),
-        snap => {
-          familien = snap.docs.map(item => ({ id:item.id, ...item.data() }));
-          familienGeladen = true;
-          vereinige();
-        },
-        error => {
-          reportClientError('calendar-groups-load', error);
-          familien = [];
-          familienGeladen = true;
-          vereinige();
-        }
-      );
-    }
-
-    /* Gruppen und noch nicht uebernommene Familien zu EINER Liste. Eine
-       Familie, die schon eine Gruppe ist (gleiche Kennung), erscheint nur
-       als Gruppe — ihre Reisen haengen an derselben Kennung und bleiben
-       damit sichtbar. */
-    let letzteGruppenIds = null;
-    async function vereinige() {
-      if (!teamsGeladen || !familienGeladen) return;
-      const teamIds = new Set(teams.map(item => item.id));
-      uebernimmFamilien(teamIds);
-      groups = vereinigeGruppen(teams, familien);
-      gruppenFarben = teamFarben(groups, GROUP_COLORS);
-      visibleGroupIds = new Set(groups.map(item => item.id).filter(id => !versteckteTeams.has(id)));
-      /* Neue Reisen gehen in die aktive Gruppe — derselbe Merker wie im
-         Gruppe-Tab und in der Leiste, kein zweiter "Standardkalender". */
-      group = groups.find(item => item.id === aktiveGruppeId()) || groups[0] || null;
-
-      const hat = groups.length > 0;
-      $('groupView').style.display='';
-      document.body.dataset.calendarWorkspace='true';
-      $('addTripBtn').style.display = hat ? '' : 'none';
-      $('manageGroupsBtn').style.display = hat ? '' : 'none';
-      if (!hat) $('tripDetail').style.display='none';
-      renderCalendarSources();
-
-      const ids = groups.map(item => item.id).join('|');
-      if (ids !== letzteGruppenIds) {
-        letzteGruppenIds = ids;
-        await reload();
-        watchTrips();
-      } else {
-        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
-        renderCurrentView();
-      }
-      initialGroupsLoaded = true;
-      updateNoGroupVisibility();
-      focusCalendarEntryWhenReady();
-    }
-
-    /* Der Kopf einer Familie uebernimmt sie beim Oeffnen des Kalenders
-       (uebernahme.js). Einmal je Sitzung versucht: scheitert es, laeuft es
-       beim naechsten Oeffnen wieder — jeder Schritt ist wiederholbar. */
-    const inUebernahme = new Set();
-    function uebernimmFamilien(teamIds) {
-      for (const familie of familien) {
-        if (!sollUebernehmen(familie, user.uid) || inUebernahme.has(familie.id)) continue;
-        inUebernahme.add(familie.id);
-        familieUebernehmen({
-          db,
-          fs:{ doc, collection, getDocs, writeBatch, updateDoc, serverTimestamp },
-          familie,
-          uid:user.uid,
-          istGruppe:teamIds.has(familie.id),
-          bereiche:VORGABE_BEREICHE.familie,
-          token:randToken(),
-          palette:GROUP_COLORS,
-        }).catch(error => reportClientError('calendar-uebernahme', error));
-      }
-    }
-
-    function updateNoGroupVisibility() {
-      $('noGroup').style.display = initialGroupsLoaded
-        && !groups.length
-        && calendarPreference.showGroupFeatures
-        ? ''
-        : 'none';
-    }
-
-    function isoWeekNumber(value) {
-      const date = new Date(`${value}T00:00:00`);
-      const utc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      utc.setUTCDate(utc.getUTCDate() + 4 - (utc.getUTCDay() || 7));
-      const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
-      return Math.ceil((((utc - yearStart) / 86400000) + 1) / 7);
-    }
-    function miniMonthHtml(offset, total) {
-      const base = new Date(`${anchorKey}T00:00:00`);
-      const month = new Date(base.getFullYear(), base.getMonth() + offset, 1);
-      const firstKey = keyOf(month.getFullYear(), month.getMonth(), 1);
-      const gridStart = startOfCalendarWeek(firstKey);
-      const activeDates = new Set(
-        ['day','3day','workweek','week'].includes(curView) ? datesForCalendarView(anchorKey,curView) : [anchorKey]
-      );
-      const rows = Array.from({length:6},(_,weekIndex)=>{
-        const weekStart = addCalendarDays(gridStart,weekIndex*7);
-        const daysHtml = Array.from({length:7},(_,dayIndex)=>{
-          const dateKey = addCalendarDays(weekStart,dayIndex);
-          const date = new Date(`${dateKey}T00:00:00`);
-          const outside = date.getMonth() !== month.getMonth();
-          return `<button class="mini-calendar-day${outside?' is-outside':''}${dateKey===todayKey?' is-today':''}${activeDates.has(dateKey)?' is-selected':''}"
-            type="button" data-mini-day="${dateKey}" aria-label="${fmtDateKey(dateKey)}">${date.getDate()}</button>`;
-        }).join('');
-        const selectedWeek = curView==='week' && startOfCalendarWeek(anchorKey)===weekStart;
-        return `<div class="mini-calendar-week${selectedWeek?' is-selected':''}">
-          <button type="button" class="mini-calendar-week__pick" data-mini-week="${weekStart}" title="Kalenderwoche ${isoWeekNumber(weekStart)} öffnen">W${isoWeekNumber(weekStart)}</button>
-          ${daysHtml}
-        </div>`;
-      }).join('');
-      return `<section class="mini-month">
-        <div class="mini-month__head">
-          ${offset===0?'<button type="button" data-mini-shift="-1" aria-label="Vorheriger Monat">‹</button>':'<span></span>'}
-          <strong>${month.toLocaleDateString('de-CH',{month:'long',year:'numeric'})}</strong>
-          ${offset===total-1?'<button type="button" data-mini-shift="1" aria-label="Nächster Monat">›</button>':'<span></span>'}
-        </div>
-        <div class="mini-calendar-weekdays"><span>KW</span><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
-        ${rows}
-      </section>`;
-    }
-    function renderMiniCalendars() {
-      const container = $('miniCalendars');
-      if (!container) return;
-      const total = calendarPreference.style==='outlook' ? 2 : 1;
-      container.innerHTML = Array.from({length:total},(_,index)=>miniMonthHtml(index,total)).join('');
-      container.querySelectorAll('[data-mini-day]').forEach(button => button.onclick = () => {
-        anchorKey = button.dataset.miniDay;
-        renderCurrentView();
-      });
-      container.querySelectorAll('[data-mini-week]').forEach(button => button.onclick = () => {
-        anchorKey = button.dataset.miniWeek;
-        setView('week');
-      });
-      container.querySelectorAll('[data-mini-shift]').forEach(button => button.onclick = () => {
-        const date = new Date(`${anchorKey}T00:00:00`);
-        date.setMonth(date.getMonth() + Number(button.dataset.miniShift), 1);
-        anchorKey = keyOf(date.getFullYear(),date.getMonth(),date.getDate());
-        renderCurrentView();
-      });
-    }
-
-    function renderCalendarSources() {
-      const personalColor = personalCalendarColor();
-      const personal = `
-        <button class="calendar-source-row${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:${personalColor}">
-          <span class="calendar-source-dot"></span><span>Persönlich &amp; Erinnerungen</span>
-        </button>`;
-      /* EINE Zeile je Gruppe — Reisen und Termine derselben Gruppe stehen
-         unter derselben Farbe. "Standard" ist die aktive Gruppe: dorthin
-         geht eine neue Reise. */
-      $('calendarSources').innerHTML = personal + groups.map(item => `
-        <button class="calendar-source-row${versteckteTeams.has(item.id)?'':' is-visible'}" type="button"
-          data-source-team="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
-          <span class="calendar-source-dot"></span><span>${esc(item.name||tt('nav.gruppe','Gruppe'))}</span>
-          ${item.id===group?.id && groups.length>1?`<small>${esc(tt('cal.standard','Standard'))}</small>`:''}
-        </button>`).join('');
-      $('calendarMobileSources').innerHTML = `
-        <button class="calendar-source-chip${showPersonal?' is-visible':''}" type="button" data-source-personal style="--source-color:${personalColor}">
-          <span class="calendar-source-dot"></span>Persönlich
-        </button>` + groups.map(item => `
-        <button class="calendar-source-chip${versteckteTeams.has(item.id)?'':' is-visible'}" type="button"
-          data-source-team="${esc(item.id)}" style="--source-color:${groupColor(item.id)}">
-          <span class="calendar-source-dot"></span>${esc(item.name||tt('nav.gruppe','Gruppe'))}
-        </button>`).join('') + (groups.length ? `
-        <button class="calendar-source-chip is-visible" id="mobileManageGroupsBtn" type="button" style="--source-color:var(--ink-soft)">
-          <svg class="ic" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
-          Verwalten
-        </button>` : '') + `
-        <button class="calendar-source-chip is-visible calendar-action-with-icon" id="mobileAddGroupBtn" type="button" style="--source-color:var(--cal-accent)">
-          <span class="ui-plus calendar-action-icon" aria-hidden="true"></span>
-          <span>Gruppe</span>
-        </button>`;
-
-      document.querySelectorAll('[data-source-personal]').forEach(button => button.onclick = () => {
-        showPersonal = !showPersonal;
-        saveVisibleSources();
-        renderCalendarSources();
-        renderCurrentView();
-      });
-      /* Ausschalten blendet beides aus: die Termine der Gruppe UND ihre
-         Reisen. Eine Gruppe ist eine Quelle, nicht zwei. */
-      document.querySelectorAll('[data-source-team]').forEach(button => button.onclick = () => {
-        const id = button.dataset.sourceTeam;
-        if (versteckteTeams.has(id)) versteckteTeams.delete(id); else versteckteTeams.add(id);
-        visibleGroupIds = new Set(groups.map(item => item.id).filter(gid => !versteckteTeams.has(gid)));
-        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
-        saveVisibleSources();
-        renderCalendarSources();
-        renderCurrentView();
-      });
-      if ($('mobileManageGroupsBtn')) $('mobileManageGroupsBtn').onclick = zurGruppenseite;
-      $('mobileAddGroupBtn').onclick = zurGruppenseite;
-    }
-
-    /* Gruppen werden an EINER Stelle angelegt, betreten und verwaltet: im
-       Gruppe-Tab. Bis v.35.31.0 hatte der Kalender eine zweite Verwaltung
-       fuer seine Kalendergruppen — Mitglieder, Rollen, Beitrittsanfragen,
-       Einladungslink, Farbe —, alles doppelt und alles auf families. */
-    function zurGruppenseite() { location.href = './gruppe.html'; }
-    /* Wechselt jemand die aktive Gruppe (Leiste, Gruppe-Tab), wandert der
-       "Standard" fuer neue Reisen mit. */
-    window.addEventListener('firn-gruppe', () => vereinige());
-
-    /* Hier stand die Verwaltung der Kalendergruppen (families): Karte mit
-       Mitgliedern, Rollen, Beitrittsanfragen, Umbenennen, Farbe, Einladungs-
-       link, Verlassen, Anlegen, Beitreten per Namenssuche — rund 250 Zeilen,
-       ein zweites Gruppensystem neben dem Gruppe-Tab. Seit v.35.32.0 fuehrt
-       alles davon nach gruppe.html (zurGruppenseite). */
-
-    /* ── Data load ── */
-    async function reload() {
-      const t1 = Promise.all(groups.map(item =>
-        getDocs(query(collection(db,'trips'), where('familyId','==',item.id)))
-          .then(snapshot => snapshot.docs.map(entry => ({id:entry.id,...entry.data()})))
-          .catch(error => { reportClientError('calendar-trips-load',error); return []; })
-      )).then(result => {
-        allTrips = result.flat();
-        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
-      });
-      const t2 = getDocs(query(collection(db,'calendarDays'), where('ownerUid','==',user.uid)))
-        .then(s=>{ days = s.docs.map(d=>({id:d.id,...d.data()})); }).catch(e=>{reportClientError('calendar-days-load',e);days=[];});
-      await Promise.all([t1,t2]);
-      renderCurrentView();
-    }
-
-    /* Trips are shared group data. A one-time getDocs load made another
-       person's edits and checkmarks appear only after reopening the page.
-       One listener per visible membership keeps every list and an open
-       native program view in sync without exposing the uploaded HTML. */
-    function watchTrips() {
-      tripUnsubs.forEach(unsubscribe => unsubscribe());
-      tripUnsubs = [];
-      const buckets = new Map(groups.map(item => [
-        item.id,
-        allTrips.filter(trip => trip.familyId === item.id)
-      ]));
-      const sync = () => {
-        allTrips = groups.flatMap(item => buckets.get(item.id) || []);
-        trips = allTrips.filter(item => visibleGroupIds.has(item.familyId));
-        renderCurrentView();
-        if (openPlanTripId && $('viewer').classList.contains('visible') && !$('viewerPlan').hidden) {
-          const current = allTrips.find(item => item.id === openPlanTripId);
-          if (current) renderPlanViewer(current);
-        }
-      };
-      groups.forEach(item => {
-        const unsubscribe = onSnapshot(
-          query(collection(db,'trips'), where('familyId','==',item.id)),
-          snapshot => {
-            buckets.set(item.id, snapshot.docs.map(entry => ({ id:entry.id, ...entry.data() })));
-            sync();
-          },
-          error => reportClientError('calendar-trips-live', error)
-        );
-        tripUnsubs.push(unsubscribe);
-      });
-    }
-
-    /* ── Personal reminders ── */
-    const reminderCollection = () => collection(db, 'users', user.uid, 'reminders');
-    function markCalendarRouteReady() {
-      document.documentElement.dataset.routeReady = 'true';
-      $('listView')?.classList.remove('is-positioning');
-    }
-    function focusCalendarEntryWhenReady() {
-      if (!calendarEntryFocusPending || !initialGroupsLoaded || !initialRemindersLoaded) return;
-      calendarEntryFocusPending = false;
-      anchorKey = todayKey;
-      agendaShouldFocusToday = true;
-      renderCurrentView();
-      if (curView !== 'agenda') markCalendarRouteReady();
-    }
-    function watchReminders() {
-      if (reminderUnsub) reminderUnsub();
-      reminderUnsub = onSnapshot(reminderCollection(), snap => {
-        reminders = snap.docs.map(item => ({ id:item.id, ...item.data() }))
-          .sort((a,b) =>
-            Number(!!a.completed) - Number(!!b.completed) ||
-            `${a.date||'9999'} ${a.time||''}`.localeCompare(`${b.date||'9999'} ${b.time||''}`)
-          );
-        initialRemindersLoaded = true;
-        renderReminders();
-        renderCurrentView();
-        focusCalendarEntryWhenReady();
-      }, () => {
-        initialRemindersLoaded = true;
-        $('reminderList').innerHTML = '<p class="empty-hint">Erinnerungen konnten nicht geladen werden.</p>';
-        focusCalendarEntryWhenReady();
-      });
-    }
-    function reminderWhen(reminder) {
-      if (!reminder.date) return 'Ohne Datum';
-      const day = reminder.date === todayKey ? 'Heute' : fmtDateKey(reminder.date);
-      return `${day}${reminder.time ? ' · ' + reminder.time : ''}`;
-    }
-    function reminderListHtml() {
-      const visible = reminders;
-      if (!visible.length) {
-        return reminders.length
-          ? '<p class="empty-hint">Alles erledigt. Abgeschlossene Erinnerungen bleiben unter „Termine“ sichtbar.</p>'
-          : '<p class="empty-hint">Noch keine Erinnerungen. Lege deine erste an.</p>';
-      }
-      return visible.map(item => `
-        <div class="reminder-row${item.completed?' is-done':''}${!item.completed&&item.date<todayKey?' is-overdue':''}">
-          <button class="reminder-check${item.completed?' is-done':''}" type="button"
-            data-reminder-check="${esc(item.id)}" aria-label="${item.completed?'Als offen markieren':'Erledigen'}">${item.completed?'✓':''}</button>
-          <button class="reminder-row__body mini" type="button" data-reminder-edit="${esc(item.id)}" style="text-align:left;padding:0">
-            <span class="reminder-row__title">${esc(item.title||'Erinnerung')}</span>
-            <span class="reminder-row__meta">${esc(reminderWhen(item))}</span>
-          </button>
-          <button class="mini" type="button" data-reminder-edit="${esc(item.id)}" aria-label="Erinnerung bearbeiten">✎</button>
-        </div>`).join('');
-    }
-    function bindReminderList(box) {
-      box.querySelectorAll('[data-reminder-check]').forEach(button => button.onclick = async () => {
-        const item = reminders.find(entry => entry.id === button.dataset.reminderCheck);
-        if (!item) return;
-        await setReminderCompletion(item, !item.completed);
-      });
-      box.querySelectorAll('[data-reminder-edit]').forEach(button => button.onclick = () => {
-        const item = reminders.find(entry => entry.id === button.dataset.reminderEdit);
-        if (item) {
-          closeReminderHub();
-          openReminderForm(item);
-        }
-      });
-    }
-    function renderReminders() {
-      const html = reminderListHtml();
-      [$('reminderList'), $('reminderHubList')].forEach(box => {
-        if (!box) return;
-        box.innerHTML = html;
-        bindReminderList(box);
-      });
-      const open = reminders.filter(item => !item.completed);
-      const overdue = open.filter(item => item.date && item.date < todayKey);
-      const reminderButton = $('mobileRemindersBtn');
-      const reminderCount = $('mobileReminderCount');
-      if (reminderButton && reminderCount) {
-        const label = open.length
-          ? `${open.length} offene Erinnerung${open.length===1?'':'en'}${overdue.length?`, ${overdue.length} überfällig`:''}`
-          : 'Keine offenen Erinnerungen';
-        reminderButton.setAttribute('aria-label', `${label}. Erinnerungen öffnen`);
-        reminderButton.title = label;
-        reminderCount.hidden = !open.length;
-        reminderCount.textContent = open.length>9 ? '9+' : String(open.length);
-      }
-    }
-    function openReminderHub() {
-      renderReminders();
-      $('reminderHubBackdrop').classList.add('visible');
-      $('reminderHubSheet').classList.add('visible');
-    }
-    function closeReminderHub() {
-      $('reminderHubBackdrop').classList.remove('visible');
-      $('reminderHubSheet').classList.remove('visible');
-    }
-    function openCreateSheet() {
-      $('createGroupEventOption').style.display = groups.length ? '' : 'none';
-      $('createBackdrop').classList.add('visible');
-      $('createSheet').classList.add('visible');
-    }
-    function closeCreateSheet() {
-      $('createBackdrop').classList.remove('visible');
-      $('createSheet').classList.remove('visible');
-    }
-    function openReminderForm(existing = null, date = '') {
-      editReminderId = existing?.id || null;
-      $('reminderFormTitle').textContent = existing ? 'Erinnerung bearbeiten' : 'Neue Erinnerung';
-      $('rTitle').value = existing?.title || '';
-      $('rDate').value = existing?.date || date || todayKey;
-      $('rTime').value = existing?.time || '';
-      $('rNotes').value = existing?.notes || '';
-      $('reminderComplete').hidden = !existing;
-      $('reminderComplete').classList.toggle('is-completed', existing?.completed === true);
-      $('reminderCompleteLabel').textContent = existing?.completed
-        ? 'Wieder als offen markieren'
-        : 'Als erledigt markieren';
-      $('reminderDelete').style.display = existing ? '' : 'none';
-      $('reminderBackdrop').classList.add('visible');
-      $('reminderSheet').classList.add('visible');
-      setTimeout(() => $('rTitle').focus(), 50);
-    }
-    function closeReminderForm() {
-      $('reminderBackdrop').classList.remove('visible');
-      $('reminderSheet').classList.remove('visible');
-    }
-    async function setReminderCompletion(item, completed) {
-      if (!item?.id) return false;
-      const previousCompleted = !!item.completed;
-      item.completed = completed;
-      renderReminders();
-      renderCurrentView();
-      try {
-        await updateDoc(doc(reminderCollection(), item.id), {
-          completed,
-          completedAt: completed ? serverTimestamp() : null,
-          updatedAt: serverTimestamp()
-        });
-        return true;
-      } catch (error) {
-        item.completed = previousCompleted;
-        renderReminders();
-        renderCurrentView();
-        reportClientError('reminder-completion', error);
-        alert('Erinnerung konnte nicht aktualisiert werden.');
-        return false;
-      }
-    }
-
-    /* ── Event map ── */
-    function dateRangeKeys(start, end = start) {
-      const keys = [];
-      if (!start) return keys;
-      let date = new Date(start + 'T00:00:00');
-      const last = new Date((end || start) + 'T00:00:00');
-      let guard = 0;
-      while (date <= last && guard++ < 400) {
-        keys.push(keyOf(date.getFullYear(), date.getMonth(), date.getDate()));
-        date.setDate(date.getDate() + 1);
-      }
-      return keys;
-    }
-    function eventMap() {
-      const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
-      (showPersonal ? days : []).forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
-        push(date, {
-          kind:'day', color:personalCalendarColor(), title:item.title||'Termin',
-          time:item.startTime||'', sourceName:'Persönlich', ref:item
-        })
-      ));
-      (showPersonal ? reminders : []).filter(item => !item.completed && item.date).forEach(item =>
-        push(item.date, {
-          kind:'reminder', color:personalCalendarColor(), title:item.title||'Erinnerung',
-          time:item.time||'', sourceName:'Persönlich', ref:item
-        })
-      );
-      trips.forEach(tr=>{
-        // Union of the trip's start/end range AND any dates carried by its
-        // itinerary items (e.g. from an imported multi-day plan) — a pasted
-        // itinerary can cover days outside a trip's own start/end fields.
-        const keys = new Set();
-        if (tr.startDate) {
-          const end=tr.endDate||tr.startDate; let d=new Date(tr.startDate+'T00:00:00'); const last=new Date(end+'T00:00:00'); let g=0;
-          while(d<=last && g++<400){ keys.add(keyOf(d.getFullYear(),d.getMonth(),d.getDate())); d.setDate(d.getDate()+1); }
-        }
-        (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
-        keys.forEach(k=>push(k,{kind:'trip',color:groupColor(tr.familyId),title:tr.name||'Termin',time:tr.startTime||'',sourceName:groupName(tr.familyId),ref:tr}));
-      });
-      Object.entries(teamMap()).forEach(([k, list]) => list.forEach(e => push(k, e)));
-      return map;
-    }
-
-    /* ── Day-program map (list view only) ── same events as eventMap(), but
-       each trip also carries its itinerary stops for that specific day, so
-       the list view can show the actual consolidated program instead of
-       just the trip's name. Kept separate from eventMap() so the compact
-       month-grid chips are unaffected. ── */
-    function dayProgramMap() {
-      const map = {}; const push=(k,e)=>{(map[k]=map[k]||[]).push(e);};
-      (showPersonal ? days : []).forEach(item => dateRangeKeys(item.date, item.endDate).forEach(date =>
-        push(date, {
-          kind:'day', color:personalCalendarColor(), title:item.title||'Termin',
-          time:item.startTime||'', sourceName:'Persönlich', ref:item
-        })
-      ));
-      (showPersonal ? reminders : []).filter(item => item.date).forEach(item =>
-        push(item.date, {
-          kind:'reminder', color:personalCalendarColor(), title:item.title||'Erinnerung',
-          time:item.time||'', sourceName:'Persönlich', ref:item
-        })
-      );
-      trips.forEach(tr=>{
-        const keys = new Set();
-        if (tr.startDate) {
-          const end=tr.endDate||tr.startDate; let d=new Date(tr.startDate+'T00:00:00'); const last=new Date(end+'T00:00:00'); let g=0;
-          while(d<=last && g++<400){ keys.add(keyOf(d.getFullYear(),d.getMonth(),d.getDate())); d.setDate(d.getDate()+1); }
-        }
-        (tr.itinerary||[]).forEach(it=>{ if(it.date) keys.add(it.date); });
-        keys.forEach(k=>{
-          const stops = (tr.itinerary||[])
-            .filter(it=>it.date===k || (!it.date && k===tr.startDate))
-            .sort((a,b)=>{
-              if (Number.isFinite(a.order) && Number.isFinite(b.order)) return a.order-b.order;
-              return (a.time||'99:99').localeCompare(b.time||'99:99');
-            });
-          push(k,{kind:'trip',color:groupColor(tr.familyId),title:tr.name||'Termin',time:tr.startTime||'',sourceName:groupName(tr.familyId),ref:tr,stops});
-        });
-      });
-      Object.entries(teamMap()).forEach(([k, list]) => list.forEach(e => push(k, e)));
-      return map;
-    }
-
-    const itineraryItemDone = (trip, item) => {
-      if (item?.id && Object.prototype.hasOwnProperty.call(trip?.itineraryDone||{},item.id)) {
-        return !!trip.itineraryDone[item.id];
-      }
-      return !!item?.done;
-    };
-    async function toggleItineraryItem(trip, item) {
-      if (!trip?.id || !item?.id) return;
-      const before = itineraryItemDone(trip, item);
-      const next = !before;
-      trip.itineraryDone = { ...(trip.itineraryDone || {}), [item.id]:next };
-      renderCurrentView();
-      if (openPlanTripId === trip.id && !$('viewerPlan').hidden) renderPlanViewer(trip);
-      try {
-        await updateDoc(doc(db,'trips',trip.id), {
-          [`itineraryDone.${item.id}`]:next,
-          itineraryUpdatedAt:serverTimestamp()
-        });
-      } catch (error) {
-        reportClientError('calendar-itinerary-toggle', error);
-        trip.itineraryDone = { ...(trip.itineraryDone || {}), [item.id]:before };
-        renderCurrentView();
-        if (openPlanTripId === trip.id && !$('viewerPlan').hidden) renderPlanViewer(trip);
-        alert('Der Programmpunkt konnte nicht aktualisiert werden.');
-      }
-    }
-
-    /* ── Calendar render ── */
-    function renderCalendar() {
-      const anchor = new Date(`${anchorKey}T00:00:00`);
-      const viewY = anchor.getFullYear(), viewM = anchor.getMonth();
-      const map = eventMap();
-      const first = new Date(viewY,viewM,1); const offset=(first.getDay()+6)%7;
-      const dim = new Date(viewY,viewM+1,0).getDate(); const prev=new Date(viewY,viewM,0).getDate();
-      const totalCells = Math.ceil((offset + dim) / 7) * 7;
-      const grid=$('grid'); grid.innerHTML='';
-      for(let i=0;i<totalCells;i++){
-        const cell=document.createElement('div'); cell.className='cell';
-        let y=viewY,m=viewM,dn;
-        if(i<offset){dn=prev-offset+1+i;m--;if(m<0){m=11;y--;}cell.classList.add('other');}
-        else if(i>=offset+dim){dn=i-offset-dim+1;m++;if(m>11){m=0;y++;}cell.classList.add('other');}
-        else dn=i-offset+1;
-        const k=keyOf(y,m,dn); if(k===todayKey)cell.classList.add('today');
-        const evs=map[k]||[];
-        let inner=`<span class="daynum">${dn}</span>`;
-        if(evs.length){
-          cell.classList.add('has-events');
-          cell.style.setProperty('--cell-color', normalizeCalendarColor(evs[0].color));
-          const two=evs.slice(0,2).map(e=>`<span class="evchip" style="${eventColorVars(e.color)}">${e.time?`<b>${esc(e.time)}</b> `:''}${esc(e.title)}</span>`).join('');
-          inner+=`<div class="chips">${two}${evs.length>2?`<span class="more">+${evs.length-2}</span>`:''}</div>`; }
-        cell.innerHTML=inner;
-        cell.onclick=()=>openDay(k,y,m,dn);
-        grid.appendChild(cell);
-      }
-    }
-
-    function minutesOf(time) {
-      const [hours, minutes] = String(time||'').split(':').map(Number);
-      return Number.isFinite(hours) ? Math.max(0, Math.min(1439, hours*60+(minutes||0))) : 0;
-    }
-    function openCalendarEvent(event) {
-      if(event.kind==='team') { zeigeTeamTermin(event); return; }
-      if(event.kind==='trip') { openTrip(event.ref.id); return; }
-      if(event.kind==='reminder') { openReminderForm(event.ref); return; }
-      openDayForm(event.ref);
-    }
-    function renderTimeView() {
-      const dates = datesForCalendarView(anchorKey, curView);
-      const program = dayProgramMap();
-      const hourHeight = parseFloat(getComputedStyle(document.body).getPropertyValue('--cal-hour')) || 44;
-      const renderedEvents = [];
-      const dayEvents = dates.map(date => {
-        const expanded = [];
-        for (const event of program[date] || []) {
-          expanded.push(event);
-          if (event.kind==='trip' && event.stops?.length) {
-            event.stops.forEach(stop => expanded.push({
-              ...event,
-              title:stop.title || event.title,
-              time:stop.time || '',
-              isStop:true,
-              stop
-            }));
-          }
-        }
-        return expanded;
-      });
-      const indexFor = event => {
-        renderedEvents.push(event);
-        return renderedEvents.length - 1;
-      };
-      const allDayCells = dayEvents.map(events => `
-        <div class="all-day-cell">${events.filter(event=>!event.time).map(event => `
-          <button class="all-day-event" type="button" data-time-event="${indexFor(event)}"
-            style="${eventColorVars(event.color)}" title="${esc(event.sourceName||'')}">${esc(event.title)}</button>`).join('')}</div>`).join('');
-      const columns = dayEvents.map((events, dayIndex) => {
-        const date = new Date(`${dates[dayIndex]}T00:00:00`);
-        const timed = events.filter(event=>event.time);
-        const blocks = timed.map(event => {
-          const start = minutesOf(event.time);
-          const explicitEnd = event.isStop ? '' : event.ref.endTime;
-          let end = explicitEnd ? minutesOf(explicitEnd) : start + (event.isStop ? 45 : 60);
-          if (end <= start) end = start + 60;
-          const top = start/60*hourHeight;
-          const height = Math.max(26,(end-start)/60*hourHeight);
-          return `<button class="time-event" type="button" data-time-event="${indexFor(event)}"
-            style="${eventColorVars(event.color)};top:${top}px;height:${height}px">
-            <strong>${esc(event.title)}</strong><span>${esc(event.time)}${event.sourceName?' · '+esc(event.sourceName):''}</span>
-          </button>`;
-        }).join('');
-        const now = dates[dayIndex]===todayKey
-          ? `<span class="time-now-line" style="top:${(tdy.getHours()*60+tdy.getMinutes())/60*hourHeight}px"></span>`
-          : '';
-        return `<div class="time-day-column${date.getDay()===0||date.getDay()===6?' is-weekend':''}" data-time-date="${dates[dayIndex]}">${blocks}${now}</div>`;
-      }).join('');
-      const headers = dates.map(date => {
-        const value = new Date(`${date}T00:00:00`);
-        return `<button class="time-day-head${date===todayKey?' is-today':''}" type="button" data-day-head="${date}">
-          <span>${value.toLocaleDateString('de-CH',{weekday:'short'})}</span><strong>${value.getDate()}</strong>
-        </button>`;
-      }).join('');
-      const hours = Array.from({length:24},(_,hour)=>`<span style="top:${hour*hourHeight}px">${pad(hour)}:00</span>`).join('');
-      $('timeCalendar').innerHTML = `<div class="time-calendar" style="--day-count:${dates.length}">
-        <div class="time-calendar__header"><div class="time-gutter"></div>${headers}</div>
-        <div class="time-calendar__all-day"><div class="all-day-label">ganztägig</div>${allDayCells}</div>
-        <div class="time-calendar__body"><div class="time-axis">${hours}</div>${columns}</div>
-      </div>`;
-      $('timeCalendar').querySelectorAll('[data-time-event]').forEach(button => button.onclick = event => {
-        event.stopPropagation();
-        openCalendarEvent(renderedEvents[+button.dataset.timeEvent]);
-      });
-      $('timeCalendar').querySelectorAll('[data-day-head]').forEach(button => button.onclick = () => {
-        anchorKey = button.dataset.dayHead;
-        setView('day');
-      });
-      $('timeCalendar').querySelectorAll('[data-time-date]').forEach(column => column.onclick = event => {
-        if (event.target !== column) return;
-        const rect = column.getBoundingClientRect();
-        const minute = Math.max(0,Math.min(23*60+45,Math.round(((event.clientY-rect.top)/hourHeight*60)/15)*15));
-        const endMinute = Math.min(23*60+59, minute+60);
-        sheetKey = column.dataset.timeDate;
-        openDayForm(null);
-        $('dStartTime').value = `${pad(Math.floor(minute/60))}:${pad(minute%60)}`;
-        $('dEndTime').value = `${pad(Math.floor(endMinute/60))}:${pad(endMinute%60)}`;
-      });
-      requestAnimationFrame(() => {
-        const wrap = $('timeCalendar');
-        const scrollHour = dates.includes(todayKey) ? Math.max(0,tdy.getHours()-2) : 7;
-        wrap.scrollTop = scrollHour*hourHeight;
-      });
-    }
-
-    function renderCurrentView() {
-      if (!$('calView')) return;
-      document.body.dataset.calendarView = curView;
-      renderMiniCalendars();
-      const isMonth = curView==='month', isAgenda = curView==='agenda';
-      $('listView').classList.toggle('is-positioning', isAgenda && calendarEntryFocusPending);
-      $('calView').hidden = !isMonth;
-      $('timeView').hidden = isMonth || isAgenda;
-      $('listView').hidden = !isAgenda;
-      const currentAgendaMonth = isAgenda && anchorKey.slice(0,7)===todayKey.slice(0,7);
-      $('monthTitle').textContent = isMobileCalendar() && currentAgendaMonth
-        ? 'Termine'
-        : calendarRangeTitle(anchorKey,curView);
-      const option = CALENDAR_VIEWS.find(view=>view.key===curView);
-      const label = curView==='agenda' ? CALENDAR_STYLES[calendarPreference.style].agendaLabel : option?.label || 'Monat';
-      $('viewPickerLabel').textContent = label;
-      document.querySelectorAll('[data-calendar-view]').forEach(button =>
-        button.classList.toggle('is-active',button.dataset.calendarView===curView)
-      );
-      if (isMonth) renderCalendar();
-      else if (isAgenda) renderAgenda();
-      else renderTimeView();
-    }
-
-    /* ── Agenda (list) render ── */
-    function agendaStopHtml(trip, stop, date) {
-      const done = itineraryItemDone(trip, stop);
-      const past = !!date && date < todayKey;
-      return `<div class="prog-row${done?' is-done':''}">
-        <button class="prog-check${done?' is-done':''}" type="button"
-          data-stop-trip="${esc(trip.id)}" data-stop-id="${esc(stop.id||'')}"
-          aria-label="${done?'Wieder öffnen':'Als erledigt markieren'}">${done?'✓':''}</button>
-        <div class="prog-row__body">
-          <div class="prog-row__top">
-            <span class="prog-time">${esc(stop.timeLabel||stop.time||'flexibel')}</span>
-            <span class="prog-title">${esc(stop.title||'Programmpunkt')}</span>
-            ${stop.tag?`<span class="prog-tag">${esc(stop.tag)}</span>`:''}
-            ${past&&!done?'<span class="plan-past">Vorbei</span>':''}
-          </div>
-          ${stop.notes?`<div class="prog-notes">${esc(stop.notes)}</div>`:''}
-          ${stop.transport?`<div class="prog-transport"><span>→</span><span>${esc(stop.transport)}</span></div>`:''}
-        </div>
-      </div>`;
-    }
-
-    function focusAgendaOnToday(box) {
-      if (!agendaShouldFocusToday) return;
-      const scroller = $('listView');
-      if (calendarEntryFocusPending) {
-        scroller?.classList.add('is-positioning');
-        return;
-      }
-      const target = box.querySelector('[data-agenda-focus]');
-      if (!target || !scroller) {
-        agendaShouldFocusToday = false;
-        markCalendarRouteReady();
-        return;
-      }
-      agendaShouldFocusToday = false;
-      scroller.classList.add('is-positioning');
-      const positionToday = () => {
-        if (!target.isConnected) return;
-        const marker = target.nextElementSibling?.classList.contains('agenda-today-marker')
-          ? target.nextElementSibling
-          : target;
-        const scrollerRect = scroller.getBoundingClientRect();
-        const markerRect = marker.getBoundingClientRect();
-        /* A real bottom runway is required on desktop when only a few
-           future entries follow today; otherwise the browser clamps
-           scrollTop and leaves past days visible above the marker. */
-        const tail = box.querySelector('.agenda-scroll-tail');
-        if (tail) {
-          tail.style.height = `${Math.max(0, scroller.clientHeight - markerRect.height - 8)}px`;
-        }
-        const adjustedMarkerRect = marker.getBoundingClientRect();
-        const top = scroller.scrollTop + adjustedMarkerRect.top - scrollerRect.top - 8;
-        scroller.scrollTop = Math.max(0, top);
-      };
-      positionToday();
-      requestAnimationFrame(() => {
-        positionToday();
-        markCalendarRouteReady();
-      });
-    }
-
-    function renderAgenda() {
-      const map = dayProgramMap();
-      /* Keep earlier entries in the DOM so they remain available by
-         scrolling upwards, but focus the mobile list on today/next. */
-      const from = `${anchorKey.slice(0,7)}-01`;
-      const keys = Object.keys(map).filter(k=>k>=from).sort();
-      const box=$('agenda');
-      const containsToday = from<=todayKey;
-      const scrollHead = '<div class="agenda-scroll-head" aria-hidden="true"></div>';
-      const scrollTail = '<div class="agenda-scroll-tail" aria-hidden="true"></div>';
-      if(!keys.length){
-        const todayMarker = containsToday
-          ? `<div class="agenda-today-anchor" data-agenda-focus aria-hidden="true"></div><div class="agenda-today-marker"><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine Einträge</small></div>`
-          : '';
-        box.innerHTML=`${scrollHead}${todayMarker}<p class="empty-hint">In und nach diesem Monat gibt es noch keine Einträge. Füge einen Termin hinzu.</p>${scrollTail}`;
-        focusAgendaOnToday(box);
-        return;
-      }
-      const focusKey = keys.find(key=>key>=todayKey) || '';
-      const groupsHtml = keys.map(k=>{
-        const items = map[k].map((e,i)=>{
-          const hasPage=(e.ref.planHtml||e.ref.planUrl||(e.ref.itinerary||[]).length);
-          const fullBtn = hasPage ? `<div class="program-actions"><button class="pill primary" data-full-k="${k}" data-full-i="${i}" title="Plan/Programm öffnen">Programm öffnen</button><button class="pill" data-edit-k="${k}" data-edit-i="${i}">Bearbeiten</button></div>` : '';
-          if (e.kind==='trip' && e.stops && e.stops.length) {
-            const doneCount = e.stops.filter(stop=>itineraryItemDone(e.ref,stop)).length;
-            const rows = e.stops.map(stop=>agendaStopHtml(e.ref,stop,k)).join('');
-            return `<div class="item-card item-card--program" data-k="${k}" data-i="${i}">
-              <div class="program-summary">
-                <div class="item-bar" style="background:${e.color}"></div>
-                <div class="item-body"><div class="item-title">${esc(e.title)}</div><div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||'Termin')}${e.ref.destination?' · '+esc(e.ref.destination):''}</div></div>
-                <span class="program-progress">${doneCount}/${e.stops.length}</span>
-              </div>
-              <div class="prog-list">${rows}</div>
-              ${fullBtn}
-            </div>`;
-          }
-          const typeLabel = e.kind==='team' ? e.art : e.kind==='trip' ? 'Termin' : e.kind==='reminder' ? 'Erinnerung' : 'Persönlicher Termin';
-          const importNote = hasPage && e.kind==='trip'
-            ? `<div class="plan-import-note">ⓘ Originalseite vorhanden${(e.ref.itinerary||[]).some(item=>item.autoImported)?' · erkannte Punkte werden nach Uhrzeit gezeigt':' · keine einzelnen Programmpunkte erkannt'}</div>`
-            : '';
-          const completedReminder = e.kind==='reminder' && e.ref.completed === true;
-          const completedBadge = completedReminder
-            ? '<span class="agenda-completed-badge">✓ Abgeschlossen</span>'
-            : '';
-          return `<div class="item-card${completedReminder?' is-completed-reminder':''}" data-k="${k}" data-i="${i}">
-            <div class="item-bar" style="background:${e.color}"></div>
-            <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-            <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}${e.ref.destination||e.ref.location?' · '+esc(e.ref.destination||e.ref.location):''}${completedBadge}</div>${importNote}${fullBtn}</div></div>`;
-        }).join('');
-        const isFocus = k===focusKey;
-        const marker = isFocus && containsToday
-          ? `<div class="agenda-today-anchor" data-agenda-focus aria-hidden="true"></div><div class="agenda-today-marker"><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span>${k>todayKey?'<small>Keine Einträge</small>':''}</div>`
-          : '';
-        const dateLabel = k===todayKey ? '' : `<div class="agenda-date">${fmtDateKey(k)}</div>`;
-        return `${marker}<div class="agenda-group${k<todayKey?' is-past':''}">
-          ${dateLabel}${items}</div>`;
-      }).join('');
-      const endMarker = !focusKey && containsToday
-        ? `<div class="agenda-today-anchor" data-agenda-focus aria-hidden="true"></div><div class="agenda-today-marker"><strong>Heute</strong><span>${fmtDateKey(todayKey)}</span><small>Keine weiteren Einträge</small></div>`
-        : '';
-      box.innerHTML = scrollHead + groupsHtml + endMarker + scrollTail;
-      box.querySelectorAll('[data-full-k]').forEach(b=>b.onclick=(ev)=>{
-        ev.stopPropagation();
-        const e=(map[b.dataset.fullK]||[])[+b.dataset.fullI]; if(e)openPlan(e.ref);
-      });
-      box.querySelectorAll('[data-edit-k]').forEach(b=>b.onclick=(ev)=>{
-        ev.stopPropagation();
-        const e=(map[b.dataset.editK]||[])[+b.dataset.editI]; if(!e)return;
-        if(e.kind==='trip') openTrip(e.ref.id);
-        else if(e.kind==='reminder') openReminderForm(e.ref);
-        else openDayForm(e.ref);
-      });
-      box.querySelectorAll('[data-stop-trip][data-stop-id]').forEach(button => button.onclick = event => {
-        event.stopPropagation();
-        const trip = allTrips.find(item=>item.id===button.dataset.stopTrip);
-        const stop = trip?.itinerary?.find(item=>item.id===button.dataset.stopId);
-        if (trip && stop) toggleItineraryItem(trip,stop);
-      });
-      box.querySelectorAll('.item-card').forEach(c=>c.onclick=()=>{
-        const e=(map[c.dataset.k]||[])[+c.dataset.i]; if(!e)return;
-        if(e.kind==='team') { zeigeTeamTermin(e); return; }
-        if(e.kind==='trip') { openTrip(e.ref.id); return; }
-        if(e.kind==='reminder') { openReminderForm(e.ref); return; }
-        // Open the same read-only day sheet the calendar cell uses,
-        // instead of jumping straight into the edit form.
-        const [y,m,d]=c.dataset.k.split('-').map(Number);
-        openDay(c.dataset.k, y, m-1, d);
-      });
-      focusAgendaOnToday(box);
-    }
-
-    /* ── Day sheet ── */
-    function openDay(k,y,m,d){
-      sheetKey=k; const map=eventMap(); const evs=map[k]||[];
-      $('dayTitle').textContent=`${WD[new Date(y,m,d).getDay()]}, ${d}. ${MONTHS[m]}`;
-      const box=$('dayEvents');
-      box.innerHTML = evs.length ? evs.map((e,i)=>{
-        const hasPage=(e.ref.planHtml||e.ref.planUrl||(e.ref.itinerary||[]).length);
-        const fullBtn = hasPage ? `<button class="pill primary" data-full="${i}" title="Plan/Programm öffnen">Programm öffnen</button>` : '';
-        let act='';
-        /* Team-Termine gehoeren der Gruppe: hier nur ansehen, geaendert
-           wird im Gruppe-Tab — dort, wo die Leitung die Rechte hat. */
-        if(e.kind==='team'){ act=`<button class="pill" data-team="${i}">${esc(tt('kal.ansehen','Ansehen'))}</button>`; }
-        else if(e.kind==='trip'){ act=fullBtn+`<button class="pill" data-open-trip="${esc(e.ref.id)}">Bearbeiten</button>`; }
-        else if(e.kind==='reminder'){ act=`<button class="pill" data-edit-reminder="${i}">Bearbeiten</button>`; }
-        else { act=fullBtn+`<button class="pill" data-edit="${i}">Bearbeiten</button>`; }
-        const typeLabel=e.kind==='team'?e.art:e.kind==='trip'?'Termin':e.kind==='reminder'?'Erinnerung':'Persönlicher Termin';
-        return `<div class="item-card"><div class="item-bar" style="background:${e.color}"></div>
-          <div class="item-body"><div class="item-title">${esc(e.title)}</div>
-          <div class="item-meta">${e.time?esc(e.time)+' · ':''}${esc(e.sourceName||typeLabel)}</div>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${act}</div></div></div>`;
-      }).join('') : `<p class="empty-hint">Keine Einträge an diesem Tag.</p>`;
-      box.querySelectorAll('[data-team]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.team];closeDay();zeigeTeamTermin(e);});
-      box.querySelectorAll('[data-open-trip]').forEach(b=>b.onclick=()=>{closeDay();openTrip(b.dataset.openTrip);});
-      box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.edit];closeDay();openDayForm(e.ref);});
-      box.querySelectorAll('[data-edit-reminder]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.editReminder];closeDay();openReminderForm(e.ref);});
-      box.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.page];openViewer(e.title,e.ref.planHtml,e.ref.planUrl);});
-      box.querySelectorAll('[data-full]').forEach(b=>b.onclick=()=>{const e=evs[+b.dataset.full];openPlan(e.ref);});
-      $('dayBackdrop').classList.add('visible'); $('daySheet').classList.add('visible');
-    }
-    function closeDay(){ $('dayBackdrop').classList.remove('visible'); $('daySheet').classList.remove('visible'); }
-
-    /* ── Trip form ── */
-    let newTripFileHtml = '';
-    let editTripItinerary = [];
-    function setTripPlanPane(p){
-      document.querySelectorAll('#tpTabs .tab').forEach(t=>t.classList.toggle('active', t.dataset.tpane===p));
-      document.querySelectorAll('#tripSheet [data-tbody]').forEach(b=>b.style.display = b.dataset.tbody===p ? '' : 'none');
-    }
-    document.querySelectorAll('#tpTabs .tab').forEach(t=>t.onclick=()=>setTripPlanPane(t.dataset.tpane));
-    function describePlanHtml(html, baseDate = $('tStart').value) {
-      const status = $('tpImportStatus');
-      if (!html?.trim()) {
-        status.className='html-import-feedback';
-        status.textContent='Erkannte Tage und Programmpunkte erscheinen automatisch in der Terminübersicht. Die Originalseite bleibt zusätzlich öffnbar; Skripte werden nicht ausgeführt.';
-        return;
-      }
-      const parsed = parseItineraryHtml(html,{baseDate});
-      if (parsed.items.length) {
-        status.className='html-import-feedback is-good';
-        status.textContent=`✓ ${parsed.items.length} Programmpunkt${parsed.items.length===1?'':'e'} an ${parsed.days||1} Tag${parsed.days===1?'':'en'} erkannt — sie erscheinen in der Terminübersicht.`;
-      } else {
-        status.className='html-import-feedback is-warning';
-        status.textContent='Die Seite wird gespeichert und lässt sich öffnen, aber es wurden keine einzelnen Programmpunkte für die Terminübersicht erkannt.';
-      }
-    }
-    if ($('tpFile')) $('tpFile').onchange = e => {
-      const f=e.target.files[0]; if(!f) return;
-      const r=new FileReader();
-      r.onload=()=>{
-        newTripFileHtml=String(r.result||'');
-        $('tpChosen').textContent='✓ '+f.name;
-        $('tpChosen').style.display='';
-        describePlanHtml(newTripFileHtml);
-      };
-      r.readAsText(f);
-    };
-    $('tpHtml').addEventListener('input',()=>describePlanHtml($('tpHtml').value));
-    function openTripForm(t){
-      editTripId = t ? t.id : null;
-      $('tripFormTitle').textContent = t ? 'Termin bearbeiten' : 'Neuer Termin';
-      $('tName').value=t?.name||''; $('tDest').value=t?.destination||'';
-      $('tGroup').innerHTML = groups.map(item=>`<option value="${esc(item.id)}">${esc(item.name||'Gruppe')}</option>`).join('');
-      $('tGroup').value=t?.familyId||group?.id||groups[0]?.id||'';
-      $('tStart').value=t?.startDate||(sheetKey||''); $('tEnd').value=t?.endDate||'';
-      $('tStartTime').value=t?.startTime||''; $('tEndTime').value=t?.endTime||'';
-      $('tNotes').value=t?.notes||'';
-      // Programm/Info-Seite: prefill from the existing Termin when editing, so
-      // this same field can also be used later to update the plan — same
-      // parser as the trip detail's own Plan section.
-      $('tpHtml').value = t?.planHtml || '';
-      $('tpUrl').value = t?.planUrl || '';
-      editTripItinerary = t?.itinerary || [];
-      newTripFileHtml = '';
-      $('tpChosen').style.display = 'none';
-      describePlanHtml(t?.planHtml||'');
-      setTripPlanPane('paste');
-      // Delete lives here too now, not just at the bottom of the Termin's own
-      // page — only makes sense once something exists to delete.
-      $('tripFormDelete').style.display = t ? '' : 'none';
-      $('tripBackdrop').classList.add('visible'); $('tripSheet').classList.add('visible');
-    }
-    function closeTripForm(){ $('tripBackdrop').classList.remove('visible'); $('tripSheet').classList.remove('visible'); }
-    $('tripFormDelete').onclick = async () => {
-      if (!editTripId) return;
-      if (!confirm('Diesen Termin löschen?')) return;
-      const id = editTripId;
-      try {
-        const aq = await getDocs(query(collection(db,'activities'), where('tripId','==',id)));
-        await Promise.all(aq.docs.map(d=>deleteDoc(d.ref)));
-        const fq = await loadAttachments(id);
-        await Promise.all(fq.map(f=>delAttachment(f.id).catch(()=>{})));
-        await deleteDoc(doc(db,'trips',id));
-        closeTripForm();
-        backToGroup();
-      } catch(e) { reportClientError('calendar-trip-delete', e); alert('Löschen fehlgeschlagen.'); }
-    };
-    $('tripSave').onclick = async () => {
-      const name=$('tName').value.trim(); if(!name){alert('Bitte einen Titel eingeben.');return;}
-      const start=$('tStart').value;
-      if(!start){alert('Bitte ein Datum auswählen.');return;}
-      // "Bis" is optional — a Termin with no end date is simply a single-day
-      // entry, so it still shows correctly everywhere dates are unioned.
-      const startTime=$('tStartTime').value, endTime=$('tEndTime').value;
-      const data={ name, destination:$('tDest').value.trim(), startDate:start, endDate:$('tEnd').value||start,
-        startTime, endTime:endTime||startTime, notes:$('tNotes').value.trim(),
-        familyId:$('tGroup').value };
-      if (!data.familyId) { alert('Bitte einen Kalender auswählen.'); return; }
-
-      // Same auto-import as the trip detail's Plan section: paste/upload/link
-      // gets parsed into per-day, per-time stops right away.
-      const activePane = document.querySelector('#tpTabs .tab.active')?.dataset.tpane || 'paste';
-      let planHtml='', planUrl='';
-      if (activePane==='upload' && newTripFileHtml) planHtml = newTripFileHtml;
-      else if (activePane==='url') planUrl = $('tpUrl').value.trim();
-      else planHtml = $('tpHtml').value.trim();
-      data.planHtml = planHtml; data.planUrl = planUrl;
-      let itinerary = editTripId ? editTripItinerary : [];
-      if (planHtml) {
-        const { items } = parseItineraryHtml(planHtml, { baseDate: data.startDate });
-        if (items.length) {
-          const manual = itinerary.filter(it => !it.autoImported);
-          itinerary = [...manual, ...items];
-        }
-      }
-      data.itinerary = itinerary;
-
-      $('tripSave').disabled=true;
-      try{
-        let id = editTripId;
-        if(editTripId) await updateDoc(doc(db,'trips',editTripId), data);
-        else { const ref = await addDoc(collection(db,'trips'), { ...data, createdBy:user.uid, createdAt:serverTimestamp() }); id = ref.id; }
-        closeTripForm();
-        await openTrip(id);
-      }catch(e){reportClientError('calendar-trip-save',e);alert('Speichern fehlgeschlagen.');}
-      $('tripSave').disabled=false;
-    };
-
-    /* ── Trip detail ── */
-    async function openTrip(id){
-      const s=await getDoc(doc(db,'trips',id)); if(!s.exists())return;
-      const tr={id:s.id,...s.data()}; editTripId=id;
-      const acts=await getDocs(query(collection(db,'activities'), where('tripId','==',id))).then(q=>q.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[]);
-      const files=await loadAttachments(id);
-      $('groupView').style.display='none';
-      $('calendarBelow').style.display='none';
-      $('tripDetail').style.display='';
-      delete document.body.dataset.calendarWorkspace;
-      window.scrollTo(0,0);
-      if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Kalender';
-      renderTripDetail(tr, acts, files);
-    }
-    function backToGroup(){
-      $('tripDetail').style.display='none';
-      $('groupView').style.display='';
-      $('calendarBelow').style.display='';
-      document.body.dataset.calendarWorkspace='true';
-      if ($('backBtnLabel')) $('backBtnLabel').textContent = 'Start';
-      reload();
-    }
-
-    function renderTripDetail(tr, acts, files){
-      files = files || [];
-      const dt = tr.startDate ? (fmtDateKey(tr.startDate)+(tr.endDate&&tr.endDate!==tr.startDate?' – '+fmtDateKey(tr.endDate):'')) : 'Kein Datum';
-      // Grouped by day: a three-day plan should read as three days, not
-      // as one list with the date repeated on every line.
-      const itinDays = groupByDay(tr.itinerary||[]);
-      const itinCount = (tr.itinerary||[]).length;
-      const v = $('tripDetail');
-      v.innerHTML = `
-        <button class="pill" id="tdBack">‹ Zurück</button>
-        <div class="grp-card" style="border-left:4px solid ${groupColor(tr.familyId)};margin-top:12px">
-          <div class="grp-top"><span class="grp-name">${esc(tr.name)}</span>
-            <button class="mini" id="tdEdit" title="Bearbeiten">✎</button></div>
-          <div class="item-meta">${esc(tr.destination||'')}</div>
-          <div class="item-meta">📅 ${dt}</div>
-          ${tr.notes?`<p style="margin-top:8px;font-size:14px">${esc(tr.notes)}</p>`:''}
-          <div class="grp-actions"><button class="pill" id="tdIcs"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> .ics</button></div>
-        </div>
-
-        <div class="sub-card"><div class="sub-title">Programm</div>
-          <div class="row2"><input class="form-input" id="iDate" type="date"><input class="form-input" id="iTime" type="time"></div>
-          <input class="form-input" id="iTitle" placeholder="Programmpunkt" style="margin-top:8px">
-          <button class="btn btn-primary btn-block" id="iAdd" style="margin-top:8px">Hinzufügen</button>
-          <div id="iList" style="margin-top:10px">${itinCount ? itinDays.map(day => `
-            <div class="itin-day">
-              <div class="marke">${esc(day.heading)}</div>
-              <div class="rows">${day.items.map(it => {
-                const done = itineraryItemDone(tr,it);
-                return `<div class="row row--static${done?' done':''}" data-bereich="kalender">
-                  <button class="prog-check${done?' is-done':''}" type="button" data-itog="${esc(it.id||'')}"
-                    aria-label="${done?'Wieder öffnen':'Als erledigt markieren'}">${done?'✓':''}</button>
-                  <span class="row__icon">${it.time ? esc(it.time.slice(0,2)) : '<svg class="ic" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'}</span>
-                  <span class="row__body">
-                    <span class="row__title">${esc(it.title)}</span>
-                    ${it.tag ? `<span class="prog-tag">${esc(it.tag)}</span>` : ''}
-                    ${it.notes ? `<span class="row__sub">${esc(it.notes)}</span>` : ''}
-                    ${it.transport ? `<span class="row__sub">→ ${esc(it.transport)}</span>` : ''}
-                  </span>
-                  <span class="row__end">
-                    ${it.timeLabel||it.time ? `<span class="row__time">${esc(it.timeLabel||it.time)}</span>` : ''}
-                    <button class="hint__x" data-idel="${(tr.itinerary||[]).indexOf(it)}" title="Entfernen" aria-label="Entfernen"><svg class="ic" viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
-                  </span>
-                </div>`;
-              }).join('')}</div>
-            </div>`).join('') : '<p class="empty-hint" style="padding:10px">Noch nichts geplant.</p>'}</div>
-        </div>
-
-        <div class="sub-card"><div class="sub-title">Gast-Zugang</div>
-          <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Teile diesen Link nur mit Personen, die den Plan sehen und mit euch chatten dürfen.</p>
-          <button class="btn btn-primary btn-block" id="gShare"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg> Gast-Link erstellen &amp; kopieren</button>
-          <div id="gList" style="margin-top:10px"><p class="empty-hint" style="padding:10px">Lade Gäste…</p></div>
-        </div>
-
-        <div class="sub-card"><div class="sub-title">Aufgaben</div>
-          <input class="form-input" id="aName" placeholder="Aufgabe / Besorgung">
-          <button class="btn btn-primary btn-block" id="aAdd" style="margin-top:8px">Hinzufügen</button>
-          <div id="aList" style="margin-top:10px">${acts.length?acts.map(a=>`<div class="line ${a.done?'done':''}"><span class="check ${a.done?'done':''}" data-tog="${a.id}" data-done="${a.done?1:0}">${a.done?'✓':''}</span><span class="l-main"><span class="l-title">${esc(a.name)}</span></span><button class="mini" data-adel="${a.id}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join(''):'<p class="empty-hint" style="padding:10px">Keine Aufgaben.</p>'}</div>
-        </div>
-
-        <div class="sub-card"><div class="sub-title">Plan / Info-Seite</div>
-          <div class="tabs" style="margin-top:8px">
-            <button class="tab active" data-tp="paste">HTML</button><button class="tab" data-tp="upload">Datei</button><button class="tab" data-tp="url">Link</button></div>
-          <div data-tb="paste"><textarea class="form-textarea" id="pHtml" rows="3" placeholder="HTML…">${esc(tr.planHtml||'')}</textarea></div>
-          <div data-tb="upload" style="display:none"><label class="drop" id="pDrop"><span id="pDropText">HTML-Datei wählen</span><input type="file" id="pFile" accept=".html,.htm,text/html" hidden></label><p id="pChosen" style="font-size:12px;color:var(--accent);margin-top:6px;display:none"></p></div>
-          <div data-tb="url" style="display:none"><input class="form-input" id="pUrl" type="url" placeholder="https://… (z.B. Claude-Link)" value="${esc(tr.planUrl||'')}"></div>
-          <div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-primary" id="pSave" style="flex:1">Speichern</button>${(tr.planHtml||tr.planUrl||(tr.itinerary||[]).length)?`<button class="pill primary" id="pOpen">Programm öffnen</button>`:''}</div>
-        </div>
-
-        <div class="sub-card"><div class="sub-title">Dateien</div>
-          <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Bilder werden automatisch verkleinert. Sehr große Dateien: lieber den Link-Tab oben nutzen.</p>
-          <label class="drop" id="fDrop"><span>📎 Dateien wählen (PDF, Bild, …)</span><input type="file" id="fInput" multiple hidden></label>
-          <div class="progress" id="fProg" style="display:none"><i></i></div>
-          <div id="fList" style="margin-top:10px"></div>
-        </div>
-
-        <button class="btn btn-danger btn-block" id="tdDelete" style="margin-top:6px">Termin löschen</button>
-      `;
-      $('tdBack').onclick = backToGroup;
-      $('tdEdit').onclick = () => openTripForm(tr);
-      $('tdIcs').onclick = () => downloadIcs([tr], (tr.name||'termin'));
-      wireGuestSection(tr);
-      $('iAdd').onclick = async () => {
-        const title=$('iTitle').value.trim(); if(!title)return;
-        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-        const next=[...(tr.itinerary||[]), {id, title, date:$('iDate').value, time:$('iTime').value}];
-        await updateDoc(doc(db,'trips',tr.id),{itinerary:next}); tr.itinerary=next; renderTripDetail(tr,acts,files);
-      };
-      v.querySelectorAll('[data-idel]').forEach(b=>b.onclick=async()=>{
-        // Index into the stored array, not into the sorted view — the old
-        // code spliced a sorted copy by index and so removed the wrong
-        // point whenever the stored order differed from the display order.
-        const i=+b.dataset.idel; if(i<0) return;
-        const n=(tr.itinerary||[]).filter((_,j)=>j!==i);
-        await updateDoc(doc(db,'trips',tr.id),{itinerary:n}); tr.itinerary=n; renderTripDetail(tr,acts,files); });
-      v.querySelectorAll('[data-itog]').forEach(button => button.onclick = () => {
-        const item = (tr.itinerary||[]).find(entry=>entry.id===button.dataset.itog);
-        if (item) toggleItineraryItem(tr,item).then(()=>renderTripDetail(tr,acts,files));
-      });
-      $('aAdd').onclick = async () => { const name=$('aName').value.trim(); if(!name)return; await addDoc(collection(db,'activities'),{tripId:tr.id,name,done:false,createdAt:serverTimestamp()}); openTrip(tr.id); };
-      v.querySelectorAll('[data-tog]').forEach(b=>b.onclick=async()=>{ await updateDoc(doc(db,'activities',b.dataset.tog),{done:b.dataset.done!=='1'}); openTrip(tr.id); });
-      v.querySelectorAll('[data-adel]').forEach(b=>b.onclick=async()=>{ await deleteDoc(doc(db,'activities',b.dataset.adel)); openTrip(tr.id); });
-      v.querySelectorAll('[data-tp]').forEach(t=>t.onclick=()=>{ v.querySelectorAll('[data-tp]').forEach(x=>x.classList.toggle('active',x===t)); v.querySelectorAll('[data-tb]').forEach(b=>b.style.display=b.dataset.tb===t.dataset.tp?'':'none'); });
-      let planFileHtml='';
-      if($('pFile')) $('pFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{planFileHtml=String(r.result||'');$('pChosen').textContent='✓ '+f.name;$('pChosen').style.display='';}; r.readAsText(f); };
-      $('pSave').onclick = async () => {
-        const active=[...v.querySelectorAll('[data-tp]')].find(x=>x.classList.contains('active')).dataset.tp;
-        let planHtml='',planUrl='';
-        if(active==='upload'&&planFileHtml)planHtml=planFileHtml; else if(active==='url')planUrl=$('pUrl').value.trim(); else planHtml=$('pHtml').value.trim();
-
-        // Auto-import: if the pasted/uploaded HTML contains stop cards,
-        // fold them into the itinerary, replacing any stops from a previous
-        // import of this same plan (manually-added stops are untouched).
-        let itinerary = tr.itinerary || [];
-        if (planHtml) {
-          const { items } = parseItineraryHtml(planHtml, { baseDate: tr.startDate });
-          if (items.length) {
-            const manual = itinerary.filter(it => !it.autoImported);
-            itinerary = [...manual, ...items];
-          }
-        }
-
-        await updateDoc(doc(db,'trips',tr.id),{planHtml,planUrl,itinerary});
-        tr.planHtml=planHtml; tr.planUrl=planUrl; tr.itinerary=itinerary;
-        renderTripDetail(tr,acts,files);
-      };
-      if($('pOpen')) $('pOpen').onclick=()=>openPlan(tr);
-      // files (Firestore, free plan)
-      let curFiles = files;
-      const bindFiles=()=>{ $('fList').innerHTML=renderFileList(curFiles);
-        v.querySelectorAll('[data-fopen]').forEach(b=>b.onclick=()=>openStored(curFiles[+b.dataset.fopen]));
-        v.querySelectorAll('[data-fdel]').forEach(b=>b.onclick=()=>removeFile(b.dataset.fdel,curFiles,bindFiles)); };
-      bindFiles();
-      $('fDrop').onclick=()=>$('fInput').click();
-      $('fInput').onchange=async e=>{ await uploadFiles(tr.id,'trip',[...e.target.files],curFiles); bindFiles(); $('fInput').value=''; };
-      $('tdDelete').onclick = async () => { if(!confirm('Diesen Termin löschen?'))return;
-        const aq=await getDocs(query(collection(db,'activities'),where('tripId','==',tr.id))); await Promise.all(aq.docs.map(d=>deleteDoc(d.ref)));
-        const fq=await loadAttachments(tr.id); await Promise.all(fq.map(f=>delAttachment(f.id).catch(()=>{})));
-        await deleteDoc(doc(db,'trips',tr.id)); backToGroup(); };
-    }
-
-    function randToken(){ return Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b=>b.toString(36)).join('').slice(0,16); }
-
-    async function wireGuestSection(tr){
-      $('gShare').onclick = async () => {
-        let token = tr.guestToken;
-        if (!token) { token = randToken(); await updateDoc(doc(db,'trips',tr.id),{guestToken:token}); tr.guestToken = token; }
-        const url = `${location.origin}${location.pathname.replace(/planner\.html$/, 'guest.html')}?trip=${tr.id}&token=${token}`;
-        try { await navigator.clipboard.writeText(url); $('gShare').textContent = '✓ Link kopiert'; }
-        catch(e) { window.prompt('Link kopieren:', url); }
-        setTimeout(()=>{ if($('gShare')) $('gShare').textContent = '🔗 Gast-Link erstellen & kopieren'; }, 2000);
-      };
-      await loadGuestList(tr);
-    }
-
-    async function loadGuestList(tr){
-      const list = $('gList');
-      if (!list) return;
-      try {
-        const aq = await getDocs(query(collection(db,'guestAccess'), where('tripId','==',tr.id)));
-        if (!aq.docs.length) { list.innerHTML = '<p class="empty-hint" style="padding:10px">Noch keine Gäste.</p>'; return; }
-        const rows = await Promise.all(aq.docs.map(async d => {
-          const g = d.data();
-          let name = g.uid, lastActiveAt = null;
-          try {
-            const p = await getDoc(doc(db,'guestProfiles',g.uid));
-            if (p.exists()) { name = p.data().name || p.data().email || g.uid; lastActiveAt = p.data().lastActiveAt || null; }
-          } catch(e) {}
-          return { uid: g.uid, name, docId: d.id, lastActiveAt };
-        }));
-        // Firestore can't auto-delete inactive guest accounts on its own (that
-        // needs a scheduled Cloud Function on the Blaze plan) — this "zuletzt
-        // aktiv" hint is the manual substitute: spot anyone past 30 days and
-        // remove them with the button below.
-        const dayMs = 86400000;
-        list.innerHTML = rows.map(r => {
-          let sub = 'noch nie aktiv';
-          if (r.lastActiveAt?.toDate) {
-            const days = Math.floor((Date.now() - r.lastActiveAt.toDate().getTime()) / dayMs);
-            sub = days <= 0 ? 'heute aktiv' : `vor ${days} Tag${days===1?'':'en'} aktiv`;
-          }
-          const stale = r.lastActiveAt?.toDate && (Date.now() - r.lastActiveAt.toDate().getTime()) / dayMs > 30;
-          return `<div class="line">
-            <span class="l-main"><span class="l-title">${esc(r.name)}</span><span class="l-sub"${stale?' style="color:var(--danger,#c0392b)"':''}>${stale?'⚠ ':''}${sub}</span></span>
-            <button class="mini" data-gchat="${esc(r.uid)}" data-gname="${esc(r.name)}" title="Chat">💬</button>
-            <button class="mini" data-gdel="${esc(r.docId)}" title="Entfernen" aria-label="Entfernen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>
-          </div>`;
-        }).join('');
-        list.querySelectorAll('[data-gchat]').forEach(b=>b.onclick=()=>{
-          const destination = `messages.html?to=${encodeURIComponent(b.dataset.gchat)}&name=${encodeURIComponent(b.dataset.gname)}`;
-          if (!window.tvzaNavigate?.(destination)) location.href = destination;
-        });
-        list.querySelectorAll('[data-gdel]').forEach(b=>b.onclick=async()=>{
-          if(!confirm('Gast-Zugang entfernen?')) return;
-          await deleteDoc(doc(db,'guestAccess',b.dataset.gdel));
-          loadGuestList(tr);
-        });
-      } catch(e) { reportClientError('calendar-guests-load',e); list.innerHTML = '<p class="empty-hint" style="padding:10px">Gäste konnten nicht geladen werden.</p>'; }
-    }
-
-    function renderFileList(files){
-      if(!files||!files.length) return '<p class="empty-hint" style="padding:10px">Keine Dateien.</p>';
-      return files.map((f,i)=>`<div class="file-row"><span class="file-ic">${/image\//.test(f.type)?'🖼':'📄'}</span>
-        <span class="item-body"><span class="l-title" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span>
-        <span class="l-sub">${(f.size/1024).toFixed(0)} KB</span></span>
-        <button class="pill" data-fopen="${i}">Öffnen</button>
-        <button class="mini" data-fdel="${esc(f.id||'')}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join('');
-    }
-    async function uploadFiles(parentId, scope, list, curFiles){
-      const prog=$('fProg'); if(prog)prog.style.display='';
-      for(const file of list){
-        const st=await fileToStored(file);
-        if(!st){ alert(`„${file.name}" ist zu groß für den Gratis-Speicher (max ~0,9 MB; Bilder werden automatisch verkleinert). Für große Dateien nutze den Link-Tab.`); continue; }
-        try{ const r=await saveAttachment(parentId,scope,st); curFiles.push({id:r.id,...st}); }
-        catch(e){ reportClientError('attachment-save',e); alert('Datei speichern fehlgeschlagen.'); }
-      }
-      if(prog)prog.style.display='none';
-    }
-    async function removeFile(id, curFiles, rebind){ if(!id)return; if(!confirm('Datei löschen?'))return;
-      try{ await delAttachment(id); }catch(e){reportClientError('attachment-delete',e);} const i=curFiles.findIndex(f=>f.id===id); if(i>=0)curFiles.splice(i,1); rebind(); }
-
-    /* ── Special day form ── */
-    function setDayPane(p){ dayPane=p; document.querySelectorAll('#dayForm .tab').forEach(t=>t.classList.toggle('active',t.dataset.pane===p)); document.querySelectorAll('#dayForm [data-body]').forEach(b=>b.style.display=b.dataset.body===p?'':'none'); }
-    function bindDayFiles(){
-      const ex = dayFiles.map((f,i)=>`<div class="file-row"><span class="file-ic">${/image\//.test(f.type)?'🖼':'📄'}</span><span class="item-body"><span class="l-title" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span><span class="l-sub">${(f.size/1024).toFixed(0)} KB</span></span><button class="pill" data-dfo="${i}">Öffnen</button><button class="mini" data-dfd="${esc(f.id)}" title="Löschen" aria-label="Löschen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div>`).join('');
-      const st = pendingDayFiles.map(f=>`<div class="file-row"><span class="file-ic">📄</span><span class="item-body"><span class="l-title">${esc(f.name)}</span><span class="l-sub">wird beim Speichern hochgeladen</span></span></div>`).join('');
-      $('dFileList').innerHTML = ex+st;
-      $('dFileList').querySelectorAll('[data-dfo]').forEach(b=>b.onclick=()=>openStored(dayFiles[+b.dataset.dfo]));
-      $('dFileList').querySelectorAll('[data-dfd]').forEach(b=>b.onclick=async()=>{ if(!confirm('Datei löschen?'))return; await delAttachment(b.dataset.dfd).catch(()=>{}); const i=dayFiles.findIndex(x=>x.id===b.dataset.dfd); if(i>=0)dayFiles.splice(i,1); bindDayFiles(); });
-    }
-    async function openDayForm(existing){
-      editDayId=existing?existing.id:null; dayUploadHtml=''; pendingDayFiles=[]; dayFiles=[];
-      $('dayFormTitle').textContent=existing?'Persönlichen Termin bearbeiten':'Persönlicher Termin';
-      $('dTitle').value=existing?.title||''; $('dDate').value=existing?.date||sheetKey||todayKey;
-      $('dStartTime').value=existing?.startTime||'';
-      $('dEndTime').value=existing?.endTime||'';
-      $('dLocation').value=existing?.location||'';
-      $('dNotes').value=existing?.notes||'';
-      $('dHtml').value=existing?.planHtml||''; $('dUrl').value=existing?.planUrl||''; $('dHtmlChosen').style.display='none';
-      $('dFileList').innerHTML='';
-      $('dayFormDelete').style.display=existing?'':'none';
-      setDayPane(existing?.planUrl&&!existing?.planHtml?'url':'paste');
-      $('dayFormBackdrop').classList.add('visible'); $('dayForm').classList.add('visible');
-      if(existing){ dayFiles = await loadAttachments(existing.id); bindDayFiles(); }
-    }
-    function closeDayForm(){ $('dayFormBackdrop').classList.remove('visible'); $('dayForm').classList.remove('visible'); }
-    $('dayFormSave').onclick = async () => {
-      const title=$('dTitle').value.trim(), date=$('dDate').value;
-      if(!title){alert('Bitte einen Titel eingeben.');return;} if(!date){alert('Bitte ein Datum wählen.');return;}
-      let planHtml='',planUrl='';
-      if(dayPane==='upload'&&dayUploadHtml)planHtml=dayUploadHtml; else if(dayPane==='url')planUrl=$('dUrl').value.trim(); else planHtml=$('dHtml').value.trim();
-      const data={
-        ownerUid:user.uid,
-        title,
-        date,
-        startTime:$('dStartTime').value,
-        endTime:$('dEndTime').value,
-        location:$('dLocation').value.trim(),
-        notes:$('dNotes').value.trim(),
-        planHtml,
-        planUrl
-      };
-      $('dayFormSave').disabled=true;
-      try{
-        let id=editDayId;
-        if(id) await updateDoc(doc(db,'calendarDays',id),data);
-        else { data.createdAt=serverTimestamp(); const r=await addDoc(collection(db,'calendarDays'),data); id=r.id; }
-        if(pendingDayFiles.length){ const tmp=[]; await uploadFiles(id,'day',pendingDayFiles,tmp); }
-        await reload(); closeDayForm();
-      }catch(e){reportClientError('calendar-day-save',e);alert('Speichern fehlgeschlagen.');}
-      $('dayFormSave').disabled=false;
-    };
-    $('dayFormDelete').onclick = async () => { if(!editDayId)return; if(!confirm('Tag löschen?'))return;
-      const fq=await loadAttachments(editDayId); await Promise.all(fq.map(f=>delAttachment(f.id).catch(()=>{})));
-      await deleteDoc(doc(db,'calendarDays',editDayId)); await reload(); closeDayForm(); };
-    $('dFileDrop').onclick=()=>$('dFiles').click();
-    $('dFiles').onchange=e=>{ pendingDayFiles=[...e.target.files]; bindDayFiles(); };
-    $('dHtmlFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{dayUploadHtml=String(r.result||'');$('dHtmlChosen').textContent='✓ '+f.name;$('dHtmlChosen').style.display='';}; r.readAsText(f); };
-    document.querySelectorAll('#dayForm .tab').forEach(t=>t.onclick=()=>setDayPane(t.dataset.pane));
-    $('dDrop').onclick=()=>$('dHtmlFile').click();
-
-    /* ── Reminder form ── */
-    $('reminderSave').onclick = async () => {
-      const title = $('rTitle').value.trim();
-      const date = $('rDate').value;
-      if (!title) { alert('Bitte einen Titel eingeben.'); return; }
-      if (!date) { alert('Bitte ein Datum wählen.'); return; }
-      const existing = reminders.find(item => item.id === editReminderId);
-      const data = {
-        title,
-        date,
-        time: $('rTime').value,
-        notes: $('rNotes').value.trim(),
-        completed: existing?.completed === true,
-        updatedAt: serverTimestamp()
-      };
-      $('reminderSave').disabled = true;
-      try {
-        if (editReminderId) await updateDoc(doc(reminderCollection(), editReminderId), data);
-        else await addDoc(reminderCollection(), { ...data, createdAt:serverTimestamp() });
-        closeReminderForm();
-      } catch {
-        alert('Erinnerung konnte nicht gespeichert werden.');
-      } finally {
-        $('reminderSave').disabled = false;
-      }
-    };
-    $('reminderComplete').onclick = async () => {
-      const existing = reminders.find(item => item.id === editReminderId);
-      if (!existing) return;
-      $('reminderComplete').disabled = true;
-      const updated = await setReminderCompletion(existing, !existing.completed);
-      $('reminderComplete').disabled = false;
-      if (updated) closeReminderForm();
-    };
-    $('reminderDelete').onclick = async () => {
-      if (!editReminderId || !confirm('Diese Erinnerung löschen?')) return;
-      try {
-        await deleteDoc(doc(reminderCollection(), editReminderId));
-        closeReminderForm();
-      } catch {
-        alert('Erinnerung konnte nicht gelöscht werden.');
-      }
-    };
-
-    /* Auto-import lives in ../assets/js/itinerary.js — it used to be
-       copied into this page and into a second, unreachable planner
-       page. One copy now, with tests. */
-
-    /* ── Viewer ── */
-    function safeExternalUrl(value) {
-      try {
-        const parsed = new URL(String(value||''));
-        return ['http:','https:'].includes(parsed.protocol) ? parsed.href : '';
-      } catch { return ''; }
-    }
-    function safePlanHtml(html) {
-      if (!html?.trim()) return '';
-      const parsed = new DOMParser().parseFromString(html,'text/html');
-      parsed.querySelectorAll('script,iframe,object,embed,form,base,meta[http-equiv="refresh"],link[rel="modulepreload"],link[rel="preload"]')
-        .forEach(element=>element.remove());
-      parsed.querySelectorAll('*').forEach(element=>{
-        [...element.attributes].forEach(attribute=>{
-          const name=attribute.name.toLowerCase(), value=attribute.value.trim();
-          if(name.startsWith('on') || name==='srcdoc') element.removeAttribute(attribute.name);
-          if(['href','src','xlink:href','action','formaction'].includes(name) && /^(?:javascript|vbscript|data\s*:\s*text\/html)/i.test(value)) element.removeAttribute(attribute.name);
-          if(name==='style' && /expression\s*\(|url\s*\(\s*['"]?\s*javascript:/i.test(value)) element.removeAttribute(attribute.name);
-        });
-        if(element.tagName==='A'){
-          element.setAttribute('target','_blank');
-          element.setAttribute('rel','noopener noreferrer');
-        }
-      });
-      return '<!doctype html>'+parsed.documentElement.outerHTML;
-    }
-    function renderPlanViewer(tr) {
-      const items = tr.itinerary || [];
-      const grouped = groupByDay(items);
-      const doneCount = items.filter(item=>itineraryItemDone(tr,item)).length;
-      const pct = items.length ? Math.round(doneCount/items.length*100) : 0;
-      const range = tr.startDate
-        ? `${fmtDateKey(tr.startDate)}${tr.endDate&&tr.endDate!==tr.startDate?' – '+fmtDateKey(tr.endDate):''}`
-        : 'Ohne festes Datum';
-      $('viewerPlan').innerHTML = `<div class="plan-wrap">
-        <section class="plan-hero">
-          <div class="plan-hero__eyebrow">${esc(groupName(tr.familyId))}</div>
-          <h2>${esc(tr.name||'Programm')}</h2>
-          <div class="plan-hero__meta">${esc(range)}${tr.destination?' · '+esc(tr.destination):''}</div>
-          ${tr.notes?`<p class="plan-stop__notes">${esc(tr.notes)}</p>`:''}
-          <div class="plan-progress">
-            <div class="plan-progress__track"><span class="plan-progress__fill" style="width:${pct}%"></span></div>
-            <span class="plan-progress__text">${doneCount} / ${items.length} erledigt</span>
-          </div>
-        </section>
-        ${grouped.length ? grouped.map(day => {
-          const first = day.items[0] || {};
-          return `<section class="plan-day">
-            <header class="plan-day__head">
-              <div class="plan-day__date">${esc(day.heading)}</div>
-              ${first.dayTitle?`<div class="plan-day__title">${esc(first.dayTitle)}</div>`:''}
-              ${first.dayIntro?`<p class="plan-day__intro">${esc(first.dayIntro)}</p>`:''}
-            </header>
-            <div class="plan-stops">${day.items.map(item => {
-              const done = itineraryItemDone(tr,item);
-              const past = !!item.date && item.date < todayKey;
-              return `<article class="plan-stop${done?' is-done':''}">
-                <button class="plan-check${done?' is-done':''}" type="button" data-plan-stop="${esc(item.id||'')}"
-                  aria-label="${done?'Wieder öffnen':'Als erledigt markieren'}">${done?'✓':''}</button>
-                <div class="plan-stop__body">
-                  <div class="plan-stop__top">
-                    ${item.timeLabel||item.time?`<span class="plan-stop__time">${esc(item.timeLabel||item.time)}</span>`:''}
-                    <span class="plan-stop__title">${esc(item.title||'Programmpunkt')}</span>
-                    ${item.tag?`<span class="prog-tag">${esc(item.tag)}</span>`:''}
-                    ${past&&!done?'<span class="plan-past">Vorbei</span>':''}
-                  </div>
-                  ${item.notes?`<div class="plan-stop__notes">${esc(item.notes)}</div>`:''}
-                  ${item.transport?`<div class="plan-stop__transport">${esc(item.transport)}</div>`:''}
-                </div>
-              </article>`;
-            }).join('')}</div>
-          </section>`;
-        }).join('') : '<p class="empty-hint">Aus der HTML konnten noch keine Programmpunkte erkannt werden.</p>'}
-      </div>`;
-      $('viewerPlan').querySelectorAll('[data-plan-stop]').forEach(button => button.onclick = () => {
-        const item = (tr.itinerary||[]).find(entry=>entry.id===button.dataset.planStop);
-        if (item) toggleItineraryItem(tr,item);
-      });
-    }
-
-    /* Uploaded HTML is converted to the native, synchronised plan above.
-       The cleaned original remains available as a secondary in-app view. */
-    function openPlan(tr) {
-      if (!(tr.itinerary||[]).length) {
-        openViewer(tr.name,tr.planHtml,tr.planUrl);
-        return;
-      }
-      openPlanTripId = tr.id;
-      $('viewerTitle').textContent=tr.name||'Programm';
-      const frame=$('viewerFrame'), plan=$('viewerPlan'), mode=$('viewerMode');
-      frame.hidden=true; frame.removeAttribute('src'); frame.removeAttribute('srcdoc');
-      plan.hidden=false;
-      renderPlanViewer(tr);
-      if(tr.planHtml||tr.planUrl){
-        mode.hidden=false;
-        mode.textContent='Original ansehen';
-        mode.onclick=()=>openViewer(tr.name,tr.planHtml,tr.planUrl,tr);
-      } else {
-        mode.hidden=true;
-        mode.onclick=null;
-      }
-      $('viewer').classList.add('visible');
-    }
-
-    function openViewer(title,html,url,returnTrip=null){
-      $('viewerTitle').textContent=title||'Info';
-      const f=$('viewerFrame'),plan=$('viewerPlan'),mode=$('viewerMode');
-      plan.hidden=true; f.hidden=false;
-      const safeUrl=safeExternalUrl(url);
-      if(safeUrl){
-        f.setAttribute('sandbox','allow-scripts allow-forms allow-popups');
-        f.removeAttribute('srcdoc'); f.src=safeUrl;
-      }
-      else {
-        f.setAttribute('sandbox','allow-popups');
-        f.removeAttribute('src');
-        const safeHtml = safePlanHtml(html) || '<p style="font-family:sans-serif;padding:24px">Keine Infos.</p>';
-        f.srcdoc = safeHtml;
-      }
-      if(returnTrip){
-        mode.hidden=false;
-        mode.textContent='Programm';
-        mode.onclick=()=>openPlan(returnTrip);
-      } else {
-        mode.hidden=true;
-        mode.onclick=null;
-      }
-      $('viewer').classList.add('visible');
-    }
-    function closeViewer(){
-      $('viewer').classList.remove('visible');
-      const f=$('viewerFrame');
-      f.removeAttribute('src'); f.removeAttribute('srcdoc'); f.hidden=true;
-      $('viewerPlan').hidden=true;
-      $('viewerMode').hidden=true;
-      $('viewerMode').onclick=null;
-      openPlanTripId=null;
-    }
-
-    /* ── Provider-neutral calendar interchange (ICS) ── */
-    function exportAllIcs() {
-      const events = [
-        ...trips.map(item => ({
-          ...item,
-          title:item.name,
-          location:item.destination
-        })),
-        ...(showPersonal ? days : []).map(item => ({
-          ...item,
-          startDate:item.date,
-          description:item.notes
-        }))
-      ];
-      const body = buildCalendarIcs({
-        events,
-        reminders:showPersonal ? reminders : [],
-        calendarName:'Firn · Sichtbare Kalender'
-      });
-      const blob = new Blob([body], { type:'text/calendar;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = 'tvza-kalender.ics';
-      anchor.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      $('calendarSyncStatus').textContent = 'Firn-Kalender wurde exportiert.';
-    }
-    async function importCalendarFile(file) {
-      const status = $('calendarSyncStatus');
-      status.textContent = 'Kalender wird importiert…';
-      try {
-        const parsed = parseCalendarIcs(await file.text());
-        if (!parsed.events.length && !parsed.reminders.length) {
-          status.textContent = 'In dieser Datei wurden keine Termine oder Erinnerungen gefunden.';
-          return;
-        }
-        const knownEvents = new Map(days.filter(item => item.externalUid).map(item => [item.externalUid, item]));
-        const knownReminders = new Map(reminders.filter(item => item.externalUid).map(item => [item.externalUid, item]));
-        for (const event of parsed.events) {
-          const data = {
-            ownerUid:user.uid,
-            title:event.title,
-            date:event.startDate,
-            endDate:event.endDate,
-            startTime:event.startTime,
-            endTime:event.endTime,
-            location:event.location,
-            notes:event.description,
-            source:'ics',
-            externalUid:event.uid || '',
-            updatedAt:serverTimestamp()
-          };
-          const existing = event.uid ? knownEvents.get(event.uid) : null;
-          if (existing) await updateDoc(doc(db, 'calendarDays', existing.id), data);
-          else await addDoc(collection(db, 'calendarDays'), { ...data, createdAt:serverTimestamp() });
-        }
-        for (const reminder of parsed.reminders) {
-          const data = {
-            title:reminder.title,
-            date:reminder.date,
-            time:reminder.time,
-            notes:reminder.notes,
-            completed:reminder.completed,
-            source:'ics',
-            externalUid:reminder.uid || '',
-            updatedAt:serverTimestamp()
-          };
-          const existing = reminder.uid ? knownReminders.get(reminder.uid) : null;
-          if (existing) await updateDoc(doc(reminderCollection(), existing.id), data);
-          else await addDoc(reminderCollection(), { ...data, createdAt:serverTimestamp() });
-        }
-        await reload();
-        status.textContent = `${parsed.events.length} Termine und ${parsed.reminders.length} Erinnerungen importiert.`;
-      } catch {
-        status.textContent = 'Die Kalenderdatei konnte nicht gelesen werden.';
-      } finally {
-        $('calendarImportFile').value = '';
-      }
-    }
-
-    /* ── View toggle + wiring ── */
-    function setView(view) {
-      if (!CALENDAR_VIEWS.some(option=>option.key===view)) return;
-      curView=view;
-      if (view==='agenda') agendaShouldFocusToday = true;
-      if (isMobileCalendar()) {
-        try { localStorage.setItem(mobileViewKey(), view); } catch {}
-      }
-      calendarPreference.view=view;
-      saveCalendarPreference();
-      $('viewMenu').hidden=true;
-      $('viewPickerBtn').setAttribute('aria-expanded','false');
-    }
-    function wireUI(){
-      $('viewPickerBtn').onclick=event=>{
-        event.stopPropagation();
-        $('viewMenu').hidden=!$('viewMenu').hidden;
-        $('viewPickerBtn').setAttribute('aria-expanded',String(!$('viewMenu').hidden));
-      };
-      document.querySelectorAll('[data-calendar-view]').forEach(button => button.onclick=()=>setView(button.dataset.calendarView));
-      document.addEventListener('click',event=>{
-        if(!event.target.closest('.view-picker')){
-          $('viewMenu').hidden=true;
-          $('viewPickerBtn').setAttribute('aria-expanded','false');
-        }
-      });
-      $('prevBtn').onclick=()=>{ agendaShouldFocusToday=false; anchorKey=moveCalendarAnchor(anchorKey,curView,-1); renderCurrentView(); };
-      $('nextBtn').onclick=()=>{ agendaShouldFocusToday=false; anchorKey=moveCalendarAnchor(anchorKey,curView,1); renderCurrentView(); };
-      $('todayBtn').onclick=()=>{ agendaShouldFocusToday=true; anchorKey=todayKey; renderCurrentView(); };
-      $('calendarSettingsBtn').onclick=()=>openCalendarSetup(false);
-      document.querySelectorAll('[data-style]').forEach(card=>card.onclick=()=>{
-        calendarPreference.style=card.dataset.style;
-        if ($('calendarSetupSheet').dataset.firstRun==='true') {
-          curView=isMobileCalendar() ? 'agenda' : CALENDAR_STYLES[calendarPreference.style].defaultView;
-        }
-        applyCalendarPreference();
-      });
-      $('showGroupFeatures').onchange=()=>{
-        calendarPreference.showGroupFeatures=$('showGroupFeatures').checked;
-        updateNoGroupVisibility();
-      };
-      $('calendarSetupSave').onclick=()=>{ saveCalendarPreference(); closeCalendarSetup(); };
-      $('calendarSetupClose').onclick=closeCalendarSetup;
-      $('calendarSetupBackdrop').onclick=()=>{ if(calendarPreferenceExists)closeCalendarSetup(); };
-      $('addGroupBtn').onclick=zurGruppenseite;
-      $('manageGroupsBtn').onclick=zurGruppenseite;
-      $('createBackdrop').onclick=closeCreateSheet;
-      $('createSheetClose').onclick=closeCreateSheet;
-      $('createEventOption').onclick=()=>{
-        closeCreateSheet();
-        sheetKey=anchorKey<todayKey ? todayKey : anchorKey;
-        openDayForm(null);
-      };
-      $('createGroupEventOption').onclick=()=>{
-        closeCreateSheet();
-        sheetKey=anchorKey<todayKey ? todayKey : anchorKey;
-        openTripForm(null);
-      };
-      $('createReminderOption').onclick=()=>{
-        closeCreateSheet();
-        openReminderForm(null,anchorKey<todayKey ? todayKey : anchorKey);
-      };
-      $('mobileRemindersBtn').onclick=openReminderHub;
-      $('reminderHubBackdrop').onclick=closeReminderHub;
-      $('reminderHubClose').onclick=closeReminderHub;
-      $('reminderHubAdd').onclick=()=>{
-        closeReminderHub();
-        openReminderForm(null,todayKey);
-      };
-      // One unified entry point: every new entry is a "Termin" (trip-shaped
-      // record) — single-day or multi-day, both work the same way and get
-      // itinerary parsing + guest sharing. Existing legacy "Besondere Tage"
-      // (calendarDays docs) still render/edit fine, we just stopped creating new ones.
-      $('calAddBtn').onclick=openCreateSheet;
-      $('mobileCalAddBtn').onclick=openCreateSheet;
-      $('addTripBtn').onclick=()=>{ sheetKey=anchorKey; openTripForm(null); };
-      $('daySheetAdd').onclick=()=>{ closeDay(); openDayForm(null); };
-      $('daySheetReminder').onclick=()=>{ const date=sheetKey; closeDay(); openReminderForm(null,date); };
-      $('addReminderBtn').onclick=()=>openReminderForm();
-      $('calendarImportBtn').onclick=()=>$('calendarImportFile').click();
-      $('calendarImportFile').onchange=e=>{ const file=e.target.files?.[0]; if(file)importCalendarFile(file); };
-      $('calendarExportBtn').onclick=exportAllIcs;
-      $('dayBackdrop').onclick=closeDay; $('tripBackdrop').onclick=closeTripForm; $('tripFormClose').onclick=closeTripForm;
-      $('reminderBackdrop').onclick=closeReminderForm; $('reminderFormClose').onclick=closeReminderForm;
-      $('dayFormBackdrop').onclick=closeDayForm; $('dayFormClose').onclick=closeDayForm; $('viewerClose').onclick=closeViewer;
-      document.addEventListener('keydown',e=>{ if(e.key!=='Escape')return;
-        if($('viewer').classList.contains('visible'))closeViewer();
-        else if($('reminderHubSheet').classList.contains('visible'))closeReminderHub();
-        else if($('createSheet').classList.contains('visible'))closeCreateSheet();
-        else if($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists)closeCalendarSetup();
-        else if($('reminderSheet').classList.contains('visible'))closeReminderForm();
-        else if($('dayForm').classList.contains('visible'))closeDayForm();
-        else if($('tripSheet').classList.contains('visible'))closeTripForm();
-        else if($('daySheet').classList.contains('visible'))closeDay(); });
-
-      // Header "Start" link: step back to the calendar overview first when a
-      // sheet/viewer/trip detail is open, instead of jumping straight home.
-      $('backBtn').addEventListener('click', e => {
-        if ($('viewer').classList.contains('visible')) { e.preventDefault(); closeViewer(); return; }
-        if ($('reminderHubSheet').classList.contains('visible')) { e.preventDefault(); closeReminderHub(); return; }
-        if ($('createSheet').classList.contains('visible')) { e.preventDefault(); closeCreateSheet(); return; }
-        if ($('calendarSetupSheet').classList.contains('visible') && calendarPreferenceExists) { e.preventDefault(); closeCalendarSetup(); return; }
-        if ($('reminderSheet').classList.contains('visible')) { e.preventDefault(); closeReminderForm(); return; }
-        if ($('dayForm').classList.contains('visible')) { e.preventDefault(); closeDayForm(); return; }
-        if ($('tripSheet').classList.contains('visible')) { e.preventDefault(); closeTripForm(); return; }
-        if ($('daySheet').classList.contains('visible')) { e.preventDefault(); closeDay(); return; }
-        if ($('tripDetail').style.display !== 'none') { e.preventDefault(); backToGroup(); return; }
-        // No nested view open — let the link navigate home normally.
-      });
-    }
-
-  </script>
-  <script type="module" src="../assets/js/nav.js?v=15"></script>
+  <script type="module" src="../assets/js/feature/kalender/kalender.js?v=2"></script>
 </body>
 </html>

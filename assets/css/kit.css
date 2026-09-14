@@ -2020,6 +2020,28 @@ body.reorder-editing .module-tile::after {
 }
 .appbar__title   { text-align: left; font-size: clamp(14px, 4vw, 15px); font-weight: 700;
                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Ein Titel, der eine Wahl öffnet (setShellTitleWahl): der Name der
+   Gruppe mit einem Winkel — tippen heisst wechseln (v.35.49.0). */
+.appbar__title--wahl {
+  position: relative;
+  max-width: 100%;
+  padding-right: var(--s4);
+  border-radius: var(--r-icon);
+  cursor: pointer;
+}
+.appbar__title--wahl::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  opacity: 0.75;
+  transform: translateY(-70%) rotate(45deg);
+}
+.appbar__title--wahl:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .appbar--bereich .appbar__title {
   display: block;
   margin-right: auto;
@@ -2146,6 +2168,8 @@ body.reorder-editing .module-tile::after {
    ist die Leiste ein Raster aus vier Spalten, ein fuenftes Element risse
    es auf — dort wechselt man ueber die Karte oben auf der Gruppenseite. */
 .nav__wechsel { display: none; }
+/* Die Liste der Gruppen und das Wort "Gruppen" gibt es nur am Laptop. */
+.nav__gruppen, .nav__wort--mehrere { display: none; }
 /* Kopf und Fuss der Leiste gibt es nur am Laptop. Am Handy liegt die
    Leiste unten und traegt die vier Tabs; das Konto steht dort im Kopf
    der Seite. */
@@ -2754,6 +2778,47 @@ html.tvza-content-frame body > main {
   .nav__wechsel svg { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: none;
                       stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   body.nav-schmal .nav__wechsel:not([hidden]) { justify-content: center; padding: 0; margin-top: 0; }
+
+  /* Die Gruppen als Liste unter dem Tab (v.35.49.0). Aufgeklappt ersetzt
+     sie den Wechselknopf; zugeklappt bleibt der Knopf, denn für Namen
+     ist dort kein Platz. */
+  body:not(.nav-schmal) .nav__wechsel:not([hidden]) { display: none; }
+  body:not(.nav-schmal) .nav__gruppen:not([hidden]) {
+    display: flex; flex-direction: column; gap: 2px;
+    margin: 0 0 var(--s1);
+  }
+  body:not(.nav-schmal) .nav__item.hat-gruppenliste .nav__wort:not(.nav__wort--mehrere) { display: none; }
+  body:not(.nav-schmal) .nav__item.hat-gruppenliste .nav__wort--mehrere { display: inline; }
+  .nav__gruppe {
+    display: flex; align-items: center; gap: var(--s2);
+    min-height: 32px;
+    padding: 0 var(--s3) 0 calc(var(--s3) + var(--s1));
+    border-radius: var(--r-icon);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px; font-weight: 600; text-decoration: none;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+  .nav__gruppe:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+  .nav__gruppe.is-aktiv { color: #fff; font-weight: 700; }
+  .nav__gruppe.is-aktiv[aria-current] { background: rgba(255, 255, 255, 0.08); }
+  .nav__gruppe-zeichen {
+    width: 22px; height: 22px; flex: none;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    background: var(--tint, rgba(255, 255, 255, 0.12));
+    color: var(--deep, #fff);
+    font-size: 9px; font-weight: 800; letter-spacing: 0.02em;
+  }
+  .nav__gruppe-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* "+ Neue Gruppe": leise — da, wenn man es sucht, aber kein Knopf. */
+  .nav__gruppe--neu { color: rgba(255, 255, 255, 0.45); font-size: 12.5px; font-weight: 600; }
+  .nav__gruppe--neu .nav__gruppe-zeichen {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+  }
+  body.nav-schmal .nav__gruppen { display: none; }
 
   /* ── Zugeklappt ─────────────────────────────────────────────────
      Symbolspalte statt Verschwinden: der Weg zurueck bleibt sichtbar.

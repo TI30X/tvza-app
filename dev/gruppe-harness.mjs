@@ -42,6 +42,14 @@ const SHELL_STUB = `
     const el = document.querySelector('.appbar__title, .appbar__greet');
     if (el) el.textContent = String(text ?? '');
   };
+  export const setShellTitleWahl = (handler, beschriftung = '') => {
+    const el = document.querySelector('.appbar__title');
+    if (!el) return;
+    el.classList.toggle('appbar__title--wahl', !!handler);
+    if (handler) { el.setAttribute('role', 'button'); el.title = beschriftung; }
+    else { el.removeAttribute('role'); el.removeAttribute('title'); }
+    el.onclick = handler ? () => handler() : null;
+  };
   export const setShellMeta = text => {
     const spacer = document.querySelector('.appbar__spacer');
     if (!spacer) return;

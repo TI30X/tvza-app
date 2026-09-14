@@ -57,31 +57,25 @@
    nichts zu schreiben gibt. */
 #lnkVerteiler.is-leer { opacity: 0.5; pointer-events: none; }
 
-/* ── Gruppe wechseln ──────────────────────────────────────────────
-   Wo man ist, als Karte: Plaettchen in der Farbe der Gruppe (dieselbe
-   wie im Kalender), Name, Rolle und wie viele Gruppen es noch gibt.
-   Rechts steht, was ein Tipp tut. Bis v.35.30.0 ein Auswahlfeld. */
-.wechsler {
-  display: flex; align-items: center; gap: var(--s3);
-  width: 100%; padding: var(--s3) var(--s4);
-  border: 1px solid var(--border); border-radius: var(--r-row);
-  background: var(--surface); color: var(--ink);
-  font: inherit; text-align: left; cursor: pointer;
-  transition: border-color 150ms ease;
+
+/* Eine weitere Gruppe — leise am Ende der Seite (v.35.49.0). Athleten
+   brauchen das selten; wer es sucht, findet es. */
+.grp-weitere {
+  margin: var(--s6) 0 var(--s3);
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
 }
-.wechsler:hover { border-color: var(--ink-soft); }
-.wechsler__bild {
-  width: 40px; height: 40px; flex: none;
-  display: grid; place-items: center;
+.grp-weitere__link {
+  padding: var(--s1);
+  border: 0;
   border-radius: var(--r-icon);
-  background: var(--tint, var(--surface-2)); color: var(--deep, var(--ink));
-  font-size: 14px; font-weight: 800; letter-spacing: 0.02em;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
-.wechsler__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.wechsler__name { font-size: 15px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wechsler__mehr { font-size: 13px; color: var(--ink-soft); }
-.wechsler__aktion {
-  display: inline-flex; align-items: center; gap: var(--s1); flex: none;
-  color: var(--accent); font-size: 13px; font-weight: 700;
-}
-.wechsler__aktion svg { stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.grp-weitere__link:hover { color: var(--accent); }

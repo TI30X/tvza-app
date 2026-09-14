@@ -1,10 +1,414 @@
-/* ================================
-   TVZA — feature/planner.css
-   Planner/Reisen fragments already sitting in style.css (Phase A).
-   Distinct from feature/calendar.css, which is the git-mv'd
-   calendar.css file.
-   ================================ */
+/* ══════════════════════════════════════════════════════════════════
+   Die Blätter des Kalenders und der Termin im Detail.
 
-/* Day groups in the Planer programme list. */
+   Bis v.35.48.0 stand das meiste davon im Stilblock von planner.html
+   (220 Zeilen) und im alten calendar.css. Übernommen ist, was die
+   Blätter (Erstellen, Termin, Erinnerung, eigener Termin, Einstellungen),
+   der Termin im Detail und das Programm brauchen — mit Abständen aus
+   der Skala statt freier Pixel. Die Ansichten selbst stehen in
+   calendar.css.
+   ══════════════════════════════════════════════════════════════════ */
+
 .itin-day + .itin-day { margin-top: var(--s5); }
-@media (min-width: 900px) { .itin-day + .itin-day { margin-top: var(--s5); } }
+
+/* ── Blätter ───────────────────────────────────────────────────────── */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  background: rgba(0, 0, 0, 0.45);
+}
+.backdrop.visible { display: block; }
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  max-width: 680px;
+  max-height: 88vh;
+  margin: 0 auto;
+  padding: var(--s5) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom));
+  border-top-left-radius: var(--r-panel);
+  border-top-right-radius: var(--r-panel);
+  background: var(--surface);
+  overflow: auto;
+  transform: translateY(100%);
+  /* Geschlossen ist ein Blatt unsichtbar, nicht nur verschoben: am
+     Handy lag sonst der Kopf des Erinnerungsblatts über der Tab-Leiste
+     und verdeckte sie (gefunden mit der Attrappe, v.35.46.0).
+     visibility wechselt erst nach dem Hinausgleiten. */
+  visibility: hidden;
+  transition: transform .3s cubic-bezier(.22, .61, .36, 1), opacity 160ms ease, visibility 0s linear .3s;
+}
+.sheet.visible {
+  transform: translateY(0);
+  visibility: visible;
+  transition: transform .3s cubic-bezier(.22, .61, .36, 1), opacity 160ms ease, visibility 0s;
+}
+.grip {
+  width: 38px;
+  height: 4px;
+  margin: 0 auto var(--s3);
+  border-radius: var(--r-pill);
+  background: var(--border);
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+.sheet-title { font-size: 17px; font-weight: 700; }
+.icon-pill {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r-icon);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.pill {
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.field { margin-bottom: var(--s3); }
+.field label {
+  display: block;
+  margin-bottom: var(--s1);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.tabs { display: flex; gap: var(--s2); margin-bottom: var(--s2); }
+.tab {
+  flex: 1;
+  padding: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-icon);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tab.active { border-color: var(--accent); background: var(--accent-bg); color: var(--accent); }
+.drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s4);
+  border: 2px dashed var(--border);
+  border-radius: var(--r-icon);
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+}
+.gewaehlt { margin-top: var(--s2); color: var(--accent); font-size: 12px; font-weight: 700; }
+.feld-abstand { margin-top: var(--s2); }
+.blatt-loeschen { margin-top: var(--s2); }
+.knopfreihe__breit { flex: 1; }
+.html-import-feedback {
+  min-height: 18px;
+  margin-top: var(--s2);
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.html-import-feedback.is-good { color: var(--success, #177245); font-weight: 700; }
+.html-import-feedback.is-warning { color: var(--warning, #9a5b00); }
+.blatt-teil + .blatt-teil {
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+}
+.blatt-text {
+  margin: 0 0 var(--s3);
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.blatt-text:empty { display: none; }
+
+/* Erstellen */
+.create-options { display: grid; gap: var(--s2); }
+.create-option {
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.create-option:hover { background: var(--surface-2); }
+.create-option[hidden] { display: none; }
+.create-option__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-icon);
+}
+.create-option__icon--event { background: var(--accent-bg); color: var(--accent); }
+.create-option__icon--reminder { background: var(--tint-matura, #f5ecff); color: var(--matura-deep, #684198); }
+.create-option > span:nth-child(2) { display: flex; flex-direction: column; min-width: 0; }
+.create-option strong { font-size: 15px; }
+.create-option small { color: var(--ink-soft); font-size: 12px; line-height: 1.35; }
+.create-option__chev { color: var(--ink-soft); }
+
+/* Farben */
+.calendar-color-options { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.calendar-color {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border: 2px solid transparent;
+  border-radius: var(--r-pill);
+  background: var(--choice-color);
+  cursor: pointer;
+}
+.calendar-color.is-selected { border-color: var(--ink); outline: 2px solid var(--surface); outline-offset: -4px; }
+.calendar-color.is-selected::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 6px;
+  height: 11px;
+  border: solid var(--choice-ink);
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* Erinnerungen — im Blatt hinter der Glocke und in der Seitenleiste */
+.reminder-list { display: flex; flex-direction: column; }
+.reminder-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 52px;
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--border);
+}
+.reminder-row:first-child { border-top: 0; }
+.reminder-row__body {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.reminder-row__title { display: block; font-size: 14px; font-weight: 700; }
+.reminder-row__meta { display: block; margin-top: 2px; color: var(--ink-soft); font-size: 12px; }
+.reminder-row.is-done .reminder-row__title { color: var(--ink-soft); text-decoration: line-through; }
+.reminder-row.is-overdue .reminder-row__meta { color: var(--danger); font-weight: 700; }
+.reminder-hub-list { max-height: min(58vh, 520px); overflow: auto; }
+.reminder-hub-add { flex: 0 0 auto; margin-top: var(--s3); border-radius: var(--r-pill); }
+.reminder-complete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  margin-top: var(--s2);
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.reminder-complete-button.is-completed { border-color: var(--border); background: var(--surface-2); color: var(--ink); }
+
+/* Das Plus in den Knöpfen */
+.calendar-action-with-icon { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); }
+.calendar-action-icon {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin: 0;
+}
+.calendar-action-icon::before,
+.calendar-action-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 75%;
+  height: 12.5%;
+  border-radius: var(--r-pill);
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+.calendar-action-icon::after { transform: translate(-50%, -50%) rotate(90deg); }
+
+/* ── Der Termin im Detail ──────────────────────────────────────────── */
+
+.grp-card {
+  margin: var(--s3) 0 var(--s4);
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--farbe, var(--accent));
+  border-radius: var(--r-panel);
+  background: var(--surface);
+}
+.grp-top { display: flex; align-items: center; gap: var(--s3); }
+.grp-name { flex: 1; font-size: 18px; font-weight: 800; }
+.grp-actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.item-meta { margin-top: 2px; color: var(--ink-soft); font-size: 13px; }
+.item-body { flex: 1; min-width: 0; }
+.reise-notiz { margin: var(--s2) 0 0; font-size: 14px; line-height: 1.5; }
+.sub-card {
+  margin-bottom: var(--s3);
+  padding: var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+.sub-title {
+  margin-bottom: var(--s3);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.line { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) 0; border-top: 1px solid var(--border); }
+.line:first-child { border-top: 0; }
+.line .l-main { flex: 1; min-width: 0; }
+.l-title { font-size: 14px; font-weight: 600; }
+.l-sub { display: block; color: var(--ink-soft); font-size: 12px; }
+.l-sub.is-alt { color: var(--danger); }
+.done .l-title { color: var(--ink-soft); text-decoration: line-through; }
+.file-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) 0; border-top: 1px solid var(--border); }
+.file-row:first-child { border-top: 0; }
+.file-ic {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--r-icon);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.datei-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress { height: 4px; margin-top: var(--s2); overflow: hidden; border-radius: var(--r-pill); background: var(--surface); }
+.progress i { display: block; width: 0; height: 100%; background: var(--accent); transition: width .2s ease; }
+.prog-tag {
+  display: inline-flex;
+  padding: 2px var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 800;
+}
+.empty-hint { color: var(--ink-soft); font-size: 14px; text-align: center; }
+
+/* ── Programm und Info-Seite ───────────────────────────────────────── */
+
+.viewer { position: fixed; inset: 0; z-index: 80; display: none; flex-direction: column; background: var(--bg); }
+.viewer.visible { display: flex; }
+.viewer-bar { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); }
+.viewer-bar .vt { flex: 1; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+#viewerFrame { flex: 1; width: 100%; border: 0; background: #fff; }
+.viewer-plan { flex: 1; overflow: auto; padding: var(--s5) clamp(14px, 4vw, 32px) var(--s7); }
+.plan-wrap { width: min(760px, 100%); margin: 0 auto; }
+.plan-hero { margin-bottom: var(--s4); padding: var(--s4); border: 1px solid var(--border); border-radius: var(--r-panel); background: var(--surface); }
+.plan-hero__eyebrow { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.plan-hero h2 { margin: var(--s1) 0; font: 700 clamp(22px, 5vw, 32px)/1.15 Georgia, 'Times New Roman', serif; }
+.plan-hero__meta { color: var(--ink-soft); font-size: 13px; }
+.plan-progress { display: flex; align-items: center; gap: var(--s3); margin-top: var(--s4); }
+.plan-progress__track { flex: 1; height: 8px; overflow: hidden; border-radius: var(--r-pill); background: var(--surface-2); }
+.plan-progress__fill { display: block; height: 100%; border-radius: var(--r-pill); background: var(--accent); }
+.plan-progress__text { color: var(--ink-soft); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.plan-day { margin-bottom: var(--s4); overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-panel); background: var(--surface); }
+.plan-day__head { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.plan-day__date { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.plan-day__title { margin-top: 3px; font-size: 16px; font-weight: 800; }
+.plan-day__intro { margin: var(--s1) 0 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.45; }
+.plan-stops { padding: 2px var(--s4); }
+.plan-stop { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--s4) 0; border-top: 1px solid var(--border); }
+.plan-stop:first-child { border-top: 0; }
+.plan-stop.is-done .plan-stop__body { opacity: .6; }
+.plan-stop.is-done .plan-stop__title { text-decoration: line-through; }
+.plan-stop__body { flex: 1; min-width: 0; }
+.plan-stop__top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); margin-bottom: var(--s1); }
+.plan-stop__time { padding: 3px var(--s2); border: 1px solid var(--border); border-radius: var(--r-icon); color: var(--ink-soft); font-size: 12.5px; font-weight: 800; }
+.plan-stop__title { font-size: 16px; font-weight: 800; }
+.plan-stop__notes, .plan-stop__transport { margin-top: var(--s2); color: var(--ink-soft); font-size: 14px; line-height: 1.52; }
+.plan-stop__transport { position: relative; padding-left: var(--s4); }
+.plan-stop__transport::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-weight: 800; }
+.plan-past { color: var(--ink-soft); font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+
+/* ── Handy ─────────────────────────────────────────────────────────── */
+@media (max-width: 899px) {
+  /* Die Blätter stehen über der Tab-Leiste, nicht dahinter. */
+  .planner-page .sheet {
+    bottom: var(--tvza-shell-bottom, calc(var(--nav-hoehe) + env(safe-area-inset-bottom)));
+    max-height: min(80dvh, 720px);
+  }
+  .planner-page .backdrop { bottom: var(--tvza-shell-bottom, calc(var(--nav-hoehe) + env(safe-area-inset-bottom))); }
+  html.tvza-content-frame .planner-page .sheet,
+  html.tvza-content-frame .planner-page .backdrop { bottom: 0; }
+  .planner-page .reminder-hub-sheet { display: flex; flex-direction: column; overflow: hidden; }
+  .planner-page .reminder-hub-sheet .reminder-hub-list { flex: 1; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; }
+  .viewer-bar { padding: var(--s2) var(--s3); }
+  .viewer-plan { padding: var(--s3) var(--s3) var(--s6); }
+  .plan-hero { padding: var(--s4); }
+  .plan-day__head { padding: var(--s3) var(--s4); }
+  .plan-stops { padding: 2px var(--s4); }
+}
+
+/* ── Laptop: Blätter in der Mitte ──────────────────────────────────── */
+@media (min-width: 700px) {
+  .planner-page .sheet {
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: min(680px, calc(100vw - 40px));
+    max-height: min(84vh, 800px);
+    margin: 0;
+    padding: var(--s5);
+    border: 1px solid var(--border);
+    border-radius: var(--r-panel);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, calc(-50% + 16px)) scale(.985);
+  }
+  .planner-page .sheet.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  .planner-page .grip { display: none; }
+}
