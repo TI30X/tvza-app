@@ -2,12 +2,15 @@
 #
 # Ausrollen:
 #   cd worker
-#   npx wrangler secret put SERVICE_ACCOUNT     # Inhalt der Service-Account-JSON
+#   npx wrangler secret put SERVICE_ACCOUNT     # Inhalt der Service-Account-JSON (Kalender-Abo)
+#   npx wrangler secret put GEMINI_API_KEY      # der Schlüssel für den Assistenten
+#   npx wrangler kv namespace create KI         # einmal; die id unten eintragen
 #   npx wrangler deploy
 #
-# SERVICE_ACCOUNT ist ein Geheimnis und steht darum NICHT hier. Der
-# private Schlüssel darf nie in Git, nie in die Website und nie in
-# Firestore — dieselbe Regel wie für mailer/.env.
+# SERVICE_ACCOUNT und GEMINI_API_KEY sind Geheimnisse und stehen darum
+# NICHT hier. Sie dürfen nie in Git, nie in die Website und nie in
+# Firestore — dieselbe Regel wie für mailer/.env. Die id des KV-Speichers
+# ist kein Geheimnis.
 
 name = "firn-worker"
 main = "index.js"
@@ -20,6 +23,22 @@ compatibility_date = "2026-01-01"
 
 [vars]
 FIREBASE_PROJECT_ID = "tvza-11d44"
+# Der Assistent (ki.js). Die Modelle lassen sich hier tauschen, ohne Code.
+KI_MODELL_NORMAL = "gemini-2.5-flash-lite"
+KI_MODELL_HOCH = "gemini-2.5-pro"
+# Je Person und Tag: so oft die höhere Stufe, so oft insgesamt.
+KI_HOCH_PRO_TAG = "3"
+KI_PRO_TAG = "40"
+# Alle zusammen und Tag — bleibt unter der kostenlosen Stufe von Gemini.
+KI_ALLE_PRO_TAG = "600"
+# Von wo der Browser fragen darf.
+KI_ORIGINS = "https://ti30x.github.io,http://localhost:4174"
+
+# Das Kontingent des Assistenten. Die id gibt
+# `npx wrangler kv namespace create KI` aus — hier eintragen.
+[[kv_namespaces]]
+binding = "KI"
+id = "HIER_DIE_ID_EINTRAGEN"
 
 [observability]
 enabled = true

@@ -10,6 +10,10 @@
        in Apple Calendar, OHNE ein Konto bei Firn zu haben. Das ist der
        Weg, auf dem ein Verein eine App wirklich einführt.
 
+   POST /ki
+       Der Assistent (ki.js). Prüft das Firebase-ID-Token, zählt das
+       Kontingent und fragt Gemini — der Schlüssel liegt nur hier.
+
    GET /health
        Sagt, ob der Worker steht und ob er den Service-Account sieht.
        Beim ersten Ausrollen ist genau das die Frage.
@@ -33,6 +37,7 @@
 import { leseDokument, leseSammlung } from './firestore.js';
 import { alsKalender } from './ics.js';
 import { artWort } from '../assets/js/termine.js';
+import { kiAnfrage } from './ki.js';
 
 /* ── Hilfen ────────────────────────────────────────────────────────*/
 
@@ -119,6 +124,17 @@ export default {
     const adresse = new URL(request.url);
     const pfad = adresse.pathname.replace(/\/+$/, '') || '/';
 
+    /* Der Assistent kommt vor der GET-Schranke: er nimmt POST und die
+       Vorfrage des Browsers (OPTIONS). */
+    if (pfad === '/ki') {
+      try { return await kiAnfrage(request, env); }
+      catch (fehler) {
+        console.error('[firn-worker] ki', fehler?.message || fehler);
+        return new Response(JSON.stringify({ fehler: 'intern' }), { status: 500,
+          headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' } });
+      }
+    }
+
     /* Kalender-Clients schicken oft erst ein HEAD, um zu sehen, ob es
        die Adresse gibt. Wer nur GET beantwortet, wird von manchen gar
        nicht erst abonniert. */
@@ -130,7 +146,8 @@ export default {
       if (pfad === '/health') {
         const umgebung = umgebungAus(env);
         return text(`ok · projekt=${umgebung.projekt} · konto=${
-          umgebung.konto.client_email ? 'vorhanden' : 'FEHLT'}`);
+          umgebung.konto.client_email ? 'vorhanden' : 'FEHLT'} · ki=${
+          env.GEMINI_API_KEY && env.KI ? 'bereit' : 'FEHLT'}`);
       }
 
       const ics = pfad.match(/^\/ics\/([A-Za-z0-9_-]{1,64})$/);

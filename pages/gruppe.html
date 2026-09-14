@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=21" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=22" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
   <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=8" />
@@ -587,6 +587,23 @@
         <button class="grp-weitere__link einladung__weg" id="btnEinladungWeg" type="button" data-i18n="einl.zurueckziehen">Zurückziehen</button>
       </div>
       <p class="empty-hint" id="einladungText" hidden></p>
+
+      <!-- Der eigene Assistent der Gruppe (v.35.53.0): ein Name, und was
+           er beachten soll. Alle in der Gruppe sehen ihn in der Pille. -->
+      <div class="einladung assistent-einst" id="assistentEinst">
+        <p class="einladung__titel" data-i18n="ki.gruppeTitel">Assistent der Gruppe</p>
+        <p class="einladung__meta" data-i18n="ki.gruppeText">Gebt eurem Assistenten einen Namen und sagt ihm, worauf er achten soll. Alle in der Gruppe sehen ihn unten in der Pille.</p>
+        <div class="form-group">
+          <label class="form-label" for="assistentName" data-i18n="ki.nameLabel">Name</label>
+          <input class="form-input" id="assistentName" type="text" maxlength="30" autocomplete="off" placeholder="z.B. Coach Maxi" data-i18n-attr="placeholder:ki.namePh" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="assistentAnweisung" data-i18n="ki.anweisungLabel">Worauf er achten soll</label>
+          <textarea class="form-input" id="assistentAnweisung" rows="3" maxlength="600" placeholder="z.B. Trainings sind meistens in Malbun, Lager dauern eine Woche." data-i18n-attr="placeholder:ki.anweisungPh"></textarea>
+        </div>
+        <button class="b b--secondary b--block" id="btnAssistent" type="button" data-i18n="ki.speichern">Assistent speichern</button>
+        <p class="empty-hint" id="assistentStand" hidden></p>
+      </div>
       <button class="b b--secondary b--block" id="btnAbo" type="button" hidden data-i18n="grp.abo">Kalender-Abo erzeugen</button>
       <p class="empty-hint" id="aboText" hidden></p>
     </section>
@@ -604,6 +621,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=22"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=23"></script>
 </body>
 </html>

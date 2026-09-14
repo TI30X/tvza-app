@@ -117,6 +117,7 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const gruppenEinladungen = async () => globalThis.__einladungen || [];
     export const einladungZuruecknehmen = ${merke('einladungZuruecknehmen')};
     export const kontakte = async () => globalThis.__bekannte || [];
+    export const assistentSetzen = ${merke('assistentSetzen')};
     export const beitreten = ${merke('beitreten')};
     export const ergebnisSpeichern = ${merke('ergebnisSpeichern')};
     export const planVeroeffentlichen = ${merke('planVeroeffentlichen')};
@@ -278,6 +279,7 @@ async function lade({
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)
     .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`)
     .replace(`'../../einladung.js'`, `'${datei('assets/js/einladung.js')}'`)
+    .replace(`'../../ki.js'`, `'${datei('assets/js/ki.js')}'`)
     /* Der Chat: gesendet wird nichts, nur mitgeschrieben. */
     .replace(`'../../chat-senden.js'`, `'${dataUrl(`
       export const gespraechspartner = async () => globalThis.__partner || [];

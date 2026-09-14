@@ -25,6 +25,7 @@
 */
 
 import { createServer } from 'node:http';
+import { kiAttrappe } from './attrappe/ki.mjs';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,6 +61,8 @@ const VORSPANN = `
      window.__attrappeFehler. So fiel auf, dass start.js seit v.35.12.0
      mitten im Modul abbrach. */
   window.__attrappeFehler = [];
+  /* Der Assistent fragt hier nicht Gemini, sondern dev/attrappe/ki.mjs. */
+  window.FIRN_KI_BASIS = '/__ki-basis';
   addEventListener('error', e => __attrappeFehler.push(String(e.error?.stack || e.message).split('\\n').slice(0, 2).join(' | ')));
   addEventListener('unhandledrejection', e => __attrappeFehler.push('Promise: ' + String(e.reason?.stack || e.reason).split('\\n').slice(0, 2).join(' | ')));
   /* Abgefangene Fehler meldet die App mit console.warn('[wo] code')
@@ -85,6 +88,18 @@ createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   let rel = decodeURIComponent(url.pathname);
   if (rel.endsWith('/')) rel += 'index.html';
+
+  if (ATTRAPPE && rel === '/__ki-basis/ki' && req.method === 'POST') {
+    let roh = '';
+    for await (const stueck of req) roh += stueck;
+    let antwort;
+    try { antwort = kiAttrappe(JSON.parse(roh || '{}')); }
+    catch { antwort = { fehler: 'anfrage' }; }
+    /* Wie ein echtes Netz: nicht sofort. */
+    setTimeout(() => res.writeHead(antwort.fehler ? 400 : 200, { 'content-type': TYPES['.json'], 'cache-control': 'no-store' })
+      .end(JSON.stringify(antwort)), 600);
+    return;
+  }
 
   if (ATTRAPPE && rel === '/sw.js') {
     res.writeHead(200, { 'content-type': TYPES['.js'], 'cache-control': 'no-store' }).end(LEERER_SW);

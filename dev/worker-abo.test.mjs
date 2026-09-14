@@ -79,7 +79,7 @@ test('das Abo-Token ist ein eigenes, nicht der Beitrittscode', async () => {
   // Wer den Kalender liest, soll nicht beitreten können. Zwei Dinge,
   // zwei Codes — dieselbe Trennung wie überall sonst im Modell.
   assert.match(rules, /'inviteToken', 'icsToken', 'farbe', 'createdAt'/);
-  assert.match(rules, /hasOnly\(\['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'\]\)/);
+  assert.match(rules, /hasOnly\(\['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken', 'assistent'\]\)/);
   assert.match(groups, /export async function abonnementErneuern\(gid\)/);
   assert.match(groups, /updateDoc\(gruppeRef\(gid\), \{ icsToken: token \}\)/);
 

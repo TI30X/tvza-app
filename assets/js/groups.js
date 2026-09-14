@@ -116,6 +116,13 @@ export const VORGABE_BEREICHE = Object.freeze({
 export function gruppeRef(gid) { return doc(db, 'groups', gid); }
 export function mitgliedRef(gid, uid) { return doc(db, 'groups', gid, 'members', uid); }
 
+/* Der eigene Assistent einer Gruppe (v.35.53.0, ki.js): Name und was er
+   beachten soll. null nimmt ihn weg — dann heisst er wieder "Assistent".
+   Nur die Leitung (die Regel, assistentGueltig). */
+export function assistentSetzen(gid, assistent) {
+  return updateDoc(gruppeRef(gid), { assistent: assistent || deleteField() });
+}
+
 export async function ladeGruppe(gid) {
   const snap = await getDoc(gruppeRef(gid));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;

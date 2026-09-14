@@ -11,8 +11,52 @@ abonnieren die Adresse in Apple Calendar, ohne ein Konto bei Firn zu
 haben: kein Einladungsmail, kein Passwort, keine Installation. So führt
 ein Verein eine App tatsächlich ein.
 
-`GET /health` — sagt, ob der Worker steht und ob er den Service-Account
-sieht. Beim ersten Ausrollen ist genau das die Frage.
+`POST /ki` — der Assistent (die Pille in der App, `ki.js`). Der
+Gemini-Schlüssel liegt **nur hier**, als Secret. Der Worker prüft das
+Firebase-ID-Token der fragenden Person, zählt ihr Kontingent (tiefe
+Stufe `gemini-2.5-flash-lite`, dreimal am Tag die höhere
+`gemini-2.5-pro`) und leitet die Frage weiter. Er liest und schreibt
+keine Daten: den Kontext schickt der Browser der Person mit, und
+Eintragen tut der Browser nach ihrer Bestätigung — mit ihren Rechten.
+
+`GET /health` — sagt, ob der Worker steht, ob er den Service-Account
+sieht und ob der Assistent eingerichtet ist (`ki=bereit`).
+
+## Der Assistent — nur ihn einrichten
+
+Das Kalender-Abo braucht den Service-Account, der Assistent nicht. Für
+den Assistenten allein:
+
+```
+cd worker
+npx wrangler login
+npx wrangler kv namespace create KI
+```
+
+Die ausgegebene `id` in `wrangler.toml` bei `[[kv_namespaces]]`
+eintragen (sie ist kein Geheimnis). Dann den Schlüssel — **beim Prompt
+einfügen, nie in eine Datei**:
+
+```
+npx wrangler secret put GEMINI_API_KEY
+npx wrangler deploy
+```
+
+Danach die Adresse in `assets/js/worker-config.js` eintragen (siehe
+unten, Schritt 4) — ab dann erscheint die Pille.
+
+**Ohne Zusatzkosten** (Michel): Cloudflare Workers und KV im freien
+Tarif, Gemini über einen Schlüssel aus Google AI Studio **ohne
+hinterlegtes Zahlungsmittel** — dann gibt es nur die kostenlose Stufe,
+und ist sie voll, antwortet Gemini mit 429 statt einer Rechnung. In
+Google AI Studio unter „Billing" nachsehen, dass das Projekt des
+Schlüssels kein Rechnungskonto hat. `KI_ALLE_PRO_TAG` begrenzt zusätzlich
+alle Fragen am Tag.
+
+Hinweis zum Datenschutz: In der kostenlosen Stufe darf Google Anfragen
+zur Verbesserung seiner Dienste verwenden. Der Browser schickt darum nur
+Titel, Daten und Orte der eigenen Termine mit — keine Namen anderer
+Personen, keine Kontakte — und die Pille sagt es beim ersten Öffnen.
 
 ## Ausrollen
 

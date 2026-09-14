@@ -3493,3 +3493,226 @@ html.tvza-content-frame body > main {
   border: 1px solid var(--border); border-radius: var(--r-row);
   background: var(--surface-2);
 }
+
+/* ── Der Assistent (v.35.53.0) ──────────────────────────────────────
+   Eine Pille, die über jeder Seite schwebt (ki-pille.js) — am Handy
+   links über der Leiste (rechts sitzen die Erinnerungen), am Laptop
+   unten rechts. Ein Tipp öffnet das Gespräch: am Handy ein Blatt über
+   der Leiste, am Laptop eine Spalte. Nur im obersten Dokument. */
+.ki-pille {
+  position: fixed;
+  z-index: 45;
+  left: 3%;
+  bottom: calc(var(--tvza-shell-bottom, calc(var(--nav-hoehe) + env(safe-area-inset-bottom))) + clamp(10px, 2.5vw, 16px));
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  max-width: 60vw;
+  min-height: 44px;
+  padding: 0 var(--s4) 0 var(--s3);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: var(--r-pill);
+  background: var(--brand-gradient);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(15,52,96,.28);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.ki-pille:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(15,52,96,.34); }
+.ki-pille:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.ki-pille .ic { flex: none; color: #ffd27a; }
+.ki-pille__name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+body.ki-offen .ki-pille,
+body:has(dialog[open]) .ki-pille,
+body.global-reminders-open .ki-pille,
+body.settings-layer-open .ki-pille { display: none; }
+@media (min-width: 900px) {
+  .ki-pille { left: auto; right: var(--s5); bottom: var(--s5); max-width: 280px; }
+  body.ki-offen .ki-pille { display: none; }
+}
+
+.ki-blatt {
+  position: fixed;
+  z-index: 58;
+  left: 0;
+  right: 0;
+  bottom: var(--tvza-shell-bottom, calc(var(--nav-hoehe) + env(safe-area-inset-bottom)));
+  display: flex;
+  flex-direction: column;
+  max-height: min(78dvh, 640px);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: var(--r-panel) var(--r-panel) 0 0;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 -12px 40px rgba(15,23,42,.22);
+}
+@media (min-width: 900px) {
+  .ki-blatt {
+    left: auto;
+    right: var(--s5);
+    bottom: var(--s5);
+    width: min(400px, calc(100vw - 2 * var(--s5)));
+    height: min(640px, calc(100dvh - 2 * var(--s6)));
+    max-height: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--r-panel);
+  }
+}
+.ki-blatt__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s3) var(--s3) var(--s4);
+  border-bottom: 1px solid var(--border);
+}
+.ki-blatt__zeichen {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: var(--r-pill);
+  background: var(--brand-gradient);
+  color: #ffd27a;
+}
+.ki-blatt__wer { flex: 1; min-width: 0; }
+.ki-blatt__name { font-weight: 800; font-size: 15px; }
+.ki-blatt__unter { color: var(--ink-soft); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ki-blatt__unter:empty { display: none; }
+.ki-blatt__zu {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.ki-blatt__zu:hover { background: var(--accent-bg); color: var(--ink); }
+
+.ki-verlauf {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3) var(--s4);
+}
+.ki-hinweis {
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-row);
+  background: var(--accent-bg);
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ki-nachricht {
+  max-width: 88%;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-panel);
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ki-nachricht--ki { align-self: flex-start; background: var(--accent-bg); border-bottom-left-radius: 5px; }
+.ki-nachricht--ich { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
+.ki-nachricht--info { align-self: center; max-width: 100%; color: var(--ink-soft); font-size: 12px; text-align: center; }
+.ki-nachricht--warten { color: var(--ink-soft); animation: ki-atmen 1.2s ease-in-out infinite; }
+@keyframes ki-atmen { 50% { opacity: .45; } }
+
+.ki-karte {
+  display: grid;
+  gap: var(--s1);
+  padding: var(--s3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+}
+.ki-karte__was { color: var(--ink-soft); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.ki-karte__titel { font-weight: 700; }
+.ki-karte__wann { color: var(--ink-soft); font-size: 13px; }
+.ki-karte__knoepfe { display: flex; gap: var(--s2); margin-top: var(--s2); }
+.ki-karte__knoepfe .b { flex: 1; }
+.ki-karte__stand { margin-top: var(--s1); color: var(--ink-soft); font-size: 13px; font-weight: 700; }
+.ki-karte--erledigt { border-color: var(--accent); }
+.ki-karte--erledigt .ki-karte__stand { color: var(--accent); }
+.ki-karte--nein { color: var(--ink-soft); font-size: 13px; border-style: dashed; }
+
+.ki-vorschlaege {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  padding: 0 var(--s4) var(--s2);
+}
+.ki-vorschlaege:empty { display: none; }
+.ki-vorschlag {
+  padding: var(--s1) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ki-vorschlag:hover { border-color: var(--accent); background: var(--accent-bg); }
+
+.ki-eingabe {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s2);
+  align-items: end;
+  padding: var(--s2) var(--s3) var(--s1) var(--s4);
+  border-top: 1px solid var(--border);
+}
+.ki-feld {
+  width: 100%;
+  min-height: 44px;
+  max-height: 120px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.35;
+  resize: none;
+}
+.ki-feld:focus { outline: none; border-color: var(--accent); }
+.ki-senden {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.ki-blatt.is-arbeitet .ki-senden { opacity: .5; cursor: progress; }
+.ki-stufe {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s1) var(--s4) var(--s3);
+  color: var(--ink-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+.ki-stufe input { accent-color: var(--accent); }
+.ki-stufe__rest:empty { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ki-pille { transition: none; }
+  .ki-nachricht--warten { animation: none; }
+}

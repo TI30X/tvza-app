@@ -59,7 +59,7 @@ import {
 /* Die Hülle: Leiste, Router, Konto, Namenskarte. Früher ein zweites
    <script type="module"> in der Seite — die Seiten-Invariante erlaubt
    eins. */
-import '../../nav.js?v=18';
+import '../../nav.js?v=19';
 
 const tt = (key, deutsch, vars) => (window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch, vars)
   : String(deutsch).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz)));
@@ -469,6 +469,12 @@ async function gruppenterminAnlegen(tag) {
 window.addEventListener('firn-gruppe', () => vereinige());
 
 /* ── Daten laden ── */
+/* Der Assistent (ki-pille.js, v.35.53.0) trägt im obersten Dokument ein;
+   der Kalender steht dann oft geparkt im Rahmen daneben und erfährt es
+   über 'storage' — sonst stünde der neue Termin erst nach dem nächsten
+   Laden da. */
+addEventListener('storage', e => { if (e.key === 'firn.daten' && user) reload().catch(() => {}); });
+
 async function reload() {
   const t1 = Promise.all(groups.map(item =>
     getDocs(query(collection(db,'trips'), where('familyId','==',item.id)))

@@ -23,6 +23,7 @@ import { frage } from './dialog.js';
 import { mountAppRouter, basisTitel, basisTitelWahl } from './router.js?v=14';
 import { zeichen, wort, softwareZeigen, markeSetzen, aktuelleMarke, seiteMarkieren } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
+import { WORKER_BASIS } from './worker-config.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
 // The module skips content frames, so routed pages mount exactly one bell.
 import './notifications.js';
@@ -368,6 +369,7 @@ export function mountRail({ profile = null } = {}) {
   mountAppRouter(nav);
   verkabelLeiste();
   gruppeInDerLeiste(nav);
+  pilleLaden();
   return nav;
 }
 
@@ -442,7 +444,14 @@ function gruppeInDerLeiste(nav) {
         feld.textContent = aktiv.name;
         tab.title = aktiv.name;
       };
-      abo = groups.beobachteMeineGruppen(user.uid, liste => { gruppen = liste; zeichne(); });
+      abo = groups.beobachteMeineGruppen(user.uid, liste => {
+        gruppen = liste;
+        /* Die Pille des Assistenten (ki-pille.js) nimmt dieselbe Liste —
+           kein zweites Lesen, nur um einen Namen zu kennen. */
+        window.__firnGruppen = liste;
+        window.dispatchEvent(new CustomEvent('firn-gruppen'));
+        zeichne();
+      });
       liste?.addEventListener('click', event => {
         const zeile = event.target.closest('[data-gruppe-id]');
         if (!zeile) return;
@@ -462,6 +471,15 @@ function gruppeInDerLeiste(nav) {
       };
     } catch { /* siehe oben: der Tab bleibt, wie er ist */ }
   });
+}
+
+/* Der Assistent (v.35.53.0): eine Pille über jeder Seite — nur im
+   obersten Dokument, nie in einem Rahmen des Routers, und nur, wenn es
+   einen Worker gibt. Geladen erst hier, damit eine Seite ohne Assistent
+   nichts davon mitschleppt. */
+function pilleLaden() {
+  if (imRahmen() || !(globalThis.FIRN_KI_BASIS || WORKER_BASIS)) return;
+  import('./ki-pille.js').then(m => m.pilleZeigen()).catch(() => { /* ohne Pille geht alles weiter */ });
 }
 
 /* Zur Gruppe: über den Router, wenn er läuft — sonst lud der Wechsel

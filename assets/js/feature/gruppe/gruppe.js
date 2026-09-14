@@ -18,13 +18,13 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError, imKreis }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=19';
+import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=20';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
   zusagen, ladeZusagen,
   rolleSetzen, mitgliedEntfernen, uebergeben,
-  einladungErzeugen, beitreten, gruppenEinladungen, einladungZuruecknehmen, kontakte,
+  einladungErzeugen, beitreten, gruppenEinladungen, einladungZuruecknehmen, kontakte, assistentSetzen,
   ladeErgebnisse, ergebnisSpeichern,
   ladePlaene, planVeroeffentlichen, planLoeschen, eigeneProgramme, PLAN_FUER_ALLE,
   ladeProtokolle, ladeKontakt, ladeKontakte, kontaktSpeichern,
@@ -47,6 +47,7 @@ import { agendaAnsicht, tagName, kurzDatum } from '../woche/woche.js';
 import { frage, eingabe, meldung, mehrere } from '../../dialog.js';
 import { einladungsLink, einladungsText, codeZeigen, gemerktEinloesen } from '../../einladung.js';
 import { gespraechspartner, anMehrere } from '../../chat-senden.js';
+import { assistentSauber } from '../../ki.js';
 import { gruppeWaehlen, gruppenStil, kuerzel } from '../../gruppenwahl.js';
 import {
   kontaktSauber, pruefeKontakt, verteiler, ohneAdresse, mailtoAdresse, istEmail, ELTERN_MAX,
@@ -793,6 +794,56 @@ function zeichne() {
   zeichneMitglieder();
   zeichneWoche();
   zeichnePlaene();
+  zeichneAssistent();
+}
+
+/* ── Der Assistent der Gruppe (v.35.53.0) ──────────────────────────
+   Michel: "wäre cool, wenn Gruppen die Möglichkeit hätten, ihren
+   Assistenten in der Gruppe zu benennen und einen eigenen zu haben."
+   Name und Anweisung stehen an der Gruppe (assistent), die Pille
+   (ki-pille.js) trägt den Namen, und die Anweisung geht mit jeder Frage
+   an den Assistenten. Ändern darf die Leitung. */
+function zeichneAssistent() {
+  const name = $('assistentName');
+  const anweisung = $('assistentAnweisung');
+  if (!name || !anweisung) return;
+  /* Nicht überschreiben, was gerade jemand tippt. */
+  if (document.activeElement !== name) name.value = aktiv?.assistent?.name || '';
+  if (document.activeElement !== anweisung) anweisung.value = aktiv?.assistent?.anweisung || '';
+}
+
+async function assistentSpeichern() {
+  if (!aktiv) return;
+  const btn = $('btnAssistent');
+  const stand = $('assistentStand');
+  const neu = assistentSauber({ name: $('assistentName').value, anweisung: $('assistentAnweisung').value });
+  btn.disabled = true;
+  try {
+    await assistentSetzen(aktiv.id, neu);
+    aktiv = { ...aktiv, assistent: neu || undefined };
+    gruppen = gruppen.map(g => (g.id === aktiv.id ? aktiv : g));
+    stand.textContent = neu
+      ? t('ki.gespeichert', '{name} ist jetzt der Assistent eurer Gruppe.', { name: neu.name })
+      : t('ki.standard', 'Der Assistent heisst wieder «Assistent».');
+    /* Die Pille lebt im obersten Dokument (die Gruppe steht oft im Rahmen
+       des Routers): dort die Liste nachtragen und Bescheid sagen. Die
+       Mitgliedschaften, auf die die Leiste hört, ändern sich dabei nicht —
+       von allein käme der neue Name erst beim nächsten Laden. */
+    try { localStorage.setItem('firn.daten', String(Date.now())); } catch {}
+    try {
+      const oben = window.parent || window;
+      if (Array.isArray(oben.__firnGruppen)) {
+        oben.__firnGruppen = oben.__firnGruppen.map(g => (g.id === aktiv.id ? { ...g, assistent: neu || undefined } : g));
+      }
+      oben.dispatchEvent(new oben.CustomEvent('firn-gruppen'));
+    } catch { /* ohne Pille nichts zu tun */ }
+  } catch (e) {
+    reportClientError('gruppe/assistent', e);
+    stand.textContent = t('ki.f.speichern', 'Der Assistent liess sich nicht speichern.');
+  } finally {
+    stand.hidden = false;
+    btn.disabled = false;
+  }
 }
 
 /* ── Handlungen ────────────────────────────────────────────────────*/
@@ -2777,6 +2828,7 @@ async function einladungZurueckziehen() {
   $('btnEinladungChat')?.addEventListener('click', einladungImChat);
   $('btnEinladungKopieren')?.addEventListener('click', einladungKopieren);
   $('btnEinladungWeg')?.addEventListener('click', einladungZurueckziehen);
+  $('btnAssistent')?.addEventListener('click', assistentSpeichern);
   $('btnAbo')?.addEventListener('click', aboErzeugen);
   $('btnTermin')?.addEventListener('click', formOeffnen);
   $('btnAbbrechen')?.addEventListener('click', formSchliessen);

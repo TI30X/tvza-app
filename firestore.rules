@@ -953,20 +953,34 @@ service cloud.firestore {
                         .data.get('headUid', '') == request.auth.uid
                     );
 
+      /* Der eigene Assistent der Gruppe (v.35.53.0): ein Name und, was er
+         beachten soll. Kurz, weil beides mit jeder Frage an Gemini geht. */
+      function assistentGueltig(d) {
+        return !('assistent' in d)
+          || (d.assistent is map
+              && d.assistent.keys().hasOnly(['name', 'anweisung'])
+              && d.assistent.get('name', '') is string
+              && d.assistent.get('name', '').size() > 0
+              && d.assistent.get('name', '').size() <= 30
+              && d.assistent.get('anweisung', '') is string
+              && d.assistent.get('anweisung', '').size() <= 600);
+      }
+
       allow update: if
-                    // Kuratieren: Name, Farbe, eingeschaltete Bereiche und
-                    // ein frischer Einladungscode. 'art' steht bewusst NICHT
-                    // in dieser Liste — sie entscheidet ueber Wortwahl und
-                    // Vorgaben, und ein Wechsel im Betrieb wuerde bestehende
-                    // Termine und Rollen sinnlos machen.
+                    // Kuratieren: Name, Farbe, eingeschaltete Bereiche, ein
+                    // frischer Einladungscode und der Assistent. 'art' steht
+                    // bewusst NICHT in dieser Liste — sie entscheidet ueber
+                    // Wortwahl und Vorgaben, und ein Wechsel im Betrieb
+                    // wuerde bestehende Termine und Rollen sinnlos machen.
                     (
                       leadsGroup(gid)
                       && request.resource.data.diff(resource.data).affectedKeys()
-                        .hasOnly(['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'])
+                        .hasOnly(['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken', 'assistent'])
                       && request.resource.data.name is string
                       && request.resource.data.name.size() > 0
                       && request.resource.data.name.size() <= 80
                       && request.resource.data.bereiche is map
+                      && assistentGueltig(request.resource.data)
                     )
                     // Uebergabe: nur der Kopf, und nur an jemanden, der
                     // bereits Mitglied ist.
