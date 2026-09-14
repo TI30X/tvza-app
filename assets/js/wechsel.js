@@ -28,10 +28,18 @@
 
    Am Handy gibt es keinen Kopf der Leiste. Dort erscheint das Zeichen
    kurz oben in der Mitte und verwandelt sich da. Wer weniger Bewegung
-   eingestellt hat, bekommt den Endstand ohne Verwandlung. */
+   eingestellt hat, bekommt den Endstand ohne Verwandlung.
+
+   ── Deutlicher (v.35.51.0) ─────────────────────────────────────────
+   Michel: "die Animation sollte viel deutlicher sein". 450 ms oben in
+   der Leiste las sich wie ein Flackern. Jetzt verwandelt sich das
+   Zeichen gross in der Mitte des Bildschirms — am Handy UND am Laptop —,
+   langsamer (900 ms), die Karte dahinter wechselt die Farbe mit, und
+   das Zeichen in der Leiste pulsiert dazu. Nur an der Grenze, wie
+   vorher; wer weniger Bewegung will, sieht den Endstand. */
 
 export const FIRN = 'firn', TVZA = 'tvza';
-export const DAUER = 450;
+export const DAUER = 900;
 
 /* Halbe Breite des Firn-Bergs (M32 17 L51 46 L13 46) auf Höhe y. */
 const hw = y => 19 * (y - 17) / 29;
@@ -192,26 +200,39 @@ export function bewege(svg, nach, dauer = DAUER) {
 const passt = (win, frage) => !!win.matchMedia?.(frage).matches;
 const warte = ms => new Promise(r => setTimeout(r, ms));
 
-/* Am Handy: das Zeichen kurz oben in der Mitte. */
+/* Das Zeichen gross in der Mitte: es erscheint in der alten Software,
+   verwandelt sich, bleibt kurz stehen und geht. Durchklickbar — die
+   Seite darunter ist schon da. */
 async function hinweis(doc, von, nach, ruhig) {
   doc.querySelector('.wechsel-hinweis')?.remove();
   const box = doc.createElement('div');
   box.className = 'wechsel-hinweis';
   box.setAttribute('aria-hidden', 'true');
   box.dataset.software = von;
+  const karte = doc.createElement('div');
+  karte.className = 'wechsel-hinweis__karte';
   const svg = zeichen(von, doc);
-  box.append(svg, wort(doc));
+  karte.append(svg, wort(doc));
+  box.append(karte);
   doc.body.append(box);
   const win = doc.defaultView;
   win.requestAnimationFrame(() => box.classList.add('is-da'));
-  await warte(200);
+  await warte(250);
   box.dataset.software = nach;
   if (ruhig) stelle(svg, nach === TVZA ? 1 : 0);
   else await bewege(svg, nach);
-  await warte(700);
+  await warte(650);
   box.classList.remove('is-da');
-  await warte(220);
+  await warte(320);
   box.remove();
+}
+
+/* Das Zeichen in der Leiste pulsiert, solange es sich verwandelt. */
+function puls(nav, win) {
+  nav.classList.remove('is-wechsel');
+  void nav.offsetWidth;
+  nav.classList.add('is-wechsel');
+  win.setTimeout(() => nav.classList.remove('is-wechsel'), DAUER + 200);
 }
 
 let aktuell = null;
@@ -262,14 +283,16 @@ export function softwareZeigen(ziel, { sanft = true, doc = document } = {}) {
       nav.dataset.software = von;
       zeichenListe.forEach(svg => { stelle(svg, von === TVZA ? 1 : 0); bewege(svg, ziel); });
       win.requestAnimationFrame(() => { nav.dataset.software = ziel; });
+      puls(nav, win);
     } else {
       nav.dataset.software = ziel;
       zeichenListe.forEach(svg => bewege(svg, ziel));
+      puls(nav, win);
     }
   }
-  if ((!erstes || quer) && sanft && passt(win, '(max-width: 899px)')) {
-    hinweis(doc, von, ziel, ruhig);
-  }
+  /* Gross in der Mitte, am Handy und am Laptop (bis v.35.50.0 nur am
+     Handy, oben, klein). */
+  if ((!erstes || quer) && sanft) hinweis(doc, von, ziel, ruhig);
   return true;
 }
 

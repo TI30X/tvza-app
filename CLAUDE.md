@@ -26,7 +26,9 @@ Anmeldung, aber nicht als ein Produkt.
 
   **Der Wechsel ist sichtbar** (`assets/js/wechsel.js`, v.35.40.0): an der
   Grenze Firn ↔ TVZA wird oben in der Leiste der Berg zum T, „Firn" blendet
-  zu „TVZA"; am Handy erscheint das Zeichen kurz oben in der Mitte. Zwischen
+  zu „TVZA". Seit v.35.51.0 (Michel: „viel deutlicher") erscheint dazu das
+  Zeichen gross in der Mitte — am Handy und am Laptop, 900 ms, die Karte
+  wechselt die Farbe mit — und das Zeichen der Leiste pulsiert. Zwischen
   zwei Firn-Seiten passiert nichts. Das Zeichen der Leiste ist darum ein SVG
   im Dokument, kein `<img>`. Die Verwandlung rechnet zwischen den Ecken von
   je drei Vierecken; `dev/wechsel.test.mjs` prüft, dass beide Enden genau

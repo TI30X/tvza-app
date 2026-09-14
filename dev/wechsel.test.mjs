@@ -82,12 +82,15 @@ test('an der Grenze verwandelt sich das Zeichen, dazwischen passiert nichts', as
 
   assert.equal(softwareZeigen('tvza', { doc }), true);
   assert.equal(nav.dataset.software, 'tvza', 'das Wortzeichen blendet nach TVZA');
+  assert.ok(nav.classList.contains('is-wechsel'), 'das Zeichen der Leiste pulsiert nicht');
   await warte(DAUER / 2);
   const mitte = Number(svg.getAttribute('data-t'));
   assert.ok(mitte > 0 && mitte < 1, `mitten in der Verwandlung steht t=${mitte}`);
   await warte(DAUER);
   assert.equal(svg.getAttribute('data-t'), '1');
-  assert.equal(doc.querySelector('.wechsel-hinweis'), null, 'am Laptop keine zweite Anzeige');
+  /* Seit v.35.51.0 auch am Laptop gross in der Mitte (Michel: "viel
+     deutlicher"), und das Zeichen der Leiste pulsiert. */
+  assert.ok(doc.querySelector('.wechsel-hinweis .wechsel-hinweis__karte svg'), 'am Laptop keine Anzeige in der Mitte');
 
   softwareZeigen('firn', { doc });
   await warte(DAUER * 1.5);
@@ -100,7 +103,7 @@ test('wer weniger Bewegung will, bekommt den Endstand sofort', () => {
   assert.equal(svg.getAttribute('data-t'), '1');
 });
 
-test('am Handy erscheint das Zeichen kurz oben und geht wieder', async () => {
+test('am Handy erscheint das Zeichen gross in der Mitte und geht wieder', async () => {
   const { doc } = seite({ handy: true });
   softwareZeigen('tvza', { doc });
   const box = doc.querySelector('.wechsel-hinweis');
@@ -109,7 +112,7 @@ test('am Handy erscheint das Zeichen kurz oben und geht wieder', async () => {
   assert.equal(box.dataset.software, 'firn', 'die Anzeige beginnt in der alten Software');
   await warte(300);
   assert.equal(box.dataset.software, 'tvza');
-  await warte(DAUER + 700 + 400);
+  await warte(DAUER + 650 + 500);
   assert.equal(doc.querySelector('.wechsel-hinweis'), null, 'die Anzeige bleibt stehen');
 });
 
@@ -145,7 +148,7 @@ test('über eine Seitengrenze verwandelt sich das Zeichen auf der neuen Seite', 
     const ruhig = neueSeite(zuletzt);
     softwareZeigen(softwareVon(ruhig.doc), { doc: ruhig.doc });
     assert.equal(ruhig.svg.getAttribute('data-t'), '0');
-    assert.equal(ruhig.doc.querySelector('.wechsel-hinweis'), null);
+    assert.equal(ruhig.doc.querySelector('.wechsel-hinweis'), null, 'ohne Wechsel keine Anzeige');
   }
 
   // Am Handy erscheint dazu das Zeichen oben.
@@ -164,5 +167,7 @@ test('das Zeichen der Leiste kann sich bewegen, und das Kit blendet die Wortzeic
   const kit = await lies('assets/css/kit.css');
   assert.match(kit, /\.software-wort > \.tvza \{ opacity: 0; \}/);
   assert.match(kit, /\[data-software="tvza"\] \.software-wort > \.firn \{ opacity: 0; \}/);
-  assert.match(kit, /@media \(prefers-reduced-motion: reduce\) \{\s*\.wechsel-hinweis, \.wechsel-hinweis\.is-da \{ transform: translate\(-50%, 0\); \}/);
+  assert.match(kit, /@media \(prefers-reduced-motion: reduce\) \{\s*\.wechsel-hinweis, \.wechsel-hinweis\.is-da \{ transform: none; \}/);
+  assert.match(kit, /\.nav\.is-wechsel \.nav__zeichen \{ animation: zeichen-puls 900ms/);
+  assert.match(kit, /\.wechsel-hinweis \{\s*position: fixed; z-index: 400; inset: 0;/, 'die Anzeige steht nicht mehr gross in der Mitte');
 });
