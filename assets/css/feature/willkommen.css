@@ -287,3 +287,5 @@
 :root[data-theme="dark"] .wk-beta {
   background: color-mix(in oklab, var(--firn-glut) 12%, var(--surface));
 }
+/* Die Nutzungsbedingungen, leise im Fuss (v.35.53.0). */
+.wk-fuss__link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

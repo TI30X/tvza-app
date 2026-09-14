@@ -154,7 +154,10 @@ test('der Name des Betreibers steht je Seite hoechstens einmal, als „betrieben
   const funde = [];
   for (const f of [...wurzel, ...unter]) {
     const html = (await readFile(join(root, f), 'utf8')).replace(/<!--[\s\S]*?-->/g, '');
-    const koerper = html.slice(html.indexOf('<body'));
+    /* Ausnahme mit Grund (v.35.53.0): der Text der Nutzungsbedingungen
+       nennt den Betreiber mit Namen — ein Vertrag muss sagen, mit wem.
+       Das ist kein Logo; Kopf und Fuss der Seite gelten weiter. */
+    const koerper = html.slice(html.indexOf('<body')).replace(/<main class="nb">[\s\S]*?<\/main>/, '');
     const zeilen = koerper.match(/<[a-z]+[^>]*data-i18n="fuss\.betrieben"[^>]*>[^<]*</g) || [];
     if (zeilen.length > 1) funde.push(`${f}: ${zeilen.length}× betrieben von`);
     const rest = zeilen.reduce((k, z) => k.replace(z, ''), koerper);

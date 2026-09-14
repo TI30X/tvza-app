@@ -71,6 +71,12 @@ Anmeldung, aber nicht als ein Produkt.
   (mit der Marke „TVZA"), darunter die Firn-Bereiche mit dem Zeichen
   „Firn". `dev/kreis.test.mjs`.
 
+**Nutzungsbedingungen** (v.35.53.0): `nutzung.html`, deutsch und verbindlich,
+verlinkt beim Registrieren und im Fuss von Willkommen. Kein Preis und kein
+Wort darüber, wer was bezahlt (Michel: „muss nirgends stehen"),
+`dev/nutzung.test.mjs`. Offen und bei Michel: Kontaktadresse und das
+anwendbare Recht (jetzt „am Sitz des Betreibers").
+
 Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
 Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 „betrieben von Timothy van Zanten" (`fuss.betrieben`) in der Fusszeile —
@@ -105,7 +111,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-67 Testdateien, **732 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+68 Testdateien, **734 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -632,7 +638,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **975 Schlüssel** aus zwölf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **979 Schlüssel** aus zwölf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel

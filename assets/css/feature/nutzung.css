@@ -1,0 +1,40 @@
+/* Die Nutzungsbedingungen (v.35.53.0). Rahmen, Kopf und Fuss kommen aus
+   willkommen.css — dieselbe Tür, nur ein ruhiger Text dahinter. Eine
+   Spalte, die sich lesen lässt: 42em, wie die Absätze auf Willkommen. */
+
+.nb-marke { color: inherit; text-decoration: none; }
+.nb-marke .firn { font-size: 1.5rem; }
+
+.nb {
+  max-width: 42em;
+  margin-inline: auto;
+  padding-block: var(--s5) var(--s7);
+}
+.nb__titel {
+  margin: 0 0 var(--s2);
+  font-size: clamp(28px, 6vw, 40px);
+  line-height: 1.1;
+}
+.nb__stand,
+.nb__sprache {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.nb__abschnitt { margin-top: var(--s6); }
+.nb__abschnitt h2 {
+  margin: 0 0 var(--s2);
+  font-size: 18px;
+}
+.nb__abschnitt p,
+.nb__abschnitt li {
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.nb__abschnitt p { margin: 0 0 var(--s3); }
+.nb__abschnitt ul {
+  display: grid;
+  gap: var(--s2);
+  margin: 0 0 var(--s3);
+  padding-left: var(--s5);
+}

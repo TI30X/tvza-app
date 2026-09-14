@@ -26,6 +26,8 @@
     }
     /* Wer über einen Einladungslink kommt (v.35.53.0), sieht, warum er
        hier ist — statt eines Formulars ohne Zusammenhang. */
+    .login-nutzung { margin: 0 0 var(--s3); text-align: center; }
+    .login-nutzung a { color: var(--accent); font-weight: 600; }
     .login-einladung {
       margin: 0 0 var(--s4);
       padding: var(--s3) var(--s4);
@@ -118,6 +120,7 @@
           <input class="form-input" id="fPass" name="password" type="password" placeholder="mind. 6 Zeichen" data-i18n-attr="placeholder:login.passPh" autocomplete="current-password" autocapitalize="none" />
         </div>
 
+        <p class="form-hint login-nutzung" id="nutzungHinweis" hidden data-i18n-html="login.nutzung">Mit dem Registrieren stimmst du den <a href="nutzung.html">Nutzungsbedingungen</a> zu.</p>
         <button class="btn btn-primary btn-block" id="submitBtn" type="submit" style="padding:12px" data-i18n="login.anmelden">Anmelden</button>
       </form>
 
@@ -192,6 +195,8 @@
       $('nameGroup').style.display = mode === 'register' ? '' : 'none';
       $('inviteGroup').style.display = mode === 'register' && !gruppenEinladung ? '' : 'none';
       $('einladungHinweis').hidden = !gruppenEinladung;
+      /* Wer ein Konto anlegt, sieht, wozu er Ja sagt (v.35.53.0). */
+      $('nutzungHinweis').hidden = mode !== 'register';
       $('subTitle').textContent = mode === 'register'
         ? (gruppenEinladung ? t('login.subNeuKurz', 'Erstelle dein Konto.')
           : t('login.subNeu', 'Erstelle dein Konto. Ein Einladungscode ist optional.'))
