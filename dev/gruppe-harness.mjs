@@ -153,6 +153,9 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     };
     export const ladeProtokoll = async (gid, uid, datum) => {
       (globalThis.__aufrufe ||= []).push(['ladeProtokoll', gid, uid, datum]);
+      /* Wie die Regel bis v.35.50.0: ein Protokoll, das es noch nicht gibt,
+         durfte ein Athlet nicht lesen. */
+      if (globalThis.__protokollAbgelehnt) throw new Error('Missing or insufficient permissions.');
       return globalThis.__protokoll?.[uid] || { uid, datum, units: {} };
     };
     export const protokollSpeichern = ${merke('protokollSpeichern')};

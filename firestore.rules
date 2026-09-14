@@ -1298,7 +1298,14 @@ service cloud.firestore {
        Behauptung — loeschen darf er, damit er nach einem Irrtum
        aufraeumen kann. */
     match /groups/{gid}/protokoll/{id} {
-      allow get, list: if inGroup(gid)
+      /* get fragt die Kennung, nicht das Dokument: ein Athlet öffnet eine
+         Einheit an einem Tag, an dem er noch nichts eingetragen hat — das
+         Dokument gibt es dann nicht, resource ist null, und bis v.35.50.0
+         lehnte die Regel das Lesen darum ab. Der Player meldete "Der Plan
+         liess sich nicht laden" (Michel, am iPhone). */
+      allow get: if inGroup(gid)
+                 && (id.split('__')[0] == request.auth.uid || leadsGroup(gid));
+      allow list: if inGroup(gid)
                     && (
                       resource.data.get('uid', '') == request.auth.uid
                       || leadsGroup(gid)

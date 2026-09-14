@@ -485,7 +485,17 @@ async function zeigeAnsicht(uid) {
     } catch { bilder = {}; }
     /* In der Ansicht das Protokoll des Athleten: die Leitung sieht, was
        an dem Tag eingetragen wurde (allow get: leadsGroup). */
-    protokoll = await ladeProtokoll(gid, ansicht ? plan.fuer : user.uid, datum);
+    /* Das Protokoll ist Beiwerk wie die Bilder: ohne es steht die
+       Einheit leer da, nicht gar nicht. Bis v.35.50.0 riss ein
+       abgelehntes Lesen den ganzen Plan mit — die Regel verweigerte das
+       eigene Protokoll eines Tages, an dem es noch keines gab, und am
+       iPhone des Athleten stand "Der Plan liess sich nicht laden". */
+    try {
+      protokoll = await ladeProtokoll(gid, ansicht ? plan.fuer : user.uid, datum);
+    } catch (e) {
+      reportClientError('einheit/protokoll', e);
+      protokoll = { units: {} };
+    }
     if (!protokoll.units) protokoll.units = {};
 
     setShellTitle(plan.titel || t('eh.einheit', 'Einheit'));

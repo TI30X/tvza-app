@@ -91,6 +91,7 @@ KEYS = {
 'eh.videoAnsehen': ('Video ansehen', 'Watch the video', 'Voir la vidéo',
                    'Guarda il video', 'Zobacz wideo', 'Video bekijken',
                    'Ver el vídeo'),
+'eh.video':        ('Video', 'Video', 'Vidéo', 'Video', 'Wideo', 'Video', 'Vídeo'),
 'eh.satzAbhaken': ('Satz {n} wie geplant', 'Set {n} as planned',
                   'Série {n} comme prévu', 'Serie {n} come previsto',
                   'Seria {n} zgodnie z planem', 'Set {n} zoals gepland',

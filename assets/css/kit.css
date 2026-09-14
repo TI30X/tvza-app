@@ -3215,13 +3215,19 @@ html.tvza-content-frame body > main {
 .ueb-kopf { display: flex; align-items: center; gap: var(--s3); }
 .ueb-kopf .form-title { flex: 1; min-width: 0; margin: 0; }
 
+/* Mit Wort, nicht nur als Dreieck: ein Play-Zeichen allein las Michel
+   nicht als "Video dieser Übung" (v.35.50.0). */
 .ueb-video {
   flex: none;
-  width: 36px; height: 36px;
-  display: grid; place-items: center;
+  min-height: 36px;
+  display: inline-flex; align-items: center; gap: var(--s1);
+  padding: 0 var(--s3) 0 var(--s2);
   border-radius: var(--r-pill);
   background: var(--accent-bg);
   color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
   transition: background-color 150ms ease;
 }
 .ueb-video:hover { background: color-mix(in oklab, var(--accent) 18%, var(--surface)); }

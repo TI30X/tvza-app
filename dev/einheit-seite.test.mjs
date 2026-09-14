@@ -129,6 +129,28 @@ test('ein Athlet öffnet seinen eigenen Plan und trägt ein', async () => {
   } finally { zurueck(); }
 });
 
+/* Michel, am iPhone: "die Trainingsinhalte laden nicht". Ein Athlet
+   öffnete eine Einheit an einem Tag ohne Protokoll; die Regel lehnte das
+   Lesen ab (resource war null), und der ganze Plan meldete "liess sich
+   nicht laden". Die Leitung merkte nichts — für sie galt leadsGroup. */
+test('ein abgelehntes Protokoll nimmt den Plan nicht mit — die Einheit steht, leer', async () => {
+  globalThis.__protokollAbgelehnt = true;
+  const { doc, zurueck } = await starteEinheit({
+    suche: `?g=g1&p=p2&u=${kraft}&d=2026-08-05`,
+    plaene: [plan('p2', 'timo')], mitglieder: MITGLIEDER,
+  });
+  try {
+    await warte(() => !doc.getElementById('secPlayer').hidden);
+    assert.equal(doc.getElementById('ladeFehler').hidden, true, doc.getElementById('ladeFehler').textContent);
+    assert.equal(doc.getElementById('secPlayer').hidden, false);
+  } finally { zurueck(); delete globalThis.__protokollAbgelehnt; }
+
+  /* Und die Regel fragt die Kennung, nicht das Dokument. */
+  const rules = await readFile(join(root, 'firestore.rules'), 'utf8');
+  const block = rules.match(/match \/groups\/\{gid\}\/protokoll\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] || '';
+  assert.match(block, /allow get: if inGroup\(gid\)\s*&& \(id\.split\('__'\)\[0\] == request\.auth\.uid \|\| leadsGroup\(gid\)\);/);
+});
+
 test('ein Athlet bekommt den Plan eines anderen nicht — die Regel sagt nein', async () => {
   const { doc, zurueck } = await starteEinheit({
     suche: `?g=g1&p=p1&u=${kraft}`,
@@ -190,13 +212,18 @@ test('das Protokoll schreibt nur, wem es gehört', async () => {
 
 test('der Trainer liest das Protokoll, der Athlet nur sein eigenes', async () => {
   const block = matchBlock(await read('firestore.rules'), '/groups/{gid}/protokoll/{id}');
-  const lesen = allowClause(block, 'get, list');
-
   // Das ist der Grund, warum es an der Gruppe hängt und nicht unter
   // users/{uid}: ein owner-only Dokument gibt dem Trainer nichts.
-  assert.match(lesen, /resource\.data\.get\('uid', ''\) == request\.auth\.uid/);
-  assert.match(lesen, /leadsGroup\(gid\)/);
-  assert.match(lesen, /inGroup\(gid\)/);
+  // Einzeln gelesen wird über die Kennung uid__datum (auch ein Tag ohne
+  // Protokoll, v.35.50.0), aufgelistet über das Feld uid.
+  const einzeln = allowClause(block, 'get');
+  assert.match(einzeln, /id\.split\('__'\)\[0\] == request\.auth\.uid/);
+  assert.match(einzeln, /leadsGroup\(gid\)/);
+  assert.match(einzeln, /inGroup\(gid\)/);
+  const liste = allowClause(block, 'list');
+  assert.match(liste, /resource\.data\.get\('uid', ''\) == request\.auth\.uid/);
+  assert.match(liste, /leadsGroup\(gid\)/);
+  assert.match(liste, /inGroup\(gid\)/);
 
   // Löschen darf die Leitung, damit sie nach einem Irrtum aufräumen kann.
   assert.match(allowClause(block, 'delete'), /leadsGroup\(gid\)/);

@@ -88,7 +88,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-65 Testdateien, **712 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+65 Testdateien, **713 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -516,7 +516,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **935 Schlüssel** aus elf
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **936 Schlüssel** aus elf
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
