@@ -736,7 +736,8 @@ Zwei Dinge, die leicht übersehen werden:
   v.35.53.0 (Einladungen mit Ablauf, Falle 19): Regeln und Code **gleich
   nacheinander** — die alten Regeln lehnen `bis` und die kurzen Codes ab,
   die neuen die langen ohne `bis`. Dazwischen scheitert nur das Anlegen
-  einer Einladung; Beitreten mit alten Codes geht weiter.
+  einer Einladung; Beitreten mit alten Codes geht weiter. Ausgerollt am
+  14.09.2026, Regeln unmittelbar vor dem Push.
 
 ## Gewohnheiten
 
