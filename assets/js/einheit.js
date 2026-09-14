@@ -186,21 +186,148 @@ export function naechsteOffene(items, protokoll, unitId, ab = 0) {
  * sind; das Protokoll sagt, was tatsächlich war. Beides gehört in
  * dieselbe Zeile, sonst muss man im Kopf abgleichen.
  */
-export function saetze(item, e) {
+/* "??" in der Gewichtsspalte heisst in der Kadervorlage: das Gewicht
+   bestimmt der Athlet (KW 36). Es ist kein Wert — bis v.35.50.0 hätte
+   ein Tipp auf den Satz "??" als Gewicht gespeichert. */
+export const gewichtOffen = w => /^\?+$/.test(String(w ?? '').trim());
+const wertSauber = w => (gewichtOffen(w) ? '' : String(w ?? '').trim());
+
+/**
+ * Die Sätze einer Übung: Vorgabe und Eingetragenes nebeneinander.
+ * @param zuletzt  die Gewichte vom letzten Mal (letzteGewichte) — der
+ *                 Vorschlag, wo der Plan keines nennt
+ */
+export function saetze(item, e, zuletzt = []) {
   const geplant = Array.isArray(item?.sets) ? item.sets : [];
   const anzahl = Math.max(geplant.length, e.sets.length);
 
-  return Array.from({ length: anzahl }, (_, i) => ({
-    label: geplant[i]?.label || `${i + 1}. Satz`,
-    zielReps: String(geplant[i]?.reps ?? ''),
+  let davor = '';   // das Gewicht, das in einem Satz davor schon steht
+  return Array.from({ length: anzahl }, (_, i) => {
     /* Der Plan kann einen Vorgabewert mitbringen (das Gewicht der
        letzten Woche). Er wird angezeigt, aber nicht als Eingabe
        ausgegeben — sonst stünde eine fremde Zahl da, als hätte man sie
        selbst gemacht. */
-    zielWert: String(geplant[i]?.weight ?? ''),
-    weight: e.sets[i]?.weight ?? '',
-    reps: e.sets[i]?.reps ?? '',
-  }));
+    const zielWert = wertSauber(geplant[i]?.weight);
+    const frage = gewichtOffen(geplant[i]?.weight);
+    /* Ohne Plan-Gewicht: was man im Satz davor genommen hat, sonst das
+       vom letzten Mal. Wer 12 kg eingetragen hat, bestätigt im zweiten
+       Satz mit einem Tipp dieselben 12 kg. */
+    const ausDavor = davor;
+    const letztes = ausDavor || String(zuletzt[i] ?? zuletzt[zuletzt.length - 1] ?? '').trim();
+    const eigen = wertSauber(e.sets[i]?.weight);
+    if (eigen) davor = eigen;
+    return {
+      label: geplant[i]?.label || `${i + 1}. Satz`,
+      zielReps: String(geplant[i]?.reps ?? ''),
+      zielWert,
+      /* Das Gewicht bestimmt der Athlet: der Plan sagt "??". */
+      gewichtFrage: frage,
+      /* Was ein Tipp bestätigt: die Vorgabe des Plans, sonst das Gewicht
+         aus dem Satz davor oder vom letzten Mal. Ohne alles öffnet der
+         Tipp die Felder. */
+      vorschlag: zielWert || letztes,
+      vorschlagDavor: !zielWert && !!ausDavor,
+      vorschlagZuletzt: !zielWert && !ausDavor && !!letztes,
+      weight: e.sets[i]?.weight ?? '',
+      reps: e.sets[i]?.reps ?? '',
+    };
+  });
+}
+
+/**
+ * Die Gewichte, mit denen jemand diese Übung zuletzt gemacht hat — aus
+ * seinen Protokollen VOR dem Tag. Die Übung wird am Namen erkannt
+ * (item.slug): die Nummer davor wechselt von Woche zu Woche
+ * ("kraft-beine-3a-kniebeuge-hinten" → "…-3-kniebeuge-vorne").
+ * @returns {string[]}  je Satz das Gewicht, [] wenn es keins gibt
+ */
+export function letzteGewichte(protokolle, item, datum) {
+  const slug = String(item?.slug || '').trim();
+  const passt = key => key === item?.key || (slug && String(key).endsWith(`-${slug}`));
+  const frueher = (protokolle || [])
+    .filter(p => p?.datum && p.datum < datum && p.units)
+    .sort((a, b) => b.datum.localeCompare(a.datum));
+  for (const p of frueher) {
+    for (const unit of Object.values(p.units)) {
+      for (const [key, roh] of Object.entries(unit?.items || {})) {
+        if (!passt(key)) continue;
+        const gewichte = (roh?.sets || []).map(s => wertSauber(s?.weight));
+        if (gewichte.some(Boolean)) return gewichte;
+      }
+    }
+  }
+  return [];
+}
+
+/* ── Zeit ──────────────────────────────────────────────────────────
+   Pausen ("120-180 Sec") und Übungen, die ganz auf Zeit laufen
+   ("30 Sec pro Seite", 2 Sätze) — daraus wird ein Timer im Player. */
+
+/** Sekunden aus "30 sec", "60 Sec", "2 min", "1:30", "120-180 Sec"
+ *  (die untere Grenze), "30 pro Seite" (ohne Einheit: Sekunden). */
+export function sekundenAus(text) {
+  const s = String(text ?? '').toLowerCase().replace(',', '.');
+  const uhr = s.match(/(\d{1,2}):(\d{2})/);
+  if (uhr) return Number(uhr[1]) * 60 + Number(uhr[2]);
+  const zahl = s.match(/(\d+(?:\.\d+)?)/);
+  if (!zahl) return 0;
+  const n = Number(zahl[1]);
+  if (/min/.test(s)) return Math.round(n * 60);
+  if (/(sek|sec|s\b|")/.test(s) || n <= 300) return Math.round(n);
+  return 0;
+}
+
+/** Die Pause nach einem Satz, in Sekunden — 0, wenn der Plan keine nennt. */
+export function pauseSekunden(item) {
+  return sekundenAus(item?.pause);
+}
+
+/** Eine Übung auf Zeit: { sekunden, runden, proSeite } oder null.
+ *  "30 Sec pro Seite" und 2 Sätze sind vier Runden — je Seite zwei. */
+export function zeitVorgabe(item) {
+  const k = kennzahlen(item);
+  const zeit = k.find(p => /^(zeit|dauer|time)$/i.test(p.label));
+  if (!zeit) return null;
+  const sekunden = sekundenAus(zeit.wert);
+  if (!sekunden) return null;
+  const saetzeZahl = Number(String(k.find(p => /^(sätze|saetze|serien|sets)$/i.test(p.label))?.wert || '1').match(/\d+/)?.[0] || 1);
+  const proSeite = /seite/i.test(zeit.wert);
+  return { sekunden, runden: Math.max(1, saetzeZahl) * (proSeite ? 2 : 1), proSeite };
+}
+
+/* ── Für die Leitung ───────────────────────────────────────────────
+   "Mit wie viel Gewicht wird wirklich trainiert?" (Michel) — je Übung
+   die letzten Tage, aus den Protokollen eines Athleten und den Plänen,
+   die ihre Namen kennen. */
+export function gewichtsVerlauf(plaene, protokolle, { tage = 5 } = {}) {
+  const namen = new Map();
+  for (const plan of plaene || []) {
+    let programm = plan?.programm;
+    if (!programm && typeof plan?.json === 'string') { try { programm = JSON.parse(plan.json); } catch { programm = null; } }
+    for (const unit of Object.values(programm?.units || {})) {
+      for (const item of unit?.items || []) {
+        if (item?.key) namen.set(item.key, { name: item.name || item.key, slug: item.slug || item.key });
+      }
+    }
+  }
+  const je = new Map();
+  for (const p of protokolle || []) {
+    for (const unit of Object.values(p?.units || {})) {
+      for (const [key, roh] of Object.entries(unit?.items || {})) {
+        const sets = (roh?.sets || [])
+          .map(s => ({ weight: wertSauber(s?.weight), reps: String(s?.reps ?? '').trim() }))
+          .filter(s => s.weight || s.reps);
+        if (!sets.length) continue;
+        const bekannt = namen.get(key);
+        const slug = bekannt?.slug || key.replace(/^.*?-\d+[a-z]?-/, '');
+        if (!je.has(slug)) je.set(slug, { name: bekannt?.name || slug, tage: [] });
+        je.get(slug).tage.push({ datum: p.datum, sets });
+      }
+    }
+  }
+  return [...je.values()]
+    .map(u => ({ ...u, tage: u.tage.sort((a, b) => b.datum.localeCompare(a.datum)).slice(0, tage) }))
+    .sort((a, b) => (b.tage[0]?.datum || '').localeCompare(a.tage[0]?.datum || '') || a.name.localeCompare(b.name));
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -247,6 +374,8 @@ export function kennzahlen(item) {
     .map(p => (typeof p === 'string'
       ? { label: '', wert: p.trim() }
       : { label: String(p?.label ?? '').trim(), wert: String(p?.value ?? '').trim() }))
+    /* "5_5" in der Vorlage heisst fünf je Seite. */
+    .map(p => ({ ...p, wert: p.wert.replace(/^(\d+)_(\d+)$/, '$1/$2') }))
     .filter(p => p.wert)
     .filter(p => !(tut && p.label.toLowerCase() === 'tut' && p.wert === tut));
 }
@@ -284,7 +413,8 @@ export function vorwochen(item) {
   return roh
     .map(h => ({
       woche: String(h?.week ?? '').trim(),
-      werte: (Array.isArray(h?.values) ? h.values : []).map(v => String(v ?? '').trim()),
+      /* "??" ist keine Auskunft (die Vorlage lässt das Gewicht offen). */
+      werte: (Array.isArray(h?.values) ? h.values : []).map(wertSauber),
       bemerkung: String(h?.note ?? '').trim(),
     }))
     .filter(h => h.werte.some(Boolean) || h.bemerkung);

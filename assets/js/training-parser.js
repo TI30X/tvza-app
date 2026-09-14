@@ -42,6 +42,19 @@ export function slug(v) {
   return norm(v).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
+/* "9-11 Uhr", "13:30-15 Uhr", "14 Uhr", "ab 9 Uhr", "08:00" — eine Zelle,
+   die nur sagt WANN. */
+const UHRZEIT = /^(ab\s*)?\d{1,2}([:.]\d{2})?\s*(uhr|h)?\s*((-|–|bis)\s*\d{1,2}([:.]\d{2})?\s*(uhr|h)?)?$/i;
+export const istUhrzeit = v => {
+  const s = txt(v);
+  return UHRZEIT.test(s) && (/[:.]\d{2}|uhr|h$|-|–|bis/i.test(s));
+};
+export const uhrzeitSauber = v => txt(v)
+  .replace(/\s*(-|bis)\s*/i, '–')
+  .replace(/(\d)\.(\d{2})/g, '$1:$2')
+  .replace(/\s*uhr/i, ' Uhr')
+  .trim();
+
 const isUrl = v => /^https?:\/\//i.test(txt(v));
 const isNumericOnly = v => txt(v) !== '' && /^\d+$/.test(txt(v));
 const rowHasContent = row => Array.isArray(row) && row.some(c => txt(c) !== '');
@@ -177,7 +190,14 @@ function parseWeekPlan(view) {
         const v = txt(row[c]);
         if (!v || seen.has(v)) continue;
         seen.add(v);
-        slotFor(days[i], lastSlot).items.push({ title: v, unit: '' });
+        const block = slotFor(days[i], lastSlot);
+        /* Eine Zelle, die nur eine Uhrzeit ist ("9-11 Uhr" unter
+           "Skiteppich Glarus", KW 36), gehört zum Eintrag darüber —
+           kein eigener Eintrag. Bis v.35.50.0 stand sie als Training
+           namens "9-11 Uhr" in der Woche. */
+        const vorher = block.items[block.items.length - 1];
+        if (istUhrzeit(v) && vorher && !vorher.time) { vorher.time = uhrzeitSauber(v); continue; }
+        block.items.push({ title: v, unit: '' });
       }
     });
   }

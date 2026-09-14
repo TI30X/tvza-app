@@ -54,6 +54,7 @@ import {
   artenFuer, kenntDisziplinen, istAbgesagt, alsIcsEintrag,
 } from '../../termine.js';
 import { buildCalendarIcs } from '../../calendar-interop.js';
+import { gewichtsVerlauf } from '../../einheit.js';
 import {
   rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
 } from '../../fispunkte.js';
@@ -2088,12 +2089,41 @@ function personOeffnen(uid) {
 
   zeichneErgebnisse();
 
+  /* Mit wie viel Gewicht wirklich trainiert wird (Michel, v.35.50.0):
+     die Leitung sieht es hier, statt eine Nachricht zu bekommen — und
+     die Person selbst ihren eigenen Verlauf. */
+  const darfGewichte = darfErfassen || ichSelbst;
+  zeige('secGewichte', false);
+  if (darfGewichte) zeichneGewichte(person.uid);
+
   /* Den Kontakt sehen die Leitung und die Person selbst — sonst
      niemand. Die Regeln lehnen jede andere Abfrage ab; hier wird sie
      gar nicht erst gestellt. */
   const darfKontakt = darfErfassen || ichSelbst;
   zeige('secKontakt', darfKontakt);
   if (darfKontakt) zeichneKontakt();
+}
+
+/* ── Gewichte ──────────────────────────────────────────────────────
+   Je Übung die letzten Tage, an denen jemand Sätze eingetragen hat:
+   "Kniebeuge vorne — 14. Sept.: 9× 60 kg · 9× 60 kg · 7× 62 kg". Die
+   Namen kommen aus den Plänen der Gruppe, die Werte aus dem Protokoll. */
+async function zeichneGewichte(uid) {
+  let liste = [];
+  try { liste = gewichtsVerlauf(plaene, await ladeProtokolle(aktiv.id, uid), { tage: 3 }); }
+  catch (e) { reportClientError('gruppe/gewichte', e); }
+  if (person?.uid !== uid) return;
+  const kg = w => (/^\d+([.,]\d+)?$/.test(w) ? `${w} kg` : w);
+  const satz = s => [s.reps && `${s.reps}×`, s.weight && kg(s.weight)].filter(Boolean).join(' ');
+  const tag = d => kurzDatum(d);
+  $('listGewichte').innerHTML = liste.slice(0, 12).map(u => `
+    <div class="row row--static">
+      <span class="row__body">
+        <span class="row__title">${escHtml(u.name)}</span>
+        ${u.tage.map((d, i) => `<span class="row__sub">${escHtml(tag(d.datum))}: ${escHtml(d.sets.map(satz).join(' · '))}</span>`).join('')}
+      </span>
+    </div>`).join('');
+  zeige('secGewichte', liste.length > 0);
 }
 
 /* ── Kontakt ───────────────────────────────────────────────────────

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=18" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=19" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -75,6 +75,23 @@
         </div>
         <p class="empty-hint" id="uebMeta" hidden></p>
 
+        <!-- Der Timer: die Pause nach einem Satz ("120-180 Sec") läuft
+             von selbst an, eine Übung auf Zeit ("30 Sec pro Seite",
+             2 Sätze) startet man je Runde. Beschriftet vom Code. -->
+        <div class="uhr" id="uhr" hidden>
+          <div class="uhr__kopf">
+            <span class="uhr__was" id="uhrWas"></span>
+            <span class="uhr__runde" id="uhrRunde"></span>
+          </div>
+          <div class="uhr__zeit" id="uhrZeit" role="timer" aria-live="off">0:00</div>
+          <div class="uhr__leiste"><span class="uhr__fuellung" id="uhrFuellung"></span></div>
+          <div class="uhr__knoepfe">
+            <button class="b b--primary" id="uhrStart" type="button">Start</button>
+            <button class="b b--secondary" id="uhrPlus" type="button" hidden>+15 s</button>
+            <button class="b b--secondary" id="uhrStopp" type="button">Zurücksetzen</button>
+          </div>
+        </div>
+
         <!-- Bilder zur Uebung, wo die Vorlage welche hat: wie steht der
              Fuss, wo liegt der Ball. Die alte Trainingsseite zeigte sie;
              beim Umzug auf die Gruppe durften sie nicht verloren gehen. -->
@@ -116,6 +133,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=12"></script>
+  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=13"></script>
 </body>
 </html>

@@ -165,10 +165,9 @@ test('ein Athlet bekommt den Plan eines anderen nicht — die Regel sagt nein', 
 test('der Vorgabewert aus dem Plan steht als Platzhalter, nicht als Wert', async () => {
   const js = await skript();
 
-  /* Der Vorgabewert bleibt Platzhalter. Nur das Ersatzwort geht
-     jetzt durch den Katalog: "Wert" heisst auf Englisch Value. */
-  assert.match(js, /placeholder="\$\{escHtml\(reihe\.zielWert \|\| t\(/);
-  assert.match(js, /t\('eh.wert', 'Wert'\)/);
+  /* Der Vorgabewert bleibt Platzhalter — seit v.35.50.0 der Vorschlag
+     (Plan, sonst das Gewicht vom letzten Mal), sonst "kg". */
+  assert.match(js, /placeholder="\$\{escHtml\(reihe\.vorschlag \|\| t\('eh\.kg', 'kg'\)\)\}"/);
   assert.match(js, /value="\$\{escHtml\(reihe\.weight\)\}"/);
 });
 

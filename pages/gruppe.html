@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=18" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=19" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
   <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=7" />
@@ -408,6 +408,14 @@
           <button class="b b--secondary b--block" id="btnKontaktBearbeiten" type="button" data-i18n="grp.kontaktBearbeiten">Kontakt bearbeiten</button>
         </div>
 
+        <!-- Mit wie viel Gewicht wirklich trainiert wird — je Übung die
+             letzten Tage aus dem Protokoll. Sehen die Leitung und die
+             Person selbst (die Regel für das Protokoll hält es so). -->
+        <div id="secGewichte" hidden>
+          <div class="marke" data-i18n="grp.gewichte">Trainiert mit</div>
+          <div class="rows" id="listGewichte"></div>
+        </div>
+
         <!-- FIS-Punkte je Disziplin. Ein Athlet hat keinen einzelnen
              Stand: im Slalom stark und in der Abfahrt schwach zu sein
              ist der Normalfall. -->
@@ -584,6 +592,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=18"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=19"></script>
 </body>
 </html>

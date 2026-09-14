@@ -3233,6 +3233,33 @@ html.tvza-content-frame body > main {
 .ueb-video:hover { background: color-mix(in oklab, var(--accent) 18%, var(--surface)); }
 .ueb-video svg { fill: currentColor; stroke: none; }
 
+/* ── Der Timer ─────────────────────────────────────────────────────
+   Pause nach einem Satz und Übungen auf Zeit (v.35.50.0). Gross genug,
+   um ihn aus zwei Metern zu lesen, wenn das Telefon auf der Bank liegt. */
+.uhr {
+  margin: var(--s3) 0;
+  padding: var(--s4);
+  border: 1px solid color-mix(in oklab, var(--accent) 35%, var(--border));
+  border-radius: var(--r-row);
+  background: var(--accent-bg);
+}
+.uhr__kopf { display: flex; justify-content: space-between; gap: var(--s2); color: var(--accent); font-size: 13px; font-weight: 700; }
+.uhr__zeit {
+  margin: var(--s2) 0;
+  color: var(--ink);
+  font-size: clamp(44px, 16vw, 64px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+}
+.uhr__leiste { height: 6px; overflow: hidden; border-radius: var(--r-pill); background: color-mix(in oklab, var(--accent) 15%, var(--surface)); }
+.uhr__fuellung { display: block; width: 0; height: 100%; background: var(--accent); transition: width 250ms linear; }
+.uhr__knoepfe { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.uhr__knoepfe .b { flex: 1 1 auto; }
+.uhr.is-fertig { border-color: var(--success, var(--accent)); }
+.uhr.is-fertig .uhr__zeit { color: var(--success, var(--accent)); }
+
 /* ── Ein Satz ──────────────────────────────────────────────────────*/
 
 .satz--gemacht { border-color: color-mix(in oklab, var(--accent) 32%, var(--border)); }

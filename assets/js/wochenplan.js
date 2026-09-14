@@ -48,6 +48,8 @@ export function wochenTage(programm) {
                Spiel (Tennis…)" ist kein Versehen des Trainers,
                sondern eine Ansage ohne Übungen. */
             unit: String(i.unit || ''),
+            /* "9–11 Uhr" aus der Zelle darunter (training-parser.js). */
+            zeit: String(i.time || ''),
             slot: s.name || '',
             slotKey: s.key || '',
           }))),

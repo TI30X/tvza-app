@@ -82,16 +82,22 @@ export function agendaAnsicht({ el, zurueck = '', beiTermin = null, beiNeuerTerm
      Ein Eintrag ohne Blatt ("evtl. Spiel") bleibt stehen, aber ohne Weg
      hinein: das ist eine Ansage des Trainers, kein Trainingsblatt. */
   function eintragHtml(e, datum, zusatz) {
-    const slot = e.slot ? `<span class="eintrag__slot">${esc(e.slot)}</span> · ` : '';
+    const wann = [e.slot, e.zeit].filter(Boolean).join(' · ');
+    const slot = wann ? `<span class="eintrag__slot">${esc(wann)}</span> · ` : '';
     const dazu = zusatz ? ` · ${esc(zusatz)}` : '';
 
     if (!e.unit) {
+      /* "Skiteppich Glarus, 9–11 Uhr" ist eine Ansage mit Zeit, kein
+         fehlendes Blatt — dann steht die Zeit, nicht "kein Blatt". */
+      const unten = e.zeit
+        ? `<span class="eintrag__slot">${esc(wann)}</span>${dazu}`
+        : `${slot}${esc(t('grp.keinBlatt', 'kein Blatt hinterlegt'))}${dazu}`;
       return `
         <div class="row row--ohneBlatt" data-bereich="t-training">
           <span class="row__icon">·</span>
           <span class="row__body">
             <span class="row__title">${esc(e.titel)}</span>
-            <span class="row__sub">${slot}${esc(t('grp.keinBlatt', 'kein Blatt hinterlegt'))}${dazu}</span>
+            <span class="row__sub">${unten}</span>
           </span>
         </div>`;
     }

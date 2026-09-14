@@ -31,12 +31,13 @@ import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
 import { mountShell, setShellTitle, setShellMeta } from '../../shell.js?v=17';
 import {
-  ladeGruppe, ladePlan, ladeProtokoll, protokollSpeichern, ladeMitglieder, PLAN_FUER_ALLE,
+  ladeGruppe, ladePlan, ladeProtokoll, ladeProtokolle, protokollSpeichern, ladeMitglieder, PLAN_FUER_ALLE,
 } from '../../groups.js';
 import {
   einheiten, uebungen, einheitTitel,
   eintrag, mitEintrag, sauber, fortschritt, naechsteOffene, saetze,
   videoUrl, vorwochen, zeigtSaetze, kennzahlen, bilderFuer,
+  letzteGewichte, pauseSekunden, zeitVorgabe,
 } from '../../einheit.js';
 import { isoTag } from '../../termine.js';
 import { rueckweg } from '../../wochenplan.js';
@@ -68,6 +69,7 @@ let pos = 0;
 let timer = null;
 let ansicht = false;       // der Plan eines anderen: nur ansehen
 let bilder = {};           // images.json, einmal geladen
+let verlauf = [];          // die eigenen Protokolle — "zuletzt 50 kg"
 
 function zeige(id, an) {
   const el = $(id);
@@ -144,14 +146,30 @@ function satzGemacht(reihe) {
  * wenn es anders lief. Wer im Kraftraum steht, tippt sonst zwei Zahlen
  * je Satz auf 60 Pixel breite Felder, und das trifft niemand.
  */
+/* Ein Gewicht ist eine Zahl in kg — die Vorlage schreibt "50", man liest "50 kg". */
+const mitKg = w => (/^\d+([.,]\d+)?$/.test(String(w).trim()) ? `${String(w).trim()} kg` : String(w));
+
+/* "9" wird "9×"; "6/Seite" bleibt, wie es ist — "6/Seite×" las sich falsch. */
+const mitMal = r => (/^\d+$/.test(String(r ?? '').trim()) ? `${String(r).trim()}×` : String(r ?? '').trim());
+
 function satzZeile(reihe, index, offen) {
-  const ziel = [reihe.zielReps && `${reihe.zielReps}×`, reihe.zielWert]
-    .filter(Boolean).join(' ');
+  /* Die Vorgabe, und wo der Plan kein Gewicht nennt, das vom letzten Mal
+     — ein Tipp bestätigt es. Sagt der Plan "??", bestimmt der Athlet:
+     dann steht es so da, und der Tipp öffnet das Feld. */
+  const gewicht = reihe.zielWert
+    ? mitKg(reihe.zielWert)
+    : reihe.vorschlagDavor
+      ? t('eh.wieDavor', '{wert} wie davor', { wert: mitKg(reihe.vorschlag) })
+    : reihe.vorschlagZuletzt
+      ? t('eh.zuletzt', 'zuletzt {wert}', { wert: mitKg(reihe.vorschlag) })
+      : reihe.gewichtFrage ? t('eh.gewichtEintragen', 'Gewicht eintragen') : '';
+  const ziel = [mitMal(reihe.zielReps), gewicht]
+    .filter(Boolean).join(' · ');
   const gemacht = satzGemacht(reihe);
   const zeigeFelder = !ansicht && (offen || (gemacht && !passtZurVorgabe(reihe)));
 
   const werte = gemacht
-    ? [reihe.reps && `${reihe.reps}×`, reihe.weight].filter(Boolean).join(' ')
+    ? [mitMal(reihe.reps), reihe.weight && mitKg(reihe.weight)].filter(Boolean).join(' ')
     : '';
 
   return `
@@ -172,7 +190,7 @@ function satzZeile(reihe, index, offen) {
         <input class="form-input" type="text" inputmode="decimal" maxlength="20"
                data-satz="${index}" data-feld="weight"
                value="${escHtml(reihe.weight)}"
-               placeholder="${escHtml(reihe.zielWert || t('eh.wert', 'Wert'))}"
+               placeholder="${escHtml(reihe.vorschlag || t('eh.kg', 'kg'))}"
                aria-label="${escHtml(t('eh.ariaWert', 'Wert {n}. Satz', { n: index + 1 }))}" />
         <input class="form-input" type="text" inputmode="numeric" maxlength="20"
                data-satz="${index}" data-feld="reps"
@@ -193,8 +211,10 @@ function satzZeile(reihe, index, offen) {
    Zeile zugeklappt — die Zahl steht ja schon als Vorgabe da. */
 function passtZurVorgabe(reihe) {
   const gleich = (a, b) => String(a).trim() === String(b).trim();
-  return gleich(reihe.weight, reihe.zielWert) && gleich(reihe.reps, reihe.zielReps);
+  return gleich(reihe.weight, reihe.vorschlag) && gleich(reihe.reps, reihe.zielReps);
 }
+
+const reihenFuer = (item, e) => saetze(item, e, letzteGewichte(verlauf, item, datum));
 
 /* Welche Zeilen der Nutzer aufgeklappt hat — nur fuer diese Ansicht,
    nichts davon gehoert ins Protokoll. */
@@ -251,7 +271,7 @@ function zeichnePlayer() {
     `<img loading="lazy" src="../assets/img/training/${escHtml(name)}" alt="${escHtml(item.name)}" />`).join('');
   $('uebBilder').hidden = !bildNamen.length;
 
-  const reihen = zeigtSaetze(item) ? saetze(item, e) : [];
+  const reihen = zeigtSaetze(item) ? reihenFuer(item, e) : [];
   $('listSaetze').innerHTML = reihen.length
     ? reihen.map((r, i) => satzZeile(r, i, offeneSaetze.has(i))).join('')
     : `<p class="empty-hint">${escHtml(t('eh.keineSaetze', 'Keine Sätze vorgegeben — nur abhaken.'))}</p>`;
@@ -270,6 +290,8 @@ function zeichnePlayer() {
           ${w.bemerkung ? `<span class="vorwoche__notiz">${escHtml(w.bemerkung)}</span>` : ''}
         </div>`).join('')
     : '';
+
+  uhrFuerUebung(item);
 
   $('uebNotiz').value = e.note;
   $('uebNotiz').readOnly = ansicht;
@@ -326,6 +348,145 @@ function weiter() {
   zeichnePlayer();
 }
 
+/* ── Der Timer ─────────────────────────────────────────────────────
+   Michel: "einen Timer für die Übungen, der die Zeit für Pausen und für
+   die, die ganz auf Zeit basieren, stoppen kann." Zwei Arten:
+     pause  läuft nach einem Satz von selbst an, so lang wie der Plan sagt
+            ("120-180 Sec" → 2:00), +15 s und Überspringen;
+     zeit   eine Übung auf Zeit ("30 Sec pro Seite", 2 Sätze → vier
+            Runden), jede Runde startet man selbst.
+   Gerechnet wird mit der Endzeit, nicht mit Ticks: ein iPhone hält
+   Intervalle im Hintergrund an, die Uhr stimmt beim Zurückkommen trotzdem. */
+
+const uhr = { art: '', dauer: 0, rest: 0, ende: 0, laeuft: false, runde: 1, runden: 1, proSeite: false, fuer: '', takt: null };
+let ton = null;
+
+/* Ein Ton am Ende — erst nach einem Tipp erlaubt (iOS), darum hier. */
+function tonFreigeben() {
+  if (ton) return;
+  try { ton = new (window.AudioContext || window.webkitAudioContext)(); } catch { ton = null; }
+}
+function signal() {
+  navigator.vibrate?.([200, 100, 200]);
+  if (!ton) return;
+  try {
+    const osc = ton.createOscillator();
+    const lautst = ton.createGain();
+    osc.frequency.value = 880;
+    lautst.gain.setValueAtTime(0.25, ton.currentTime);
+    lautst.gain.exponentialRampToValueAtTime(0.001, ton.currentTime + 0.6);
+    osc.connect(lautst).connect(ton.destination);
+    osc.start();
+    osc.stop(ton.currentTime + 0.6);
+  } catch { /* ohne Ton geht es auch */ }
+}
+
+const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+function uhrZeichnen() {
+  const kasten = $('uhr');
+  if (!uhr.art) { kasten.hidden = true; return; }
+  kasten.hidden = false;
+  const bleibt = uhr.laeuft ? Math.max(0, Math.ceil((uhr.ende - Date.now()) / 1000)) : uhr.rest;
+  $('uhrZeit').textContent = mmss(bleibt);
+  $('uhrFuellung').style.width = `${uhr.dauer ? Math.round((1 - bleibt / uhr.dauer) * 100) : 0}%`;
+  kasten.classList.toggle('is-fertig', bleibt === 0);
+  if (uhr.art === 'pause') {
+    $('uhrWas').textContent = bleibt === 0 ? t('eh.pauseVorbei', 'Pause vorbei') : t('eh.pauseLaeuft', 'Pause');
+    $('uhrRunde').textContent = '';
+  } else {
+    $('uhrWas').textContent = uhr.proSeite
+      ? t('eh.seite', 'Seite {n}', { n: uhr.runde % 2 ? 1 : 2 })
+      : t('eh.zeit', 'Auf Zeit');
+    $('uhrRunde').textContent = uhr.runden > 1 ? t('eh.runde', 'Runde {n} von {m}', { n: uhr.runde, m: uhr.runden }) : '';
+  }
+  $('uhrStart').textContent = uhr.laeuft ? t('eh.anhalten', 'Anhalten')
+    : bleibt === 0 && uhr.art === 'zeit' && uhr.runde < uhr.runden ? t('eh.naechsteRunde', 'Nächste Runde')
+    : bleibt === 0 ? t('eh.nochmalStart', 'Nochmal') : t('eh.start', 'Start');
+  $('uhrPlus').hidden = uhr.art !== 'pause';
+  $('uhrPlus').textContent = t('eh.plus15', '+15 s');
+  $('uhrStopp').textContent = uhr.art === 'pause' ? t('eh.ueberspringen', 'Überspringen') : t('eh.zuruecksetzen', 'Zurücksetzen');
+}
+
+function uhrTakt() {
+  if (!uhr.laeuft) return;
+  if (Date.now() >= uhr.ende) {
+    uhr.laeuft = false;
+    uhr.rest = 0;
+    clearInterval(uhr.takt);
+    signal();
+  }
+  uhrZeichnen();
+}
+
+function uhrLos() {
+  uhr.ende = Date.now() + uhr.rest * 1000;
+  uhr.laeuft = true;
+  clearInterval(uhr.takt);
+  uhr.takt = setInterval(uhrTakt, 250);
+  uhrZeichnen();
+}
+
+function uhrAnhalten() {
+  uhr.rest = Math.max(0, Math.ceil((uhr.ende - Date.now()) / 1000));
+  uhr.laeuft = false;
+  clearInterval(uhr.takt);
+  uhrZeichnen();
+}
+
+function uhrStellen(art, sekunden, { runden = 1, proSeite = false, fuer = '' } = {}) {
+  clearInterval(uhr.takt);
+  Object.assign(uhr, { art, dauer: sekunden, rest: sekunden, laeuft: false, runde: 1, runden, proSeite, fuer });
+  uhrZeichnen();
+}
+
+/* Beim Blättern: eine laufende Pause läuft weiter (die Bank wartet
+   nicht), sonst stellt sich die Uhr auf die neue Übung ein. */
+function uhrFuerUebung(item) {
+  if (uhr.art === 'pause' && uhr.laeuft) return;
+  if (uhr.art === 'zeit' && uhr.fuer === item.key) { uhrZeichnen(); return; }
+  const z = ansicht ? null : zeitVorgabe(item);
+  if (z) uhrStellen('zeit', z.sekunden, { runden: z.runden, proSeite: z.proSeite, fuer: item.key });
+  else uhrStellen('', 0);
+}
+
+function pauseStarten(item) {
+  const s = pauseSekunden(item);
+  if (!s || ansicht) return;
+  uhrStellen('pause', s, { fuer: item.key });
+  uhrLos();
+}
+
+function uhrStartGeklickt() {
+  tonFreigeben();
+  if (uhr.laeuft) { uhrAnhalten(); return; }
+  if (uhr.rest === 0) {
+    if (uhr.art === 'zeit' && uhr.runde < uhr.runden) uhr.runde += 1;
+    else if (uhr.art === 'zeit') uhr.runde = 1;
+    uhr.rest = uhr.dauer;
+  }
+  uhrLos();
+}
+
+function uhrStoppGeklickt() {
+  const item = items[pos];
+  if (uhr.art === 'pause') {
+    /* Überspringen: zurück zur Uhr der Übung, falls sie eine hat. */
+    uhrStellen('', 0);
+    if (item) uhrFuerUebung(item);
+    return;
+  }
+  uhrStellen(uhr.art, uhr.dauer, { runden: uhr.runden, proSeite: uhr.proSeite, fuer: uhr.fuer });
+}
+
+function uhrPlus() {
+  if (uhr.art !== 'pause') return;
+  if (uhr.laeuft) uhr.ende += 15000;
+  else uhr.rest += 15;
+  uhr.dauer += 15;
+  uhrZeichnen();
+}
+
 /* ── Eingaben ──────────────────────────────────────────────────────*/
 
 function satzGeaendert(event) {
@@ -335,7 +496,7 @@ function satzGeaendert(event) {
 
   const item = items[pos];
   const e = eintrag(protokoll, unitId, item.key);
-  const reihen = saetze(item, e);
+  const reihen = reihenFuer(item, e);
 
   const sets = reihen.map((r, i) => ({
     weight: i === Number(feld.dataset.satz) && feld.dataset.feld === 'weight'
@@ -419,7 +580,16 @@ async function zeigeAnsicht(uid) {
   $('btnWeiter')?.addEventListener('click', weiter);
   $('btnErledigt')?.addEventListener('click', erledigtGeklickt);
   $('uebNotiz')?.addEventListener('input', notizGeaendert);
+  $('uhrStart')?.addEventListener('click', uhrStartGeklickt);
+  $('uhrStopp')?.addEventListener('click', uhrStoppGeklickt);
+  $('uhrPlus')?.addEventListener('click', uhrPlus);
+  /* Zurück aus dem Hintergrund: die Uhr sofort nachziehen. */
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) uhrTakt(); });
   $('listSaetze')?.addEventListener('input', satzGeaendert);
+  /* Nach dem Eintragen (Feld verlassen) neu zeichnen: der nächste Satz
+     schlägt dann dasselbe Gewicht vor. Beim Tippen nicht — sonst ginge
+     am Handy der Fokus verloren. */
+  $('listSaetze')?.addEventListener('change', () => zeichnePlayer());
 
   /* Ein Tipp auf die Zeile heisst "lief wie geplant": die Vorgabe
      wird uebernommen. Noch einmal getippt nimmt sie zurueck. Der
@@ -440,19 +610,32 @@ async function zeigeAnsicht(uid) {
 
     const i = Number(tipp.dataset.satzTippen);
     const e = eintrag(protokoll, unitId, item.key);
-    const reihen = saetze(item, e);
+    const reihen = reihenFuer(item, e);
     if (!reihen[i]) return;
+    tonFreigeben();
 
+    /* Das Gewicht bestimmt der Athlet, und es gibt noch keins: der Tipp
+       öffnet das Feld, statt "??" oder nichts zu speichern. */
+    if (!satzGemacht(reihen[i]) && reihen[i].gewichtFrage && !reihen[i].vorschlag) {
+      offeneSaetze.add(i);
+      zeichnePlayer();
+      $('listSaetze').querySelector(`[data-satz="${i}"][data-feld="weight"]`)?.focus();
+      return;
+    }
+
+    const warGemacht = satzGemacht(reihen[i]);
     const sets = reihen.map((r, n) => n === i
-      ? (satzGemacht(r)
+      ? (warGemacht
           ? { weight: '', reps: '' }              // noch einmal getippt: zurueck
-          : { weight: r.zielWert, reps: r.zielReps })
+          : { weight: r.vorschlag, reps: r.zielReps })
       : { weight: r.weight, reps: r.reps });
 
     offeneSaetze.delete(i);
     protokoll = mitEintrag(protokoll, unitId, item.key, { sets });
     speichereBald();
     zeichnePlayer();
+    /* Nach einem Satz beginnt die Pause, die der Plan nennt. */
+    if (!warGemacht && i < reihen.length - 1) pauseStarten(item);
   });
   $('listEinheiten')?.addEventListener('click', event => {
     const id = event.target.closest('[data-einheit]')?.dataset.einheit;
@@ -497,6 +680,13 @@ async function zeigeAnsicht(uid) {
       protokoll = { units: {} };
     }
     if (!protokoll.units) protokoll.units = {};
+    /* Die eigenen früheren Tage: daraus kommt "zuletzt 50 kg", wo der
+       Plan kein Gewicht nennt. Beiwerk — scheitert es, fehlt nur der
+       Vorschlag. */
+    if (!ansicht) {
+      try { verlauf = await ladeProtokolle(gid, user.uid); }
+      catch (e) { reportClientError('einheit/verlauf', e); verlauf = []; }
+    }
 
     setShellTitle(plan.titel || t('eh.einheit', 'Einheit'));
     if (ansicht) await zeigeAnsicht(plan.fuer);
