@@ -88,9 +88,9 @@ test('an der Grenze verwandelt sich das Zeichen, dazwischen passiert nichts', as
   assert.ok(mitte > 0 && mitte < 1, `mitten in der Verwandlung steht t=${mitte}`);
   await warte(DAUER);
   assert.equal(svg.getAttribute('data-t'), '1');
-  /* Seit v.35.51.0 auch am Laptop gross in der Mitte (Michel: "viel
+  /* Seit v.35.51.0 auch am Laptop die Karte oben (Michel: "viel
      deutlicher"), und das Zeichen der Leiste pulsiert. */
-  assert.ok(doc.querySelector('.wechsel-hinweis .wechsel-hinweis__karte svg'), 'am Laptop keine Anzeige in der Mitte');
+  assert.ok(doc.querySelector('.wechsel-hinweis .wechsel-hinweis__karte svg'), 'am Laptop keine Anzeige');
 
   softwareZeigen('firn', { doc });
   await warte(DAUER * 1.5);
@@ -103,7 +103,7 @@ test('wer weniger Bewegung will, bekommt den Endstand sofort', () => {
   assert.equal(svg.getAttribute('data-t'), '1');
 });
 
-test('am Handy erscheint das Zeichen gross in der Mitte und geht wieder', async () => {
+test('am Handy erscheint das Zeichen oben und geht wieder', async () => {
   const { doc } = seite({ handy: true });
   softwareZeigen('tvza', { doc });
   const box = doc.querySelector('.wechsel-hinweis');
@@ -112,7 +112,7 @@ test('am Handy erscheint das Zeichen gross in der Mitte und geht wieder', async 
   assert.equal(box.dataset.software, 'firn', 'die Anzeige beginnt in der alten Software');
   await warte(300);
   assert.equal(box.dataset.software, 'tvza');
-  await warte(DAUER + 650 + 500);
+  await warte(DAUER + 500 + 500);
   assert.equal(doc.querySelector('.wechsel-hinweis'), null, 'die Anzeige bleibt stehen');
 });
 
@@ -167,7 +167,9 @@ test('das Zeichen der Leiste kann sich bewegen, und das Kit blendet die Wortzeic
   const kit = await lies('assets/css/kit.css');
   assert.match(kit, /\.software-wort > \.tvza \{ opacity: 0; \}/);
   assert.match(kit, /\[data-software="tvza"\] \.software-wort > \.firn \{ opacity: 0; \}/);
-  assert.match(kit, /@media \(prefers-reduced-motion: reduce\) \{\s*\.wechsel-hinweis, \.wechsel-hinweis\.is-da \{ transform: none; \}/);
+  assert.match(kit, /@media \(prefers-reduced-motion: reduce\) \{\s*\.wechsel-hinweis, \.wechsel-hinweis\.is-da \{ transform: translate\(-50%, 0\); \}/);
   assert.match(kit, /\.nav\.is-wechsel \.nav__zeichen \{ animation: zeichen-puls 900ms/);
-  assert.match(kit, /\.wechsel-hinweis \{\s*position: fixed; z-index: 400; inset: 0;/, 'die Anzeige steht nicht mehr gross in der Mitte');
+  /* Nicht aufdringlich (Michel): kein Abdunkeln, keine unscharfe Seite darunter. */
+  const block = kit.match(/\.wechsel-hinweis \{[^}]*\}/)?.[0] || '';
+  assert.doesNotMatch(block, /backdrop-filter|inset: 0|background:/, 'die Anzeige deckt die Seite wieder zu');
 });

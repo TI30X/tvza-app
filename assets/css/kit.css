@@ -1867,39 +1867,37 @@ body.reorder-editing .module-tile::after {
 [data-software="tvza"] .software-wort > .tvza { opacity: 1; }
 [data-software="tvza"] .software-wort > .firn { opacity: 0; }
 
-/* Beim Wechsel erscheint das Zeichen gross in der Mitte und verwandelt
-   sich dort — am Handy und am Laptop (v.35.51.0; vorher klein, oben,
-   nur am Handy, und Michel las es nicht als Wechsel). Die Karte trägt
-   die Farbe der Software und wechselt sie mit. Durchklickbar;
-   wechsel.js baut es und nimmt es wieder weg. */
+/* Beim Wechsel gleitet oben in der Mitte eine Karte herein und das
+   Zeichen verwandelt sich darin — am Handy und am Laptop. v.35.51.0
+   stand sie gross in der Bildmitte über abgedunkelter Seite; Michel:
+   "less intrusive". Jetzt ohne Abdunkeln, oben, kompakt — aber gross
+   genug, dass man die Verwandlung sieht. Die Karte trägt die Farbe der
+   Software und wechselt sie mit. Durchklickbar; wechsel.js baut sie und
+   nimmt sie wieder weg. */
 .wechsel-hinweis {
-  position: fixed; z-index: 400; inset: 0;
-  display: grid; place-items: center;
-  background: rgba(6, 14, 26, 0.38);
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
+  position: fixed; z-index: 400; left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + var(--s3));
   opacity: 0;
-  transition: opacity 240ms ease;
+  transform: translate(-50%, -12px);
+  transition: opacity 220ms ease, transform 260ms cubic-bezier(0.2, 0.9, 0.3, 1.15);
   pointer-events: none;
 }
-.wechsel-hinweis.is-da { opacity: 1; }
+.wechsel-hinweis.is-da { opacity: 1; transform: translate(-50%, 0); }
 .wechsel-hinweis__karte {
-  display: flex; flex-direction: column; align-items: center; gap: var(--s4);
-  padding: var(--s6) var(--s7);
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s2) var(--s5) var(--s2) var(--s2);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: var(--r-panel);
+  border-radius: var(--r-pill);
   background-color: #1256B0;
   color: #FFFFFF;
-  font-size: clamp(30px, 8vw, 40px); line-height: 1;
-  transform: scale(0.8);
-  transition: transform 360ms cubic-bezier(0.2, 0.9, 0.3, 1.25), background-color 700ms ease;
+  font-size: 22px; line-height: 1;
+  transition: background-color 600ms ease;
 }
-.wechsel-hinweis.is-da .wechsel-hinweis__karte { transform: scale(1); }
 .wechsel-hinweis[data-software="tvza"] .wechsel-hinweis__karte { background-color: #1A1A2E; }
-.wechsel-hinweis svg { display: block; width: clamp(88px, 26vw, 120px); height: auto; flex: none; border-radius: 22%; }
+.wechsel-hinweis svg { display: block; width: 44px; height: 44px; flex: none; border-radius: 22%; }
 @media (prefers-reduced-motion: reduce) {
-  .wechsel-hinweis, .wechsel-hinweis.is-da { transform: none; }
-  .wechsel-hinweis__karte, .wechsel-hinweis.is-da .wechsel-hinweis__karte { transform: none; transition: none; }
+  .wechsel-hinweis, .wechsel-hinweis.is-da { transform: translate(-50%, 0); }
+  .wechsel-hinweis__karte { transition: none; }
 }
 
 /* Das Zeichen der Leiste pulsiert, während es sich verwandelt. */

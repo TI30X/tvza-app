@@ -32,14 +32,15 @@
 
    ── Deutlicher (v.35.51.0) ─────────────────────────────────────────
    Michel: "die Animation sollte viel deutlicher sein". 450 ms oben in
-   der Leiste las sich wie ein Flackern. Jetzt verwandelt sich das
-   Zeichen gross in der Mitte des Bildschirms — am Handy UND am Laptop —,
-   langsamer (900 ms), die Karte dahinter wechselt die Farbe mit, und
-   das Zeichen in der Leiste pulsiert dazu. Nur an der Grenze, wie
-   vorher; wer weniger Bewegung will, sieht den Endstand. */
+   der Leiste las sich wie ein Flackern. Jetzt gleitet oben eine Karte
+   herein, am Handy UND am Laptop, das Zeichen verwandelt sich darin
+   (700 ms), die Karte wechselt die Farbe mit, und das Zeichen in der
+   Leiste pulsiert dazu. Eine erste Fassung stand gross in der Bildmitte
+   über abgedunkelter Seite — zu aufdringlich (Michel). Nur an der
+   Grenze, wie vorher; wer weniger Bewegung will, sieht den Endstand. */
 
 export const FIRN = 'firn', TVZA = 'tvza';
-export const DAUER = 900;
+export const DAUER = 700;
 
 /* Halbe Breite des Firn-Bergs (M32 17 L51 46 L13 46) auf Höhe y. */
 const hw = y => 19 * (y - 17) / 29;
@@ -200,9 +201,9 @@ export function bewege(svg, nach, dauer = DAUER) {
 const passt = (win, frage) => !!win.matchMedia?.(frage).matches;
 const warte = ms => new Promise(r => setTimeout(r, ms));
 
-/* Das Zeichen gross in der Mitte: es erscheint in der alten Software,
-   verwandelt sich, bleibt kurz stehen und geht. Durchklickbar — die
-   Seite darunter ist schon da. */
+/* Die Karte oben: sie erscheint in der alten Software, verwandelt sich,
+   bleibt kurz stehen und geht. Durchklickbar — die Seite darunter ist
+   schon da. */
 async function hinweis(doc, von, nach, ruhig) {
   doc.querySelector('.wechsel-hinweis')?.remove();
   const box = doc.createElement('div');
@@ -217,11 +218,11 @@ async function hinweis(doc, von, nach, ruhig) {
   doc.body.append(box);
   const win = doc.defaultView;
   win.requestAnimationFrame(() => box.classList.add('is-da'));
-  await warte(250);
+  await warte(220);
   box.dataset.software = nach;
   if (ruhig) stelle(svg, nach === TVZA ? 1 : 0);
   else await bewege(svg, nach);
-  await warte(650);
+  await warte(500);
   box.classList.remove('is-da');
   await warte(320);
   box.remove();
@@ -290,8 +291,8 @@ export function softwareZeigen(ziel, { sanft = true, doc = document } = {}) {
       puls(nav, win);
     }
   }
-  /* Gross in der Mitte, am Handy und am Laptop (bis v.35.50.0 nur am
-     Handy, oben, klein). */
+  /* Oben in der Mitte, am Handy und am Laptop (bis v.35.50.0 nur am
+     Handy und klein). */
   if ((!erstes || quer) && sanft) hinweis(doc, von, ziel, ruhig);
   return true;
 }
