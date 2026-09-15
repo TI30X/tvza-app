@@ -596,11 +596,15 @@ export function mountAppRouter(nav) {
     wrap.inert = false;
     /* Ein geparkter Rahmen steht mit seinem Stand da — er gleitet
        herein wie ein neuer, nur ohne Warten. */
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (currentFrame !== eintrag) return;
+    const aktivieren = () => {
+      if (currentFrame !== eintrag || wrap.classList.contains('is-active')) return;
       wrap.classList.remove('is-entering', 'from-left', 'from-right');
       wrap.classList.add('is-active');
-    }));
+    };
+    requestAnimationFrame(() => requestAnimationFrame(aktivieren));
+    /* Pausiert der Browser die Bilder (Tab im Hintergrund), bliebe der
+       Rahmen unsichtbar im Anflug stehen — spätestens hiernach ist er da. */
+    setTimeout(aktivieren, 250);
     if (old) wegfuehren(old, direction);
     if (historyMode === 'push') history.pushState({ tvzaRoute:eintrag.url.href }, '', routeKey(eintrag.url));
     dispatchEvent(new CustomEvent('tvza-route'));
@@ -660,6 +664,13 @@ export function mountAppRouter(nav) {
   const vorladen = raw => {
     const target = appUrl(raw);
     if (!target || sparen()) return null;
+    /* Nie eine Adresse mit Anweisung (v.35.57.2). Michel: "beim Neuladen
+       spickt das plötzlich raus" — der Mauszeiger ging am Laptop über
+       "+ Neue Gruppe" (gruppe.html?anlegen=1), direkt unter dem Tab der
+       Gruppe; das lud die Gruppe im Voraus MIT dem Formular, verdrängte
+       die normale (eine Seite läuft nur einmal), und der nächste Klick auf
+       die Gruppe zeigte "Neue Gruppe". Vorgeladen wird nur, was nichts tut. */
+    if (target.search) return null;
     if (istBasis(target)) return null;
     const da = passenderRahmen(rahmen, zielVon(target));
     if (da) return da;

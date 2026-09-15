@@ -229,6 +229,21 @@ function oeffnen() {
   pille.setAttribute('aria-expanded', 'true');
   if (!verlauf.length && !blatt.querySelector('.ki-verlauf').childElementCount) begruessen();
   blatt.querySelector('.ki-feld').focus();
+  gruppenAuffrischen();
+}
+
+/* Die Gruppen der Leiste kommen aus den Mitgliedschaften — ändert der
+   Admin danach etwas an einer Gruppe (Assistent freigeschaltet, v.35.57.2:
+   Michel sah danach keinen Wechsel zum Assistenten der Gruppe), erfährt
+   die Leiste das erst beim nächsten Laden. Beim Öffnen darum frisch. */
+async function gruppenAuffrischen() {
+  try {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const groups = await import('./groups.js');
+    window.__firnGruppen = await groups.meineGruppen(uid);
+    beschriften();
+  } catch { /* dann bleibt es, wie es war */ }
 }
 
 function schliessen() {

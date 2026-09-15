@@ -588,3 +588,14 @@ test('Einmal-Anweisungen verschwinden aus der Adresse, sobald die Gruppe sie gel
   assert.match(router, /initialUrl = new URL\(ziel\.href\);\s*initialKey = routeKey\(ziel\);/);
   assert.match(router, /if \(typ === 'tvza-adresse'\) \{/);
 });
+
+/* v.35.57.2 — derselbe Fehler, andere Tür: der Mauszeiger über
+   "+ Neue Gruppe" lud die Gruppe MIT dem Formular im Voraus. */
+test('vorgeladen wird nur, was nichts tut — nie eine Adresse mit Anweisung', async () => {
+  const router = await read('assets/js/router.js');
+  const vorladen = router.slice(router.indexOf('const vorladen = raw => {'), router.indexOf('const tabsVorladen'));
+  assert.match(vorladen, /if \(target\.search\) return null;/);
+  assert.match(router, /setTimeout\(aktivieren, 250\);/, 'ein Rahmen steht nie unsichtbar im Anflug');
+  const pille = await read('assets/js/ki-pille.js');
+  assert.match(pille, /async function gruppenAuffrischen\(\)/, 'beim Öffnen frisch — sonst fehlt ein eben freigeschalteter Assistent');
+});

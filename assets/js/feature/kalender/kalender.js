@@ -59,7 +59,7 @@ import {
 /* Die Hülle: Leiste, Router, Konto, Namenskarte. Früher ein zweites
    <script type="module"> in der Seite — die Seiten-Invariante erlaubt
    eins. */
-import '../../nav.js?v=21';
+import '../../nav.js?v=22';
 
 const tt = (key, deutsch, vars) => (window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch, vars)
   : String(deutsch).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz)));
