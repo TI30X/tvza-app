@@ -63,7 +63,9 @@ export function assistentSauber({ name, anweisung } = {}) {
    - Der der GRUPPE kennt nur diese Gruppe, trägt ihren Namen und ihre
      Anweisung und plant ihre Termine (für die Leitung). Frei für alle
      Mitglieder einer freigeschalteten Gruppe (groups.ki — später, wenn
-     die Gruppe zahlt).
+     die Gruppe zahlt) — und für jeden, der den persönlichen hat, in
+     jeder seiner Gruppen (v.35.58.0, Michel: "wenn ich in einer Gruppe
+     bin, sollte der Wechsel direkt in der Pille stehen").
    Warum jemand einen hat oder nicht, steht nirgends. Wer keinen hat,
    sieht keine Pille. */
 export const ICH = 'ich';
@@ -75,15 +77,19 @@ export function persoenlichFrei(profil, kreis = false) {
   return profil?.ki === true || profil?.isTimo === true || !!kreis;
 }
 
-/** Die Assistenten einer Person: der persönliche, dann einer je
-    freigeschalteter Gruppe. */
+/** Hat eine Person den Assistenten dieser Gruppe? Die Gruppe ist
+    freigeschaltet, oder die Person hat ihren persönlichen. */
+export const gruppeFrei = (gruppe, profil, kreis = false) => gruppe?.ki === true || persoenlichFrei(profil, kreis);
+
+/** Die Assistenten einer Person: der persönliche, dann einer je Gruppe,
+    deren Assistenten sie hat. */
 export function assistenten({ profil, kreis = false, gruppen = [], t = (k, f) => f } = {}) {
   const liste = [];
   if (persoenlichFrei(profil, kreis)) {
     liste.push({ wer: ICH, name: t('ki.persoenlich', 'Dein Assistent'), eigen: false, anweisung: '', gruppe: '', persoenlich: true });
   }
   for (const g of gruppen) {
-    if (g?.ki === true) liste.push({ wer: g.id, ...assistentVon(g, t), persoenlich: false });
+    if (g?.id && gruppeFrei(g, profil, kreis)) liste.push({ wer: g.id, ...assistentVon(g, t), persoenlich: false });
   }
   return liste;
 }

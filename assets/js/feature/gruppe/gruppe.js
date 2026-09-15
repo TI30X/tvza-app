@@ -47,7 +47,7 @@ import { agendaAnsicht, tagName, kurzDatum } from '../woche/woche.js';
 import { frage, eingabe, meldung, mehrere } from '../../dialog.js';
 import { einladungsLink, einladungsText, codeZeigen, gemerktEinloesen } from '../../einladung.js';
 import { gespraechspartner, anMehrere } from '../../chat-senden.js';
-import { assistentSauber } from '../../ki.js';
+import { assistentSauber, gruppeFrei } from '../../ki.js';
 import { gruppeWaehlen, gruppenStil, kuerzel } from '../../gruppenwahl.js';
 import {
   kontaktSauber, pruefeKontakt, verteiler, ohneAdresse, mailtoAdresse, istEmail, ELTERN_MAX,
@@ -824,11 +824,14 @@ function zeichneAssistent() {
   const name = $('assistentName');
   const anweisung = $('assistentAnweisung');
   if (!name || !anweisung) return;
-  /* Nur, wenn die Gruppe einen Assistenten hat (groups.ki, v.35.55.0) —
-     sonst gibt es nichts zu benennen, und warum nicht, steht nirgends. */
+  /* Nur, wenn es den Assistenten der Gruppe gibt — freigeschaltet
+     (groups.ki, v.35.55.0) oder für die Person selbst (gruppeFrei,
+     v.35.58.0) —, sonst gibt es nichts zu benennen, und warum nicht,
+     steht nirgends. */
+  const frei = !!aktiv && gruppeFrei(aktiv, meinProfil, imKreis(meinProfil));
   const einst = $('assistentEinst');
-  if (einst) einst.hidden = aktiv?.ki !== true;
-  if (aktiv?.ki !== true) return;
+  if (einst) einst.hidden = !frei;
+  if (!frei) return;
   /* Nicht überschreiben, was gerade jemand tippt. */
   if (document.activeElement !== name) name.value = aktiv?.assistent?.name || '';
   if (document.activeElement !== anweisung) anweisung.value = aktiv?.assistent?.anweisung || '';

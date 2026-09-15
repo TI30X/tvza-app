@@ -133,8 +133,10 @@ function wahlZeigen(liste, a) {
     <button class="ki-wahl__knopf${x.persoenlich ? '' : ' is-gruppe'}" type="button" data-wer="${esc(x.wer)}"
             aria-pressed="${x.wer === a.wer}"${x.persoenlich ? '' : ` style="${esc(stil(x.wer))}"`}>
       <span class="ki-wahl__zeichen" aria-hidden="true">${x.persoenlich ? FUNKE : esc(kuerzel(x.gruppe))}</span>
-      <span>${esc(x.name)}</span>
+      <span>${esc(x.persoenlich || x.eigen ? x.name : x.gruppe)}</span>
     </button>`).join('');
+  /* Ohne eigenen Namen hiesse jeder Knopf "Assistent" — dann steht dort
+     die Gruppe (v.35.58.0). */
 }
 
 /* ── Die Pille ─────────────────────────────────────────────────────── */

@@ -320,6 +320,15 @@ test('die Leitung benennt den Assistenten im Gruppe-Tab', async () => {
     assert.equal(ohne.doc.getElementById('assistentEinst').hidden, true);
   } finally { ohne.zurueck(); }
 
+  // Wer den persönlichen hat, hat den der Gruppe auch ohne Freischaltung
+  // (v.35.58.0) — und kann ihn benennen.
+  const kreis = await starteGruppe({ profil: { displayName: 'Michel', kreis: true },
+    gruppen: [{ id: 'g1', name: 'BSV Kader', art: 'kader', meineRolle: 'head' }] });
+  try {
+    await warte(() => !kreis.doc.getElementById('secAktionen').hidden);
+    assert.equal(kreis.doc.getElementById('assistentEinst').hidden, false);
+  } finally { kreis.zurueck(); }
+
   const { doc, zurueck } = await starteGruppe({ gruppen: [{ id: 'g1', name: 'BSV Kader', art: 'kader', meineRolle: 'head',
     ki: true, assistent: { name: 'Maxi' } }] });
   try {
@@ -391,8 +400,13 @@ test('den persönlichen hat der Kreis und wen der Admin freischaltet, den der Gr
   assert.deepEqual(assistenten({ profil: {}, kreis: false, gruppen, t }).map(a => [a.wer, a.name]),
     [['g1', 'Coach Maxi']], 'Lea: nur der Assistent ihrer freigeschalteten Gruppe');
   const beide = assistenten({ profil: {}, kreis: true, gruppen, t });
-  assert.deepEqual(beide.map(a => a.wer), [ICH, 'g1']);
+  // v.35.58.0, Michel: "wenn ich in einer Gruppe bin, sollte der Wechsel
+  // direkt in der Pille stehen" — wer den persönlichen hat, hat jede
+  // seiner Gruppen dazu, auch eine nicht freigeschaltete.
+  assert.deepEqual(beide.map(a => a.wer), [ICH, 'g1', 'g2']);
   assert.equal(beide[0].name, 'Dein Assistent');
+  assert.equal(beide[2].name, 'Assistent', 'ohne eigenen Namen');
+  assert.deepEqual(assistenten({ profil: { ki: true }, kreis: false, gruppen, t }).map(a => a.wer), [ICH, 'g1', 'g2']);
   assert.equal(assistenten({ profil: {}, kreis: false, gruppen: [], t }).length, 0, 'ohne Freischaltung: keine Pille');
 
   // Wer antwortet: in der Gruppe der der Gruppe, sonst der persönliche —
@@ -400,7 +414,9 @@ test('den persönlichen hat der Kreis und wen der Admin freischaltet, den der Gr
   assert.equal(assistentWaehlen(beide, { seite: 'gruppe', aktiveGid: 'g1' }).wer, 'g1');
   assert.equal(assistentWaehlen(beide, { seite: 'planner', aktiveGid: 'g1' }).wer, ICH);
   assert.equal(assistentWaehlen(beide, { seite: 'planner', aktiveGid: 'g1', gewaehlt: 'g1' }).wer, 'g1');
-  assert.equal(assistentWaehlen(beide, { seite: 'gruppe', aktiveGid: 'g2' }).wer, ICH, 'g2 hat keinen');
+  assert.equal(assistentWaehlen(beide, { seite: 'gruppe', aktiveGid: 'g2' }).wer, 'g2');
+  const lea = assistenten({ profil: {}, kreis: false, gruppen, t });
+  assert.equal(assistentWaehlen(lea, { seite: 'gruppe', aktiveGid: 'g2' }).wer, 'g1', 'Lea hat in g2 keinen');
 });
 
 test('der Worker prüft die Freischaltung mit derselben Kreis-Regel wie die App', async () => {
@@ -427,6 +443,10 @@ test('der Worker prüft die Freischaltung mit derselben Kreis-Regel wie die App'
   assert.equal(await freigabePruefen({ uid: 'lea', wer: 'g1', lesen }), true);
   assert.equal(await freigabePruefen({ uid: 'lea', wer: 'g2', lesen }), false, 'Gruppe nicht freigeschaltet');
   assert.equal(await freigabePruefen({ uid: 'timo', wer: 'g1', lesen }), false, 'nicht Mitglied');
+  // Ohne eigenen Namen hiesse jeder Knopf oben "Assistent": dort steht die Gruppe.
+  assert.match(await read('assets/js/ki-pille.js'), /\$\{esc\(x\.persoenlich \|\| x\.eigen \? x\.name : x\.gruppe\)\}/);
+  docs['groups/g2/members/timo'] = { uid: 'timo' };
+  assert.equal(await freigabePruefen({ uid: 'timo', wer: 'g2', lesen }), true, 'mit dem persönlichen: auch der seiner Gruppe');
 });
 
 test('mit Service-Account lehnt der Worker ab, wer den Assistenten nicht hat', async () => {

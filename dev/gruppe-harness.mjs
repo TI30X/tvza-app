@@ -20,7 +20,7 @@ const FIREBASE_STUB = `
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   export const requireAuth = () => Promise.resolve({ uid: 'timo', email: 't@example.test' });
-  export const getProfile = () => Promise.resolve({ displayName: 'Timothy' });
+  export const getProfile = () => Promise.resolve(globalThis.__profil || { displayName: 'Timothy' });
   export const wireOfflineBanner = () => {};
   export const imKreis = p => !!p?.kreis;
   export const reportClientError = (wo, e) => { (globalThis.__fehler ||= []).push([wo, String(e)]); };
@@ -212,6 +212,7 @@ async function lade({
   mitglieder = [{ uid: 'timo', name: 'Timothy', rolle: 'mitglied' }],
   heute = '2026-08-05',
   termine = [],
+  profil = null,
 }) {
   const html = await readFile(join(root, `pages/${seite}.html`), 'utf8');
   const dom = new JSDOM(html.replace(/<script\b[^>]*><\/script>/gi, ''), {
@@ -233,6 +234,7 @@ async function lade({
   globalThis.__partner = [];
   globalThis.__aufrufe = [];
   globalThis.__termine = termine;
+  globalThis.__profil = profil;
   globalThis.__antwort = { gruppeAnlegen: 'g-neu' };
 
   /* termine.js liest die Systemuhr. Ohne gestellte Uhr hinge der Test

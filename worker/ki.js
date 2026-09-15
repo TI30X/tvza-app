@@ -137,7 +137,12 @@ export async function freigabePruefen({ uid, wer, lesen }) {
     return !!profil && (profil.ki === true || kreisVon(profil));
   }
   const [gruppe, mitglied] = await Promise.all([lesen(`groups/${wer}`), lesen(`groups/${wer}/members/${uid}`)]);
-  return !!gruppe && gruppe.ki === true && !!mitglied;
+  if (!gruppe || !mitglied) return false;
+  if (gruppe.ki === true) return true;
+  /* Wer den persönlichen hat, hat auch den seiner Gruppen (wie ki.js,
+     gruppeFrei). */
+  const profil = await lesen(`users/${uid}`);
+  return !!profil && (profil.ki === true || kreisVon(profil));
 }
 
 /* ── Wie viel noch geht ────────────────────────────────────────────── */

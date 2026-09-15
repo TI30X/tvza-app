@@ -681,6 +681,26 @@ if (languageSelect && window.TVZAI18n) {
     } catch (error) { reportClientError('lang-save', error); }
   });
 }
+/* ── Erscheinungsbild ─────────────────────────────────────────
+   Drei Knöpfe statt eines Symbols (◐), das man durchtippen musste, um zu
+   erraten, was es tut (v.35.58.0). Gespeichert wie von theme.js; die
+   Hülle hört über tvza-theme-change mit (tellSettingsParent oben). */
+const themeWahl = document.getElementById('themeWahl');
+if (themeWahl && window.TVZATheme) {
+  const zeigen = () => {
+    const modus = window.TVZATheme.getMode();
+    themeWahl.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === modus)));
+  };
+  themeWahl.addEventListener('click', event => {
+    const knopf = event.target.closest('[data-mode]');
+    if (!knopf) return;
+    try { localStorage.setItem('tvza-theme', knopf.dataset.mode); } catch {}
+    window.TVZATheme.applyTheme(knopf.dataset.mode);
+  });
+  window.addEventListener('tvza-theme-change', zeigen);
+  zeigen();
+}
+
 function closeSettings() {
   settingsModal.classList.remove('visible');
   tellSettingsParent({ type:'tvza-settings-close' });
@@ -903,7 +923,7 @@ function renderModuleToggles() {
   const availableModules = Object.values(MODULES)
     .filter(m => m.key !== 'admin' && !CORE_MODULE_KEYS.includes(m.key) && allowed[m.key]);
   if (!availableModules.length) {
-    document.getElementById('moduleToggles').innerHTML = '<p style="font-size:13px;color:var(--ink-soft)">Noch keine Module freigeschaltet.</p>';
+    document.getElementById('moduleToggles').innerHTML = '<p class="form-hint">Noch keine Module freigeschaltet.</p>';
     return;
   }
   const zeile = m => `

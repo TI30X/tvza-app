@@ -684,6 +684,17 @@ body.dm-thread .app {
 }
 
 .form-group { margin-bottom: var(--s3); }
+
+/* Ein Hinweis unter einem Feld ist leiser als das Feld. Bis v.35.58.0
+   hatte .form-hint keine Regel und stand in voller Textgrösse — in den
+   Einstellungen und beim Registrieren. */
+.form-hint {
+  margin: var(--s1) 0 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.form-hint:empty { display: none; }
 .form-group:last-of-type { margin-bottom: var(--s4); }
 
 .form-label {
@@ -1114,7 +1125,7 @@ body.reorder-editing .reorder-fab {
 
 /* ── Settings menu layout — even vertical rhythm ── */
 #settingsModal .modal {
-  max-width: 720px;
+  max-width: 600px;
   padding: var(--s5);
   background: var(--surface-2);
 }
@@ -2978,6 +2989,10 @@ html.tvza-content-frame body > main {
 .seg__item[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .seg__item[aria-pressed="true"]:hover { background: var(--accent-hover); color: #fff; }
 .seg__item:disabled { opacity: .5; cursor: default; }
+/* Im Dunkeln ist das Akzentblau hell — Weiss darauf war kaum lesbar.
+   Dieselbe Schrift wie der Hauptknopf (.btn-primary, .b--primary). */
+:root[data-theme="dark"] .seg__item[aria-pressed="true"],
+:root[data-theme="dark"] .radio-row label:has(input:checked) { color: var(--brand-navy); }
 
 /* ── Zurück ────────────────────────────────────────────────────────
    Eine Ansicht zu verlassen ist Navigation, keine Handlung. Als
@@ -3180,7 +3195,7 @@ html.tvza-content-frame body > main {
    Trenner werden dadurch ueberfluessig. */
 
 #settingsModal .settings-section {
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--rule-soft, var(--border));
   border-radius: 16px;
   padding: var(--s4) var(--s4);
@@ -3190,11 +3205,86 @@ html.tvza-content-frame body > main {
 #settingsModal .settings-section-title {
   font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
   color: var(--ink-faint, var(--ink-soft));
+  margin-bottom: var(--s1);
 }
-#settingsModal .settings-row { padding: var(--s2) 0; }
+
+/* ── In der Karte liegt keine zweite Karte (v.35.58.0) ───────────────
+   Michel: "Einstellungen können noch überarbeitet werden — das ist ja
+   wohl nicht dein Bestes". Jede Zeile trug noch einmal Rahmen und
+   Fläche (Erscheinungsbild, Sprache, jeder Bereich), der Hinweis stand
+   in Textgrösse (.form-hint hatte gar keine Regel), die Sprachwahl ragte
+   am Handy aus der Zeile, und die Bereiche standen am Laptop zu zweit
+   nebeneinander, bis "Schliff & Wachs" abgeschnitten war. Jetzt: die
+   Karte ist die Gruppe, die Zeilen sind flach und durch Haarlinien
+   getrennt, rechts steht, was man bedient. */
+#settingsModal .settings-row {
+  min-height: 52px;
+  padding: var(--s3) 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
 #settingsModal .settings-row + .settings-row {
   border-top: 1px solid var(--rule-soft, var(--border));
 }
+#settingsModal .settings-row-label { min-width: 0; font-size: 15px; }
+#settingsModal .settings-row .seg { flex: 0 1 320px; }
+#settingsModal .settings-select { flex: 0 1 200px; width: auto; min-width: 0; }
+#settingsModal .settings-section > .form-hint { margin-top: var(--s1); }
+
+/* Am Handy steht das Erscheinungsbild über seinen drei Knöpfen — neben
+   dem Wort hätten "Automatisch", "Hell" und "Dunkel" keinen Platz. */
+@media (max-width: 520px) {
+  #settingsModal .settings-row--stapel { flex-direction: column; align-items: stretch; gap: var(--s2); }
+  #settingsModal .settings-row--stapel .seg { flex: none; }
+}
+
+/* Die Bereiche: dieselben flachen Zeilen, eine Spalte. */
+#settingsModal #moduleToggles { display: flex; flex-direction: column; gap: 0; }
+#settingsModal #moduleToggles .row--check {
+  min-height: 60px;
+  padding: var(--s3) 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+#settingsModal #moduleToggles .row--check + .row--check {
+  border-top: 1px solid var(--rule-soft, var(--border));
+}
+#settingsModal #moduleToggles .row--check:active { transform: none; }
+#settingsModal #moduleToggles > .marke { margin: var(--s4) 0 var(--s1); }
+#settingsModal #moduleToggles > .marke:first-child { margin-top: var(--s2); }
+#settingsModal .module-toggle-state { display: none; }
+#settingsModal .settings-section-head { margin-bottom: 0; }
+
+/* Rechte beim Teilen: zwei Knöpfe in einer Schiene wie .seg statt
+   nackter Radioknöpfe. Das Radio bleibt das Bedienelement (Tastatur,
+   Vorlesen) und liegt unsichtbar über seinem Knopf. */
+.radio-row {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+.radio-row label {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(var(--r-row) - 3px);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.radio-row input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.radio-row label:has(input:checked) { background: var(--accent); color: #fff; }
+.radio-row label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Am Handy ist ein zentrierter Dialog der falsche Ort: er laesst rundherum
    Rand stehen, den niemand braucht, und der Daumen kommt schlecht an den

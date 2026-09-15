@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.57.2**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.58.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-70 Testdateien, **758 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+71 Testdateien, **761 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -715,6 +715,14 @@ cool, wenn Gruppen ihren Assistenten benennen und einen eigenen haben".
   selbst (`freigabePruefen`, `kreisVon` = `imKreis`, vom Test
   verglichen); ohne verlässt er sich auf die Pille. Später ersetzt ein
   Bezahlen das Häkchen des Admins — die Felder bleiben dieselben.
+- **Wer den persönlichen hat, hat jede seiner Gruppen** (v.35.58.0).
+  Michel sah in der Pille nur „Dein Assistent" — die Freischaltung der
+  Gruppe lag im Admin, und er suchte sie nicht dort: „wenn ich in einer
+  Gruppe bin, sollte der Wechsel direkt in der Pille stehen". `gruppeFrei()`
+  in `ki.js`: `groups.ki` ODER der persönliche ist frei; der Worker
+  (`freigabePruefen`) rechnet gleich. Eine Gruppe ohne eigenen Namen des
+  Assistenten steht im Wechsel mit ihrem Namen („Familie van Zanten"), nicht
+  als zweites „Assistent". Auch den Namen setzen darf die Leitung dann.
 - **Deep Thinking** heisst die höhere Stufe (Michel), vorher „Gründlich".
 - **Attrappe:** `dev/attrappe/ki.mjs` beantwortet `/__ki-basis/ki` aus
   Mustern (Erinnerung, Training planen, verschieben) — ohne Gemini. BSV ist
@@ -722,6 +730,20 @@ cool, wenn Gruppen ihren Assistenten benennen und einen eigenen haben".
 
 Tests: `ki.test.mjs` (Token mit echtem RSA-Schlüssel, Kontingent, Route,
 Kontext, Vorschläge, Gruppe-Tab, kein Schlüssel im Repo).
+
+**21. Die Einstellungen sind eine Liste, keine Kartensammlung** (v.35.58.0).
+Michel: „das ist ja wohl nicht dein Bestes". Über dem Dialog stand fest
+„Firn" (auch für den Kreis) — weg, der Titel reicht. Jede Zeile war eine
+Karte in der Karte, die Bereiche standen am Laptop zu zweit, bis „Schliff &
+Wachs" abgeschnitten war, die Sprachwahl hatte ein `style=""` und ragte am
+Handy hinaus, `.form-hint` hatte **gar keine Regel** (Hinweise in
+Textgrösse, auch beim Registrieren), und das Erscheinungsbild war ein ◐, das
+man durchtippen musste. Jetzt: je Gruppe eine Karte, darin flache Zeilen mit
+Haarlinien, eine Spalte; das Erscheinungsbild drei Knöpfe (`#themeWahl`,
+`.seg`, am Handy unter dem Wort), die Rechte beim Teilen ebenso
+(`.radio-row`, das Radio liegt unsichtbar darüber). Im Dunkeln trägt eine
+gewählte Schiene die Schrift des Hauptknopfs (Weiss auf hellem Blau war
+unlesbar — betraf auch die Gruppe). `dev/einstellungen.test.mjs`.
 
 ## Ausrollen
 
@@ -860,7 +882,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.57.2: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.58.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
