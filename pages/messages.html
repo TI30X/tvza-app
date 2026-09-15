@@ -363,7 +363,9 @@
       if (!link) return;
       e.preventDefault();
       try {
-        await einloesen(link.dataset.einladung, me);
+        const ergebnis = await einloesen(link.dataset.einladung, me);
+        /* In den TVZA-Kreis: die ganze App neu, mit dem neuen Profil. */
+        if (ergebnis?.kreis) { window.top.location.reload(); return; }
         const ziel = new URL('./gruppe.html', location.href).href;
         if (!window.tvzaNavigate?.(ziel)) location.href = ziel;
       } catch (err) {

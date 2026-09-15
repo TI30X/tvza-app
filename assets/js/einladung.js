@@ -106,6 +106,13 @@ export function einladungsText({ gruppe, link, bis, sprache = 'de-CH', t = (k, f
     { gruppe: gruppe || '', link, bis: datum });
 }
 
+/** Der Text zu einem Link in den TVZA-Kreis (v.35.56.0) — ohne Marke
+    im Katalog, die steht im Link selbst nicht und kommt beim Öffnen. */
+export function kreisEinladungsText({ link, bis, sprache = 'de-CH', t = (k, f, v) => fuellen(f, v) }) {
+  const datum = alsDatum(bis)?.toLocaleDateString(sprache, { day: 'numeric', month: 'long' }) || '';
+  return t('einl.kreisText', 'Du bist eingeladen: {link}\nDer Link gilt bis {bis} und für eine Person.', { link, bis: datum });
+}
+
 const fuellen = (text, vars = {}) =>
   String(text).replace(/\{(\w+)\}/g, (ganz, name) => (vars[name] ?? ganz));
 
@@ -145,22 +152,26 @@ export function ausAdresseMerken(win = globalThis.window) {
 
 /* ── Beitreten ─────────────────────────────────────────────────────── */
 
-/** Tritt mit einem Code bei und macht die Gruppe zur aktiven. Wer schon
-    drin ist, landet einfach dort. Wirft mit einer lesbaren Meldung. */
+/** Tritt mit einem Code bei. Ein Code zeigt entweder auf eine Gruppe
+    (die dann die aktive wird) oder in den TVZA-Kreis (v.35.56.0,
+    kreis-einladung.js). Gibt { gid } oder { kreis: true } zurück; wirft
+    mit einer lesbaren Meldung. */
 export async function einloesen(code, uid) {
+  const kreis = await import('./kreis-einladung.js');
+  if (await kreis.istKreisEinladung(code)) return kreis.kreisBeitreten(code, uid);
   const groups = await import('./groups.js');
   const gid = await groups.beitreten(code, uid);
   groups.aktiveGruppeSetzen(gid);
-  return gid;
+  return { gid };
 }
 
-/** Der gemerkte Code, nach der Anmeldung. Gibt { gid } oder { fehler }
+/** Der gemerkte Code, nach der Anmeldung. Gibt { gid }, { kreis } oder { fehler }
     zurück oder null, wenn nichts wartete. Der Merker geht in jedem Fall
     weg — ein abgelaufener Code soll nicht bei jedem Öffnen scheitern. */
 export async function gemerktEinloesen(uid, speicher = globalThis.localStorage) {
   const code = gemerkt(speicher);
   if (!code) return null;
   vergessen(speicher);
-  try { return { gid: await einloesen(code, uid) }; }
+  try { return await einloesen(code, uid); }
   catch (e) { return { fehler: e?.message || String(e) }; }
 }

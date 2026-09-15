@@ -35,7 +35,7 @@ import {
 import { ICONS, icon } from '../../shell.js?v=21';
 import { initialsOf } from '../../nav.js?v=20';
 import { frage, meldung } from '../../dialog.js';
-import { gemerktEinloesen } from '../../einladung.js';
+import { gemerktEinloesen, einladungsLink, kreisEinladungsText, codeZeigen } from '../../einladung.js';
 import { meineGruppen, leitet, kontakte } from '../../groups.js';
 import { nameAus } from '../../bekannte.js';
 
@@ -127,6 +127,12 @@ if (window.parent === window) void (async () => {
   if (!beitritt) return;
   if (beitritt.fehler) {
     await meldung({ titel: t('grp.f.beitritt', 'Der Beitritt hat nicht geklappt.'), text: beitritt.fehler });
+    return;
+  }
+  /* In den TVZA-Kreis (v.35.56.0): neu laden — Zeichen, Bereiche und
+     der persönliche Assistent kommen mit dem Profil. */
+  if (beitritt.kreis) {
+    if (!beitritt.schon) location.reload();
     return;
   }
   const ziel = new URL('pages/gruppe.html', location.href).href;
@@ -800,6 +806,8 @@ function openAdmin() {
   document.getElementById('superAdminFoodSection').style.display = '';
   document.getElementById('superAdminKiSection').hidden = false;
   void renderAdminKiGruppen();
+  document.getElementById('superAdminKreisSection').hidden = false;
+  void renderKreisEinladungen();
   loadInviteGroups().then(renderMemberInvites);
   loadAppUsers().then(() => {
     renderAdminUsers();
@@ -1403,6 +1411,70 @@ async function renderAdminUsers() {
     }
   }));
 }
+
+/* ════ Admin · TVZA-Einladung (v.35.56.0) ═════════════════
+   Michel: "Kann ich jemand einfach in TVZA einladen?" Ein Link für eine
+   Person, sieben Tage (kreis-einladung.js). Teilen über das Menü des
+   Telefons, sonst kopieren. Offene Links stehen darunter, mit
+   Zurückziehen. */
+async function renderKreisEinladungen() {
+  if (profile.isTimo !== true) return;
+  const liste = document.getElementById('kreisEinladungListe');
+  const kreis = await import('../../kreis-einladung.js');
+  let offene = [];
+  try { offene = await kreis.kreisEinladungen(); }
+  catch (error) { reportClientError('kreis-einladungen', error); }
+  const datum = d => d.toLocaleDateString('de-CH', { day: 'numeric', month: 'long' });
+  liste.innerHTML = offene.map(e => `
+    <div class="row kreis-einladung" data-kreis-code="${escHtml(e.code)}">
+      <span class="row__body">
+        <span class="row__title">${escHtml(e.fuer || codeZeigen(e.code))}</span>
+        <span class="row__sub">${escHtml(einladungsLink(e.code).replace(/^https?:\/\//, ''))} · bis ${escHtml(datum(e.bis))}</span>
+      </span>
+      <span class="row__end">
+        <button class="btn btn-secondary" type="button" data-kreis-teilen>Teilen</button>
+        <button class="btn btn-secondary" type="button" data-kreis-weg>Zurückziehen</button>
+      </span>
+    </div>`).join('');
+  liste.querySelectorAll('[data-kreis-code]').forEach(zeile => {
+    const e = offene.find(x => x.code === zeile.dataset.kreisCode);
+    zeile.querySelector('[data-kreis-teilen]').addEventListener('click', () => kreisTeilen(e));
+    zeile.querySelector('[data-kreis-weg]').addEventListener('click', async () => {
+      if (!await frage({ titel: 'Einladung zurückziehen?', text: 'Der Link führt danach nirgends mehr hin.', ja: 'Zurückziehen', gefahr: true })) return;
+      try { await kreis.kreisEinladungZuruecknehmen(e.code); } catch (error) { reportClientError('kreis-einladung-weg', error); }
+      await renderKreisEinladungen();
+    });
+  });
+}
+
+async function kreisTeilen(e) {
+  const text = kreisEinladungsText({ link: einladungsLink(e.code), bis: e.bis, t });
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; }
+    catch (error) { if (error?.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(text); await meldung({ titel: 'Kopiert', text }); }
+  catch { await meldung({ titel: 'Der Link', text }); }
+}
+
+document.getElementById('kreisEinladungNeu')?.addEventListener('click', async () => {
+  if (profile.isTimo !== true) return;
+  const btn = document.getElementById('kreisEinladungNeu');
+  const feld = document.getElementById('kreisEinladungFuer');
+  btn.disabled = true;
+  try {
+    const kreis = await import('../../kreis-einladung.js');
+    const neu = await kreis.kreisEinladungErzeugen(user.uid, { fuer: feld.value });
+    feld.value = '';
+    await renderKreisEinladungen();
+    await kreisTeilen(neu);
+  } catch (error) {
+    reportClientError('kreis-einladung-neu', error);
+    await meldung({ titel: 'Der Link liess sich nicht erstellen.' });
+  } finally {
+    btn.disabled = false;
+  }
+});
 
 /* ════ Admin · Assistent der Gruppen (v.35.55.0) ═════════════════
    Michel: "wenn die Gruppe dafür zahlt, wird ja extra freigeschaltet".

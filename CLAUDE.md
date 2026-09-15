@@ -63,6 +63,20 @@ Anmeldung, aber nicht als ein Produkt.
   **Draussen gibt es TVZA nicht**: `allowedModules()` nimmt die
   TVZA-Bereiche weg, Firn ist das Zuhause.
 
+  **Mit einem Link in den Kreis** (v.35.56.0, `kreis-einladung.js`). Michel:
+  „Kann ich jemand einfach in TVZA einladen?" Admin → „TVZA-Einladung":
+  ein Link für EINE Person, sieben Tage (`kreisEinladungen/{code}`,
+  dieselbe kurze Form `?k=<code>` wie für Gruppen). Wer ihn öffnet — neu
+  oder schon mit Konto —, kommt in den Kreis: `kreis = true`, alle
+  TVZA-Bereiche frei, Food/Watchlist/Projekte gleich eingeschaltet
+  (`KREIS_SICHTBAR`, die Maturaarbeit nicht), `kreis/{uid}`. Profil,
+  Kreisliste und Verbrauch des Links in EINEM Stapel; die Regel lässt das
+  nur mit einem Link zu, der vorher da war, noch gilt und danach weg ist
+  (`kreisEinladungVerbraucht`, `tvzaFrei`). `einloesen()` in
+  `einladung.js` schaut zuerst, ob ein Code in den Kreis führt, sonst in
+  eine Gruppe. Der Hinweis beim Registrieren sagt neutral „Du bist
+  eingeladen". `dev/kreis-einladung.test.mjs`.
+
   **Das „Zuhause" ist weg** (v.35.52.0). Von v.35.48.0 bis v.35.51.0 waren
   Start, Kalender und Chat für den Kreis TVZA (`data-zuhause`,
   `zuhauseMarkieren()`), die Gruppe Firn. Seit v.35.53.0 entscheidet die
@@ -83,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.55.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.56.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -111,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-69 Testdateien, **749 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+70 Testdateien, **753 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -702,7 +716,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1030 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1031 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -814,11 +828,14 @@ Zwei Dinge, die leicht übersehen werden:
   erweitert nur — der alte Code braucht sie nicht, der neue nur fürs
   Freischalten im Admin. Regeln vor oder mit dem Code. Ausgerollt am
   15.09.2026, vor dem Push.
+  v.35.56.0 (TVZA-Einladungslink, `kreisEinladungen`, Selbst-Zweig bei
+  `users` und `kreis`) **Regeln VOR dem Code**: ohne sie scheitert das
+  Anlegen eines Links im Admin und das Einlösen.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.55.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.56.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

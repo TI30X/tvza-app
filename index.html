@@ -483,6 +483,19 @@
         <hr class="settings-divider" />
         <!-- Der Assistent der Gruppen (v.35.55.0): welche Gruppe einen hat.
              Nur für den Admin — die Gruppen selbst sehen nie, warum. -->
+        <!-- In den TVZA-Kreis einladen (v.35.56.0): ein Link für eine
+             Person, sieben Tage gültig. Wer ihn öffnet, ist danach drin. -->
+        <section class="settings-section" id="superAdminKreisSection" hidden>
+          <p class="settings-section-title">TVZA-Einladung</p>
+          <p class="settings-section-copy">Ein Link für eine Person, sieben Tage gültig. Wer ihn öffnet — neu oder schon mit Konto —, ist danach im TVZA-Kreis.</p>
+          <div class="form-group">
+            <label class="form-label" for="kreisEinladungFuer">Für wen (nur für dich)</label>
+            <input class="form-input" id="kreisEinladungFuer" type="text" maxlength="60" autocomplete="off" placeholder="z.B. Grosi" />
+          </div>
+          <button class="btn btn-primary btn-block" id="kreisEinladungNeu" type="button">Einladungslink erstellen</button>
+          <div id="kreisEinladungListe"></div>
+        </section>
+        <hr class="settings-divider" />
         <section class="settings-section" id="superAdminKiSection" hidden>
           <p class="settings-section-title">Assistent der Gruppen</p>
           <p class="settings-section-copy">Freigeschaltete Gruppen haben einen eigenen Assistenten, den ihre Leitung benennt.</p>
@@ -497,7 +510,7 @@
     </div>
   </div>
 
-  <script type="module" src="./assets/js/feature/start/start.js?v=19"></script>
+  <script type="module" src="./assets/js/feature/start/start.js?v=20"></script>
 
   <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
   <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=12"></script>

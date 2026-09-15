@@ -109,6 +109,9 @@ test('fremde Profile liest niemand mehr einzeln — bis auf drei begründete Ste
     'assets/js/feature/start/start.js': /stapel\.update\(doc\(db, 'users', uid\), \{\s*allowedModules/,
     'assets/js/feature/gast/gast.js': /async function isFamilyAccount\(uid\)/,
     'assets/js/personen.js': /Übergang/,
+    /* v.35.56.0: wer einen TVZA-Link einlöst, liest sein EIGENES Profil
+       (uid ist dort die eigene, von einloesen(code, user.uid)). */
+    'assets/js/kreis-einladung.js': /export async function kreisBeitreten\(code, uid\)/,
   };
   for (const [datei, src] of await alleQuellen()) {
     for (const [, wer] of src.matchAll(/doc\(db, ['"]users['"], ([\w.]+)\)/g)) {

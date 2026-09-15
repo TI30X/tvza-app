@@ -76,7 +76,7 @@ test('draussen gibt es TVZA nicht — egal was freigegeben ist', async () => {
 
 /* ── Die Regeln ────────────────────────────────────────────────────*/
 
-test('in den Kreis nimmt nur der Admin — niemand sich selbst', async () => {
+test('in den Kreis nimmt nur der Admin — niemand sich selbst, ausser mit seinem Link', async () => {
   const rules = await lies('firestore.rules');
   const users = block(rules, 'match /users/{uid} {');
   const selbst = users.match(/request\.auth\.uid == uid\s*&& request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\s*\.hasOnly\(\[([^\]]+)\]\)/)?.[1];
@@ -88,7 +88,13 @@ test('in den Kreis nimmt nur der Admin — niemand sich selbst', async () => {
 
   const kreis = block(rules, 'match /kreis/{uid} {');
   assert.match(kreis, /allow list: if imKreis\(\) \|\| isAdmin\(\);/, 'die Liste sehen nur die, die darauf stehen');
-  assert.match(kreis, /allow create, update: if isAdmin\(\)/);
+  /* Seit v.35.56.0 (TVZA-Einladungslink, kreis-einladung.test.mjs) darf
+     man sich selbst eintragen — aber NUR mit einem Link, den der Admin
+     angelegt hat und der im selben Stapel verbraucht wird. Ohne Link
+     bleibt es beim Admin. */
+  assert.match(kreis, /allow create, update: if request\.resource\.data\.keys\(\)\.hasOnly\(\['seit'\]\)\s*&& \(\s*isAdmin\(\)\s*(\/\/[^\n]*\s*)*\|\| \(\s*isMember\(\)\s*&& request\.auth\.uid == uid\s*&& getAfter[\s\S]*?kreisEinladungVerbraucht\(/);
+  const profilKreis = users.match(/\.hasOnly\(\['kreis', 'allowedModules', 'kreisCode', 'modules'\]\)[\s\S]{0,200}/)?.[0] || '';
+  assert.match(profilKreis, /kreisEinladungVerbraucht\(/, 'kreis im Profil selbst setzen nur mit einem verbrauchten Link');
   assert.match(kreis, /allow delete: if isAdmin\(\);/);
   assert.match(kreis, /keys\(\)\.hasOnly\(\['seit'\]\)/, 'auf der Liste steht nichts als seit wann');
   assert.match(rules, /function imKreis\(\) \{\s*return isMember\(\)\s*&& exists\(\/databases\/\$\(database\)\/documents\/kreis\/\$\(request\.auth\.uid\)\);/);

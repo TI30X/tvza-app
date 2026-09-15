@@ -471,6 +471,22 @@ service cloud.firestore {
                       && request.resource.data.diff(resource.data).affectedKeys()
                         .hasOnly(['familyId', 'role'])
                       && managesFamily(request.resource.data.familyId)
+                    )
+                    // In den TVZA-Kreis mit einem Link des Admins (v.35.56.0,
+                    // kreis-einladung.js): nur man selbst, nur kreis = true,
+                    // nur die TVZA-Bereiche frei — und nur, wenn der Link
+                    // vorher da war, noch gilt und im selben Stapel weg ist.
+                    || (
+                      isMember()
+                      && request.auth.uid == uid
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['kreis', 'allowedModules', 'kreisCode', 'modules'])
+                      && request.resource.data.kreis == true
+                      && kreisEinladungVerbraucht(request.resource.data.get('kreisCode', ''))
+                      && tvzaFrei(request.resource.data.get('allowedModules', {}))
+                      && request.resource.data.get('allowedModules', {})
+                        .diff(resource.data.get('allowedModules', {})).affectedKeys()
+                        .hasOnly(['matura', 'maturatracker', 'food', 'watch', 'projects'])
                     );
       allow delete: if isAdmin();
     }
@@ -507,9 +523,65 @@ service cloud.firestore {
     match /kreis/{uid} {
       allow get: if isMember() && (request.auth.uid == uid || imKreis() || isAdmin());
       allow list: if imKreis() || isAdmin();
-      allow create, update: if isAdmin()
-                            && request.resource.data.keys().hasOnly(['seit']);
+      allow create, update: if request.resource.data.keys().hasOnly(['seit'])
+                            && (
+                              isAdmin()
+                              // Mit einem Link in den Kreis (v.35.56.0): nur sich
+                              // selbst, und nur zusammen mit dem Profil, das den
+                              // verbrauchten Link trägt.
+                              || (
+                                isMember()
+                                && request.auth.uid == uid
+                                && getAfter(/databases/$(database)/documents/users/$(uid)).data.get('kreis', false) == true
+                                && kreisEinladungVerbraucht(
+                                  getAfter(/databases/$(database)/documents/users/$(uid)).data.get('kreisCode', ''))
+                              )
+                            );
       allow delete: if isAdmin();
+    }
+
+    /* Einladungen in den TVZA-Kreis (v.35.56.0). Michel: "Kann ich jemand
+       einfach in TVZA einladen?" Anlegen und auflisten nur der Admin; ein
+       Link gilt fuer EINE Person und hoechstens 15 Tage (die App nimmt 7).
+       Lesen darf ihn jedes Konto, das den Code kennt (get, nie list) —
+       um zu sehen, ob er in den Kreis oder in eine Gruppe fuehrt. Weg
+       geht er durch den Admin oder beim Einloesen, im Stapel mit dem
+       eigenen Profil, das ihn dann traegt. */
+    function kreisEinladungVerbraucht(code) {
+      return code is string
+        && code.size() == 8
+        && exists(/databases/$(database)/documents/kreisEinladungen/$(code))
+        && get(/databases/$(database)/documents/kreisEinladungen/$(code)).data.bis > request.time
+        && !existsAfter(/databases/$(database)/documents/kreisEinladungen/$(code));
+    }
+
+    function tvzaFrei(m) {
+      return m is map
+        && m.get('matura', false) == true
+        && m.get('maturatracker', false) == true
+        && m.get('food', false) == true
+        && m.get('watch', false) == true
+        && m.get('projects', false) == true;
+    }
+
+    match /kreisEinladungen/{code} {
+      allow get: if isMember();
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+                    && code.matches('^[A-HJKMNP-Z2-9]{8}$')
+                    && request.resource.data.keys().hasOnly(['createdBy', 'createdAt', 'bis', 'fuer'])
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.bis is timestamp
+                    && request.resource.data.bis > request.time
+                    && request.resource.data.bis < request.time + duration.value(15, 'd')
+                    && (!('fuer' in request.resource.data)
+                        || (request.resource.data.fuer is string && request.resource.data.fuer.size() <= 60));
+      allow delete: if isAdmin()
+                    || (
+                      isMember()
+                      && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('kreisCode', '') == code
+                      && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('kreis', false) == true
+                    );
     }
 
     match /users/{uid}/reminders/{reminderId} {
