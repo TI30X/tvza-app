@@ -22,6 +22,8 @@ export async function gespraechspartner(ich) {
     const snap = await getDocs(query(collection(db, 'dms'), where('participants', 'array-contains', ich)));
     return snap.docs.map(d => {
       const daten = d.data();
+      /* Ein Gruppenchat (v.35.61.0) ist keine Person. */
+      if (daten.art === 'runde') return null;
       const uid = (daten.participants || []).find(p => p !== ich);
       return uid ? { uid, name: daten.participantNames?.[uid] || '' } : null;
     }).filter(Boolean);

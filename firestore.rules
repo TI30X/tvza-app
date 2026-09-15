@@ -596,6 +596,15 @@ service cloud.firestore {
         && d.name is string && d.name.size() > 0 && d.name.size() <= 40
         && d.farbe is string && d.farbe.size() <= 20;
     }
+    /* Was man selbst zu einer Unterhaltung weiss (v.35.61.0): stumm, und
+       bis wann ein Gruppenchat gelesen ist. Nur die Person selbst. */
+    match /users/{uid}/chat/{schluessel} {
+      allow read, delete: if isMember() && request.auth.uid == uid;
+      allow create, update: if isMember() && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(['stumm', 'gelesen'])
+                            && request.resource.data.get('stumm', false) is bool;
+    }
+
     match /users/{uid}/kalender/{kalenderId} {
       allow read, delete: if isMember() && request.auth.uid == uid;
       allow create, update: if isMember() && request.auth.uid == uid
@@ -716,18 +725,48 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    /* Eine Termin-Karte an einer Nachricht (v.35.61.0, chat-modell.js):
+       nur, was jede Person im Chat sehen darf. */
+    function karteGueltig(d) {
+      return !('termin' in d)
+        || (d.termin is map
+            && d.termin.keys().hasOnly(['gid', 'eid', 'titel', 'von', 'bis', 'zeit', 'ort', 'art', 'gruppe', 'was'])
+            && d.termin.titel is string && d.termin.titel.size() <= 120
+            && d.termin.von is string && d.termin.von.size() == 10);
+    }
+
     // ── Direct messages ──────────────────────────────────────────
+    // Zu zweit (a__b) oder, seit v.35.61.0, ein Gruppenchat ("runde"):
+    // 3 bis 30 Leute, ein Titel, wer drin ist, steht beim Anlegen fest.
     match /dms/{convId} {
       allow read: if signedIn()
                   && request.auth.uid in resource.data.participants;
       allow create: if signedIn()
                     && request.auth.uid in request.resource.data.participants
-                    && request.resource.data.participants.size() == 2
-                    && request.resource.data.participants[0]
-                      != request.resource.data.participants[1]
-                    && convId == (
-                      request.resource.data.participants[0] + '__'
-                      + request.resource.data.participants[1]
+                    && (
+                      (
+                        request.resource.data.participants.size() == 2
+                        && request.resource.data.participants[0]
+                          != request.resource.data.participants[1]
+                        && convId == (
+                          request.resource.data.participants[0] + '__'
+                          + request.resource.data.participants[1]
+                        )
+                      )
+                      || (
+                        request.resource.data.get('art', '') == 'runde'
+                        && request.resource.data.participants.size() >= 3
+                        && request.resource.data.participants.size() <= 30
+                        && request.resource.data.titel is string
+                        && request.resource.data.titel.size() > 0
+                        && request.resource.data.titel.size() <= 60
+                        && request.resource.data.erstelltVon == request.auth.uid
+                        && !convId.matches('.*__.*')
+                        && request.resource.data.keys().hasOnly([
+                          'art', 'titel', 'erstelltVon', 'participants', 'participantNames',
+                          'lastMessage', 'lastAt', 'lastSender', 'unread', 'lastRead', 'typing'
+                        ])
+                      )
                     );
       allow update: if signedIn()
                     && request.auth.uid in resource.data.participants
@@ -735,8 +774,15 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys()
                       .hasOnly([
                         'participantNames', 'lastMessage', 'lastAt', 'lastSender',
-                        'unread', 'lastRead', 'typing'
-                      ]);
+                        'unread', 'lastRead', 'typing', 'titel'
+                      ])
+                    && (
+                      !('titel' in request.resource.data.diff(resource.data).affectedKeys())
+                      || (resource.data.get('art', '') == 'runde'
+                          && request.resource.data.titel is string
+                          && request.resource.data.titel.size() > 0
+                          && request.resource.data.titel.size() <= 60)
+                    );
       allow delete: if false;
 
       match /messages/{msgId} {
@@ -750,8 +796,9 @@ service cloud.firestore {
                       && request.resource.data.text.size() > 0
                       && request.resource.data.text.size() <= 4000
                       && request.resource.data.keys().hasOnly([
-                        'text', 'sender', 'createdAt'
+                        'text', 'sender', 'createdAt', 'termin'
                       ])
+                      && karteGueltig(request.resource.data)
                       && request.auth.uid in get(
                         /databases/$(database)/documents/dms/$(convId)
                       ).data.participants;
@@ -1233,6 +1280,37 @@ service cloud.firestore {
        verlaesst oder entfernt wird, dessen Karte geht im selben Batch mit
        (groups.js). exists() sieht dabei den Stand VOR dem Batch, also ist
        man beim Loeschen der eigenen Karte noch Mitglied. */
+    /* Der Chat einer Gruppe (v.35.61.0): es gibt ihn für jede Gruppe;
+       lesen und schreiben alle, die drin sind. Wer die Gruppe verlässt,
+       liest nichts mehr (inGroup). Löschen: wer schrieb, und die Leitung. */
+    match /groups/{gid}/chat/{msgId} {
+      allow get, list: if inGroup(gid);
+      allow create: if inGroup(gid)
+                    && request.resource.data.sender == request.auth.uid
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 4000
+                    && request.resource.data.get('senderName', '') is string
+                    && request.resource.data.get('senderName', '').size() <= 80
+                    && request.resource.data.keys().hasOnly(['text', 'sender', 'senderName', 'createdAt', 'termin'])
+                    && karteGueltig(request.resource.data);
+      allow update: if false;
+      allow delete: if inGroup(gid)
+                    && (resource.data.sender == request.auth.uid || leadsGroup(gid));
+    }
+
+    /* Die letzte Nachricht eines Gruppenchats — für die Liste und den
+       Punkt am Tab, ohne jede Nachricht zu lesen. */
+    match /groups/{gid}/chatMeta/{docId} {
+      allow get, list: if inGroup(gid);
+      allow create, update: if inGroup(gid)
+                            && docId == 'letzte'
+                            && request.resource.data.sender == request.auth.uid
+                            && request.resource.data.text is string
+                            && request.resource.data.text.size() <= 140
+                            && request.resource.data.keys().hasOnly(['text', 'sender', 'senderName', 'at']);
+    }
+
     /* Die Kalender einer Gruppe (v.35.60.0): "Rennplan" neben Trainings,
        Lager und Rennen. Sehen alle in der Gruppe, anlegen die Leitung. */
     match /groups/{gid}/kalender/{kalenderId} {

@@ -27,6 +27,8 @@ import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } 
 import { mountAppRouter } from './router.js?v=17';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 import { eigeneKarte, kartenNachtragen } from './personen.js';
+import { beobachteUnterhaltungen } from './chat-stand.js';
+import { ungelesenGesamt } from './chat-modell.js';
 
 const BEREICH_OF = {
   ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
@@ -211,13 +213,11 @@ window.tvzaSetUnread = setUnread;   // so page scripts can call it without impor
    Weil das hier in nav.js läuft, meldet sich eine neue Nachricht auf
    JEDER Seite, nicht nur in den Nachrichten selbst. Dieselbe Abfrage
    wie in messages.html, also von den Firestore-Regeln gedeckt. */
+/* Seit v.35.61.0 aus chat-stand.js: dazu die Gruppenchats und der Chat
+   jeder Gruppe, und stumme Unterhaltungen zählen nicht (Michel: "man
+   sollte bestimmte Chats stummschalten können"). */
 function watchUnread(user) {
-  const q = query(collection(db, 'dms'), where('participants', 'array-contains', user.uid));
-  onSnapshot(q, snap => {
-    let n = 0;
-    snap.forEach(d => { n += Number(d.data()?.unread?.[user.uid]) || 0; });
-    setUnread(n);
-  }, () => { /* offline oder keine Berechtigung: Punkt bleibt einfach aus */ });
+  beobachteUnterhaltungen(user.uid, liste => setUnread(ungelesenGesamt(liste)));
 }
 
 const file = location.pathname.split('/').pop() || 'index.html';

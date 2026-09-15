@@ -33,10 +33,12 @@ import {
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { ICONS, icon } from '../../shell.js?v=24';
-import { initialsOf } from '../../nav.js?v=23';
+import { initialsOf } from '../../nav.js?v=24';
 import { frage, meldung } from '../../dialog.js';
 import { gemerktEinloesen, einladungsLink, kreisEinladungsText, codeZeigen } from '../../einladung.js';
 import { meineGruppen, leitet, kontakte } from '../../groups.js';
+import { beobachteUnterhaltungen } from '../../chat-stand.js';
+import { ungelesenGesamt } from '../../chat-modell.js';
 import { nameAus } from '../../bekannte.js';
 
 /* Modulschlüssel → Bereichsfarbe. Wie in nav.js ausgeschrieben,
@@ -301,9 +303,10 @@ function applyModules() {
 let dmUnsub = null, dmPrevTotal = null;
 function startDmBadge() {
   if (dmUnsub) return;
-  dmUnsub = onSnapshot(query(collection(db, 'dms'), where('participants', 'array-contains', user.uid)), snap => {
-    let total = 0;
-    snap.forEach(d => { total += (d.data().unread?.[user.uid]) || 0; });
+  /* Dieselbe Zahl wie am Tab (chat-stand.js, v.35.61.0): stumme Chats
+     zählen nicht, die Chats der Gruppen schon. */
+  dmUnsub = beobachteUnterhaltungen(user.uid, liste => {
+    const total = ungelesenGesamt(liste);
     const badge = document.getElementById('dmTileBadge');
     if (badge) {
       badge.textContent = total > 99 ? '99+' : String(total);
@@ -314,7 +317,7 @@ function startDmBadge() {
       try { new Notification('💬 Neue Nachricht', { body: 'Du hast neue Nachrichten in Firn.', icon: 'assets/icons/firn-192.png', tag: 'firn-dm' }); } catch (e) {}
     }
     dmPrevTotal = total;
-  }, err => reportClientError('dm-badge', err));
+  });
 }
 function stopDmBadge() {
   if (dmUnsub) { dmUnsub(); dmUnsub = null; }

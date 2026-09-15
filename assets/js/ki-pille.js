@@ -505,6 +505,30 @@ async function kartenKlick(e) {
   }
 }
 
+/* Was der Assistent in eine Gruppe einträgt oder dort verschiebt, geht als
+   Karte in den Chat der Gruppe (v.35.61.0). Michel: "oder gleich von der KI
+   beim Eintragen versendet werden, zum Informieren". Geschrieben von der
+   Person, die bestätigt hat — die Leitung. Scheitert der Chat, ist der
+   Termin trotzdem eingetragen. */
+async function imChatAnkuendigen({ uid, gid, gruppe = '', termin, was }) {
+  try {
+    const [{ terminKarte, karteText }, { gruppenNachricht }, { artWort }] = await Promise.all([
+      import('./chat-modell.js'), import('./chat-stand.js'), import('./termine.js'),
+    ]);
+    const art = gruppenJetzt().find(g => g.id === gid)?.art || 'kader';
+    const karte = terminKarte(termin, { id: gid, name: gruppe }, was);
+    if (!karte) return;
+    const datum = tag => new Date(`${tag}T12:00:00`).toLocaleDateString(document.documentElement.lang || 'de-CH',
+      { weekday: 'short', day: 'numeric', month: 'short' });
+    await gruppenNachricht({
+      gid, ich: uid, meinName: window.__firnProfil?.displayName || '',
+      text: karteText(karte, { datum, artWort: a => artWort(a, art) }), termin: karte,
+    });
+  } catch (fehler) {
+    reportClientError('ki-chat', fehler);
+  }
+}
+
 /** Schreibt, was die Person bestätigt hat — mit ihren Rechten. */
 export async function ausfuehren(pruefung, { uid = auth.currentUser?.uid } = {}) {
   const d = pruefung.daten;
@@ -516,12 +540,16 @@ export async function ausfuehren(pruefung, { uid = auth.currentUser?.uid } = {})
       { ownerUid: uid, ...d, planHtml: '', planUrl: '', createdAt: serverTimestamp() });
   } else if (pruefung.art === 'gruppe') {
     const groups = await import('./groups.js');
-    await groups.terminAnlegen(pruefung.ziel.gid, uid, d);
+    const eid = await groups.terminAnlegen(pruefung.ziel.gid, uid, d);
+    await imChatAnkuendigen({ uid, gid: pruefung.ziel.gid, gruppe: pruefung.ziel.gruppe, termin: { ...d, id: eid }, was: 'neu' });
   } else if (pruefung.art === 'verschieben') {
     const z = pruefung.ziel;
     if (z.quelle === 'gruppe') {
       const groups = await import('./groups.js');
       await groups.terminAendern(z.gid, z.eid, d);
+      const gruppe = gruppenJetzt().find(g => g.id === z.gid);
+      await imChatAnkuendigen({ uid, gid: z.gid, gruppe: gruppe?.name, was: 'geaendert',
+        termin: { ...(z.vorher || {}), ...d, id: z.eid, titel: z.titel || z.vorher?.titel } });
     } else if (z.quelle === 'eigen') {
       await updateDoc(doc(db, 'calendarDays', z.id), d);
     } else {

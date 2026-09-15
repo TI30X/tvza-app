@@ -3621,6 +3621,8 @@ html.tvza-content-frame body > main {
 body.ki-offen .ki-pille,
 body:has(dialog[open]) .ki-pille,
 body.global-reminders-open .ki-pille,
+/* In einer offenen Unterhaltung liegt unten das Eingabefeld (v.35.61.0). */
+body.chat-offen .ki-pille,
 body.settings-layer-open .ki-pille { display: none; }
 @media (min-width: 900px) {
   .ki-pille { left: auto; right: var(--s5); bottom: var(--s5); max-width: 280px; }

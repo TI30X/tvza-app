@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.35.60.0';
+const CACHE = 'tvza-v.35.61.0';
 // Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
@@ -24,7 +24,7 @@ const SHELL = [
   './login.html',
   './willkommen.html',
   './nutzung.html',
-  './assets/css/kit.css?v=27',
+  './assets/css/kit.css?v=28',
   './assets/css/feature/willkommen.css?v=4',
   './assets/css/feature/nutzung.css?v=1',
   './assets/css/legacy.css?v=1',
@@ -42,9 +42,9 @@ const SHELL = [
   './assets/icons/firn-192.png',
   './assets/js/theme.js',
   // Der Start traegt seinen Code seit v.35.19.0 in eigenen Dateien.
-  './assets/js/feature/start/start.js?v=25',
+  './assets/js/feature/start/start.js?v=26',
   './assets/js/feature/start/wetter-chip.js?v=15',
-  './assets/js/feature/start/heute.js?v=18',
+  './assets/js/feature/start/heute.js?v=19',
   './assets/js/i18n.js?v=1',
   // Sprachdateien gehoeren in den Vorrat: sonst laesst sich offline
   // zwar umschalten, aber der Katalog fehlt und alles bleibt deutsch.
@@ -91,7 +91,7 @@ const SHELL = [
   './assets/js/personen.js',
   './assets/js/bekannte.js',
   './assets/js/kalender-teams.js',
-  './assets/js/feature/kalender/kalender.js?v=11',
+  './assets/js/feature/kalender/kalender.js?v=12',
   './assets/js/feature/kalender/eintraege.js',
   './assets/js/feature/kalender/ansicht.js',
   './assets/js/gruppenwahl.js',
@@ -102,11 +102,13 @@ const SHELL = [
   './assets/css/feature/video.css?v=1',
   './assets/js/feature/einheit/einheit.js?v=20',
   './assets/js/briefing.js',
-  './assets/js/nav.js?v=23',
+  './assets/js/nav.js?v=24',
   './assets/js/groups.js',
   './assets/js/gruppen-strom.js',
   './assets/js/kalender-quellen.js',
   './assets/js/formatierung.js',
+  './assets/js/chat-modell.js',
+  './assets/js/chat-stand.js',
   './assets/js/feature/gruppe/gruppe.js?v=30',
   './assets/css/feature/gruppe.css?v=10',
   './assets/js/feature/ski/ski.js?v=1',
@@ -124,9 +126,9 @@ const SHELL = [
   './assets/css/feature/gast.css?v=1',
   './pages/maturaarbeit.html',
   './pages/maturaarbeit-tracker.html',
-  './assets/js/feature/matura/uebersicht.js?v=14',
+  './assets/js/feature/matura/uebersicht.js?v=15',
   './assets/js/feature/matura/uebersicht-ansicht.js',
-  './assets/js/feature/matura/tracker.js?v=14',
+  './assets/js/feature/matura/tracker.js?v=15',
   './assets/js/feature/matura/tracker-ansicht.js',
   './pages/training.html',
   './assets/js/training-parser.js',

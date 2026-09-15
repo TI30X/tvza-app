@@ -175,6 +175,7 @@ export function query(basis, ...bed) {
 export const where = (feld, op, wert) => ({ art: 'where', feld, op, wert });
 export const orderBy = (feld, richtung = 'asc') => ({ art: 'orderBy', feld, richtung });
 export const limit = n => ({ art: 'limit', n });
+export const limitToLast = n => ({ art: 'limitToLast', n });
 
 /* ── Lesen ─────────────────────────────────────────────────────────*/
 
@@ -235,6 +236,8 @@ function treffer(q) {
   }
   const grenze = bed.find(x => x.art === 'limit');
   if (grenze) liste = liste.slice(0, grenze.n);
+  const letzte = bed.find(x => x.art === 'limitToLast');
+  if (letzte) liste = liste.slice(-letzte.n);
   return liste;
 }
 

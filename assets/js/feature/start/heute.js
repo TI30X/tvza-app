@@ -344,7 +344,8 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
       if (!convs.length) return;
       const c = convs[0];
       const other = (c.participants || []).find(u => u !== uid);
-      const name = (c.participantNames && c.participantNames[other]) || 'Unbekannt';
+      /* Ein Gruppenchat (v.35.61.0) heisst, wie er heisst. */
+      const name = (c.art === 'runde' ? c.titel : c.participantNames && c.participantNames[other]) || 'Unbekannt';
       const prev = (c.lastSender === uid ? 'Du: ' : '') + c.lastMessage;
       el.innerHTML = `<span class="dm-name">${esc(name)}</span><span class="dm-prev">${esc(prev)}</span>`;
       show(el);

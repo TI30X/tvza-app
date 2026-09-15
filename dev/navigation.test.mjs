@@ -201,7 +201,8 @@ test('verlassene Seiten bleiben stehen, die Tabs laden vor, die Gruppe läuft im
   assert.match(groups, /addEventListener\?\.\('storage', event => \{\s*if \(event\.key !== SCHLUESSEL\) return;/);
   // Ein geparkter Chat markiert nichts als gelesen.
   assert.match(chat, /const sichtbar = \(\) => !document\.hidden && !document\.documentElement\.hasAttribute\('data-tvza-geparkt'\)/);
-  assert.match(chat, /if \(sichtbar\(\)\) updateDoc/);
+  // Seit v.35.61.0 an einer Stelle für alle drei Arten Unterhaltung.
+  assert.match(chat, /function gelesen\(\) \{\s*if \(!aktiv \|\| !sichtbar\(\)\) return;/);
   assert.match(router, /toggleAttribute\('data-tvza-geparkt', !sichtbar\)/);
   // Seiten ausserhalb des Routers öffnen oben, nicht im Rahmen.
   assert.match(router, /window\.top\.location\.href = ganz\.href/);

@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.60.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.61.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-77 Testdateien, **791 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+78 Testdateien, **798 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -841,6 +841,38 @@ Abgabedatum, ein neues Datum ist eine neue Meldung. Und **die Knöpfe oben
 im Assistenten** schrumpfen nicht mehr (`flex: none`): ein langes Gespräch
 drückte sie am Handy zusammen, samt eigenem Scrollbalken.
 
+**25. Der Chat hat drei Arten Unterhaltung** (v.35.61.0,
+`chat-modell.js` rein, `chat-stand.js` mit Firebase). Michel: „Gruppenchats
+und zusätzlich immer einen Chat für jede Gruppe … Tags wie beim Eintragen
+von Terminen beim KI-Assistenten — oder gleich von der KI beim Eintragen
+versendet … bestimmte Chats stummschalten".
+
+- **Zu zweit** wie bisher (`dms/{a__b}`). **Gruppenchat** (`art: 'runde'`):
+  `dms/{zufall}`, 3–30 Leute, ein Titel; wer drin ist, steht beim Anlegen
+  fest (die Regel verbietet, `participants` zu ändern, und eine Runde kann
+  keine Kennung `a__b` belegen). **Der Chat jeder Gruppe**:
+  `groups/{gid}/chat`, lesen und schreiben alle in der Gruppe (`inGroup`),
+  dazu `chatMeta/letzte` für Liste und Punkt — wie viele neu sind, weiss
+  niemand, ungelesen ist ein Punkt.
+- **Stumm und gelesen** stehen unter `users/{uid}/chat/{d_<id>|g_<gid>}`,
+  nur die Person selbst. Stumme Chats zählen nicht am Tab (`nav.js`) und
+  nicht an der Kachel auf Start — beide nehmen `beobachteUnterhaltungen` +
+  `ungelesenGesamt`, eine Rechnung für drei Stellen.
+- **Termin-Karten** (`termin` an der Nachricht, `terminKarte`): nur, was
+  jede Person im Chat sehen darf — keine Notiz, keine Abfahrten, kein
+  Gasttoken. „Zum Termin" nur, wer in der Gruppe ist. Im Chat teilt man
+  sie über den Kalender-Knopf neben dem Feld. **Der Assistent** schickt
+  eine Karte in den Chat der Gruppe, sobald er dort etwas einträgt oder
+  verschiebt (`imChatAnkuendigen`, geschrieben von der Person, die
+  bestätigt; scheitert der Chat, bleibt der Termin).
+- In einer offenen Unterhaltung tritt die Pille zurück
+  (`body.chat-offen` im obersten Dokument) — sie lag am Handy über dem
+  Eingabefeld.
+- Der Chat ist weiter ein Inline-Modul in `pages/messages.html` (nicht
+  umgezogen, Falle 4) — viele Tests lesen ihn als Text.
+
+`dev/chat-gruppen.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -853,7 +885,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1069 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1085 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -982,11 +1014,15 @@ Zwei Dinge, die leicht übersehen werden:
   v.35.60.0 (Kalender: `users/{uid}/kalender`, `groups/{gid}/kalender`,
   `kalender` am Termin) **Regeln VOR dem Code**: ohne sie scheitert das
   Anlegen eines Kalenders, und ein Termin mit Kalender wird abgelehnt.
+  v.35.61.0 (Chat: Runden in `dms`, `groups/{gid}/chat` und `chatMeta`,
+  `users/{uid}/chat`, `termin` an Nachrichten) **Regeln VOR dem Code**:
+  ohne sie scheitern Gruppenchats, der Chat der Gruppe, stumm und Karten;
+  Nachrichten zu zweit gehen weiter.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.60.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.61.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
