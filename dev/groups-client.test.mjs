@@ -76,7 +76,9 @@ test('die Sammelgruppen-Abfrage filtert auf die eigene uid', async () => {
 
   // Beide Leser gehen durch dieselbe Abfrage, damit der Filter nicht an
   // einer Stelle vergessen werden kann.
-  for (const leser of ['meineGruppen', 'beobachteMeineGruppen']) {
+  // Seit v.35.63.0 hört beobachteMeineGruppen über die gemeinsame Quelle
+  // der obersten Seite (gruppenQuelle) — dort steht die Abfrage.
+  for (const leser of ['meineGruppen', 'gruppenQuelle']) {
     assert.match(fnBody(src, leser), /eigeneMitgliedschaften\(uid\)/, `${leser} umgeht den Filter`);
   }
 });

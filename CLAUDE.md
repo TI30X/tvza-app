@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.62.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.63.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -910,6 +910,19 @@ und die Gruppenseite zeichnet eine leere, unvollständige Liste nicht als
 „Noch in keiner Gruppe". Die Seite selbst ist neu gestaltet (`.grp-leer`:
 Zeichen, Satz, zwei Karten).
 
+**Die Ursache war die zweite Liste** (v.35.63.0). Michels Bildschirm: links
+in der Leiste „TEST" und „Test 2", daneben die Gruppenseite mit „Noch in
+keiner Gruppe" — wechseln half nicht. Die Leiste hört in der obersten
+Seite, die Gruppenseite im Rahmen mit ihrer eigenen Firestore-Instanz, und
+die lieferte am Laptop eine leere Liste. Jetzt gibt es EINEN Zuhörer: die
+oberste Seite legt `window.__firnGruppenQuelle` an (`gruppenQuelle` in
+groups.js), jeder Rahmen hängt sich an (`abonnieren`, beim `pagehide`
+wieder ab) — Gruppe, Kalender, Chat und Training sehen, was die Leiste
+sieht. Nur wo oben noch keine Quelle ist, hört eine Seite selbst; ein
+Rahmen legt nie eine ab (sie stürbe mit ihm). Ein Fehler des Zuhörers
+leert eine bekannte Liste nicht. Die Listen stammen aus dem obersten
+Dokument: `Array.isArray`, nie `instanceof Array`.
+
 **Admin** ist, wer im eigenen Profil `isTimo: true` hat — setzen kann das
 nur ein Admin (Admin → Benutzer → „Admin") oder die Firebase-Konsole,
 nie die Person selbst (Regel beim Anlegen und am eigenen Profil).
@@ -1067,7 +1080,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.62.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.63.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

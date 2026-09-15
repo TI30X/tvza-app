@@ -226,11 +226,64 @@ export async function meineGruppen(uid) {
    Verbindung hält. Die Antwort des Servers geht durch denselben Strom;
    stimmt sie mit dem Speicher überein, geschieht nichts. Bei einem
    Fehler ist die Liste nicht leer, sondern unbekannt — die Seite wartet. */
-export function beobachteMeineGruppen(uid, cb) {
-  const folgen = mitgliedschaftenFolgen(zuGruppen, cb);
-  const weg = onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true }, folgen, () => cb([]));
+/* ── EINE Liste für die ganze App (v.35.63.0) ──────────────────────
+   Michel, mit zwei Bildschirmen: links in der Leiste "TEST" und "Test 2",
+   daneben die Gruppenseite mit "Noch in keiner Gruppe" — und wechseln
+   half nicht. Die Leiste liest in der obersten Seite, die Gruppenseite
+   im Rahmen des Routers mit ihrer EIGENEN Firestore-Instanz; am Laptop
+   (alle Tabs vorgeladen, jeder Rahmen eine Instanz auf einem gemeinsamen
+   Speicher) lieferte die zweite eine leere Liste, während die erste
+   stimmte. Die Seite suchte die gewählte Gruppe dann in ihrer leeren
+   Liste und fand sie nie.
+
+   Jetzt hält die oberste Seite EINEN Zuhörer (`__firnGruppenQuelle`), und
+   jeder Rahmen hängt sich an ihn — Gruppe, Kalender, Chat, Training sehen
+   genau, was die Leiste sieht. Nur wo es oben (noch) keine Quelle gibt,
+   hört eine Seite selbst. Ein Fehler des Zuhörers leert die Liste nicht:
+   was man kannte, bleibt. */
+function gruppenQuelle(uid) {
+  const hoerer = new Set();
+  let letzte = null;
+  const melden = liste => {
+    letzte = liste;
+    for (const h of [...hoerer]) {
+      /* Ein Rahmen, den der Router entfernt hat, meldet sich hier ab —
+         spätestens, wenn der Aufruf in sein Dokument scheitert. */
+      try { h(liste); } catch { hoerer.delete(h); }
+    }
+  };
+  const folgen = mitgliedschaftenFolgen(zuGruppen, melden);
+  onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true }, folgen,
+    () => { if (!letzte) melden([]); });
   getDocsFromServer(eigeneMitgliedschaften(uid)).then(folgen, () => {});
-  return weg;
+  return {
+    uid,
+    abonnieren(cb) {
+      hoerer.add(cb);
+      if (letzte) cb(letzte);
+      return () => hoerer.delete(cb);
+    },
+  };
+}
+
+function obersteSeite() {
+  try { return window.top?.document ? window.top : window; } catch { return window; }
+}
+
+export function beobachteMeineGruppen(uid, cb) {
+  const oben = obersteSeite();
+  let quelle = oben.__firnGruppenQuelle;
+  if (quelle?.uid === uid) {
+    const weg = quelle.abonnieren(cb);
+    /* Entfernt der Router den Rahmen, meldet er sich ab. */
+    if (oben !== window) window.addEventListener('pagehide', weg, { once: true });
+    return weg;
+  }
+  quelle = gruppenQuelle(uid);
+  /* Nur die oberste Seite legt die gemeinsame Quelle ab: sie lebt so lange
+     wie die App. Ein Rahmen, der vor ihr da ist, hört für sich. */
+  if (oben === window) window.__firnGruppenQuelle = quelle;
+  return quelle.abonnieren(cb);
 }
 
 /* ── Schreiben ─────────────────────────────────────────────────────*/

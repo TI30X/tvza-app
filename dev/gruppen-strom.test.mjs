@@ -84,7 +84,11 @@ test('eine Gruppe, die es nie mehr gibt, wird nicht endlos nachgefragt', async (
 
 test('groups.js hört mit den Metadaten und nimmt den Strom', async () => {
   const q = await readFile(join(root, 'assets/js/groups.js'), 'utf8');
-  assert.match(q, /const folgen = mitgliedschaftenFolgen\(zuGruppen, cb\);\s*const weg = onSnapshot\(eigeneMitgliedschaften\(uid\), \{ includeMetadataChanges: true \}, folgen,/);
+  // v.35.63.0: EIN Zuhörer in der obersten Seite, die Rahmen hängen sich an.
+  assert.match(q, /const folgen = mitgliedschaftenFolgen\(zuGruppen, melden\);\s*onSnapshot\(eigeneMitgliedschaften\(uid\), \{ includeMetadataChanges: true \}, folgen,/);
+  assert.match(q, /if \(quelle\?\.uid === uid\) \{\s*const weg = quelle\.abonnieren\(cb\);/);
+  assert.match(q, /if \(oben === window\) window\.__firnGruppenQuelle = quelle;/, 'nur die oberste Seite legt die Quelle ab');
+  assert.match(q, /\(\) => \{ if \(!letzte\) melden\(\[\]\); \}\);/, 'ein Fehler leert eine bekannte Liste nicht');
   // v.35.62.0: und einmal direkt beim Server — ein veralteter Speicher
   // (mehrere Rahmen, ein gemeinsamer Speicher) hielt am Laptop eine Gruppe
   // zurück, die das Handy zeigte.
