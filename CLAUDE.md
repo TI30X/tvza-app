@@ -1013,11 +1013,12 @@ Zwei Dinge, die leicht übersehen werden:
   Push.
   v.35.60.0 (Kalender: `users/{uid}/kalender`, `groups/{gid}/kalender`,
   `kalender` am Termin) **Regeln VOR dem Code**: ohne sie scheitert das
-  Anlegen eines Kalenders, und ein Termin mit Kalender wird abgelehnt.
+  Anlegen eines Kalenders, und ein Termin mit Kalender wird abgelehnt. Ausgerollt am 15.09.2026, vor dem Push.
   v.35.61.0 (Chat: Runden in `dms`, `groups/{gid}/chat` und `chatMeta`,
   `users/{uid}/chat`, `termin` an Nachrichten) **Regeln VOR dem Code**:
   ohne sie scheitern Gruppenchats, der Chat der Gruppe, stumm und Karten;
-  Nachrichten zu zweit gehen weiter.
+  Nachrichten zu zweit gehen weiter. Ausgerollt am 15.09.2026 (zusammen mit
+  v.35.60.0), vor dem Push.
 
 ## Gewohnheiten
 
