@@ -3774,6 +3774,21 @@ body.settings-layer-open .ki-pille { display: none; }
 .ki-karte--erledigt { border-color: var(--accent); }
 .ki-karte--erledigt .ki-karte__stand { color: var(--accent); }
 .ki-karte--nein { color: var(--ink-soft); font-size: 13px; border-style: dashed; }
+/* Eine Nachricht über den Assistenten (v.35.67.0): An, Von, Text — und
+   erst "Senden" schickt genau diesen Text. */
+.ki-karte__feld { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); gap: var(--s2); align-items: baseline; font-size: 14px; }
+.ki-karte__label { color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+.ki-empf-liste { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s1); }
+.ki-empf--fehlt { color: var(--danger); }
+.ki-empf--ok::after { content: " ✓"; color: var(--success, var(--accent)); }
+.ki-empf--nein { color: var(--danger); }
+.ki-empf__wahl { display: grid; gap: var(--s1); font-size: 13px; }
+.ki-karte__nachricht { white-space: pre-wrap; overflow-wrap: anywhere; padding: var(--s2) var(--s3); border-radius: var(--r-row); background: var(--surface-2); }
+.ki-karte__eingabe { min-height: 96px; resize: vertical; font-size: 16px; }
+.ki-karte__hinweis { color: var(--ink-soft); font-size: 12.5px; }
+.ki-karte__link { color: var(--accent); font-size: 13px; font-weight: 700; text-decoration: none; }
+.ki-karte--nachricht .ki-karte__knoepfe { flex-wrap: wrap; }
+
 
 .ki-vorschlaege {
   flex: none;

@@ -36,6 +36,13 @@ export function kiAttrappe(koerper = {}) {
   const rahmen = { stufe: hoch ? 'hoch' : 'normal', hochUebrig: 3 - hochHeute.n,
     hochAufgebraucht: koerper.hoch === true && !hoch };
 
+  /* "Schreib Lea: bin später da" — eine Nachricht (v.35.67.0). */
+  const schreib = /^(?:schreib(?:e)?|sag|sende)\s+(.+?)\s*[:,]\s*(.+)$/i.exec(frage.trim());
+  if (schreib) {
+    return { ...rahmen, text: 'Hier ist die Nachricht — prüf sie und sende sie selbst:', aktionen: [
+      { name: 'nachricht_senden', args: { an: schreib[1].replace(/^(an|dem|den|der)\s+/i, ''), text: schreib[2] } },
+    ] };
+  }
   if (/erinner/.test(f)) {
     const titel = (/an[s]?\s+(?:das\s+|den\s+|die\s+)?(.+)$/i.exec(frage)?.[1] || 'Packen').replace(/[.!?]$/, '');
     return { ...rahmen, text: 'Hier ist mein Vorschlag:', aktionen: [{ name: 'erinnerung_eintragen',

@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.66.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.67.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-82 Testdateien, **828 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+83 Testdateien, **836 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -1056,6 +1056,38 @@ den Plänen kamen nicht vor.
 
 `dev/start-ueberblick.test.mjs`.
 
+**29. Chat: Sag Hallo, Nachrichten über den Assistenten, Suche** (v.35.67.0).
+
+- **„Sag Hallo"** in einer leeren Unterhaltung ist ein Knopf: er setzt
+  „Hallo Anna! 👋" (im Gruppenchat „Hallo zusammen!") ins Feld und
+  fokussiert es; gesendet wird erst mit „Senden" (`halloEinsetzen`). Bis
+  dahin stand dort ein Text, der wie ein Knopf aussah.
+- **Nachricht über den Assistenten** (Werkzeug `nachricht_senden`, beide
+  Assistenten): nur auf ausdrücklichen Wunsch. Der Assistent gibt Empfänger
+  (wie genannt) und Text zurück — Namen anderer kennt er weiter nicht; der
+  Browser löst sie gegen die eigenen Gruppen und Chats auf
+  (`nachricht-ki.js`: Teile, gross/klein, ä = ae, genauer Treffer vor
+  ungefähren, zwei Leas → Wahl mit Gruppe; der Assistent einer Gruppe nur
+  in ihr). Die Karte zeigt An, Von („… (du)"), den vollen Text;
+  Bearbeiten, Abbrechen, Senden. Gesendet wird genau der gezeigte Text,
+  einmal (kein Knopf, solange es läuft; wer schon angekommen ist, bekommt
+  beim erneuten Senden nichts doppelt), mit `nachrichtSenden` bzw.
+  `gruppenNachricht` — denselben Wegen und Regeln wie im Chat. „Gesendet"
+  steht erst, wenn der Server es hat; offline „Noch nicht gesendet …";
+  scheitert jemand, steht es da. „Zum Chat mit …" öffnet die Unterhaltung
+  (`messages.html?to=` bzw. `?gruppe=`). Attrappe: „Schreib Lea: …".
+  **Braucht den Worker** (Deklaration in `worker/ki.js`) — vorbereitet,
+  nicht ausgerollt; bis dahin kennt Gemini das Werkzeug nicht, sonst ändert
+  sich nichts.
+- **Suche** (`bekannte.js`): „Mueller" findet „Müller", mehrere Wörter in
+  beliebiger Folge; Gruppen beim Namen (zu zweit: ihr Chat; im Gruppenchat:
+  alle ihre Leute anhaken). Die Adresse findet weiter über `emailKarten`,
+  eine Suche über alle Konten gibt es nicht. `kontakte()` nimmt die
+  Gruppenliste der Leiste (`gruppenJetzt`), sonst blieb „Wem schreiben?"
+  im Rahmen am Laptop leer.
+
+`dev/chat-ki-nachricht.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -1068,7 +1100,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1184 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1208 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -1211,6 +1243,9 @@ Zwei Dinge, die leicht übersehen werden:
   bleibt „Oder aus einer Vorlage" verborgen und „Als Vorlage speichern"
   meldet, dass es nicht ging; der Plan geht trotzdem hinaus. **Vorbereitet,
   noch nicht ausgerollt.**
+  v.35.67.0 braucht keine neue Regel (Nachrichten wie im Chat), aber den
+  **Worker** (`nachricht_senden` in `worker/ki.js`): `npx.cmd wrangler
+  deploy` im Ordner `worker`. **Vorbereitet, noch nicht ausgerollt.**
 
 ## Gewohnheiten
 

@@ -69,8 +69,11 @@ export function assistentSauber({ name, anweisung } = {}) {
    Warum jemand einen hat oder nicht, steht nirgends. Wer keinen hat,
    sieht keine Pille. */
 export const ICH = 'ich';
-export const WERKZEUGE_PERSOENLICH = Object.freeze(['erinnerung_eintragen', 'eigenen_termin_eintragen', 'termin_verschieben']);
-export const WERKZEUGE_GRUPPE = Object.freeze(['gruppentermin_eintragen', 'termin_verschieben', 'erinnerung_eintragen']);
+/* nachricht_senden (v.35.67.0): eine Nachricht in den Chat, NUR auf
+   ausdrücklichen Wunsch — der Assistent nennt Empfänger und Text, der
+   Browser löst die Namen auf (nachricht-ki.js), die Person bestätigt. */
+export const WERKZEUGE_PERSOENLICH = Object.freeze(['erinnerung_eintragen', 'eigenen_termin_eintragen', 'termin_verschieben', 'nachricht_senden']);
+export const WERKZEUGE_GRUPPE = Object.freeze(['gruppentermin_eintragen', 'termin_verschieben', 'erinnerung_eintragen', 'nachricht_senden']);
 export const werkzeugeFuer = wer => (wer && wer !== ICH ? WERKZEUGE_GRUPPE : WERKZEUGE_PERSOENLICH);
 
 export function persoenlichFrei(profil, kreis = false) {
@@ -230,6 +233,16 @@ export function aktionPruefen({ name, args = {} } = {}, kontext = {}) {
   const zeit = hhmm(a.zeit);
   const bisZeit = hhmm(a.bisZeit);
   if (a.zeit && !zeit) return nein('Die Uhrzeit ist unlesbar.');
+
+  /* Eine Nachricht: nur Empfänger (wie genannt) und Text. Wer genau
+     gemeint ist, entscheidet die Person auf der Karte. */
+  if (name === 'nachricht_senden') {
+    const an = kurz(a.an, 200).trim();
+    const text = String(a.text ?? '').trim().slice(0, 2000);
+    if (!an) return nein('Ohne Empfänger.');
+    if (!text) return nein('Ohne Text.');
+    return { ok: true, art: 'nachricht', daten: { an, text } };
+  }
 
   if (name === 'erinnerung_eintragen') {
     if (!titel) return nein('Ohne Titel.');

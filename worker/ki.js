@@ -203,6 +203,17 @@ export const WERKZEUGE = Object.freeze([
     }, required: ['gruppe_id', 'art', 'titel', 'datum'] },
   },
   {
+    name: 'nachricht_senden',
+    description: 'Eine Chat-Nachricht im Namen dieser Person vorbereiten — NUR, wenn sie ausdrücklich darum bittet, '
+      + 'jemandem etwas zu schreiben oder auszurichten. an: der Name der Person oder Gruppe, so wie die Person ihn '
+      + 'nennt (mehrere mit Komma). text: die Nachricht genau so, wie sie ankommen soll, in der Ich-Form der Person. '
+      + 'Die Person sieht Empfänger und Text und sendet selbst.',
+    parameters: { type: 'object', properties: {
+      an: { type: 'string', description: 'Name der Person(en) oder Gruppe, wie genannt' },
+      text: { type: 'string', description: 'Der Text der Nachricht' },
+    }, required: ['an', 'text'] },
+  },
+  {
     name: 'termin_verschieben',
     description: 'Einen vorhandenen Termin oder eine Erinnerung auf ein anderes Datum oder eine andere Zeit legen. '
       + 'Gruppentermine nur in Gruppen mit leite=true.',
@@ -255,6 +266,8 @@ export function systemAnweisung({ assistent = {}, kontext = {} }) {
     inGruppe
       ? 'Gruppentermine nur, wenn leite=true. Leitet die Person die Gruppe nicht, sag, dass nur die Leitung einträgt, und schlage höchstens eine Erinnerung vor.'
       : 'Eigene Termine und Erinnerungen darfst du vorschlagen; Gruppentermine nicht.',
+    'Eine Nachricht an andere nur, wenn die Person ausdrücklich darum bittet (nachricht_senden); nie von dir aus. '
+      + 'Sag nie, sie sei gesendet — die Person prüft Empfänger und Text und sendet selbst.',
     'Datum immer als JJJJ-MM-TT, Zeit als HH:MM. Ohne genannte Uhrzeit keine erfinden.',
     'Antworte kurz, freundlich und in der Sprache der Frage. Keine Überschriften, höchstens kurze Listen.',
   ];

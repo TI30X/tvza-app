@@ -34,6 +34,7 @@ import {
 import { gruppenStil, kuerzel } from './gruppenwahl.js';
 import { planEinheiten } from './wochenplan.js';
 import { formatiert } from './formatierung.js';
+import { empfaengerFinden, sendebereit, ohneDoppelte, TEXT_MAX } from './nachricht-ki.js';
 import {
   collection, doc, getDocs, addDoc, updateDoc, query, where, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -466,6 +467,7 @@ const offene = new Map();
 let naechste = 0;
 
 function karteZeigen(pruefung) {
+  if (pruefung.ok && pruefung.art === 'nachricht') { void nachrichtKarte(pruefung); return; }
   const liste = blatt.querySelector('.ki-verlauf');
   const el = document.createElement('div');
   el.className = 'ki-karte';
@@ -516,6 +518,164 @@ async function kartenKlick(e) {
     knoepfe.querySelectorAll('button').forEach(b => { b.disabled = false; });
     nachricht('info', t('ki.f.eintragen', 'Das liess sich nicht eintragen.'));
   }
+}
+
+/* ── Eine Nachricht (v.35.67.0) ──────────────────────────────────────
+   Michel: "Bestätigungsbox im Stil der Aktionskarten: Empfänger, voller
+   Text, Absender; Bearbeiten, Abbrechen, Senden … bei mehrdeutigen Namen
+   wählen, genau den gezeigten Text senden, keine Dubletten, Erfolg erst
+   nach bestätigtem Versand." Die Namen löst nachricht-ki.js gegen die
+   eigenen Gruppen und Chats auf — der Assistent kennt sie nicht. Gesendet
+   wird mit denselben Funktionen und Rechten wie im Chat. */
+const chatAdresse = (x) => {
+  const basis = location.pathname.includes('/pages/') ? './messages.html' : './pages/messages.html';
+  return x.art === 'gruppe'
+    ? `${basis}?gruppe=${encodeURIComponent(x.id)}`
+    : `${basis}?to=${encodeURIComponent(x.id)}&name=${encodeURIComponent(x.name)}`;
+};
+const wen = x => (x.art === 'gruppe'
+  ? t('ki.chatVon', 'Chat von «{gruppe}»', { gruppe: x.name })
+  : x.sub ? `${x.name} · ${x.sub}` : x.name);
+
+async function nachrichtKarte(pruefung) {
+  const liste = blatt.querySelector('.ki-verlauf');
+  const el = document.createElement('div');
+  el.className = 'ki-karte ki-karte--nachricht';
+  el.innerHTML = `<div class="ki-karte__was">${esc(t('ki.nachricht', 'Nachricht'))}</div>
+    <div class="ki-karte__wann">${esc(t('ki.suchtEmpfaenger', 'Sucht die Empfänger …'))}</div>`;
+  liste.appendChild(el);
+  liste.scrollTop = liste.scrollHeight;
+  const uid = auth.currentUser?.uid;
+  let personen = [];
+  try {
+    const [groups, { gespraechspartner }] = await Promise.all([import('./groups.js'), import('./chat-senden.js')]);
+    const [bekannte, partner] = await Promise.all([groups.kontakte(uid).catch(() => []), gespraechspartner(uid)]);
+    personen = [...bekannte];
+    for (const p of partner) if (p.name && !personen.some(x => x.uid === p.uid)) personen.push({ uid: p.uid, name: p.name, gruppen: [] });
+  } catch (e) { reportClientError('ki-nachricht-kontakte', e); }
+  const gruppen = gruppenJetzt().map(g => ({ id: g.id, name: g.name || '' }));
+  const z = {
+    empfaenger: empfaengerFinden(pruefung.daten.an, { personen, gruppen, nurGruppe: aktuell && !aktuell.persoenlich ? aktuell.wer : null }),
+    text: pruefung.daten.text, bearbeiten: false, sendet: false, wartet: false, fertig: false, abgebrochen: false,
+    ergebnisse: new Map(),   // "art:id" -> { ok, x, fehler }
+  };
+  nachrichtZeichnen(el, z);
+  el.addEventListener('click', e => { void nachrichtKlick(e, el, z); });
+  el.addEventListener('change', e => {
+    const w = e.target.closest('[data-empfaenger-wahl]');
+    if (!w) return;
+    const x = z.empfaenger[Number(w.dataset.empfaengerWahl)];
+    x.gewaehlt = x.treffer.find(tr => `${tr.art}:${tr.id}` === w.value) || null;
+    nachrichtZeichnen(el, z);
+  });
+  el.addEventListener('input', e => {
+    if (!e.target.matches('[data-nachricht-text]')) return;
+    z.text = e.target.value;
+    const senden = el.querySelector('[data-senden]');
+    if (senden) senden.disabled = !sendebereit(z.empfaenger, z.text);
+  });
+}
+
+function nachrichtZeichnen(el, z) {
+  const meinName = window.__firnProfil?.displayName || auth.currentUser?.email || '';
+  const zu = z.sendet || z.fertig || z.abgebrochen;
+  const zeilen = z.empfaenger.map((e, i) => {
+    if (!e.treffer.length) {
+      return `<li class="ki-empf ki-empf--fehlt">${esc(t('ki.niemand', 'Niemand namens «{name}» gefunden', { name: e.name }))}</li>`;
+    }
+    const erg = e.gewaehlt ? z.ergebnisse.get(`${e.gewaehlt.art}:${e.gewaehlt.id}`) : null;
+    const mark = erg ? (erg.ok ? ' ki-empf--ok' : ' ki-empf--nein') : '';
+    if (e.treffer.length === 1 || zu) {
+      return `<li class="ki-empf${mark}">${esc(e.gewaehlt ? wen(e.gewaehlt) : e.name)}</li>`;
+    }
+    return `<li class="ki-empf">
+      <label class="ki-empf__wahl">${esc(t('ki.welche', 'Wen meinst du mit «{name}»?', { name: e.name }))}
+        <select class="form-select" data-empfaenger-wahl="${i}">
+          <option value="">${esc(t('grp.waehlen', '— wählen —'))}</option>
+          ${e.treffer.map(tr => `<option value="${esc(`${tr.art}:${tr.id}`)}"${e.gewaehlt === tr ? ' selected' : ''}>${esc(wen(tr))}</option>`).join('')}
+        </select>
+      </label></li>`;
+  }).join('');
+  const bereit = sendebereit(z.empfaenger, z.text);
+  const fehlend = z.empfaenger.some(e => !e.treffer.length);
+  const gut = [...z.ergebnisse.values()].filter(r => r.ok);
+  const schlecht = [...z.ergebnisse.values()].filter(r => !r.ok);
+  let stand = '';
+  if (z.abgebrochen) stand = t('ki.abgebrochen', 'Nicht gesendet');
+  else if (z.sendet) stand = z.wartet ? t('ki.wartetNetz', 'Noch nicht gesendet — geht hinaus, sobald wieder Netz ist …') : t('ki.sendet', 'Sendet …');
+  else if (z.fertig) stand = t('ki.gesendet', 'Gesendet');
+  else if (schlecht.length) stand = t('ki.teilGesendet', 'Nicht gesendet an: {namen}', { namen: schlecht.map(r => r.x.name).join(', ') });
+  const links = gut.map(r => `<a class="ki-karte__link" href="${esc(chatAdresse(r.x))}" data-zum-chat>${esc(t('ki.zumChat', 'Zum Chat mit {name}', { name: r.x.name }))} ›</a>`).join('');
+  const knoepfe = zu ? '' : `
+    <div class="ki-karte__knoepfe">
+      <button class="b b--primary" type="button" data-senden${bereit ? '' : ' disabled'}>${esc(schlecht.length ? t('ki.nochmalSenden', 'Erneut senden') : t('ki.senden', 'Senden'))}</button>
+      <button class="b b--secondary" type="button" data-bearbeiten>${esc(z.bearbeiten ? t('ki.fertigBearbeitet', 'Fertig') : t('ki.bearbeiten', 'Bearbeiten'))}</button>
+      <button class="b b--secondary" type="button" data-abbrechen>${esc(t('ki.abbrechen', 'Abbrechen'))}</button>
+    </div>`;
+  el.classList.toggle('ki-karte--erledigt', z.fertig);
+  el.innerHTML = `
+    <div class="ki-karte__was">${esc(t('ki.nachricht', 'Nachricht'))}</div>
+    <div class="ki-karte__feld"><span class="ki-karte__label">${esc(t('ki.an', 'An'))}</span><ul class="ki-empf-liste">${zeilen}</ul></div>
+    <div class="ki-karte__feld"><span class="ki-karte__label">${esc(t('ki.von', 'Von'))}</span><span>${esc(t('ki.vonDir', '{name} (du)', { name: meinName }))}</span></div>
+    <div class="ki-karte__feld ki-karte__feld--text"><span class="ki-karte__label">${esc(t('ki.text', 'Text'))}</span>${z.bearbeiten && !zu
+      ? `<textarea class="form-input ki-karte__eingabe" data-nachricht-text rows="4" maxlength="${TEXT_MAX}">${esc(z.text)}</textarea>`
+      : `<div class="ki-karte__nachricht">${esc(z.text)}</div>`}</div>
+    ${fehlend && !zu ? `<div class="ki-karte__hinweis">${esc(t('ki.nurBekannte', 'Schreiben kannst du Leuten aus deinen Gruppen und denen, mit denen du schon schreibst.'))}</div>` : ''}
+    ${stand ? `<div class="ki-karte__stand" role="status">${esc(stand)}</div>` : ''}
+    ${links}${knoepfe}`;
+}
+
+async function nachrichtKlick(e, el, z) {
+  if (e.target.closest('[data-zum-chat]')) {
+    e.preventDefault();
+    const ziel = new URL(e.target.closest('[data-zum-chat]').getAttribute('href'), location.href).href;
+    schliessen();
+    if (!window.tvzaNavigate?.(ziel)) location.href = ziel;
+    return;
+  }
+  if (z.sendet || z.fertig || z.abgebrochen) return;
+  if (e.target.closest('[data-abbrechen]')) { z.abgebrochen = true; nachrichtZeichnen(el, z); return; }
+  if (e.target.closest('[data-bearbeiten]')) {
+    const feld = el.querySelector('[data-nachricht-text]');
+    if (feld) z.text = feld.value;
+    z.bearbeiten = !z.bearbeiten;
+    nachrichtZeichnen(el, z);
+    if (z.bearbeiten) el.querySelector('[data-nachricht-text]')?.focus();
+    return;
+  }
+  if (!e.target.closest('[data-senden]')) return;
+  const feld = el.querySelector('[data-nachricht-text]');
+  if (feld) z.text = feld.value;
+  if (!sendebereit(z.empfaenger, z.text)) return;
+  /* Genau der gezeigte Text, einmal: der Knopf ist weg, bis es entschieden ist. */
+  z.sendet = true;
+  z.bearbeiten = false;
+  nachrichtZeichnen(el, z);
+  const text = z.text.trim();
+  const uid = auth.currentUser?.uid;
+  const meinName = window.__firnProfil?.displayName || '';
+  const ziele = ohneDoppelte(z.empfaenger).filter(x => !z.ergebnisse.get(`${x.art}:${x.id}`)?.ok);
+  const langsam = setTimeout(() => { z.wartet = true; if (z.sendet) nachrichtZeichnen(el, z); }, 8000);
+  try {
+    const [{ nachrichtSenden }, { gruppenNachricht }] = await Promise.all([import('./chat-senden.js'), import('./chat-stand.js')]);
+    const ergebnisse = await Promise.allSettled(ziele.map(x => (x.art === 'gruppe'
+      ? gruppenNachricht({ gid: x.id, ich: uid, meinName, text })
+      : nachrichtSenden({ ich: uid, meinName, an: x.id, anName: x.name, text }))));
+    ergebnisse.forEach((r, i) => {
+      const x = ziele[i];
+      if (r.status === 'rejected') reportClientError('ki-nachricht', r.reason);
+      z.ergebnisse.set(`${x.art}:${x.id}`, { ok: r.status === 'fulfilled', x, fehler: r.reason?.message || '' });
+    });
+  } catch (fehler) {
+    reportClientError('ki-nachricht', fehler);
+    for (const x of ziele) z.ergebnisse.set(`${x.art}:${x.id}`, { ok: false, x, fehler: fehler?.message || '' });
+  } finally {
+    clearTimeout(langsam);
+  }
+  z.sendet = false;
+  z.wartet = false;
+  z.fertig = [...z.ergebnisse.values()].every(r => r.ok) && ohneDoppelte(z.empfaenger).every(x => z.ergebnisse.get(`${x.art}:${x.id}`)?.ok);
+  nachrichtZeichnen(el, z);
 }
 
 /* Was der Assistent in eine Gruppe einträgt oder dort verschiebt, geht als

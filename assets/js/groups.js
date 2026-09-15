@@ -186,7 +186,7 @@ export async function ladeMitglieder(gid) {
    Wer im TVZA-Kreis ist ({ kreis: true }, v.35.48.0), kennt dazu die
    anderen im Kreis — Freunde und Familie sind keine Gruppe in Firn. */
 export async function kontakte(uid, { kreis = false } = {}) {
-  const gruppen = await meineGruppen(uid);
+  const gruppen = await gruppenJetzt(uid);
   const jeGruppe = await Promise.all(gruppen.map(async g => {
     try { return { gruppe: g.name || '', mitglieder: await ladeMitglieder(g.id) }; }
     catch { return { gruppe: g.name || '', mitglieder: [] }; }
@@ -278,6 +278,8 @@ function gruppenQuelle(uid) {
   getDocsFromServer(eigeneMitgliedschaften(uid)).then(folgen, () => {});
   return {
     uid,
+    /* Die zuletzt gemeldete Liste (v.35.67.0, für kontakte()). */
+    letzte: () => letzte,
     abonnieren(cb) {
       hoerer.add(cb);
       if (letzte) cb(letzte);
@@ -288,6 +290,17 @@ function gruppenQuelle(uid) {
 
 function obersteSeite() {
   try { return window.top?.document ? window.top : window; } catch { return window; }
+}
+
+/* Die Gruppen, wie die Leiste sie kennt (v.35.67.0). Im Chat blieb die
+   Auswahl "Wem schreiben?" am Laptop leer, obwohl die Leiste die Gruppen
+   zeigte — der Rahmen fragte mit seiner eigenen Firestore-Instanz
+   (siehe v.35.63.0). Gibt es oben eine vollständige Liste, gilt sie. */
+async function gruppenJetzt(uid) {
+  const quelle = obersteSeite().__firnGruppenQuelle;
+  const liste = quelle?.uid === uid ? quelle.letzte?.() : null;
+  if (Array.isArray(liste) && !liste.unvollstaendig) return liste;
+  return meineGruppen(uid);
 }
 
 export function beobachteMeineGruppen(uid, cb) {

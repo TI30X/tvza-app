@@ -170,13 +170,14 @@ test('der Worker schickt Gemini nur den Kontext der Person — und die Anweisung
   assert.ok(system.indexOf('Trainings in Malbun.') > system.indexOf('Gruppentermine nur in Gruppen mit leite=true'),
     'die Anweisung der Leitung steht unter den Regeln');
   // Der Assistent der Gruppe plant ihre Termine und darf erinnern; der
-  // persönliche trägt nur für die Person ein — nie in eine Gruppe.
+  // persönliche trägt nur für die Person ein — nie in eine Gruppe. Beide
+  // bereiten auf Wunsch eine Nachricht vor (v.35.67.0, die Person sendet).
   assert.deepEqual(geminiKoerper(a).tools[0].functionDeclarations.map(w => w.name),
-    ['erinnerung_eintragen', 'gruppentermin_eintragen', 'termin_verschieben']);
+    ['erinnerung_eintragen', 'gruppentermin_eintragen', 'nachricht_senden', 'termin_verschieben']);
   const ich = anfrageLesen({ frage: 'Hallo' });
   assert.equal(ich.wer, ICH);
   assert.deepEqual(geminiKoerper(ich).tools[0].functionDeclarations.map(w => w.name),
-    ['erinnerung_eintragen', 'eigenen_termin_eintragen', 'termin_verschieben']);
+    ['erinnerung_eintragen', 'eigenen_termin_eintragen', 'nachricht_senden', 'termin_verschieben']);
   assert.match(systemAnweisung(ich), /persönliche Assistent dieser Person/);
   assert.throws(() => anfrageLesen({ wer: '../users', frage: 'x' }), /wer/);
   // Ein Werkzeug, das dieser Assistent nicht hat, geht nicht hinaus.
@@ -184,7 +185,7 @@ test('der Worker schickt Gemini nur den Kontext der Person — und die Anweisung
   assert.equal(antwortLesen(antwort, ICH).aktionen.length, 0);
   assert.equal(antwortLesen(antwort, 'g1').aktionen.length, 1);
   assert.equal(antwortLesen({}).aktionen.length, 0);
-  assert.equal(WERKZEUGE.length, 4);
+  assert.equal(WERKZEUGE.length, 5, 'mit nachricht_senden (v.35.67.0)');
   assert.equal(STANDARD.modellHoch, 'gemini-flash-latest');
 });
 

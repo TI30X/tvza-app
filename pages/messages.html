@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=31" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=32" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <title>Nachrichten — Firn</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
@@ -96,6 +96,11 @@
       box-shadow: inset 0 0 0 4px var(--surface); }
     .dm-user-hinweis { margin:6px 2px 0; font-size:12.5px; color:var(--ink-soft); }
     .dm-empty--still { border:0; }
+    /* "Sag Hallo" ist ein Knopf (v.35.67.0): er setzt einen Gruss ins Feld. */
+    .dm-hallo { min-height:44px; padding:0 var(--s5); border:1px solid color-mix(in oklab, var(--accent) 35%, var(--border)); border-radius:var(--r-pill); background:var(--accent-bg); color:var(--accent); font:inherit; font-weight:700; cursor:pointer; }
+    .dm-hallo:hover { border-color:var(--accent); }
+    .dm-hallo:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .dm-user--gruppe .dm-ava { background:var(--tint, var(--accent-bg)); color:var(--deep, var(--accent)); }
 
     /* v.35.61.0: Gruppenchats, der Chat jeder Gruppe, stumm, Termin-Karten */
     .dm-kopfknoepfe { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -220,7 +225,7 @@
     import { db, requireAuth, wireOfflineBanner, escHtml, getProfile, reportClientError, imKreis } from '../assets/js/firebase-config.js';
     import { kontakte } from '../assets/js/groups.js';
     import { nameVon, personPerEmail as perAdresse, istEmail as istAdresse } from '../assets/js/personen.js';
-    import { sucheBekannte } from '../assets/js/bekannte.js';
+    import { sucheBekannte, sucheGruppen } from '../assets/js/bekannte.js';
     import { codeSauber, einloesen, APP_WURZEL } from '../assets/js/einladung.js';
     import { meldung, eingabe, waehle } from '../assets/js/dialog.js';
     import { formatiert } from '../assets/js/formatierung.js';
@@ -272,6 +277,9 @@
     let alleDms = [];        // dazu die Gruppenchats
     let eintraege = [];      // die Liste, wie sie gezeichnet wird
     let meineGruppen = [];
+    /* ?gruppe=<gid>: der Chat einer Gruppe, etwa aus der Karte des
+       Assistenten (v.35.67.0) — sobald die Gruppen bekannt sind. */
+    let gruppeAusAdresse = new URLSearchParams(location.search).get('gruppe') || '';
     beobachteUnterhaltungen(me, (liste, { dms, gruppen }) => {
       alleDms = dms;
       convs = dms.filter(c => c.art !== 'runde');
@@ -279,6 +287,8 @@
       eintraege = liste;
       renderConvList();
       if (aktiv) stummZeichnen();
+      const g = gruppeAusAdresse && gruppen.find(x => x.id === gruppeAusAdresse);
+      if (g) { gruppeAusAdresse = ''; oeffne({ art: 'gruppe', id: g.id, name: g.name }); }
     });
 
     const RUNDE_SYMBOL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c3 .3 5.5 2.7 5.5 5.8"/></svg>';
@@ -492,7 +502,12 @@
 
     function renderMessages(list) {
       const box = $('msgs');
-      if (!list.length) { box.innerHTML = `<div class="dm-empty" style="border:0">Sag Hallo 👋</div>`; return; }
+      /* Leer: "Sag Hallo" setzt einen Gruss ins Feld (v.35.67.0) — bis dahin
+         stand da ein Text, der wie ein Knopf aussah und nichts tat (Michel). */
+      if (!list.length) {
+        box.innerHTML = `<div class="dm-empty dm-empty--still"><button class="dm-hallo" type="button" data-hallo>${escHtml(tOr('msg.sagHallo', 'Sag Hallo 👋'))}</button></div>`;
+        return;
+      }
       let html = '', lastDay = '';
       for (const m of list) {
         const dk = dayKey(m.createdAt);
@@ -524,7 +539,20 @@
           : url;
       });
     }
+    /* Der Gruss: zu zweit mit dem Vornamen, sonst an alle. Gesendet wird
+       erst mit "Senden" — scheitert es, sagt send() es und lässt den Text stehen. */
+    function halloEinsetzen() {
+      const vorname = String(activeName || '').trim().split(/\s+/)[0];
+      input.value = aktiv?.art === 'dm' && vorname
+        ? tOr('msg.hallo', 'Hallo {name}! 👋', { name: vorname })
+        : tOr('msg.halloAlle', 'Hallo zusammen! 👋');
+      autoSize();
+      sendBtn.disabled = false;
+      input.focus();
+      try { input.setSelectionRange(input.value.length, input.value.length); } catch { /* manche Browser nicht */ }
+    }
     $('msgs').addEventListener('click', async e => {
+      if (e.target.closest('[data-hallo]')) { halloEinsetzen(); return; }
       const zumTermin = e.target.closest('a[data-termin-link]');
       if (zumTermin) {
         e.preventDefault();
@@ -754,21 +782,36 @@
           ${wahlArt === 'runde' ? '<span class="dm-user__haken" aria-hidden="true"></span>' : ''}
         </button>`;
     }
+    /* Gruppen findet man beim Namen (v.35.67.0): zu zweit öffnet ein Tipp
+       ihren Chat, im Gruppenchat hakt er alle ihre Leute an. */
+    function gruppenZeilen(filter) {
+      const s = String(filter || '').trim();
+      if (!s) return '';
+      const stil = gruppenStil(meineGruppen);
+      return sucheGruppen(meineGruppen, s).map(g => `
+        <button class="dm-user dm-user--gruppe" type="button" data-gruppe="${escHtml(g.id)}" style="${escHtml(stil(g.id))}">
+          <span class="dm-ava dm-ava--klein">${escHtml(kuerzel(g.name))}</span>
+          <span class="dm-user__wer"><span class="dm-user__name">${escHtml(g.name)}</span><small>${escHtml(wahlArt === 'runde'
+            ? tOr('msg.alleAusGruppe', 'Alle aus der Gruppe anhaken')
+            : tOr('msg.chatDerGruppe', 'Chat der Gruppe'))}</small></span>
+        </button>`).join('');
+    }
     function renderUsers(filter = '') {
       const list = sucheBekannte(allUsers || [], filter);
       const box = $('userList');
+      const gruppenTreffer = gruppenZeilen(filter);
       const oben = gefunden && gefunden.uid !== me && !list.some(u => u.uid === gefunden.uid)
         ? personZeile(gefunden, tOr('msg.perAdresse', 'Über die Adresse gefunden'))
         : '';
       const hinweis = $('userHinweis');
       hinweis.textContent = gefunden === false ? tOr('msg.keinKonto', 'Zu dieser Adresse gibt es kein Konto.') : '';
       hinweis.hidden = !hinweis.textContent;
-      if (!list.length && !oben) {
+      if (!list.length && !oben && !gruppenTreffer) {
         box.innerHTML = (allUsers || []).length || filter
           ? `<div class="dm-empty dm-empty--still">${escHtml(tOr('msg.keineTreffer', 'Niemand gefunden. Du kannst auch eine Adresse eintippen.'))}</div>`
           : `<div class="dm-empty dm-empty--still">${escHtml(tOr('msg.nochNiemand', 'Hier stehen die Leute aus deinen Gruppen und alle, mit denen du schreibst. Andere findest du über ihre Adresse.'))}</div>`;
       } else {
-        box.innerHTML = oben + list.map(u => personZeile(u, u.gruppen.length ? u.gruppen.join(' · ') : tOr('msg.schonGeschrieben', 'Schon geschrieben'))).join('');
+        box.innerHTML = gruppenTreffer + oben + list.map(u => personZeile(u, u.gruppen.length ? u.gruppen.join(' · ') : tOr('msg.schonGeschrieben', 'Schon geschrieben'))).join('');
       }
       const weiter = $('userWeiter');
       weiter.hidden = wahlArt !== 'runde';
@@ -778,6 +821,19 @@
         : tOr('common.weiter', 'Weiter');
     }
     $('userList').addEventListener('click', e => {
+      const g = e.target.closest('[data-gruppe]');
+      if (g) {
+        const gruppe = meineGruppen.find(x => x.id === g.dataset.gruppe);
+        if (!gruppe) return;
+        if (wahlArt === 'eins') {
+          userModal.classList.remove('visible');
+          oeffne({ art: 'gruppe', id: gruppe.id, name: gruppe.name });
+          return;
+        }
+        for (const u of allUsers || []) if ((u.gruppen || []).includes(gruppe.name)) gewaehlte.set(u.uid, { uid: u.uid, name: u.name });
+        renderUsers($('userSearch').value.trim());
+        return;
+      }
       const b = e.target.closest('.dm-user');
       if (!b) return;
       if (wahlArt === 'eins') {

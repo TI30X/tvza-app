@@ -60,10 +60,22 @@ export function bekannteAus(jeGruppe, ich) {
 }
 
 /* Die Suche im Chat: nach dem Namen, nicht nach der E-Mail — die gibt es
-   hier nicht mehr. Gross/klein egal, Akzente auch ("Lea" findet "Léa"). */
-const flach = text => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+   hier nicht mehr. Gross/klein egal, Akzente auch ("Lea" findet "Léa").
+   Seit v.35.67.0 auch "Mueller" für "Müller" (und umgekehrt) und mehrere
+   Wörter in beliebiger Folge ("van zanten tim"). */
+const flach = text => String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  .replace(/ß/g, 'ss').replace(/ae/g, 'a').replace(/oe/g, 'o').replace(/ue/g, 'u');
+const passt = (text, woerter) => { const f = flach(text); return woerter.every(w => f.includes(w)); };
+const woerterAus = suche => flach(suche).split(/\s+/).filter(Boolean);
 export function sucheBekannte(liste, suche) {
-  const s = flach(suche).trim();
-  if (!s) return liste;
-  return liste.filter(b => flach(b.name).includes(s) || b.gruppen.some(g => flach(g).includes(s)));
+  const woerter = woerterAus(suche);
+  if (!woerter.length) return liste;
+  return liste.filter(b => passt(`${b.name} ${(b.gruppen || []).join(' ')}`, woerter));
+}
+
+/* Die eigenen Gruppen beim Namen (v.35.67.0) — derselbe Vergleich. */
+export function sucheGruppen(gruppen, suche) {
+  const woerter = woerterAus(suche);
+  if (!woerter.length) return [];
+  return (gruppen || []).filter(g => g?.id && passt(g.name, woerter));
 }
