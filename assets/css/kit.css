@@ -2950,6 +2950,36 @@ html.tvza-content-frame body > main {
   white-space: nowrap;
 }
 
+/* Ein Knopf, der wie ein Link aussieht (v.35.64.0): "Erneut versuchen",
+   "Rückgängig", "Alle auswählen" — neben einem Satz, nicht als Balken. */
+.linkknopf {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit; font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Nur für Screenreader. */
+.nur-vorlesen {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Ein Häkchen mit Satz daneben, gross genug für einen Daumen. */
+.check-zeile {
+  display: flex; align-items: center; gap: var(--s3);
+  min-height: 44px;
+  cursor: pointer;
+}
+.check-zeile input { width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
+
 /* ── Segmentwahl ───────────────────────────────────────────────────
    Fuer eine Frage mit wenigen, sich ausschliessenden Antworten: die
    Zusage zu einem Training, einem Lager oder einer Reise.

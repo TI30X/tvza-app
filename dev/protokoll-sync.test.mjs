@@ -174,5 +174,5 @@ test('groups.js schreibt je Übung in einer Transaktion, der Player hört live',
   assert.match(shell, /s\.nachtragen\(localStorage, user\.uid, g\.protokollAbgleichen\)/);
   const sw = await read('sw.js');
   assert.match(sw, /'\.\/assets\/js\/protokoll-sicherung\.js'/);
-  assert.match(sw, /'\.\/assets\/css\/feature\/einheit\.css\?v=1'/);
+  assert.match(sw, /'\.\/assets\/css\/feature\/einheit\.css\?v=\d+'/);
 });

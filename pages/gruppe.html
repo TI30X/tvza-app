@@ -13,10 +13,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=29" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=30" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=11" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=12" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -115,6 +115,27 @@
       <div class="rows">
         <button class="b b--secondary b--block" id="btnTermin" type="button" hidden data-i18n="grp.terminNeu">Termin hinzufügen</button>
         <button class="b b--secondary b--block" id="btnPlanNeu" type="button" hidden data-i18n="grp.planNeu">Plan veröffentlichen</button>
+        <!-- Die Leitung: wer an einem Tag was trainiert hat (v.35.65.0). -->
+        <button class="b b--secondary b--block" id="btnFortschritt" type="button" hidden data-i18n="grp.fortschrittAthleten">Fortschritt der Athleten</button>
+      </div>
+    </section>
+
+    <!-- Fortschritt der Athleten (v.35.65.0): je Tag, Athlet und Einheit,
+         aus denselben Protokollen, die der Athlet im Player sieht. Nur für
+         die Leitung (die Regel lässt nur sie die Protokolle auflisten). -->
+    <section class="section" id="secFortschritt" hidden>
+      <div class="form-card">
+        <button class="backlink" id="btnFortschrittZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" data-i18n="grp.fortschrittAthleten">Fortschritt der Athleten</div>
+        <div class="fortschritt-tag">
+          <button class="b b--secondary fortschritt-tag__pfeil" id="fortschrittVor" type="button" aria-label="Tag davor" data-i18n-attr="aria-label:grp.tagDavor"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <span class="fortschritt-tag__datum" id="fortschrittDatum">—</span>
+          <button class="b b--secondary fortschritt-tag__pfeil" id="fortschrittNach" type="button" aria-label="Tag danach" data-i18n-attr="aria-label:grp.tagDanach"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+          <button class="b b--secondary" id="fortschrittHeute" type="button" data-i18n="grp.heute">Heute</button>
+        </div>
+        <p class="plan-vorschau__hinweis" data-i18n="grp.fortschrittHinweis">Was ein Athlet offline eingetragen hat, erscheint erst, wenn sein Gerät wieder Netz hat — „nichts synchronisiert“ heisst nicht „nicht trainiert“. Private Notizen sieht nur der Athlet.</p>
+        <p class="empty-hint" id="fortschrittFehler" hidden></p>
+        <div class="rows" id="listFortschritt"></div>
       </div>
     </section>
 
@@ -263,6 +284,15 @@
 
         <!-- Was man frueher auf der persoenlichen Seite eingelesen hat,
              bleibt waehlbar — aber nur, wenn es das gibt. -->
+        <!-- Aus einer Vorlage (v.35.65.0): eine Kopie, auf die gewählte Woche
+             gelegt. Die Vorlage selbst bleibt, wie sie ist. -->
+        <div class="form-group" id="grpPlanVorlage" hidden>
+          <label class="form-label" for="planVorlage" data-i18n="grp.planAusVorlage">Oder aus einer Vorlage</label>
+          <select class="form-select" id="planVorlage"></select>
+          <label class="form-label" for="planVorlageMontag" data-i18n="grp.planVorlageWoche">Woche ab (Montag)</label>
+          <input class="form-input" id="planVorlageMontag" type="date" />
+        </div>
+
         <div class="form-group" id="grpPlanQuelle" hidden>
           <label class="form-label" for="planQuelle" data-i18n="grp.planQuelleOder">Oder aus deinen Programmen</label>
           <select class="form-select" id="planQuelle"></select>
@@ -271,6 +301,10 @@
         <div class="form-group" id="grpPlanTitel">
           <label class="form-label" for="planTitel" data-i18n="grp.titel">Titel</label>
           <input class="form-input" id="planTitel" type="text" maxlength="120" placeholder="z.B. Woche 31 — Kraft" data-i18n-attr="placeholder:grp.planTitelPh" />
+          <label class="check-zeile" id="grpAlsVorlage" hidden>
+            <input type="checkbox" id="planAlsVorlage" />
+            <span data-i18n="grp.planAlsVorlage">Auch als Vorlage speichern</span>
+          </label>
         </div>
 
         <div class="form-group" id="grpPlanFuer">
@@ -279,8 +313,12 @@
           <!-- Woher der Vorschlag kommt ("Aus der Excel: Van Zanten Timothy").
                Den Satz setzt der Code, darum ohne data-i18n. -->
           <p class="plan-vorschau__hinweis" id="planFuerHinweis" hidden></p>
+          <!-- Mehrere: Häkchen statt eines zweiten Dialogs (v.35.65.0). -->
+          <div class="empfaenger" id="planEmpfaenger" hidden></div>
         </div>
 
+        <!-- An wen der Plan geht, bevor er geht (v.35.65.0). Setzt der Code. -->
+        <p class="plan-geht-an" id="planGehtAn" hidden></p>
         <p class="empty-hint" id="planFehler" hidden></p>
         <button class="b b--primary b--block" id="btnPlanSpeichern" type="button" data-i18n="grp.veroeffentlichen">Veröffentlichen</button>
       </div>
@@ -684,6 +722,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=33"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=34"></script>
 </body>
 </html>

@@ -119,20 +119,131 @@ test('"Für wen": mehrere Personen wie im Chat — jede bekommt ihren eigenen Pl
     feld.dispatchEvent(new win.Event('change', { bubbles: true }));
     await warte(() => !doc.getElementById('planVorschau').hidden);
 
+    /* Seit v.35.65.0 stehen die Häkchen im Formular (Michel: "Checkbox-
+       Mehrfachauswahl: eine, mehrere oder alle") statt in einem zweiten
+       Dialog — und vor dem Veröffentlichen steht, an wen es geht. */
     const fuer = doc.getElementById('planFuer');
     assert.ok([...fuer.options].some(o => o.value === 'mehrere'), '"Mehrere Personen …" steht zur Wahl');
     fuer.value = 'mehrere';
     fuer.dispatchEvent(new win.Event('change', { bubbles: true }));
-    await warte(() => doc.querySelector('dialog.frage [data-mehrere]'));
-    const kaestchen = [...doc.querySelectorAll('dialog.frage [data-mehrere] input')];
-    kaestchen[1].checked = true;   // Lea
-    kaestchen[2].checked = true;   // Max
-    klick(doc.querySelector('dialog.frage [data-frage="ja"]'));
-    await warte(() => /Lea, Max/.test(doc.getElementById('planFuerHinweis').textContent));
+    await warte(() => !doc.getElementById('planEmpfaenger').hidden);
+    const haken = uid => doc.querySelector(`#planEmpfaenger [data-empfaenger="${uid}"]`);
+    /* Die Excel nannte Timothy: er ist schon angehakt. */
+    assert.equal(haken('timo').checked, true, 'wer vorher gewählt war, fängt angehakt an');
+    haken('timo').checked = false;
+    haken('timo').dispatchEvent(new win.Event('change', { bubbles: true }));
+    for (const uid of ['lea', 'max']) {
+      haken(uid).checked = true;
+      haken(uid).dispatchEvent(new win.Event('change', { bubbles: true }));
+    }
+    assert.match(doc.getElementById('planGehtAn').textContent, /Geht an Lea, Max — jede Person bekommt den Plan als ihren eigenen/);
+    assert.match(doc.getElementById('planGehtAn').textContent, /Wer später beitritt, bekommt ihn nicht/);
+    assert.equal(doc.getElementById('btnPlanSpeichern').textContent, 'An 2 Personen veröffentlichen');
     assert.match(fuer.selectedOptions[0].textContent, /\(2\)/);
 
+    /* "Alle auswählen": die, die jetzt da sind. */
+    klick(doc.querySelector('#planEmpfaenger [data-empfaenger-alle]'));
+    assert.ok([...doc.querySelectorAll('#planEmpfaenger [data-empfaenger]')].every(k => k.checked));
+    klick(doc.querySelector('#planEmpfaenger [data-empfaenger-alle]'));
+    for (const uid of ['lea', 'max']) {
+      haken(uid).checked = true;
+      haken(uid).dispatchEvent(new win.Event('change', { bubbles: true }));
+    }
+
+    /* Einer scheitert: die anderen gehen, und es steht da, für wen nicht. */
+    globalThis.__planScheitertFuer = 'max';
     klick(doc.getElementById('btnPlanSpeichern'));
-    await warte(() => aufrufe('planVeroeffentlichen').length === 2);
-    assert.deepEqual(aufrufe('planVeroeffentlichen').map(a => a[3].fuer), ['lea', 'max']);
+    await warte(() => !doc.getElementById('planFehler').hidden);
+    assert.match(doc.getElementById('planFehler').textContent, /1 von 2 veröffentlicht\. Nicht für: Max/);
+    assert.equal(doc.getElementById('secPlanForm').hidden, false, 'das Formular ging zu, obwohl Max fehlt');
+    assert.equal(fuer.value, 'max', 'nur wer fehlt, bleibt gewählt');
+    delete globalThis.__planScheitertFuer;
+    klick(doc.getElementById('btnPlanSpeichern'));
+    await warte(() => doc.getElementById('secPlanForm').hidden);
+    assert.deepEqual(aufrufe('planVeroeffentlichen').map(a => a[3].fuer), ['lea', 'max'], 'Lea bekam den Plan zweimal');
+  } finally { zurueck(); delete globalThis.__raster; delete globalThis.__planScheitertFuer; }
+});
+
+test('"Alle in der Gruppe" sagt, dass es auch für Künftige gilt', async () => {
+  globalThis.__raster = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
+  const { doc, zurueck } = await starteGruppe(KADER);
+  try {
+    klick(doc.getElementById('btnPlanNeu'));
+    await warte(() => !doc.getElementById('secPlanForm').hidden);
+    const feld = doc.getElementById('planFuer');
+    feld.value = 'alle';
+    feld.dispatchEvent(new doc.defaultView.Event('change', { bubbles: true }));
+    assert.match(doc.getElementById('planGehtAn').textContent, /ganze Gruppe — jetzt 3 Personen, und alle, die später beitreten/);
   } finally { zurueck(); delete globalThis.__raster; }
+});
+
+test('die Leitung sieht je Tag und Athlet, was begonnen und abgeschlossen ist — "unbekannt" statt "nicht trainiert"', async () => {
+  const grid = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
+  const { parseProgram } = await import('../assets/js/training-parser.js');
+  const programm = parseProgram(grid);
+  const { einheitenAmTag } = await import('../assets/js/wochenplan.js');
+  const montagsEinheit = einheitenAmTag(programm, '2026-08-03')[0];
+  const kraft = programm.units[montagsEinheit].items;
+  const { doc, zurueck } = await starteGruppe({
+    ...KADER,
+    heute: '2026-08-03',
+    plaene: [{ id: 'p1', titel: 'KW 31', fuer: 'alle', json: JSON.stringify(programm) }],
+    protokolle: [{ uid: 'lea', datum: '2026-08-03', units: { [montagsEinheit]: { items: {
+      [kraft[0].key]: { done: true, note: 'zog im Knie', sets: [{ weight: '50', reps: '8', ok: true }] },
+    } } } }],
+  });
+  try {
+    klick(doc.getElementById('btnFortschritt'));
+    await warte(() => !doc.getElementById('secFortschritt').hidden && /Begonnen/.test(doc.getElementById('listFortschritt').textContent));
+    const text = doc.getElementById('listFortschritt').textContent;
+    assert.match(text, /Lea[\s\S]*Begonnen[\s\S]*1\/\d+ Übungen/, 'Lea hat begonnen');
+    assert.match(text, /zog im Knie/, 'die Notiz für die Leitung fehlt');
+    assert.match(text, /Max[\s\S]*Nichts synchronisiert/, 'ohne Protokoll heisst es nicht "nicht trainiert"');
+    assert.doesNotMatch(text, /Timothy/, 'die Leitung steht bei einem Plan für alle nicht als Athlet da');
+    /* Ein Tipp öffnet die Einheit des Athleten als Ansicht. */
+    const link = [...doc.querySelectorAll('.fs-einheit')].find(a => /a=lea/.test(a.getAttribute('href')));
+    assert.ok(link, 'ohne &a= öffnete die Leitung ihr eigenes Protokoll');
+    assert.equal(link.getAttribute('href'), `./einheit.html?g=g1&p=p1&u=${montagsEinheit}&d=2026-08-03&z=gruppe&a=lea`);
+  } finally { zurueck(); }
+
+  /* Konnte nichts geladen werden: unbekannt. */
+  const zwei = await starteGruppe({ ...KADER, heute: '2026-08-03', plaene: [{ id: 'p1', titel: 'KW 31', fuer: 'alle', json: JSON.stringify(programm) }] });
+  globalThis.__protokolleFehler = true;
+  try {
+    klick(zwei.doc.getElementById('btnFortschritt'));
+    await warte(() => !zwei.doc.getElementById('fortschrittFehler').hidden);
+    assert.match(zwei.doc.getElementById('listFortschritt').textContent, /Unbekannt/);
+    assert.doesNotMatch(zwei.doc.getElementById('listFortschritt').textContent, /Nichts synchronisiert/);
+  } finally { zwei.zurueck(); delete globalThis.__protokolleFehler; }
+});
+
+test('eine Vorlage wird auf eine Woche gelegt — als Kopie, die Vorlage bleibt', async () => {
+  const grid = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
+  const { parseProgram } = await import('../assets/js/training-parser.js');
+  const { vorlageAufWoche, planTageMitDatum } = await import('../assets/js/wochenplan.js');
+  const programm = parseProgram(grid);
+  const kopie = vorlageAufWoche(programm, '2026-09-21');
+  assert.deepEqual(planTageMitDatum(kopie).map(t => t.datum), ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27']);
+  assert.equal(programm.days[0].date, '2026-08-03', 'die Vorlage selbst wurde verändert');
+  assert.equal(kopie.kw, null, 'die KW der Excel stimmt für die neue Woche nicht');
+
+  const { doc, zurueck } = await starteGruppe(KADER);
+  /* Nach dem Start: der Harness setzt __vorlagen beim Laden zurück. */
+  globalThis.__vorlagen = [{ id: 'v1', titel: 'Kraftwoche', json: JSON.stringify(programm) }];
+  try {
+    klick(doc.getElementById('btnPlanNeu'));
+    await warte(() => !doc.getElementById('grpPlanVorlage').hidden);
+    doc.getElementById('planVorlage').value = 'v1';
+    doc.getElementById('planVorlageMontag').value = '2026-09-23';   // ein Mittwoch: gilt ab Montag
+    doc.getElementById('planVorlage').dispatchEvent(new doc.defaultView.Event('change', { bubbles: true }));
+    assert.match(doc.getElementById('planTitel').value, /^Kraftwoche · /);
+    klick(doc.getElementById('btnPlanSpeichern'));
+    await warte(() => aufrufe('planVeroeffentlichen').length === 1);
+    const plan = aufrufe('planVeroeffentlichen')[0][3];
+    assert.equal(JSON.parse(plan.json).days[0].date, '2026-09-21');
+    assert.equal(aufrufe('vorlageSpeichern').length, 0);
+  } finally { zurueck(); delete globalThis.__vorlagen; }
+
+  const regeln = await readFile(join(root, 'firestore.rules'), 'utf8');
+  assert.match(regeln, /match \/groups\/\{gid\}\/vorlagen\/\{vorlageId\} \{\s*allow get, list: if leadsGroup\(gid\);/);
 });

@@ -99,6 +99,18 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
       (globalThis.__aufrufe ||= []).push(['ladeProtokolle', gid, uid]);
       return ${JSON.stringify(protokolle)};
     };
+    /* Die Übersicht der Leitung (v.35.65.0): die Protokolle eines Tages,
+       live — hier einmal; globalThis.__protokolleFehler lässt es scheitern. */
+    export const beobachteProtokolleAm = (gid, datum, cb, fehler) => {
+      (globalThis.__aufrufe ||= []).push(['beobachteProtokolleAm', gid, datum]);
+      setTimeout(() => {
+        if (globalThis.__protokolleFehler) fehler?.(new Error('Missing or insufficient permissions.'));
+        else cb(${JSON.stringify(protokolle)}.filter(p => p.datum === datum));
+      }, 0);
+      return () => {};
+    };
+    export const ladeVorlagen = async () => globalThis.__vorlagen || [];
+    export const vorlageSpeichern = ${merke('vorlageSpeichern')};
     export const ladeZusagen = async () => [];
     export const ladeErgebnisse = async () => [];
     export const ladeAnhaenge = async () => [];
@@ -125,7 +137,11 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const gruppenKalenderLoeschen = ${merke('gruppenKalenderLoeschen')};
     export const beitreten = ${merke('beitreten')};
     export const ergebnisSpeichern = ${merke('ergebnisSpeichern')};
-    export const planVeroeffentlichen = ${merke('planVeroeffentlichen')};
+    /* __planScheitertFuer = uid: der Plan für diese Person scheitert (v.35.65.0). */
+    export const planVeroeffentlichen = async (...a) => {
+      if (globalThis.__planScheitertFuer && a[2]?.fuer === globalThis.__planScheitertFuer) throw new Error('Missing or insufficient permissions.');
+      (globalThis.__aufrufe ||= []).push(['planVeroeffentlichen', ...a]);
+    };
     export const planLoeschen = ${merke('planLoeschen')};
     export const abonnementErneuern = async () => '';
     export const abonnementAdresse = () => '';
@@ -260,6 +276,8 @@ async function lade({
   globalThis.__abgleich = null;
   globalThis.__privat = null;
   globalThis.__protokollLive = null;
+  globalThis.__vorlagen = null;
+  globalThis.__protokolleFehler = null;
   globalThis.__termine = termine;
   globalThis.__profil = profil;
   globalThis.__antwort = { gruppeAnlegen: 'g-neu' };

@@ -220,7 +220,7 @@ test('die Leitung sieht, mit wie viel Gewicht wirklich trainiert wird', async ()
     await warte(() => doc.querySelector('[data-person="timo"]'));
     klick(doc.querySelector('[data-person="timo"]'));
     assert.ok(await warte(() => !doc.getElementById('secGewichte').hidden), 'die Gewichte stehen nicht im Profil');
-    assert.match(doc.getElementById('listGewichte').textContent, /Kniebeuge hinten[\s\S]*9× 52 kg · 9× 52 kg/);
+    assert.match(doc.getElementById('listGewichte').textContent, /Kniebeuge hinten[\s\S]*9 × 52 kg · 9 × 52 kg/);
   } finally { zurueck(); }
 });
 

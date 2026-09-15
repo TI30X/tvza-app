@@ -270,3 +270,66 @@
 .grp-leer__weg--haupt .grp-leer__icon { background: var(--accent); color: #fff; }
 .grp-leer__wort { font-weight: 750; font-size: 15px; }
 .grp-leer__sub { color: var(--ink-soft); font-size: 12.5px; line-height: 1.35; }
+
+/* ── Für wen: Häkchen und "Geht an" (v.35.65.0) ────────────────────── */
+.empfaenger {
+  margin-top: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+}
+.empfaenger__kopf {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s3);
+  padding: var(--s1) 0 var(--s2);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.empfaenger .check-zeile { border-top: 1px solid var(--rule-soft, var(--border)); }
+.empfaenger__name { flex: 1; min-width: 0; }
+.empfaenger__rolle { color: var(--ink-soft); font-size: 12.5px; }
+.plan-geht-an {
+  margin: var(--s3) 0;
+  padding: var(--s3);
+  border-radius: var(--r-row);
+  background: var(--accent-bg);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* ── Fortschritt der Athleten (v.35.65.0) ──────────────────────────── */
+.fortschritt-tag { display: flex; align-items: center; gap: var(--s2); margin: var(--s3) 0; }
+.fortschritt-tag__pfeil { padding: 0 var(--s3); }
+.fortschritt-tag__datum { flex: 1; text-align: center; font-weight: 700; }
+.fs-person { padding: var(--s3) 0; border-top: 1px solid var(--rule-soft, var(--border)); }
+.fs-person__kopf { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); }
+.fs-person__name { font-weight: 750; }
+.fs-person__stand { color: var(--ink-soft); font-size: 12.5px; }
+.fs-einheit {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3);
+  width: 100%;
+  margin-top: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+.fs-einheit:hover { border-color: var(--ink-soft); }
+.fs-einheit__titel { flex: 1; min-width: 0; font-weight: 650; }
+.fs-einheit__zahlen { width: 100%; color: var(--ink-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
+.fs-einheit__notiz { width: 100%; color: var(--ink); font-size: 13px; font-style: italic; }
+.fs-status {
+  padding: 2px var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 12px; font-weight: 700;
+}
+.fs-status[data-status="fertig"] { background: color-mix(in oklab, var(--success, var(--accent)) 16%, var(--surface)); color: var(--ink); }
+.fs-status[data-status="begonnen"] { background: var(--accent-bg); color: var(--accent); }
+.fs-status[data-status="unbekannt"] { background: transparent; border: 1px dashed var(--border); }

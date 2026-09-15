@@ -416,3 +416,77 @@ export function planTitelVorschlag(programm) {
   if (kopf.kw) return kopf.tw ? `KW ${kopf.kw} · TW ${kopf.tw}` : `KW ${kopf.kw}`;
   return kopf.label || '';
 }
+
+/**
+ * Wer an einem Tag was trainiert — für die Übersicht der Leitung
+ * (v.35.65.0). Michel: "Trainer sollen pro Plan, Datum und Athlet sehen,
+ * was begonnen und abgeschlossen ist." Je Person gilt der neueste Plan
+ * für sie und der neueste für alle (wie agendaTage); ein Plan für alle
+ * gilt für die, die nicht leiten.
+ *
+ * @param o.quellen    [{ plan, programm }]
+ * @param o.mitglieder [{ uid, name, rolle }]
+ * @param o.leitet     (rolle) => boolean
+ * @returns [{ uid, name, einheiten: [{ planId, fuer, unit, titel, items, zeit }] }]
+ */
+export function fortschrittZeilen({ quellen = [], mitglieder = [], datum = '', leitet = () => false } = {}) {
+  const beste = new Map();
+  for (const q of quellen) {
+    if (!q?.programm) continue;
+    const tag = planTageMitDatum(q.programm, datum).find(t => t.datum === datum);
+    if (!tag) continue;
+    const fuer = q.plan?.fuer || 'alle';
+    const bisher = beste.get(fuer);
+    if (!bisher || zeitVon(q.plan) > zeitVon(bisher.q.plan)) beste.set(fuer, { q, tag });
+  }
+  const einheitenVon = eintrag => {
+    if (!eintrag) return [];
+    const { q, tag } = eintrag;
+    const raus = [];
+    for (const e of tag.eintraege) {
+      if (!e.unit || raus.some(x => x.unit === e.unit)) continue;
+      const items = uebungen(q.programm, e.unit);
+      if (!items.length) continue;
+      raus.push({
+        planId: q.plan?.id || '', fuer: q.plan?.fuer || 'alle', unit: e.unit,
+        titel: q.programm?.units?.[e.unit]?.title || e.titel, items, zeit: e.zeit || '',
+      });
+    }
+    return raus;
+  };
+  const fuerAlle = beste.get('alle');
+  return mitglieder
+    .filter(m => m?.uid && (beste.has(m.uid) || (fuerAlle && !leitet(m.rolle))))
+    .map(m => ({
+      uid: m.uid,
+      name: m.name || '',
+      einheiten: [...einheitenVon(beste.get(m.uid)), ...(leitet(m.rolle) ? [] : einheitenVon(fuerAlle))],
+    }))
+    .filter(z => z.einheiten.length)
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
+/**
+ * Eine Vorlage auf eine neue Woche legen (v.35.65.0). Michel: "Trainer
+ * sollen wiederverwendbare Vorlagen erstellen und zuweisen können." Die
+ * Vorlage bleibt, wie sie ist; der Plan bekommt eine KOPIE mit den Tagen
+ * ab montag — was schon trainiert ist, hängt am Protokoll und ändert
+ * sich nie mit der Vorlage. Die Kalenderwoche der Excel stimmt danach
+ * nicht mehr und fällt weg (keine selbst gerechnete zweite Zahl, siehe
+ * Falle 10).
+ */
+export function vorlageAufWoche(programm, montag) {
+  const kopie = JSON.parse(JSON.stringify(programm || {}));
+  const tage = Array.isArray(kopie.days) ? kopie.days : [];
+  const FOLGE = ['mo', 'di', 'mi', 'do', 'fr', 'sa', 'so'];
+  tage.forEach((t, i) => {
+    const n = FOLGE.indexOf(String(t?.key || '').slice(0, 2).toLowerCase());
+    const stelle = n >= 0 ? n : i;
+    if (t && stelle < 7) t.date = plusTage(montag, stelle);
+  });
+  kopie.dateRange = { start: montag, end: plusTage(montag, 6) };
+  kopie.kw = null;
+  kopie.trainingWeek = null;
+  kopie.weekLabel = '';
+  return kopie;
+}

@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.64.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.65.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-81 Testdateien, **817 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+81 Testdateien, **820 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -981,6 +981,36 @@ echten Daten); was überschrieben wurde, ist weg.
 
 `dev/protokoll-sync.test.mjs`, `einheit-seite`, `einheit-timer`.
 
+**27. Die Leitung sieht den Fortschritt, Pläne gehen an Angehakte, Vorlagen**
+(v.35.65.0).
+
+- **Fortschritt der Athleten** (Gruppe-Tab, nur Leitung, `#secFortschritt`):
+  je Tag (‹ › Heute) und Athlet die Einheiten aus dem Plan
+  (`fortschrittZeilen` in wochenplan.js: der neueste Plan je Person und der
+  neueste für alle, ein Plan für alle gilt für die, die nicht leiten), dazu
+  Abgeschlossen/Begonnen/Nichts synchronisiert, „n/m Übungen · n/m Sätze",
+  die Notizen für die Leitung und „synchronisiert HH:MM". Aus denselben
+  Protokollen wie der Player (`beobachteProtokolleAm`, live; die Regel lässt
+  nur die Leitung auflisten). Scheitert das Laden: „Unbekannt", nie „nicht
+  trainiert". Ein Tipp öffnet die Einheit des Athleten als Ansicht — bei
+  einem Plan für alle mit `&a=<uid>` (einheit.js), sonst sähe die Leitung
+  ihr eigenes Protokoll.
+- **Für wen:** „Mehrere Personen …" zeigt Häkchen im Formular (eine,
+  mehrere, „Alle auswählen" = alle, die jetzt da sind, je ein eigener Plan).
+  „Alle in der Gruppe" ist der eine Plan für alle — auch für Künftige. Vor
+  dem Veröffentlichen steht „Geht an …", der Knopf sagt „An n Personen
+  veröffentlichen". Scheitert einer, gehen die anderen trotzdem, und es
+  steht da, für wen nicht; nur die bleiben gewählt.
+- **Vorlagen** (`groups/{gid}/vorlagen`, nur Leitung): „Auch als Vorlage
+  speichern" beim Einlesen einer Excel, „Oder aus einer Vorlage" + „Woche ab
+  (Montag)" im Formular. Der Plan bekommt eine **Kopie**, auf die Woche
+  gelegt (`vorlageAufWoche`: Tage nach mo…so, KW und Wochenname fallen
+  weg — keine selbst gerechnete zweite Zahl). Vorlage, Plan und Protokoll
+  sind drei Dokumente; eine geänderte Vorlage ändert nichts Veröffentlichtes.
+- Im Profil eines Athleten „9 × 60 kg" wie im Player.
+
+`dev/gruppe-einstellungen.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -993,7 +1023,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1129 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1158 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -1130,6 +1160,12 @@ Zwei Dinge, die leicht übersehen werden:
   v.35.62.0 (`emailKarten`) erweitert nur — ohne die Regel findet die
   Suche per Adresse niemanden, sonst geht alles. Regeln vor oder mit dem
   Code. Ausgerollt am 15.09.2026, vor dem Push.
+  v.35.64.0 braucht keine neue Regel (Transaktion auf `protokoll` wie
+  bisher, private Notizen unter `trainingLogs`).
+  v.35.65.0 (`groups/{gid}/vorlagen`) erweitert nur — ohne die Regel
+  bleibt „Oder aus einer Vorlage" verborgen und „Als Vorlage speichern"
+  meldet, dass es nicht ging; der Plan geht trotzdem hinaus. **Vorbereitet,
+  noch nicht ausgerollt.**
 
 ## Gewohnheiten
 

@@ -954,6 +954,37 @@ export function protokollAbgleichen(gid, uid, datum, aenderungen, planId = '') {
   });
 }
 
+/* Die Protokolle eines Tages — für die Übersicht der Leitung (v.35.65.0).
+   Die Regel lässt die Leitung alle auflisten (leadsGroup); ein Athlet
+   bekäme mit dieser Abfrage nichts und fragt sie nie. Live, damit die
+   Leitung am Rand der Halle sieht, wie weit alle sind. */
+export function beobachteProtokolleAm(gid, datum, cb, fehler) {
+  return onSnapshot(query(collection(db, 'groups', gid, 'protokoll'), where('datum', '==', datum)),
+    snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))), fehler);
+}
+
+/* ── Vorlagen (v.35.65.0) ───────────────────────────────────────────
+   Ein Wochenplan, den die Leitung wiederverwendet. Vorlage, Zuweisung
+   (plaene) und Trainiertes (protokoll) sind drei Dinge: ein Plan aus
+   einer Vorlage ist eine KOPIE — ändert sich die Vorlage, bleibt jeder
+   Plan und jedes Protokoll, wie es war. Nur die Leitung (Regel). */
+export async function ladeVorlagen(gid) {
+  const snap = await getDocs(collection(db, 'groups', gid, 'vorlagen'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => String(a.titel || '').localeCompare(String(b.titel || ''), 'de'));
+}
+
+export async function vorlageSpeichern(gid, uid, { titel, json }) {
+  const ref = await addDoc(collection(db, 'groups', gid, 'vorlagen'), {
+    titel: String(titel || '').slice(0, 120), json, erstelltVon: uid, erstelltAm: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export function vorlageLoeschen(gid, id) {
+  return deleteDoc(doc(db, 'groups', gid, 'vorlagen', id));
+}
+
 /* Live: was ein anderes Gerät einträgt, erscheint hier (v.35.64.0). */
 export function beobachteProtokoll(gid, uid, datum, cb, fehler) {
   return onSnapshot(protokollRef(gid, uid, datum), { includeMetadataChanges: true },

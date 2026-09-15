@@ -1107,6 +1107,12 @@ async function zurueckGehen() {
     const plan = await ladePlan(gid, planId);
     if (!plan) throw new Error('Plan nicht gefunden.');
     ansicht = Boolean(plan.fuer) && plan.fuer !== PLAN_FUER_ALLE && plan.fuer !== user.uid;
+    /* Aus der Übersicht der Leitung (v.35.65.0): bei einem Plan für alle
+       sagt &a=, wessen Einheit gezeigt wird — nur ansehen, die Regel
+       lässt ohnehin nur die Leitung fremde Protokolle lesen. */
+    const athlet = p.get('a') || '';
+    const wessen = ansicht ? plan.fuer : (athlet && athlet !== user.uid ? athlet : user.uid);
+    if (wessen !== user.uid) ansicht = true;
 
     programm = JSON.parse(plan.json);
 
@@ -1123,7 +1129,7 @@ async function zurueckGehen() {
        eigene Protokoll eines Tages, an dem es noch keines gab, und am
        iPhone des Athleten stand "Der Plan liess sich nicht laden". */
     try {
-      protokoll = await ladeProtokoll(gid, ansicht ? plan.fuer : user.uid, datum);
+      protokoll = await ladeProtokoll(gid, wessen, datum);
     } catch (e) {
       reportClientError('einheit/protokoll', e);
       protokoll = { units: {} };
@@ -1158,7 +1164,7 @@ async function zurueckGehen() {
     }
 
     setShellTitle(plan.titel || t('eh.einheit', 'Einheit'));
-    if (ansicht) await zeigeAnsicht(plan.fuer);
+    if (ansicht) await zeigeAnsicht(wessen);
 
     /* Die Einheit des Tages direkt (v.35.64.0). */
     amTag = einheitenAmTag(programm, datum);
@@ -1166,7 +1172,7 @@ async function zurueckGehen() {
     else if (amTag.length === 1) starte(amTag[0]);
     else zeichneWahl();
 
-    hoereProtokoll(ansicht ? plan.fuer : user.uid);
+    hoereProtokoll(wessen);
   } catch (e) {
     reportClientError('einheit/laden', e);
     /* Der häufigste Grund ist eine Regel oder ein Index, der noch nicht

@@ -22,25 +22,6 @@
 .speicherstand[data-stand="konflikt"] { color: var(--ink); }
 .speicherstand[data-stand="fehler"] { color: var(--danger); }
 
-.linkknopf {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent);
-  font: inherit; font-weight: 700;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.nur-vorlesen {
-  position: absolute;
-  width: 1px; height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .tag-einheiten { margin-bottom: var(--s3); }
 .uhr__bereich { margin-top: var(--s3); }
 

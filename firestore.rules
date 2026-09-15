@@ -1528,6 +1528,26 @@ service cloud.firestore {
       allow delete: if leadsGroup(gid);
     }
 
+    /* Vorlagen (v.35.65.0): Wochenpläne, die die Leitung wiederverwendet.
+       Ein Plan aus einer Vorlage ist eine Kopie (plaene) — die Vorlage zu
+       ändern ändert weder Pläne noch Protokolle. Lesen und schreiben nur
+       die Leitung; Athleten sehen, was ihnen zugewiesen ist, nicht die
+       Sammlung dahinter. */
+    match /groups/{gid}/vorlagen/{vorlageId} {
+      allow get, list: if leadsGroup(gid);
+      allow create, update: if leadsGroup(gid)
+                    && request.resource.data.titel is string
+                    && request.resource.data.titel.size() > 0
+                    && request.resource.data.titel.size() <= 120
+                    && request.resource.data.json is string
+                    && request.resource.data.json.size() <= 900000
+                    && request.resource.data.erstelltVon == request.auth.uid
+                    && request.resource.data.keys().hasOnly([
+                      'titel', 'json', 'erstelltVon', 'erstelltAm'
+                    ]);
+      allow delete: if leadsGroup(gid);
+    }
+
     /* Trainingsprotokoll einer Gruppe: was ein Athlet an einem Tag
        tatsaechlich gemacht hat.
 

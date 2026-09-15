@@ -35,6 +35,7 @@ import {
   terminAendern, programmSetzen, beobachteGepackt, gepacktSetzen,
   gastTokenSetzen, ladeGaeste, gastEntfernen, reisenDerGruppeUebernehmen,
   gruppeAendern, gruppeLoeschen, ladeGruppenKalender, gruppenKalenderAnlegen, gruppenKalenderLoeschen,
+  beobachteProtokolleAm, ladeVorlagen, vorlageSpeichern,
 } from '../../groups.js';
 import { kalenderName, naechsteFarbe, KALENDER_MAX } from '../../kalender-quellen.js';
 import {
@@ -44,6 +45,7 @@ import {
 } from '../../programm.js';
 import {
   wochenTage, nachDatum, planZusammenfassung, planTitelVorschlag, planTageMitDatum, ersetztePlaene,
+  fortschrittZeilen, vorlageAufWoche, montagVon, plusTage, einheitZiel,
 } from '../../wochenplan.js';
 import { agendaAnsicht, tagName, kurzDatum } from '../woche/woche.js';
 import { frage, eingabe, meldung, mehrere } from '../../dialog.js';
@@ -59,7 +61,7 @@ import {
   artenFuer, kenntDisziplinen, istAbgesagt, alsIcsEintrag,
 } from '../../termine.js';
 import { buildCalendarIcs } from '../../calendar-interop.js';
-import { gewichtsVerlauf } from '../../einheit.js';
+import { gewichtsVerlauf, einheitStatus, satzFortschritt, fortschritt } from '../../einheit.js';
 import {
   rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
 } from '../../fispunkte.js';
@@ -322,6 +324,7 @@ async function zeichnePlaene() {
   const fuer = aktiv.id;
   const darfFuehren = leitet(aktiv.meineRolle);
   $('btnPlanNeu').hidden = !darfFuehren;
+  if ($('btnFortschritt')) $('btnFortschritt').hidden = !darfFuehren;
   let neu = [];
   try { neu = await ladePlaene(fuer, user.uid, darfFuehren); }
   catch (e) { reportClientError('gruppe/plaene', e); }
@@ -466,6 +469,9 @@ function einzelnZeigen(x) {
   const hinweis = $('planFuerHinweis');
   hinweis.textContent = zuordnungText(x);
   hinweis.hidden = !hinweis.textContent;
+  zeige('grpAlsVorlage', true);
+  zeichneEmpfaenger();
+  planGehtAnZeigen();
 }
 
 /* Mehrere: je Datei eine Karte mit Woche und Zuordnung. */
@@ -474,6 +480,8 @@ function mehrereZeigen() {
   zeige('planVorschau', false);
   zeige('grpPlanTitel', false);
   zeige('grpPlanFuer', false);
+  zeige('grpPlanVorlage', false);
+  planGehtAnZeigen();
 
   /* Dieselbe Person, dieselbe Woche, zwei Dateien: in der Woche gewinnt
      die spaeter veroeffentlichte (agendaTage). Das soll man vorher sehen. */
@@ -574,6 +582,7 @@ async function planDateiGewaehlt(liste) {
     $('planDateiKnopf').textContent = t('grp.planAndereDateien', 'Andere Dateien wählen');
   }
   zeige('grpPlanQuelle', false);
+  zeige('grpPlanVorlage', false);
 }
 
 async function planFormOeffnen() {
@@ -617,6 +626,11 @@ async function planFormOeffnen() {
   planMehrere = [];
   planFuerVorher = PLAN_FUER_ALLE;
   $('planFuer').innerHTML = fuerOptionen(PLAN_FUER_ALLE, { nurWen: true });
+  $('planAlsVorlage').checked = false;
+  zeige('grpAlsVorlage', false);
+  zeichneEmpfaenger();
+  planGehtAnZeigen();
+  void vorlagenLaden();
 
   $('planTitel').value = '';
   $('planFehler').hidden = true;
@@ -625,37 +639,123 @@ async function planFormOeffnen() {
   zeige('secMitglieder', false);
 }
 
-/* "Mehrere Personen …" gewählt: der Dialog wie im Chat. Abbrechen
-   stellt die vorige Wahl wieder her; eine einzige Person ist "Nur …". */
+/* "Mehrere Personen …" (v.35.65.0): die Häkchen stehen im Formular —
+   eine, mehrere oder alle, die jetzt in der Gruppe sind. Bis dahin ging
+   dafür ein zweiter Dialog auf (v.35.60.0). "Alle in der Gruppe" bleibt
+   der eine Plan für alle, der auch für die gilt, die später beitreten;
+   "Alle auswählen" sind die, die jetzt da sind, jede mit eigenem Plan.
+   Was gilt, steht vor dem Veröffentlichen in "Geht an". */
 let planFuerVorher = PLAN_FUER_ALLE;
-async function planFuerGeaendert() {
+function planFuerGeaendert() {
   const feld = $('planFuer');
-  if (feld.value !== PLAN_MEHRERE) { planFuerVorher = feld.value; $('planFuerHinweis').hidden = true; return; }
-  const wahl = await mehrere({
-    titel: t('grp.planFuer', 'Für wen'),
-    text: t('grp.mehrereText', 'Jede Person bekommt den Plan als ihren eigenen.'),
-    optionen: mitglieder.map(m => ({ wert: m.uid, titel: m.name || m.uid, text: wort(aktiv?.art, m.rolle), an: planMehrere.includes(m.uid) })),
-    ja: t('common.ok', 'OK'),
-  });
-  if (wahl === null || !wahl.length) {
-    feld.innerHTML = fuerOptionen(planFuerVorher, { nurWen: true });
-  } else if (wahl.length === 1) {
-    planFuerVorher = wahl[0];
-    feld.innerHTML = fuerOptionen(wahl[0], { nurWen: true });
-  } else {
-    planMehrere = wahl;
-    planFuerVorher = PLAN_MEHRERE;
-    feld.innerHTML = fuerOptionen(PLAN_MEHRERE, { nurWen: true });
+  if (feld.value !== PLAN_MEHRERE) {
+    planFuerVorher = feld.value;
+    $('planFuerHinweis').hidden = true;
+  } else if (!planMehrere.length && planFuerVorher && ![PLAN_FUER_ALLE, PLAN_MEHRERE].includes(planFuerVorher)) {
+    /* Wer vorher "Nur Timo" hatte, fängt mit Timo angehakt an. */
+    planMehrere = [planFuerVorher];
   }
-  mehrereHinweis();
+  zeichneEmpfaenger();
+  planGehtAnZeigen();
 }
 
-function mehrereHinweis() {
-  const hinweis = $('planFuerHinweis');
-  if ($('planFuer').value !== PLAN_MEHRERE) return;
-  const namen = planMehrere.map(uid => mitglieder.find(m => m.uid === uid)?.name || uid);
-  hinweis.textContent = t('grp.mehrereFuer', 'Für {namen}', { namen: namen.join(', ') });
-  hinweis.hidden = false;
+const nameVonUid = uid => mitglieder.find(m => m.uid === uid)?.name || uid;
+
+function zeichneEmpfaenger() {
+  const el = $('planEmpfaenger');
+  if (!el) return;
+  const an = !alsListe && $('planFuer').value === PLAN_MEHRERE;
+  el.hidden = !an;
+  if (!an) return;
+  const alle = mitglieder.length > 0 && mitglieder.every(m => planMehrere.includes(m.uid));
+  el.innerHTML = `
+    <div class="empfaenger__kopf">
+      <span>${escHtml(t('grp.empfaengerFrage', 'Wer bekommt den Plan?'))}</span>
+      <button class="linkknopf" type="button" data-empfaenger-alle="1">${escHtml(alle
+        ? t('grp.empfaengerKeine', 'Keine')
+        : t('grp.empfaengerAlle', 'Alle auswählen'))}</button>
+    </div>
+    ${sortiere(mitglieder).map(m => `
+      <label class="check-zeile">
+        <input type="checkbox" data-empfaenger="${escHtml(m.uid)}"${planMehrere.includes(m.uid) ? ' checked' : ''} />
+        <span class="empfaenger__name">${escHtml(m.name || m.uid)}</span>
+        <span class="empfaenger__rolle">${escHtml(wort(aktiv?.art, m.rolle))}</span>
+      </label>`).join('')}`;
+}
+
+function empfaengerGeaendert(event) {
+  const alle = event.target.closest?.('[data-empfaenger-alle]');
+  if (alle) {
+    planMehrere = mitglieder.every(m => planMehrere.includes(m.uid)) ? [] : mitglieder.map(m => m.uid);
+  } else {
+    const k = event.target.closest?.('[data-empfaenger]');
+    if (!k) return;
+    const uid = k.dataset.empfaenger;
+    planMehrere = k.checked ? [...new Set([...planMehrere, uid])] : planMehrere.filter(x => x !== uid);
+  }
+  $('planFuer').innerHTML = fuerOptionen(PLAN_MEHRERE, { nurWen: true });
+  zeichneEmpfaenger();
+  planGehtAnZeigen();
+}
+
+/* An wen der Plan geht — bevor er geht. */
+function planGehtAnZeigen() {
+  const el = $('planGehtAn');
+  const knopf = $('btnPlanSpeichern');
+  if (!el || !knopf) return;
+  const wert = alsListe ? '' : $('planFuer').value;
+  let text = '';
+  if (wert === PLAN_FUER_ALLE) {
+    text = t('grp.gehtAnAlle', 'Geht an die ganze Gruppe — jetzt {n}, und alle, die später beitreten. Jede Person hat ihren eigenen Fortschritt.',
+      { n: tPlural('grp.personen', mitglieder.length, 'Person', 'Personen') });
+  } else if (wert === PLAN_MEHRERE) {
+    text = planMehrere.length
+      ? t('grp.gehtAnMehrere', 'Geht an {namen} — jede Person bekommt den Plan als ihren eigenen. Wer später beitritt, bekommt ihn nicht.',
+        { namen: planMehrere.map(nameVonUid).join(', ') })
+      : t('grp.gehtAnNiemand', 'Noch niemand angehakt.');
+  } else if (wert) {
+    text = t('grp.gehtAnEine', 'Geht an {name}.', { name: nameVonUid(wert) });
+  }
+  el.textContent = text;
+  el.hidden = !text;
+  const n = wert === PLAN_MEHRERE ? planMehrere.length : 0;
+  knopf.textContent = n > 1
+    ? t('grp.veroeffentlichenN', 'An {n} Personen veröffentlichen', { n })
+    : t('grp.veroeffentlichen', 'Veröffentlichen');
+}
+
+/* ── Vorlagen (v.35.65.0) ── */
+let planVorlagen = [];
+async function vorlagenLaden() {
+  const feld = $('planVorlage');
+  if (!feld || !aktiv) return;
+  const gid = aktiv.id;
+  try { planVorlagen = await ladeVorlagen(gid); }
+  catch (e) {
+    /* Solange die Regel nicht ausgerollt ist, gibt es keine — still. */
+    reportClientError('gruppe/vorlagen', e);
+    planVorlagen = [];
+  }
+  if (aktiv?.id !== gid) return;
+  feld.innerHTML = [`<option value="">—</option>`,
+    ...planVorlagen.map(v => `<option value="${escHtml(v.id)}">${escHtml(v.titel || v.id)}</option>`)].join('');
+  const montag = $('planVorlageMontag');
+  if (montag && !montag.value) montag.value = montagVon(plusTage(isoTag(), 7));
+  zeige('grpPlanVorlage', planVorlagen.length > 0 && !eingelesen.length);
+}
+
+function vorlageGewaehlt() {
+  const v = planVorlagen.find(x => x.id === $('planVorlage').value);
+  if (!v) { zeige('planVorschau', false); return; }
+  try {
+    const montag = montagVon($('planVorlageMontag').value || isoTag());
+    planVorschau(vorlageAufWoche(JSON.parse(v.json), montag));
+    const titel = $('planTitel');
+    if (!titel.value.trim() || titel.dataset.ausVorlage === '1') {
+      titel.value = `${v.titel} · ${kurzDatum(montag)}`;
+      titel.dataset.ausVorlage = '1';
+    }
+  } catch (e) { reportClientError('gruppe/vorlage', e); }
 }
 
 function planFormSchliessen() {
@@ -672,10 +772,19 @@ async function planSpeichern() {
 
   if (alsListe) { await mehrereVeroeffentlichen(); return; }
 
-  /* Die eben eingelesene Datei zuerst; sonst ein frueheres Programm. */
+  /* Die eben eingelesene Datei zuerst; dann eine Vorlage (auf die gewählte
+     Woche gelegt); sonst ein frueheres Programm. */
   const x = eingelesen[0];
   let json = x?.json || '';
   let programmId = x ? planTitelVorschlag(x.programm) || x.datei : '';
+  const vorlage = !json && planVorlagen.find(v => v.id === $('planVorlage')?.value);
+  if (vorlage) {
+    const montag = montagVon($('planVorlageMontag').value || isoTag());
+    try {
+      json = JSON.stringify(vorlageAufWoche(JSON.parse(vorlage.json), montag));
+      programmId = `${vorlage.titel} · ${kurzDatum(montag)}`;
+    } catch (e) { reportClientError('gruppe/vorlage', e); json = ''; }
+  }
   if (!json && quelle.value) {
     programmId = quelle.value;
     try { json = JSON.parse(quelle.dataset.json || '{}')[programmId] || ''; }
@@ -704,14 +813,50 @@ async function planSpeichern() {
 
   const btn = $('btnPlanSpeichern');
   btn.disabled = true;
+  const titel = $('planTitel').value.trim() || programmId;
+  const alsVorlage = !!x && $('planAlsVorlage')?.checked;
   try {
-    /* Je Person ein eigener Plan (siehe PLAN_MEHRERE). */
+    /* Je Person ein eigener Plan (siehe PLAN_MEHRERE). Scheitert einer,
+       gehen die anderen trotzdem — und es steht da, für wen nicht
+       (v.35.65.0; bis dahin brach die Schleife ab, ohne es zu sagen). */
+    const gut = [];
+    const nicht = [];
     for (const wer of ziele) {
-      await planVeroeffentlichen(aktiv.id, user.uid, {
-        titel: $('planTitel').value.trim() || programmId,
-        json,
-        fuer: wer,
-      });
+      try {
+        await planVeroeffentlichen(aktiv.id, user.uid, { titel, json, fuer: wer });
+        gut.push(wer);
+      } catch (e) {
+        reportClientError('gruppe/plan', e);
+        nicht.push({ wer, grund: e?.message || '' });
+      }
+    }
+    if (nicht.length) {
+      const wem = wer => (wer === PLAN_FUER_ALLE ? t('grp.alleInGruppe', 'Alle in der Gruppe') : nameVonUid(wer));
+      fehler.textContent = gut.length
+        ? t('grp.f.planTeilPersonen', '{fertig} von {n} veröffentlicht. Nicht für: {namen}. „Veröffentlichen“ versucht nur diese noch einmal. {grund}',
+          { fertig: gut.length, n: ziele.length, namen: nicht.map(y => wem(y.wer)).join(', '), grund: nicht[0].grund })
+        : (nicht[0].grund || t('grp.f.plan', 'Der Plan konnte nicht veröffentlicht werden.'));
+      fehler.hidden = false;
+      /* Nur die, die fehlen, bleiben gewählt. */
+      if (gut.length) {
+        const rest = nicht.map(y => y.wer);
+        planMehrere = rest.length > 1 ? rest : [];
+        planFuerVorher = rest.length > 1 ? PLAN_MEHRERE : rest[0];
+        $('planFuer').innerHTML = fuerOptionen(planFuerVorher, { nurWen: true });
+        zeichneEmpfaenger();
+        planGehtAnZeigen();
+        await zeichnePlaene();
+      }
+      return;
+    }
+    if (alsVorlage) {
+      /* Die Vorlage ist Beiwerk: scheitert sie, ist der Plan trotzdem draussen. */
+      try { await vorlageSpeichern(aktiv.id, user.uid, { titel, json }); }
+      catch (e) {
+        reportClientError('gruppe/vorlage', e);
+        void meldung({ titel: t('grp.vorlageFehlerTitel', 'Vorlage nicht gespeichert'),
+          text: t('grp.vorlageFehler', 'Der Plan ist veröffentlicht, aber die Vorlage liess sich nicht speichern.') });
+      }
     }
     planMehrere = [];
     eingelesen = [];
@@ -857,8 +1002,10 @@ function zeichne() {
   const darfFuehren = hat && leitet(aktiv.meineRolle);
   /* Stehen die Einstellungen der Gruppe offen, bleibt das Übrige zu —
      auch wenn eine neue Meldung die Seite neu zeichnet. */
-  const inEinst = hat && $('secGruppeEinst')?.hidden === false;
+  if (!darfFuehren && $('secFortschritt')?.hidden === false) fortschrittSchliessen();
+  const inEinst = hat && ($('secGruppeEinst')?.hidden === false || $('secFortschritt')?.hidden === false);
   if (!hat) zeige('secGruppeEinst', false);
+  if (inEinst && $('secFortschritt')?.hidden === false) fortschrittHoeren();
 
   zeige('secLeer', !hat);
   zeige('secWoche', hat && !inEinst);
@@ -898,6 +1045,139 @@ function zeichne() {
   zeichnePlaene();
   zeichneAssistent();
   zeichneFarbwahl();
+}
+
+/* ── Fortschritt der Athleten (v.35.65.0) ──────────────────────────
+   Michel: "Trainer sollen pro Plan, Datum und Athlet sehen: nicht
+   begonnen, begonnen, abgeschlossen, Satz- und Übungsfortschritt, Werte
+   und Notizen." Dieselben Protokolle, die der Athlet im Player sieht
+   (beobachteProtokolleAm, live). Ein Tipp öffnet die Einheit des
+   Athleten als Ansicht, mit allen Werten. Konnte nichts geladen werden,
+   heisst es "unbekannt" — nie "nicht trainiert". */
+let fortschrittTag = '';
+let fortschrittAbo = null;
+let fortschrittFuer = '';
+let fortschrittDaten = null;     // Protokolle des Tages, null = (noch) nicht geladen
+let fortschrittFehlt = false;
+
+function fortschrittOeffnen() {
+  if (!aktiv || !leitet(aktiv.meineRolle)) return;
+  fortschrittTag ||= isoTag();
+  for (const id of HAUPTTEILE) zeige(id, false);
+  zeige('secGruppeEinst', false);
+  zeige('secFortschritt', true);
+  fortschrittHoeren();
+  window.scrollTo?.(0, 0);
+}
+
+function fortschrittSchliessen() {
+  fortschrittAbo?.();
+  fortschrittAbo = null;
+  fortschrittFuer = '';
+  zeige('secFortschritt', false);
+  const darf = !!aktiv && leitet(aktiv.meineRolle);
+  zeige('secWoche', !!aktiv);
+  zeige('secMitglieder', !!aktiv);
+  zeige('secAktionen', darf);
+  zeige('grpEinstZeile', darf);
+  zeige('secWeitere', !!aktiv);
+}
+
+function fortschrittHoeren() {
+  if (!aktiv) return;
+  const schluessel = `${aktiv.id}|${fortschrittTag}`;
+  if (fortschrittFuer === schluessel) { zeichneFortschritt(); return; }
+  fortschrittAbo?.();
+  fortschrittFuer = schluessel;
+  fortschrittDaten = null;
+  fortschrittFehlt = false;
+  zeichneFortschritt();
+  const gid = aktiv.id;
+  const tag = fortschrittTag;
+  fortschrittAbo = beobachteProtokolleAm(gid, tag, liste => {
+    if (fortschrittFuer !== `${gid}|${tag}`) return;
+    fortschrittDaten = liste;
+    fortschrittFehlt = false;
+    zeichneFortschritt();
+  }, e => {
+    reportClientError('gruppe/fortschritt', e);
+    fortschrittFehlt = true;
+    zeichneFortschritt();
+  });
+}
+
+function fortschrittTagSetzen(tag) {
+  fortschrittTag = tag;
+  fortschrittHoeren();
+}
+
+const STATUS = {
+  fertig: () => t('grp.fs.fertig', 'Abgeschlossen'),
+  begonnen: () => t('grp.fs.begonnen', 'Begonnen'),
+  offen: () => t('grp.fs.offen', 'Nichts synchronisiert'),
+  unbekannt: () => t('grp.fs.unbekannt', 'Unbekannt'),
+  laedt: () => t('grp.fs.laedt', 'Lädt …'),
+};
+
+function zeichneFortschritt() {
+  const liste = $('listFortschritt');
+  if (!liste || !aktiv) return;
+  $('fortschrittDatum').textContent = `${tagName({ datum: fortschrittTag })}, ${kurzDatum(fortschrittTag)}`;
+  const fehlerFeld = $('fortschrittFehler');
+  fehlerFeld.hidden = !fortschrittFehlt;
+  fehlerFeld.textContent = fortschrittFehlt
+    ? t('grp.fs.fehler', 'Die Einträge liessen sich nicht laden. Was hier fehlt, ist unbekannt — nicht untrainiert.')
+    : '';
+
+  const zeilen = fortschrittZeilen({
+    quellen: plaene.map(plan => ({ plan, programm: programmVon(plan) })),
+    mitglieder, datum: fortschrittTag, leitet,
+  });
+  if (!zeilen.length) {
+    liste.innerHTML = `<p class="empty-hint">${escHtml(t('grp.fs.keinPlan', 'An diesem Tag steht für niemanden eine Einheit im Plan.'))}</p>`;
+    return;
+  }
+  const geladen = Array.isArray(fortschrittDaten);
+  const jePerson = new Map((fortschrittDaten || []).map(p => [p.uid, p]));
+  const uhrzeit = am => {
+    const ms = typeof am?.toMillis === 'function' ? am.toMillis() : Number.isFinite(am?.seconds) ? am.seconds * 1000 : 0;
+    return ms ? new Date(ms).toLocaleTimeString(document.documentElement.lang || 'de', { hour: '2-digit', minute: '2-digit' }) : '';
+  };
+
+  liste.innerHTML = zeilen.map(z => {
+    const p = jePerson.get(z.uid) || null;
+    const stand = p ? uhrzeit(p.updatedAt) : '';
+    const einheiten = z.einheiten.map(e => {
+      const status = fortschrittFehlt ? 'unbekannt' : !geladen ? 'laedt' : einheitStatus(e.items, p || {}, e.unit);
+      const f = fortschritt(e.items, p || {}, e.unit);
+      const s = satzFortschritt(e.items, p || {}, e.unit);
+      const zahlen = geladen && !fortschrittFehlt && status !== 'offen'
+        ? [t('grp.fs.uebungen', '{n}/{gesamt} Übungen', { n: f.erledigt, gesamt: f.gesamt }),
+           s.gesamt ? t('grp.fs.saetze', '{n}/{gesamt} Sätze', { n: s.ok, gesamt: s.gesamt }) : ''].filter(Boolean).join(' · ')
+        : '';
+      /* Nur die Notiz für die Leitung — die private liegt, wo nur der Athlet liest. */
+      const notizen = Object.entries(p?.units?.[e.unit]?.items || {})
+        .filter(([, roh]) => String(roh?.note || '').trim())
+        .map(([key, roh]) => `${e.items.find(i => i.key === key)?.name || key}: ${String(roh.note).trim()}`);
+      const ziel = einheitZiel(aktiv.id, e.planId, { unit: e.unit }, fortschrittTag, 'gruppe')
+        + (e.fuer === PLAN_FUER_ALLE && z.uid !== user.uid ? `&a=${encodeURIComponent(z.uid)}` : '');
+      return `
+        <a class="fs-einheit" href="${escHtml(ziel)}">
+          <span class="fs-einheit__titel">${escHtml(e.titel)}</span>
+          <span class="fs-status" data-status="${status}">${escHtml(STATUS[status]())}</span>
+          ${zahlen ? `<span class="fs-einheit__zahlen">${escHtml(zahlen)}</span>` : ''}
+          ${notizen.map(n => `<span class="fs-einheit__notiz">„${escHtml(n)}“</span>`).join('')}
+        </a>`;
+    }).join('');
+    return `
+      <div class="fs-person">
+        <div class="fs-person__kopf">
+          <span class="fs-person__name">${escHtml(z.name || t('grp.einAthlet', 'ein Athlet'))}</span>
+          ${stand ? `<span class="fs-person__stand">${escHtml(t('grp.fs.stand', 'synchronisiert {zeit}', { zeit: stand }))}</span>` : ''}
+        </div>
+        ${einheiten}
+      </div>`;
+  }).join('');
 }
 
 /* ── Die Einstellungen der Gruppe (v.35.60.0) ──────────────────────
@@ -2473,7 +2753,7 @@ function personOeffnen(uid) {
 
 /* ── Gewichte ──────────────────────────────────────────────────────
    Je Übung die letzten Tage, an denen jemand Sätze eingetragen hat:
-   "Kniebeuge vorne — 14. Sept.: 9× 60 kg · 9× 60 kg · 7× 62 kg". Die
+   "Kniebeuge vorne — 14. Sept.: 9 × 60 kg · 9 × 60 kg · 7 × 62 kg". Die
    Namen kommen aus den Plänen der Gruppe, die Werte aus dem Protokoll. */
 async function zeichneGewichte(uid) {
   let liste = [];
@@ -2481,7 +2761,8 @@ async function zeichneGewichte(uid) {
   catch (e) { reportClientError('gruppe/gewichte', e); }
   if (person?.uid !== uid) return;
   const kg = w => (/^\d+([.,]\d+)?$/.test(w) ? `${w} kg` : w);
-  const satz = s => [s.reps && `${s.reps}×`, s.weight && kg(s.weight)].filter(Boolean).join(' ');
+  /* "Wiederholungen × Gewicht", wie im Player (v.35.65.0): "9 × 60 kg". */
+  const satz = s => (s.reps && s.weight ? `${s.reps} × ${kg(s.weight)}` : s.reps ? `${s.reps} Wdh.` : kg(s.weight));
   const tag = d => kurzDatum(d);
   $('listGewichte').innerHTML = liste.slice(0, 12).map(u => `
     <div class="row row--static">
@@ -3334,6 +3615,18 @@ async function einladungZurueckziehen() {
     }
   });
   $('btnPlanAbbrechen')?.addEventListener('click', planFormSchliessen);
+  $('planEmpfaenger')?.addEventListener('change', empfaengerGeaendert);
+  $('planEmpfaenger')?.addEventListener('click', event => {
+    if (event.target.closest('[data-empfaenger-alle]')) empfaengerGeaendert(event);
+  });
+  $('planVorlage')?.addEventListener('change', vorlageGewaehlt);
+  $('planVorlageMontag')?.addEventListener('change', vorlageGewaehlt);
+  $('btnFortschritt')?.addEventListener('click', fortschrittOeffnen);
+  $('btnFortschrittZurueck')?.addEventListener('click', fortschrittSchliessen);
+  $('fortschrittVor')?.addEventListener('click', () => fortschrittTagSetzen(plusTage(fortschrittTag, -1)));
+  $('fortschrittNach')?.addEventListener('click', () => fortschrittTagSetzen(plusTage(fortschrittTag, 1)));
+  $('fortschrittHeute')?.addEventListener('click', () => fortschrittTagSetzen(isoTag()));
+  /* Ein Tipp auf eine Einheit: der Router öffnet einheit.html oben (Falle 18). */
   $('btnPlanSpeichern')?.addEventListener('click', planSpeichern);
   $('planFuer')?.addEventListener('change', planFuerGeaendert);
   for (const id of ['ergRennen', 'ergZeit', 'ergSieger', 'ergZuschlag']) {
