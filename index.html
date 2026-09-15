@@ -22,7 +22,7 @@
   </script>
   <script src="assets/js/theme.js?v=3"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=23" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=24" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="assets/css/feature/access.css?v=2" />
   <title data-i18n="home.seitentitel">Firn</title>
@@ -481,6 +481,14 @@
           <div id="adminUsers"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
         </section>
         <hr class="settings-divider" />
+        <!-- Der Assistent der Gruppen (v.35.55.0): welche Gruppe einen hat.
+             Nur für den Admin — die Gruppen selbst sehen nie, warum. -->
+        <section class="settings-section" id="superAdminKiSection" hidden>
+          <p class="settings-section-title">Assistent der Gruppen</p>
+          <p class="settings-section-copy">Freigeschaltete Gruppen haben einen eigenen Assistenten, den ihre Leitung benennt.</p>
+          <div id="adminKiGruppen"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
+        </section>
+        <hr class="settings-divider" />
         <section class="settings-section" id="superAdminFoodSection">
           <p class="settings-section-title">Food-Anfragen <span id="reqCount" class="role-badge" style="display:none"></span></p>
           <div id="adminFoodRequests"><div class="spinner" data-i18n="common.laden">Lade…</div></div>
@@ -489,13 +497,13 @@
     </div>
   </div>
 
-  <script type="module" src="./assets/js/feature/start/start.js?v=18"></script>
+  <script type="module" src="./assets/js/feature/start/start.js?v=19"></script>
 
   <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
-  <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=11"></script>
+  <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=12"></script>
 
   <!-- ═══ Live dashboard tile content (weather, watchlist, matura, food, calendar) ═══ -->
-  <script type="module" src="./assets/js/feature/start/heute.js?v=14"></script>
-  <script type="module" src="./assets/js/nav.js?v=19"></script>
+  <script type="module" src="./assets/js/feature/start/heute.js?v=15"></script>
+  <script type="module" src="./assets/js/nav.js?v=20"></script>
 </body>
 </html>

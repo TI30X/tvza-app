@@ -83,7 +83,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.54.1**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.55.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -111,7 +111,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-69 Testdateien, **745 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+69 Testdateien, **749 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -662,8 +662,30 @@ cool, wenn Gruppen ihren Assistenten benennen und einen eigenen haben".
   („Coach Maxi"), die Anweisung geht mit jeder Frage mit — im Prompt UNTER
   den Regeln. Die Gruppen kennt die Pille aus der Leiste
   (`window.__firnGruppen`, kein zweites Lesen).
+- **Zwei Assistenten, zwei Freischaltungen** (v.35.55.0). Michel: „der
+  persönliche Assistent sollte sich von der Gruppe unterscheiden — aber wenn
+  die Gruppe dafür zahlt, wird ja extra freigeschaltet, auch wenn jemand
+  privat für Firn zahlt, oder sowie auch für TVZA". **Dein Assistent** (der
+  persönliche, navy): eigene Termine, Erinnerungen, liest die Termine der
+  eigenen Gruppen mit, trägt nur für die Person ein; frei für den TVZA-Kreis
+  und für wen der Admin ihn freischaltet (`users.ki`, Admin → Benutzer,
+  „Persönlicher Assistent"). **Der Assistent der Gruppe** (ihre Farbe, ihr
+  Name): kennt nur diese Gruppe, plant ihre Termine (für die Leitung), darf
+  erinnern; frei für alle Mitglieder, wenn der Admin die Gruppe freischaltet
+  (`groups.ki`, Admin → „Assistent der Gruppen" — die Regel lässt nur den
+  Admin `ki` schreiben, und er darf dafür die Gruppen lesen). Die
+  Werkzeuge je Assistent stehen EINMAL in `ki.js` (`werkzeugeFuer`), der
+  Worker nimmt dieselben. Wer antwortet, entscheidet die Seite (Gruppe →
+  der der Gruppe, sonst der persönliche), oben im Gespräch lässt sich
+  wechseln, jeder hat sein Gespräch. Ohne Freischaltung keine Pille — warum,
+  steht nirgends. Mit `SERVICE_ACCOUNT` prüft der Worker die Freischaltung
+  selbst (`freigabePruefen`, `kreisVon` = `imKreis`, vom Test
+  verglichen); ohne verlässt er sich auf die Pille. Später ersetzt ein
+  Bezahlen das Häkchen des Admins — die Felder bleiben dieselben.
+- **Deep Thinking** heisst die höhere Stufe (Michel), vorher „Gründlich".
 - **Attrappe:** `dev/attrappe/ki.mjs` beantwortet `/__ki-basis/ki` aus
-  Mustern (Erinnerung, Training planen, verschieben) — ohne Gemini.
+  Mustern (Erinnerung, Training planen, verschieben) — ohne Gemini. BSV ist
+  dort freigeschaltet („Coach Maxi"); Lea sieht nur ihn, Michel beide.
 
 Tests: `ki.test.mjs` (Token mit echtem RSA-Schlüssel, Kontingent, Route,
 Kontext, Vorschläge, Gruppe-Tab, kein Schlüssel im Repo).
@@ -680,7 +702,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1024 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1030 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -788,11 +810,14 @@ Zwei Dinge, die leicht übersehen werden:
   v.35.54.0 (Assistent der Gruppe, `assistentGueltig`) Regeln VOR dem Code:
   der neue Code schreibt `groups.assistent`, die alten Regeln lehnen das ab;
   die neuen vertragen den alten Code. Ausgerollt am 15.09.2026.
+  v.35.55.0 (Freischaltung: Admin liest Gruppen und schreibt `groups.ki`)
+  erweitert nur — der alte Code braucht sie nicht, der neue nur fürs
+  Freischalten im Admin. Regeln vor oder mit dem Code.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.54.1: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.55.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

@@ -10,7 +10,7 @@
    beim nächsten Laden auf diese Startdaten zurück. Von Hand:
    attrappeZuruecksetzen() in der Konsole. */
 
-export const VERSION = 7;
+export const VERSION = 8;
 
 export const KONTEN = {
   michel: { email: 'michel@firn.test', name: 'Michel van Zanten' },
@@ -80,6 +80,9 @@ export async function startDaten() {
       name: 'BSV Perspektivkader', art: 'kader', headUid: 'michel',
       bereiche: { termine: true, training: true, video: false, chat: true },
       inviteToken: 'attrappe', createdAt: zeit(-60),
+      /* Der Assistent der Gruppe ist freigeschaltet (v.35.55.0) und hat
+         einen Namen — Lea (nicht im Kreis) sieht nur ihn. */
+      ki: true, assistent: { name: 'Coach Maxi', anweisung: 'Trainings sind meistens in Malbun.' },
     },
     'groups/g1/members/michel': { uid: 'michel', rolle: 'head', seit: zeit(-60) },
     'groups/g1/members/timo': { uid: 'timo', rolle: 'mitglied', seit: zeit(-50) },

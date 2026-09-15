@@ -49,15 +49,71 @@ export function assistentSauber({ name, anweisung } = {}) {
   return n ? { name: n, ...(a ? { anweisung: a } : {}) } : null;
 }
 
+/* ── Zwei Assistenten, zwei Freischaltungen (v.35.55.0) ───────────────
+   Michel: "Der persönliche Assistent sollte sich von der Gruppe
+   unterscheiden — aber wenn die Gruppe dafür zahlt, wird ja extra
+   freigeschaltet, auch wenn jemand privat für Firn zahlt, oder sowie
+   auch für TVZA."
+
+   - Der PERSÖNLICHE kennt die eigenen Termine, Erinnerungen und liest
+     die Termine aller eigenen Gruppen mit — er trägt aber nur für die
+     Person selbst ein (Erinnerung, eigener Termin, Verschieben davon).
+     Frei für den TVZA-Kreis und für wen der Admin ihn freischaltet
+     (users.ki — später, wenn jemand privat für Firn zahlt).
+   - Der der GRUPPE kennt nur diese Gruppe, trägt ihren Namen und ihre
+     Anweisung und plant ihre Termine (für die Leitung). Frei für alle
+     Mitglieder einer freigeschalteten Gruppe (groups.ki — später, wenn
+     die Gruppe zahlt).
+   Warum jemand einen hat oder nicht, steht nirgends. Wer keinen hat,
+   sieht keine Pille. */
+export const ICH = 'ich';
+export const WERKZEUGE_PERSOENLICH = Object.freeze(['erinnerung_eintragen', 'eigenen_termin_eintragen', 'termin_verschieben']);
+export const WERKZEUGE_GRUPPE = Object.freeze(['gruppentermin_eintragen', 'termin_verschieben', 'erinnerung_eintragen']);
+export const werkzeugeFuer = wer => (wer && wer !== ICH ? WERKZEUGE_GRUPPE : WERKZEUGE_PERSOENLICH);
+
+export function persoenlichFrei(profil, kreis = false) {
+  return profil?.ki === true || profil?.isTimo === true || !!kreis;
+}
+
+/** Die Assistenten einer Person: der persönliche, dann einer je
+    freigeschalteter Gruppe. */
+export function assistenten({ profil, kreis = false, gruppen = [], t = (k, f) => f } = {}) {
+  const liste = [];
+  if (persoenlichFrei(profil, kreis)) {
+    liste.push({ wer: ICH, name: t('ki.persoenlich', 'Dein Assistent'), eigen: false, anweisung: '', gruppe: '', persoenlich: true });
+  }
+  for (const g of gruppen) {
+    if (g?.ki === true) liste.push({ wer: g.id, ...assistentVon(g, t), persoenlich: false });
+  }
+  return liste;
+}
+
+/** Wer antwortet: der zuletzt gewählte, in der Gruppe der der Gruppe,
+    sonst der persönliche. */
+export function assistentWaehlen(liste = [], { seite = '', aktiveGid = '', gewaehlt = '' } = {}) {
+  return liste.find(a => a.wer === gewaehlt)
+    || (seite === 'gruppe' && liste.find(a => a.wer === aktiveGid))
+    || liste.find(a => a.wer === ICH)
+    || liste.find(a => a.wer === aktiveGid)
+    || liste[0] || null;
+}
+
 /**
  * Der Kontext für eine Frage — nur die eigenen Daten, nur ein Fenster um
  * heute (eine Woche zurück, zwei Monate vor), gekürzt auf das Nötige.
  */
 export function kontextBauen({
-  jetzt = new Date(), sprache = 'de-CH', seite = '', aktiveGid = '',
+  jetzt = new Date(), sprache = 'de-CH', seite = '', aktiveGid = '', wer = ICH,
   gruppen = [], termine = [], eigene = [], erinnerungen = [],
   leitet = rolle => rolle === 'head' || rolle === 'staff',
 } = {}) {
+  /* Der Assistent einer Gruppe sieht nur sie — keine anderen Gruppen,
+     keine eigenen Termine, keine Erinnerungen. */
+  if (wer !== ICH) {
+    gruppen = gruppen.filter(g => g.id === wer);
+    eigene = [];
+    erinnerungen = [];
+  }
   const heute = iso(jetzt);
   const von = plusTage(heute, -TAGE_ZURUECK);
   const bis = plusTage(heute, TAGE_VOR);
@@ -65,6 +121,7 @@ export function kontextBauen({
   const gruppenIds = new Set(gruppen.map(g => g.id));
 
   return {
+    wer,
     heute,
     wochentag: jetzt.toLocaleDateString(sprache, { weekday: 'long' }),
     zeit: `${String(jetzt.getHours()).padStart(2, '0')}:${String(jetzt.getMinutes()).padStart(2, '0')}`,
@@ -118,6 +175,12 @@ function datumOk(tag, heute) {
  */
 export function aktionPruefen({ name, args = {} } = {}, kontext = {}) {
   const heute = kontext.heute || iso(new Date());
+  const inGruppe = !!kontext.wer && kontext.wer !== ICH;
+  if (!werkzeugeFuer(kontext.wer).includes(name)) {
+    return nein(inGruppe
+      ? 'Das trägt dein persönlicher Assistent ein, nicht der der Gruppe.'
+      : 'Termine einer Gruppe plant der Assistent der Gruppe.');
+  }
   const a = args && typeof args === 'object' ? args : {};
   const titel = kurz(a.titel, 120);
   const zeit = hhmm(a.zeit);
@@ -143,7 +206,7 @@ export function aktionPruefen({ name, args = {} } = {}, kontext = {}) {
 
   if (name === 'gruppentermin_eintragen') {
     const gruppe = (kontext.gruppen || []).find(g => g.id === a.gruppe_id);
-    if (!gruppe) return nein('Diese Gruppe gibt es hier nicht.');
+    if (!gruppe || (inGruppe && gruppe.id !== kontext.wer)) return nein('Diese Gruppe gibt es hier nicht.');
     if (!gruppe.leite) return nein(`In «${gruppe.name}» trägt nur die Leitung ein.`);
     if (!datumOk(a.datum, heute)) return nein('Das Datum passt nicht.');
     const termin = {
@@ -161,6 +224,7 @@ export function aktionPruefen({ name, args = {} } = {}, kontext = {}) {
     if (!datumOk(a.datum, heute)) return nein('Das Datum passt nicht.');
     const bis = istIsoTag(a.bis) && a.bis > a.datum ? a.bis : '';
     const g = (kontext.termine || []).find(e => e.id === id);
+    if (g && !inGruppe) return nein('Termine einer Gruppe verschiebt der Assistent der Gruppe.');
     if (g) {
       const gruppe = (kontext.gruppen || []).find(x => x.id === g.gruppe);
       if (!gruppe?.leite) return nein(`In «${gruppe?.name || 'dieser Gruppe'}» verschiebt nur die Leitung.`);
@@ -228,12 +292,13 @@ export function verlaufKuerzen(verlauf) {
 
 /** Fragt den Worker. Wirft mit { code } bei einem Fehler, den die Pille kennt. */
 export async function fragen({ basis, token, frage, hoch = false, verlauf = [], kontext, assistent, holen = fetch }) {
+  const wer = kontext?.wer || ICH;
   let antwort;
   try {
     antwort = await holen(`${String(basis).replace(/\/+$/, '')}/ki`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-      body: JSON.stringify({ frage, hoch, verlauf: verlaufKuerzen(verlauf), kontext,
+      body: JSON.stringify({ wer, frage, hoch, verlauf: verlaufKuerzen(verlauf), kontext,
         assistent: { name: assistent?.eigen ? assistent.name : '', anweisung: assistent?.anweisung || '',
           gruppe: assistent?.gruppe || '' } }),
     });

@@ -505,6 +505,8 @@ export function mountAppRouter(nav) {
     }
     titelWahlSetzen(titelEl(), basisKopf.wahl, basisKopf.beschriftung);
     tabFolgen(document, null, eigen);
+    /* Wer mitliest (die Pille des Assistenten), erfährt die neue Seite. */
+    dispatchEvent(new CustomEvent('tvza-route'));
   };
 
   /* Einen Rahmen bauen — für einen Wechsel oder im Voraus. Er steht
@@ -592,6 +594,7 @@ export function mountAppRouter(nav) {
     }));
     if (old) wegfuehren(old, direction);
     if (historyMode === 'push') history.pushState({ tvzaRoute:eintrag.url.href }, '', routeKey(eintrag.url));
+    dispatchEvent(new CustomEvent('tvza-route'));
   };
 
   const navigate = (raw, historyMode = 'push') => {

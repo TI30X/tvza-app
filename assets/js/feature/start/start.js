@@ -32,8 +32,8 @@ import {
   doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from '../../shell.js?v=20';
-import { initialsOf } from '../../nav.js?v=19';
+import { ICONS, icon } from '../../shell.js?v=21';
+import { initialsOf } from '../../nav.js?v=20';
 import { frage, meldung } from '../../dialog.js';
 import { gemerktEinloesen } from '../../einladung.js';
 import { meineGruppen, leitet, kontakte } from '../../groups.js';
@@ -798,6 +798,8 @@ function openAdmin() {
   document.getElementById('memberInviteSection').style.display = '';
   document.getElementById('superAdminUserSection').style.display = '';
   document.getElementById('superAdminFoodSection').style.display = '';
+  document.getElementById('superAdminKiSection').hidden = false;
+  void renderAdminKiGruppen();
   loadInviteGroups().then(renderMemberInvites);
   loadAppUsers().then(() => {
     renderAdminUsers();
@@ -1287,6 +1289,13 @@ async function renderAdminUsers() {
           <span class="admin-mod__icon tvza-marke">TVZA</span>
           <span>Im TVZA-Kreis</span>
         </label>
+        <!-- Der persönliche Assistent (v.35.55.0): im Kreis immer dabei,
+             sonst hier einzeln — später, wenn jemand privat für Firn zahlt. -->
+        <label class="admin-mod admin-mod--ki" title="Im TVZA-Kreis immer dabei">
+          <input type="checkbox" data-admin-ki ${u.ki === true || kreis ? 'checked' : ''} ${kreis ? 'disabled' : ''} />
+          <span class="admin-mod__icon"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span>
+          <span>Persönlicher Assistent</span>
+        </label>
         <div class="admin-mods">
           ${Object.values(MODULES).filter(m => manageableModuleKeys.includes(m.key)).map(m => `
             <label class="admin-mod" data-bereich="${BEREICH_OF[m.key] || ''}">
@@ -1312,6 +1321,9 @@ async function renderAdminUsers() {
      anderen Häkchen wirkt. */
   wrap.querySelectorAll('[data-admin-kreis]').forEach(schalter => schalter.addEventListener('change', () => {
     const row = schalter.closest('[data-admin-user]');
+    /* Im Kreis ist der persönliche Assistent dabei — der Schalter zeigt es. */
+    const ki = row.querySelector('[data-admin-ki]');
+    if (ki) { ki.disabled = schalter.checked; if (schalter.checked) ki.checked = true; }
     row.querySelectorAll('[data-admin-allowed]').forEach(cb => {
       if (istTvza(cb.dataset.adminAllowed)) cb.checked = schalter.checked;
     });
@@ -1324,6 +1336,9 @@ async function renderAdminUsers() {
     row.querySelectorAll('[data-admin-allowed]').forEach(cb => allowedModulesNext[cb.dataset.adminAllowed] = cb.checked);
     const isTimo = row.querySelector('[data-admin-timo]').checked;
     const kreis = row.querySelector('[data-admin-kreis]').checked;
+    /* Nur, was der Admin eigens freischaltet; der Kreis bringt ihn ohnehin. */
+    const kiSchalter = row.querySelector('[data-admin-ki]');
+    const ki = !!kiSchalter && !kiSchalter.disabled && kiSchalter.checked;
     if (uid === user.uid && !isTimo) { alert('Du kannst dir selbst den Admin-Zugriff nicht entfernen.'); return; }
     const moduleKeys = manageableModuleKeys;
     const allowedKeys = Object.keys(allowedModulesNext);
@@ -1357,7 +1372,8 @@ async function renderAdminUsers() {
       stapel.update(doc(db, 'users', uid), {
         allowedModules: allowedModulesNext,
         isTimo,
-        kreis
+        kreis,
+        ki
       });
       if (kreis || isTimo) stapel.set(doc(db, 'kreis', uid), { seit: serverTimestamp() });
       else stapel.delete(doc(db, 'kreis', uid));
@@ -1384,6 +1400,43 @@ async function renderAdminUsers() {
         btn.disabled = false;
         btn.textContent = originalLabel;
       }
+    }
+  }));
+}
+
+/* ════ Admin · Assistent der Gruppen (v.35.55.0) ═════════════════
+   Michel: "wenn die Gruppe dafür zahlt, wird ja extra freigeschaltet".
+   Bis es ein Bezahlen gibt, schaltet der Admin frei: groups.ki. Die
+   Regel lässt das nur ihn schreiben, nie die Leitung der Gruppe. */
+async function renderAdminKiGruppen() {
+  if (profile.isTimo !== true) return;
+  const wrap = document.getElementById('adminKiGruppen');
+  let gruppen = [];
+  try {
+    const snap = await getDocs(collection(db, 'groups'));
+    gruppen = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de'));
+  } catch (error) {
+    reportClientError('admin-ki-gruppen', error);
+    wrap.innerHTML = '<p class="settings-section-copy">Die Gruppen liessen sich nicht laden.</p>';
+    return;
+  }
+  if (!gruppen.length) { wrap.innerHTML = '<p class="settings-section-copy">Noch keine Gruppen.</p>'; return; }
+  wrap.innerHTML = gruppen.map(g => `
+    <label class="admin-mod admin-mod--ki">
+      <input type="checkbox" data-admin-ki-gruppe="${escHtml(g.id)}" ${g.ki === true ? 'checked' : ''} />
+      <span class="admin-mod__icon"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span>
+      <span>${escHtml(g.name || 'Ohne Namen')}${g.assistent?.name ? ` · ${escHtml(g.assistent.name)}` : ''}</span>
+    </label>`).join('');
+  wrap.querySelectorAll('[data-admin-ki-gruppe]').forEach(schalter => schalter.addEventListener('change', async () => {
+    schalter.disabled = true;
+    try {
+      await updateDoc(doc(db, 'groups', schalter.dataset.adminKiGruppe), { ki: schalter.checked });
+    } catch (error) {
+      reportClientError('admin-ki-gruppe', error);
+      schalter.checked = !schalter.checked;
+    } finally {
+      schalter.disabled = false;
     }
   }));
 }

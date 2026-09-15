@@ -1,32 +1,37 @@
 /* ══════════════════════════════════════════════════════════════════
-   Die Pille — der Assistent, der überall ist (v.35.53.0).
+   Die Pille — der Assistent, der überall ist (v.35.53.0, v.35.55.0).
 
    Michel: "nicht eine eigene Tabelle, sondern wie eine fliegende Pille,
-   die überall ist" — und: "wäre cool, wenn Gruppen die Möglichkeit
-   hätten, ihren Assistenten zu benennen und einen eigenen zu haben".
+   die überall ist" — "wäre cool, wenn Gruppen die Möglichkeit hätten,
+   ihren Assistenten zu benennen und einen eigenen zu haben" — und: "der
+   persönliche Assistent sollte sich von der Gruppe unterscheiden".
 
    Die Pille schwebt über jeder Seite der App (nur im obersten Dokument,
-   nie in einem Rahmen des Routers — sonst stünde sie doppelt da). Sie
-   trägt den Namen des Assistenten der aktiven Gruppe ("Coach Maxi"),
-   ohne eigenen Namen "Assistent". Ein Tipp öffnet das Gespräch: am Handy
-   als Blatt über der Leiste, am Laptop als Spalte rechts.
+   nie in einem Rahmen des Routers — sonst stünde sie doppelt da). Hinter
+   ihr stehen bis zu zwei Arten von Assistenten (ki.js, assistenten()):
+   - "Dein Assistent", der persönliche — navy, wie die Leiste;
+   - der der Gruppe, mit ihrem Namen ("Coach Maxi") und in ihrer Farbe.
+   Welcher antwortet, entscheidet die Seite (in der Gruppe der der
+   Gruppe, sonst der persönliche); oben im Gespräch lässt sich wechseln.
+   Jeder hat sein eigenes Gespräch. Wer keinen freigeschaltet hat, sieht
+   keine Pille — und nirgends steht, warum.
 
    Was hier passiert:
-   - Kontext laden: die eigenen Gruppen, deren Termine, die eigenen
-     Termine und Erinnerungen — mit den Rechten der Person, fünf Minuten
-     gemerkt (ki.js entscheidet, was davon mitgeht).
+   - Kontext laden: nur, was DIESER Assistent kennen darf, mit den Rechten
+     der Person, fünf Minuten gemerkt (ki.js entscheidet, was mitgeht).
    - Fragen: an den Worker (worker/ki.js), mit dem ID-Token. Der
      Gemini-Schlüssel ist nie hier.
-   - Vorschläge: jede Aktion des Assistenten wird geprüft
-     (aktionPruefen) und als Karte gezeigt. Erst "Eintragen" schreibt.
+   - Vorschläge: jede Aktion wird geprüft (aktionPruefen) und als Karte
+     gezeigt. Erst "Eintragen" schreibt.
    Ohne Worker-Adresse gibt es die Pille nicht.
    ══════════════════════════════════════════════════════════════════ */
 
-import { auth, db, reportClientError } from './firebase-config.js';
+import { auth, db, reportClientError, imKreis } from './firebase-config.js';
 import { WORKER_BASIS } from './worker-config.js';
 import {
-  assistentVon, kontextBauen, aktionPruefen, aktionZeile, fragen, fehlerText,
+  assistenten, assistentWaehlen, kontextBauen, aktionPruefen, aktionZeile, fragen, fehlerText,
 } from './ki.js';
+import { gruppenStil, kuerzel } from './gruppenwahl.js';
 import {
   collection, doc, getDocs, addDoc, updateDoc, query, where, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -49,34 +54,87 @@ const ZU = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidd
 
 let pille = null;
 let blatt = null;
-let verlauf = [];
-let vorrat = null;          // { am, kontext, gruppen }
-let hochUebrig = null;
 let arbeitet = false;
+let hochUebrig = null;
+/* Das Gespräch des Assistenten, der gerade antwortet — die anderen
+   liegen in gespraeche und kommen beim Zurückwechseln wieder. */
+let aktuell = null;          // der Assistent (aus assistenten())
+let verlauf = [];
+const gespraeche = new Map(); // wer -> { verlauf, html }
+const vorraete = new Map();   // wer -> { am, kontext }
+let gewaehlt = '';            // oben gewechselt; gilt bis zur nächsten Seite
 
-/* ── Welche Gruppe, welcher Assistent ──────────────────────────────── */
+/* ── Welche Assistenten, welcher antwortet ─────────────────────────── */
 
 function gruppenJetzt() {
-  return Array.isArray(window.__firnGruppen) ? window.__firnGruppen : (vorrat?.gruppen || []);
+  return Array.isArray(window.__firnGruppen) ? window.__firnGruppen : [];
 }
-function aktiveGruppe(gruppen = gruppenJetzt()) {
+function aktiveGid(gruppen = gruppenJetzt()) {
   let gemerkt = '';
   try { gemerkt = localStorage.getItem('firn.gruppe') || ''; } catch {}
-  return gruppen.find(g => g.id === gemerkt) || gruppen[0] || null;
+  return (gruppen.find(g => g.id === gemerkt) || gruppen[0])?.id || '';
 }
-const assistent = () => assistentVon(aktiveGruppe(), t);
+const seiteJetzt = () => (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '');
+
+function alleAssistenten() {
+  const profil = window.__firnProfil || null;
+  return assistenten({ profil, kreis: profil ? imKreis(profil) : false, gruppen: gruppenJetzt(), t });
+}
+const waehlen = liste => assistentWaehlen(liste, { seite: seiteJetzt(), aktiveGid: aktiveGid(), gewaehlt });
+
+function farbeSetzen(el, a) {
+  if (!el) return;
+  el.style.cssText = a && !a.persoenlich ? gruppenStil(gruppenJetzt())(a.wer) : '';
+  el.classList.toggle('is-gruppe', !!a && !a.persoenlich);
+}
 
 function beschriften() {
   if (!pille) return;
-  const a = assistent();
+  const liste = alleAssistenten();
+  const a = waehlen(liste);
+  /* Kein Assistent freigeschaltet: keine Pille, kein Hinweis. */
+  pille.hidden = !a;
+  if (!a) { if (blatt && !blatt.hidden) schliessen(); return; }
   pille.querySelector('.ki-pille__name').textContent = a.name;
   pille.setAttribute('aria-label', t('ki.oeffnen', '{name} fragen', { name: a.name }));
-  pille.classList.toggle('ki-pille--eigen', a.eigen);
+  farbeSetzen(pille, a);
   if (blatt) {
     blatt.querySelector('.ki-blatt__name').textContent = a.name;
-    blatt.querySelector('.ki-blatt__unter').textContent = a.gruppe;
+    blatt.querySelector('.ki-blatt__unter').textContent = a.persoenlich ? t('ki.nurDu', 'Nur für dich') : a.gruppe;
     blatt.querySelector('.ki-feld').placeholder = t('ki.feldPh', '{name} fragen …', { name: a.name });
+    farbeSetzen(blatt.querySelector('.ki-blatt__zeichen'), a);
+    wahlZeigen(liste, a);
   }
+  wechselZu(a);
+}
+
+/* Jeder Assistent hat sein Gespräch: beim Wechsel wird das alte
+   weggelegt und das neue (oder eine Begrüssung) hergeholt. */
+function wechselZu(a) {
+  if (aktuell?.wer === a.wer) { aktuell = a; return; }
+  const liste = blatt?.querySelector('.ki-verlauf');
+  if (aktuell && liste) gespraeche.set(aktuell.wer, { verlauf, html: liste.innerHTML });
+  aktuell = a;
+  const g = gespraeche.get(a.wer);
+  verlauf = g?.verlauf || [];
+  if (liste) {
+    liste.innerHTML = g?.html || '';
+    if (!blatt.hidden && !verlauf.length && !liste.childElementCount) begruessen();
+    else vorschlaegeZeigen(!verlauf.length);
+  }
+}
+
+function wahlZeigen(liste, a) {
+  const wahl = blatt.querySelector('.ki-wahl');
+  wahl.hidden = liste.length < 2;
+  if (liste.length < 2) { wahl.innerHTML = ''; return; }
+  const stil = gruppenStil(gruppenJetzt());
+  wahl.innerHTML = liste.map(x => `
+    <button class="ki-wahl__knopf${x.persoenlich ? '' : ' is-gruppe'}" type="button" data-wer="${esc(x.wer)}"
+            aria-pressed="${x.wer === a.wer}"${x.persoenlich ? '' : ` style="${esc(stil(x.wer))}"`}>
+      <span class="ki-wahl__zeichen" aria-hidden="true">${x.persoenlich ? FUNKE : esc(kuerzel(x.gruppe))}</span>
+      <span>${esc(x.name)}</span>
+    </button>`).join('');
 }
 
 /* ── Die Pille ─────────────────────────────────────────────────────── */
@@ -91,18 +149,21 @@ export function pilleZeigen() {
   pille = document.createElement('button');
   pille.type = 'button';
   pille.className = 'ki-pille';
+  pille.hidden = true;
   pille.innerHTML = `${FUNKE}<span class="ki-pille__name"></span>`;
   pille.addEventListener('click', () => (blatt && !blatt.hidden ? schliessen() : oeffnen()));
   document.body.appendChild(pille);
-  beschriften();
 
-  window.addEventListener('firn-gruppe', beschriften);
-  window.addEventListener('firn-gruppen', beschriften);
+  for (const ereignis of ['firn-gruppe', 'firn-gruppen', 'firn-profil']) window.addEventListener(ereignis, beschriften);
+  /* Eine neue Seite entscheidet neu, wer antwortet. */
+  window.addEventListener('tvza-route', () => { gewaehlt = ''; beschriften(); });
+  window.addEventListener('popstate', () => { gewaehlt = ''; beschriften(); });
   /* Eine andere Seite (die Gruppe im Rahmen) hat etwas geändert — etwa
      den Namen des Assistenten: der Vorrat ist alt. */
   window.addEventListener('storage', e => {
-    if (e.key === STAND) { vorrat = null; beschriften(); }
+    if (e.key === STAND) { vorraete.clear(); beschriften(); }
   });
+  beschriften();
   return pille;
 }
 
@@ -123,6 +184,7 @@ function blattBauen() {
       </div>
       <button class="ki-blatt__zu" type="button" aria-label="${esc(t('common.schliessen', 'Schliessen'))}">${ZU}</button>
     </header>
+    <div class="ki-wahl" hidden></div>
     <div class="ki-verlauf" aria-live="polite"></div>
     <div class="ki-vorschlaege"></div>
     <form class="ki-eingabe">
@@ -131,7 +193,7 @@ function blattBauen() {
     </form>
     <label class="ki-stufe">
       <input type="checkbox" class="ki-stufe__haken" />
-      <span>${esc(t('ki.gruendlich', 'Gründlich'))}</span>
+      <span>${esc(t('ki.gruendlich', 'Deep Thinking'))}</span>
       <span class="ki-stufe__rest"></span>
     </label>`;
   document.body.appendChild(blatt);
@@ -139,8 +201,7 @@ function blattBauen() {
   blatt.querySelector('.ki-blatt__zu').addEventListener('click', schliessen);
   blatt.addEventListener('keydown', e => { if (e.key === 'Escape') schliessen(); });
   const feld = blatt.querySelector('.ki-feld');
-  const form = blatt.querySelector('.ki-eingabe');
-  form.addEventListener('submit', e => { e.preventDefault(); senden(feld.value); });
+  blatt.querySelector('.ki-eingabe').addEventListener('submit', e => { e.preventDefault(); senden(feld.value); });
   feld.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); senden(feld.value); }
   });
@@ -148,6 +209,13 @@ function blattBauen() {
   blatt.querySelector('.ki-vorschlaege').addEventListener('click', e => {
     const v = e.target.closest('[data-vorschlag]');
     if (v) senden(v.dataset.vorschlag);
+  });
+  blatt.querySelector('.ki-wahl').addEventListener('click', e => {
+    const k = e.target.closest('[data-wer]');
+    if (!k || arbeitet) return;
+    gewaehlt = k.dataset.wer;
+    beschriften();
+    feld.focus();
   });
   blatt.querySelector('.ki-verlauf').addEventListener('click', kartenKlick);
   stufeZeigen();
@@ -159,7 +227,7 @@ function oeffnen() {
   blatt.hidden = false;
   document.body.classList.add('ki-offen');
   pille.setAttribute('aria-expanded', 'true');
-  if (!verlauf.length) begruessen();
+  if (!verlauf.length && !blatt.querySelector('.ki-verlauf').childElementCount) begruessen();
   blatt.querySelector('.ki-feld').focus();
 }
 
@@ -180,22 +248,26 @@ function begruessen() {
       'Deine Fragen gehen mit deinen Terminen an Google Gemini. Schreib nichts hinein, das niemand lesen soll.'))}</p>`);
     try { localStorage.setItem(HINWEIS, '1'); } catch {}
   }
-  const a = assistent();
-  /* Ohne eigenen Namen nicht 'Ich bin Assistent' — das liest sich wie ein Formular. */
-  nachricht('ki', a.eigen
-    ? t('ki.hallo', 'Hallo! Ich bin {name}. Ich kann Termine, Trainings und Erinnerungen für dich eintragen, verschieben oder planen — frag einfach.', { name: a.name })
-    : t('ki.halloStandard', 'Hallo! Ich kann Termine, Trainings und Erinnerungen für dich eintragen, verschieben oder planen — frag einfach.'));
-  vorschlaegeZeigen();
+  const a = aktuell;
+  if (!a) return;
+  nachricht('ki', a.persoenlich
+    ? t('ki.halloIch', 'Hallo! Ich bin dein persönlicher Assistent. Ich trage dir Erinnerungen und eigene Termine ein, verschiebe sie und sage dir, was ansteht — auch in deinen Gruppen.')
+    : a.eigen
+      ? t('ki.halloGruppe', 'Hallo! Ich bin {name}, der Assistent von «{gruppe}». Ich kenne die Termine der Gruppe und plane Trainings, Lager und Rennen.', { name: a.name, gruppe: a.gruppe })
+      : t('ki.halloGruppeStandard', 'Hallo! Ich bin der Assistent von «{gruppe}». Ich kenne die Termine der Gruppe und plane Trainings, Lager und Rennen.', { gruppe: a.gruppe }));
+  vorschlaegeZeigen(true);
 }
 
-function vorschlaegeZeigen() {
-  const leite = gruppenJetzt().some(g => g.meineRolle === 'head' || g.meineRolle === 'staff');
-  const liste = [
-    t('ki.v.woche', 'Was steht diese Woche an?'),
-    t('ki.v.erinnerung', 'Erinnere mich morgen um 18 Uhr ans Packen'),
-    ...(leite ? [t('ki.v.training', 'Plane nächste Woche zwei Trainings')] : []),
-  ];
-  blatt.querySelector('.ki-vorschlaege').innerHTML = liste.map(v =>
+function vorschlaegeZeigen(zeigen = true) {
+  const feld = blatt.querySelector('.ki-vorschlaege');
+  if (!zeigen || !aktuell) { feld.innerHTML = ''; return; }
+  const gruppe = gruppenJetzt().find(g => g.id === aktuell.wer);
+  const leite = gruppe && (gruppe.meineRolle === 'head' || gruppe.meineRolle === 'staff');
+  const liste = aktuell.persoenlich
+    ? [t('ki.v.woche', 'Was steht diese Woche an?'), t('ki.v.erinnerung', 'Erinnere mich morgen um 18 Uhr ans Packen')]
+    : [t('ki.v.gruppeWoche', 'Was steht in der Gruppe diese Woche an?'),
+      ...(leite ? [t('ki.v.training', 'Plane nächste Woche zwei Trainings')] : [])];
+  feld.innerHTML = liste.map(v =>
     `<button class="ki-vorschlag" type="button" data-vorschlag="${esc(v)}">${esc(v)}</button>`).join('');
 }
 
@@ -218,41 +290,42 @@ function stufeZeigen() {
   haken.disabled = hochUebrig === 0;
 }
 
-/* ── Kontext ───────────────────────────────────────────────────────── */
+/* ── Kontext: nur, was dieser Assistent kennen darf ────────────────── */
 
-async function kontextLaden() {
-  if (vorrat && Date.now() - vorrat.am < VORRAT_MS) return vorrat;
+async function kontextLaden(a) {
+  const vorrat = vorraete.get(a.wer);
+  if (vorrat && Date.now() - vorrat.am < VORRAT_MS) return vorrat.kontext;
   const uid = auth.currentUser?.uid;
   const groups = await import('./groups.js');
-  const gruppen = await groups.meineGruppen(uid).catch(() => gruppenJetzt());
+  const alle = await groups.meineGruppen(uid).catch(() => gruppenJetzt());
+  const gruppen = a.persoenlich ? alle : alle.filter(g => g.id === a.wer);
   const [jeGruppe, eigene, erinnerungen] = await Promise.all([
     Promise.all(gruppen.map(g => groups.ladeTermine(g.id)
       .then(liste => liste.map(e => ({ ...e, gid: g.id }))).catch(() => []))),
-    getDocs(query(collection(db, 'calendarDays'), where('ownerUid', '==', uid)))
-      .then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
-    getDocs(collection(db, 'users', uid, 'reminders'))
-      .then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []),
+    a.persoenlich ? getDocs(query(collection(db, 'calendarDays'), where('ownerUid', '==', uid)))
+      .then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []) : [],
+    a.persoenlich ? getDocs(collection(db, 'users', uid, 'reminders'))
+      .then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []) : [],
   ]);
-  const seite = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '');
   const kontext = kontextBauen({
-    jetzt: new Date(), sprache: document.documentElement.lang || 'de-CH', seite,
-    aktiveGid: aktiveGruppe(gruppen)?.id || '', gruppen, termine: jeGruppe.flat(), eigene, erinnerungen,
+    jetzt: new Date(), sprache: document.documentElement.lang || 'de-CH', seite: seiteJetzt(),
+    aktiveGid: aktiveGid(alle), wer: a.wer, gruppen, termine: jeGruppe.flat(), eigene, erinnerungen,
     leitet: groups.leitet,
   });
-  vorrat = { am: Date.now(), kontext, gruppen };
-  beschriften();
-  return vorrat;
+  vorraete.set(a.wer, { am: Date.now(), kontext });
+  return kontext;
 }
 
 /* ── Fragen ────────────────────────────────────────────────────────── */
 
 async function senden(roh) {
   const frage = String(roh || '').trim();
-  if (!frage || arbeitet) return;
+  const a = aktuell;
+  if (!frage || arbeitet || !a) return;
   const feld = blatt.querySelector('.ki-feld');
   feld.value = '';
   feld.style.height = 'auto';
-  blatt.querySelector('.ki-vorschlaege').innerHTML = '';
+  vorschlaegeZeigen(false);
   nachricht('ich', frage);
   const warten = nachricht('ki', t('ki.denkt', 'Denkt nach …'));
   warten.classList.add('ki-nachricht--warten');
@@ -260,18 +333,16 @@ async function senden(roh) {
   blatt.classList.add('is-arbeitet');
   const hoch = blatt.querySelector('.ki-stufe__haken').checked;
   try {
-    const { kontext, gruppen } = await kontextLaden();
+    const kontext = await kontextLaden(a);
     const token = await auth.currentUser.getIdToken();
-    const antwort = await fragen({
-      basis: kiBasis(), token, frage, hoch, verlauf, kontext, assistent: assistentVon(aktiveGruppe(gruppen), t),
-    });
+    const antwort = await fragen({ basis: kiBasis(), token, frage, hoch, verlauf, kontext, assistent: a });
     warten.remove();
     verlauf.push({ rolle: 'nutzer', text: frage });
     const text = antwort.text || (antwort.aktionen.length ? t('ki.vorschlag', 'Hier ist mein Vorschlag:') : '…');
     nachricht('ki', text);
     verlauf.push({ rolle: 'assistent', text });
     if (antwort.hochUebrig !== null) hochUebrig = antwort.hochUebrig;
-    if (antwort.hochAufgebraucht) nachricht('info', t('ki.hochAus', 'Gründlich geht heute nicht mehr — die Antwort kommt von der schnellen Stufe.'));
+    if (antwort.hochAufgebraucht) nachricht('info', t('ki.hochAus', 'Deep Thinking geht heute nicht mehr — die Antwort kommt von der schnellen Stufe.'));
     stufeZeigen();
     for (const aktion of antwort.aktionen) karteZeigen(aktionPruefen(aktion, kontext));
   } catch (e) {
@@ -369,6 +440,7 @@ export async function ausfuehren(pruefung, { uid = auth.currentUser?.uid } = {})
   }
   /* Der Vorrat ist alt, und die anderen Seiten (Kalender, Gruppe im
      Rahmen) erfahren es über 'storage'. */
-  vorrat = null;
+  vorraete.clear();
   try { localStorage.setItem(STAND, String(Date.now())); } catch {}
 }
+

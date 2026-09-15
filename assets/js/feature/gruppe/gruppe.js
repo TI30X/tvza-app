@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError, imKreis }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=20';
+import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=21';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -807,6 +807,11 @@ function zeichneAssistent() {
   const name = $('assistentName');
   const anweisung = $('assistentAnweisung');
   if (!name || !anweisung) return;
+  /* Nur, wenn die Gruppe einen Assistenten hat (groups.ki, v.35.55.0) —
+     sonst gibt es nichts zu benennen, und warum nicht, steht nirgends. */
+  const einst = $('assistentEinst');
+  if (einst) einst.hidden = aktiv?.ki !== true;
+  if (aktiv?.ki !== true) return;
   /* Nicht überschreiben, was gerade jemand tippt. */
   if (document.activeElement !== name) name.value = aktiv?.assistent?.name || '';
   if (document.activeElement !== anweisung) anweisung.value = aktiv?.assistent?.anweisung || '';

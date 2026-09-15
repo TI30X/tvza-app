@@ -3719,3 +3719,51 @@ body.settings-layer-open .ki-pille { display: none; }
   .ki-pille { transition: none; }
   .ki-nachricht--warten { animation: none; }
 }
+
+/* Der Assistent einer Gruppe trägt ihre Farbe (v.35.55.0) — der
+   persönliche bleibt navy. --tint und --deep kommen aus gruppenStil()
+   (gruppenwahl.js), dieselben wie im Kalender und im Gruppenwechsel. */
+.ki-pille.is-gruppe,
+.ki-blatt__zeichen.is-gruppe {
+  background: var(--tint);
+  color: var(--deep);
+  border-color: transparent;
+}
+.ki-pille.is-gruppe .ic,
+.ki-blatt__zeichen.is-gruppe { color: var(--deep); }
+
+.ki-wahl {
+  display: flex;
+  gap: var(--s2);
+  padding: var(--s2) var(--s4) 0;
+  overflow-x: auto;
+}
+.ki-wahl__knopf {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: none;
+  padding: var(--s1) var(--s3) var(--s1) var(--s1);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ki-wahl__knopf[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-bg); }
+.ki-wahl__zeichen {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-pill);
+  background: var(--brand-gradient);
+  color: #ffd27a;
+  font-size: 10px;
+  font-weight: 800;
+}
+.ki-wahl__zeichen .ic { width: 14px; height: 14px; }
+.ki-wahl__knopf.is-gruppe .ki-wahl__zeichen { background: var(--tint); color: var(--deep); }

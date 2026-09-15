@@ -28,6 +28,8 @@
    ══════════════════════════════════════════════════════════════════ */
 
 import { ARTEN } from '../assets/js/termine.js';
+import { ICH, werkzeugeFuer } from '../assets/js/ki.js';
+import { leseDokument } from './firestore.js';
 
 export const STANDARD = Object.freeze({
   /* Die tiefe Stufe: schnell, günstig, reicht für "trag mir morgen um
@@ -100,6 +102,36 @@ export async function idTokenPruefen(token, projekt, { jetzt = Date.now(), schlu
      der Assistent ist für Konten. */
   if (inhalt.firebase?.sign_in_provider === 'anonymous' || !inhalt.email) throw new Error('kein Konto');
   return { uid: inhalt.sub, email: inhalt.email };
+}
+
+/* ── Wer welchen Assistenten hat (v.35.55.0) ─────────────────────────
+   Dieselbe Regel wie im Browser (ki.js, persoenlichFrei): der persönliche
+   für den TVZA-Kreis und für wen der Admin ihn freischaltet (users.ki),
+   der einer Gruppe für die Mitglieder einer freigeschalteten Gruppe
+   (groups.ki). Nachgeprüft wird hier nur, wenn der Worker den
+   Service-Account hat (Kalender-Abo) — ohne ihn kann er Firestore nicht
+   lesen und verlässt sich auf die Pille, die ohne Freischaltung gar nicht
+   erscheint. Kosten entstehen so oder so keine. */
+
+/* Wie imKreis() in firebase-config.js, das der Worker nicht laden kann
+   (es holt Firebase aus dem Netz). ki.test.mjs vergleicht beide an
+   denselben Profilen — läuft die Liste auseinander, fällt der Test. */
+export const TVZA_BEREICHE = Object.freeze(['matura', 'maturatracker', 'food', 'watch', 'projects']);
+const TVZA_STANDARD = Object.freeze({ food: true, watch: true });
+export function kreisVon(profil) {
+  if (profil?.isTimo === true || profil?.kreis === true) return true;
+  if (profil?.kreis === false) return false;
+  const frei = { ...TVZA_STANDARD, ...(profil?.allowedModules || {}) };
+  return TVZA_BEREICHE.some(key => frei[key] === true);
+}
+
+export async function freigabePruefen({ uid, wer, lesen }) {
+  if (wer === ICH) {
+    const profil = await lesen(`users/${uid}`);
+    return !!profil && (profil.ki === true || kreisVon(profil));
+  }
+  const [gruppe, mitglied] = await Promise.all([lesen(`groups/${wer}`), lesen(`groups/${wer}/members/${uid}`)]);
+  return !!gruppe && gruppe.ki === true && !!mitglied;
 }
 
 /* ── Wie viel noch geht ────────────────────────────────────────────── */
@@ -187,25 +219,31 @@ export function anfrageLesen(koerper) {
     .filter(v => v && (v.rolle === 'nutzer' || v.rolle === 'assistent') && String(v.text || '').trim())
     .map(v => ({ rolle: v.rolle, text: kurz(v.text, GRENZEN.verlaufText) }));
   const a = koerper.assistent && typeof koerper.assistent === 'object' ? koerper.assistent : {};
+  const wer = koerper.wer === undefined || koerper.wer === ICH ? ICH : String(koerper.wer);
+  if (wer !== ICH && !/^[A-Za-z0-9_-]{1,64}$/.test(wer)) throw new Error('wer');
   return {
-    frage, kontext, verlauf, hoch: koerper.hoch === true,
+    wer, frage, kontext: { ...kontext, wer }, verlauf, hoch: koerper.hoch === true,
     assistent: { name: kurz(a.name, GRENZEN.name).trim(), anweisung: kurz(a.anweisung, GRENZEN.anweisung).trim(),
       gruppe: kurz(a.gruppe, 80).trim() },
   };
 }
 
 export function systemAnweisung({ assistent = {}, kontext = {} }) {
+  const inGruppe = !!kontext.wer && kontext.wer !== ICH;
   const name = assistent.name || 'der Assistent';
   const zeilen = [
-    `Du bist ${name}, der Assistent in der App Firn${assistent.gruppe ? ` für die Gruppe «${assistent.gruppe}»` : ''}.`,
-    'Du hilfst einer einzelnen Person beim Planen: Termine, Trainings, Lager, Rennen und Erinnerungen.',
+    inGruppe
+      ? `Du bist ${name}, der Assistent der Gruppe «${assistent.gruppe || 'Gruppe'}» in der App Firn. Du kennst nur diese Gruppe und planst ihre Termine, Trainings, Lager und Rennen.`
+      : 'Du bist der persönliche Assistent dieser Person in der App Firn. Du kennst ihre eigenen Termine und Erinnerungen und siehst die Termine ihrer Gruppen — eintragen tust du aber nur für sie selbst. Termine in eine Gruppe plant der Assistent der Gruppe; sag das, wenn jemand danach fragt.',
+    'Du hilfst einer einzelnen Person beim Planen.',
     `Heute ist ${kontext.heute || 'unbekannt'} (${kontext.wochentag || ''}), es ist ${kontext.zeit || ''} Uhr.`,
     'Du kennst NUR die Daten im Kontext unten — die dieser Person. Erfinde keine Termine und keine Personen.',
     'Soll etwas eingetragen, geplant, übertragen oder verschoben werden, rufe das passende Werkzeug auf — '
       + 'für mehrere Termine mehrmals. Die Person bestätigt jeden Vorschlag selbst; sag also nie, etwas sei schon '
       + 'eingetragen, sondern z.B. "Hier ist der Vorschlag".',
-    'Gruppentermine nur in Gruppen mit leite=true. Leitet die Person die Gruppe nicht, schlage stattdessen einen '
-      + 'eigenen Termin oder eine Erinnerung vor und sag warum.',
+    inGruppe
+      ? 'Gruppentermine nur, wenn leite=true. Leitet die Person die Gruppe nicht, sag, dass nur die Leitung einträgt, und schlage höchstens eine Erinnerung vor.'
+      : 'Eigene Termine und Erinnerungen darfst du vorschlagen; Gruppentermine nicht.',
     'Datum immer als JJJJ-MM-TT, Zeit als HH:MM. Ohne genannte Uhrzeit keine erfinden.',
     'Antworte kurz, freundlich und in der Sprache der Frage. Keine Überschriften, höchstens kurze Listen.',
   ];
@@ -224,16 +262,17 @@ export function geminiKoerper({ frage, verlauf = [], kontext = {}, assistent = {
       ...verlauf.map(v => ({ role: v.rolle === 'assistent' ? 'model' : 'user', parts: [{ text: v.text }] })),
       { role: 'user', parts: [{ text: frage }] },
     ],
-    tools: [{ functionDeclarations: WERKZEUGE }],
+    tools: [{ functionDeclarations: WERKZEUGE.filter(w => werkzeugeFuer(kontext.wer).includes(w.name)) }],
     generationConfig: { temperature: 0.3, maxOutputTokens: hoch ? 4096 : 1024 },
   };
 }
 
-/** Text und Vorschläge aus der Antwort — Gedanken des Modells fallen weg. */
-export function antwortLesen(json) {
+/** Text und Vorschläge aus der Antwort — Gedanken des Modells fallen weg,
+    und nur die Werkzeuge dieses Assistenten zählen. */
+export function antwortLesen(json, wer = ICH) {
   const teile = json?.candidates?.[0]?.content?.parts || [];
   const text = teile.filter(t => typeof t.text === 'string' && !t.thought).map(t => t.text).join('').trim();
-  const namen = new Set(WERKZEUGE.map(w => w.name));
+  const namen = new Set(werkzeugeFuer(wer));
   const aktionen = teile.map(t => t.functionCall).filter(f => f && namen.has(f.name))
     .slice(0, 12).map(f => ({ name: f.name, args: f.args && typeof f.args === 'object' ? f.args : {} }));
   return { text, aktionen };
@@ -271,7 +310,7 @@ async function gemini(modell, koerper, schluessel, holen) {
 /**
  * POST /ki. `hilfen` ersetzt im Test Netz, Uhr und Schlüssel von Google.
  */
-export async function kiAnfrage(request, env, { holen = fetch, jetzt = Date.now(), schluessel } = {}) {
+export async function kiAnfrage(request, env, { holen = fetch, jetzt = Date.now(), schluessel, lesen: hilfenLesen } = {}) {
   const kopf = corsKopf(request, env);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: kopf });
   if (request.method !== 'POST') return alsJson({ fehler: 'methode' }, 405, kopf);
@@ -292,6 +331,19 @@ export async function kiAnfrage(request, env, { holen = fetch, jetzt = Date.now(
     anfrage = anfrageLesen(JSON.parse(roh));
   } catch {
     return alsJson({ fehler: 'anfrage' }, 400, kopf);
+  }
+
+  /* Mit Service-Account: nachsehen, ob die Person diesen Assistenten hat. */
+  if (env.SERVICE_ACCOUNT) {
+    let frei = false;
+    try {
+      const konto = JSON.parse(env.SERVICE_ACCOUNT);
+      const lesen = pfad => (hilfenLesen || (p => leseDokument({ projekt: env.FIREBASE_PROJECT_ID, konto }, p)))(pfad);
+      frei = await freigabePruefen({ uid: wer.uid, wer: anfrage.wer, lesen });
+    } catch (fehler) {
+      console.error('[ki] freigabe', fehler?.message || fehler);
+    }
+    if (!frei) return alsJson({ fehler: 'nicht-frei' }, 403, kopf);
   }
 
   const u = umgebung(env);
@@ -317,7 +369,7 @@ export async function kiAnfrage(request, env, { holen = fetch, jetzt = Date.now(
     console.error('[ki] gemini', antwort.status);
     return alsJson({ fehler: antwort.status === 429 ? 'gemini-voll' : 'gemini' }, 502, kopf);
   }
-  const ergebnis = antwortLesen(await antwort.json());
+  const ergebnis = antwortLesen(await antwort.json(), anfrage.wer);
 
   const neu = { n: (Number(stand?.n) || 0) + (hoch ? 0 : 1), h: (Number(stand?.h) || 0) + (hoch ? 1 : 0) };
   await Promise.all([

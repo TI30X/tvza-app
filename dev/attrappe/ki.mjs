@@ -50,10 +50,15 @@ export function kiAttrappe(koerper = {}) {
     ] };
   }
   if (/training|plan/.test(f)) {
+    /* Der persönliche Assistent plant nicht in Gruppen (v.35.55.0). */
+    if (!k.wer || k.wer === 'ich') {
+      return { ...rahmen, text: 'Termine einer Gruppe plant ihr Assistent — für dich trage ich das Training als eigenen Termin ein:',
+        aktionen: [{ name: 'eigenen_termin_eintragen', args: { titel: 'Training', datum: wochentag(heute, 1), zeit: '18:00' } }] };
+    }
     const g = (k.gruppen || []).find(x => x.leite);
     if (!g) {
-      return { ...rahmen, text: 'Du leitest keine Gruppe — ich trage dir das Training als eigenen Termin ein.',
-        aktionen: [{ name: 'eigenen_termin_eintragen', args: { titel: 'Training', datum: wochentag(heute, 1), zeit: '18:00' } }] };
+      return { ...rahmen, text: 'In dieser Gruppe trägt nur die Leitung Trainings ein. Soll ich dich erinnern?',
+        aktionen: [{ name: 'erinnerung_eintragen', args: { titel: 'Training anfragen', datum: plus(heute, 1), zeit: '18:00' } }] };
     }
     return { ...rahmen, text: `Zwei Trainings für «${g.name}» nächste Woche:`, aktionen: [
       { name: 'gruppentermin_eintragen', args: { gruppe_id: g.id, art: 'training', titel: 'Kondi', datum: wochentag(heute, 1), zeit: '18:00', bisZeit: '19:30', ort: 'Halle' } },

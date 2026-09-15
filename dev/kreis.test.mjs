@@ -99,7 +99,8 @@ test('der Admin schreibt Profil und Kreisliste in einem Stapel', async () => {
   const admin = start.slice(start.indexOf('async function renderAdminUsers('));
   assert.match(admin, /<input type="checkbox" data-admin-kreis \$\{kreis \? 'checked' : ''\} \/>/);
   assert.match(admin, /const kreis = row\.querySelector\('\[data-admin-kreis\]'\)\.checked;/);
-  assert.match(admin, /stapel\.update\(doc\(db, 'users', uid\), \{\s*allowedModules: allowedModulesNext,\s*isTimo,\s*kreis\s*\}\);/);
+  /* ki: der persönliche Assistent (v.35.55.0), im selben Update. */
+  assert.match(admin, /stapel\.update\(doc\(db, 'users', uid\), \{\s*allowedModules: allowedModulesNext,\s*isTimo,\s*kreis,\s*ki\s*\}\);/);
   assert.match(admin, /if \(kreis \|\| isTimo\) stapel\.set\(doc\(db, 'kreis', uid\), \{ seit: serverTimestamp\(\) \}\);\s*else stapel\.delete\(doc\(db, 'kreis', uid\)\);\s*await stapel\.commit\(\);/);
   // Hinein gibt die TVZA-Bereiche frei, hinaus nimmt sie.
   assert.match(admin, /if \(istTvza\(cb\.dataset\.adminAllowed\)\) cb\.checked = schalter\.checked;/);

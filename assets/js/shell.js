@@ -20,7 +20,7 @@
 import { auth, MODULES, enabledModules, imKreis } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { frage } from './dialog.js';
-import { mountAppRouter, basisTitel, basisTitelWahl } from './router.js?v=14';
+import { mountAppRouter, basisTitel, basisTitelWahl } from './router.js?v=15';
 import { zeichen, wort, softwareZeigen, markeSetzen, aktuelleMarke, seiteMarkieren } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 import { WORKER_BASIS } from './worker-config.js';
@@ -574,6 +574,10 @@ export function setzeKonto(profile, mail) {
     markeSetzen(imKreis(profile));
     seiteMarkieren(document);
     softwareZeigen(aktuelleMarke());
+    /* Die Pille (ki-pille.js) entscheidet am Profil, ob es einen
+       persönlichen Assistenten gibt — kein zweites Lesen dafür. */
+    window.__firnProfil = profile;
+    window.dispatchEvent(new CustomEvent('firn-profil'));
   }
   const name = String(profile?.displayName || profile?.name || '').trim()
     || (() => { try { return localStorage.getItem('tvza-name') || ''; } catch { return ''; } })();

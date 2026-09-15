@@ -920,7 +920,10 @@ service cloud.firestore {
     }
 
     match /groups/{gid} {
-      allow get, list: if inGroup(gid);
+      // Der Admin sieht die Gruppen (nur die Gruppe selbst, keine
+      // Termine, keine Mitglieder), um ihren Assistenten freizuschalten
+      // (v.35.55.0).
+      allow get, list: if inGroup(gid) || isAdmin();
 
       // Eine Gruppe entsteht nie ohne ihren Kopf. existsAfter prueft den
       // Zustand NACH dem Schreiben, das Mitgliedsdokument muss also im
@@ -981,6 +984,14 @@ service cloud.firestore {
                       && request.resource.data.name.size() <= 80
                       && request.resource.data.bereiche is map
                       && assistentGueltig(request.resource.data)
+                    )
+                    // Freischalten: der Assistent der Gruppe (ki) — nur der
+                    // Admin, nie die Leitung selbst (v.35.55.0; spaeter, wenn
+                    // die Gruppe dafuer zahlt).
+                    || (
+                      isAdmin()
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ki'])
+                      && request.resource.data.ki is bool
                     )
                     // Uebergabe: nur der Kopf, und nur an jemanden, der
                     // bereits Mitglied ist.
