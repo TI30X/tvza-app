@@ -9,11 +9,9 @@
 import { db, requireAuth, getFinnhubKey, getProfile, reportClientError } from '../../firebase-config.js';
 import { weatherIcon } from '../../shell.js?v=27';
 import { chooseHint, markShown, dismissHint } from '../../hints.js';
-import {
-  buildBriefing, renderBriefing, tagesfenster, ABEND_AB, VORSCHAU_TAGE,
-} from '../../briefing.js';
+import { buildBriefing, renderBriefing } from '../../briefing.js';
 import { meineGruppen, ladeTermine } from '../../groups.js';
-import { alsBriefingTermine, alsVorschauTermine, isoTag, tageBis as tageBisTag } from '../../termine.js';
+import { tageBis as tageBisTag } from '../../termine.js';
 import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 (async () => {
@@ -38,7 +36,9 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
      Nachrichten is deliberately absent: it has its own tab, and §6.4
      says a thing with a tab does not also appear here. The unread
      count reaches you through the dot on the bar instead. */
-  const HEUTE_ORDER = ['cal', 'food', 'matura', 'watch', 'ski'];
+  /* Ohne 'cal' seit v.35.66.0: Termine und Erinnerungen stehen im Überblick
+     darüber (feature/start/ueberblick.js) — hier stünden sie doppelt. */
+  const HEUTE_ORDER = ['food', 'matura', 'watch', 'ski'];
   const heuteRows = new Map();
 
   function pushHeute(key, row) {
@@ -413,32 +413,14 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
     }
   });
 
-  /* Was heute in einer Gruppe läuft, gehört in die Zusammenfassung —
-     ein Training um 14:00 ist Teil deines Tages, auch wenn es der
-     Trainer eingetragen hat.
-
-     Läuft früh los, damit es bis zur Karte da ist, und liegt
-     vollständig in einem catch: die Gruppenabfrage ist das Einzige
-     auf dieser Seite, das den COLLECTION_GROUP-Index braucht. Fehlt
-     er, bleibt die Zusammenfassung bei den eigenen Terminen, statt
-     ganz auszufallen. */
-  /* Dieselbe Abfrage liefert beides: was am Stichtag laeuft, und was
-     in den zwei Wochen danach kommt. Zweimal zu laden waere derselbe
-     Weg fuer dieselben Daten. */
-  const gruppenTermine = (async () => {
-    try {
-      const gruppen = await meineGruppen(uid);
-      const listen = await Promise.all(gruppen.map(async g => {
-        try { return await ladeTermine(g.id); } catch { return []; }
-      }));
-      return listen.flat();
-    } catch { return []; }
-  })();
-
-  setTimeout(async () => {
+  /* Der Hinweis (hints.js, zwei Quellen). Den Tag selbst — was heute und
+     demnächst ansteht — zeigt seit v.35.66.0 der Überblick
+     (feature/start/ueberblick.js). Die Tageskarte hier wartete 1,2 s auf
+     die eigenen und höchstens 0,9 s auf die Termine der Gruppen, und was
+     später kam, fiel weg: sie erschien darum "nur selten" (Michel). */
+  setTimeout(() => {
     try {
       const slot = $('hintSlot'); if (!slot) return;
-      const cal = heuteRows.get('cal');
       const sources = {
         // Kalender × Wetter needs the hourly forecast, which only the
         // Wetter page fetches; until that is shared this pair stays
@@ -451,43 +433,15 @@ import { doc, getDoc, collection, getDocs, query, where } from 'https://www.gsta
         maturaDue: window.tvzaMaturaDue || null,
       };
       const hint = chooseHint(sources, uid);
-
-      /* Auf die Gruppentermine wird gewartet, aber nicht ewig: eine
-         langsame Verbindung darf die Karte nicht verschlucken.
-         Kommen sie zu spät, steht der eigene Tag trotzdem da. */
-      const roh = await Promise.race([
-        gruppenTermine,
-        new Promise(fertig => setTimeout(() => fertig([]), 900)),
-      ]);
-
-      /* Der Stichtag folgt dem Fenster: am Abend zeigt die Karte
-         morgen, also muss auch der Tagesteil von morgen kommen. */
-      const jetzt = new Date();
-      const fenster = tagesfenster(jetzt, ABEND_AB);
-      const stichtag = isoTag(fenster.tag);
-
-      const bis = new Date(fenster.tag);
-      bis.setDate(bis.getDate() + VORSCHAU_TAGE);
-      const abMorgen = new Date(fenster.tag);
-      abMorgen.setDate(abMorgen.getDate() + 1);
-
-      const briefing = buildBriefing({
-        termine: [
-          ...(window.tvzaHeuteTermine || []),
-          ...alsBriefingTermine(roh, stichtag),
-          ...alsVorschauTermine(roh, isoTag(abMorgen), isoTag(bis)),
-        ],
-        hint,
-        now: jetzt,
-        abendAb: ABEND_AB,
-      });
+      if (!hint?.text) return;
+      const briefing = buildBriefing({ termine: [], hint, now: new Date() });
       if (!briefing) return;
-
       slot.appendChild(renderBriefing(briefing, {
+        titel: window.TVZAI18n?.tOr('brief.hinweis', 'Hinweis') ?? 'Hinweis',
         onDismiss: typ => { if (typ) dismissHint(uid, typ, 'today'); },
         onLater:   typ => { if (typ) dismissHint(uid, typ, 'later'); },
       }));
       if (briefing.hinweisTyp) markShown(uid);
     } catch (e) { reportClientError('briefing', e); }
-  }, 1200);
+  }, 1500);
 })();

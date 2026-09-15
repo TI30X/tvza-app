@@ -22,6 +22,7 @@ export const START_MODULE = [
   'assets/js/feature/start/start.js',
   'assets/js/feature/start/wetter-chip.js',
   'assets/js/feature/start/heute.js',
+  'assets/js/feature/start/ueberblick.js',
 ];
 
 /* Seit v.35.34.0 genauso die beiden Matura-Seiten: ihr Code stand als

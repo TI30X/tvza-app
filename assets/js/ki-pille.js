@@ -138,6 +138,9 @@ function beschriften() {
   const a = waehlen(liste);
   /* Kein Assistent freigeschaltet: keine Pille, kein Hinweis. */
   pille.hidden = !a;
+  /* Start zeigt, welche Assistenten es gibt (v.35.66.0) — dieselbe Liste. */
+  window.__firnAssistenten = liste.map(x => ({ wer: x.wer, name: x.name, gruppe: x.gruppe, persoenlich: x.persoenlich }));
+  window.dispatchEvent(new CustomEvent('firn-ki-liste'));
   if (!a) { if (blatt && !blatt.hidden) schliessen(); return; }
   pille.querySelector('.ki-pille__name').textContent = a.name;
   pille.setAttribute('aria-label', t('ki.oeffnen', '{name} fragen', { name: a.name }));
@@ -175,6 +178,7 @@ function wahlZeigen(liste, a) {
   const stil = gruppenStil(gruppenJetzt());
   wahl.innerHTML = liste.map(x => `
     <button class="ki-wahl__knopf${x.persoenlich ? '' : ' is-gruppe'}" type="button" data-wer="${esc(x.wer)}"
+            title="${esc(x.persoenlich ? t('ki.nurDu', 'Nur für dich') : t('ki.vonGruppe', 'Assistent von «{gruppe}»', { gruppe: x.gruppe }))}"
             aria-pressed="${x.wer === a.wer}"${x.persoenlich ? '' : ` style="${esc(stil(x.wer))}"`}>
       <span class="ki-wahl__zeichen" aria-hidden="true">${x.persoenlich ? FUNKE : esc(kuerzel(x.gruppe))}</span>
       <span>${esc(x.persoenlich || x.eigen ? x.name : x.gruppe)}</span>
@@ -201,6 +205,15 @@ export function pilleZeigen() {
   document.body.appendChild(pille);
 
   for (const ereignis of ['firn-gruppe', 'firn-gruppen', 'firn-profil']) window.addEventListener(ereignis, beschriften);
+  /* Von Start aus (v.35.66.0): "Frag Coach Maxi" öffnet das Gespräch,
+     auf Wunsch gleich mit dem Assistenten einer Gruppe. */
+  window.addEventListener('firn-ki-oeffnen', event => {
+    if (!pille || pille.hidden) return;
+    const wer = event.detail?.wer;
+    if (wer && alleAssistenten().some(a => a.wer === wer)) gewaehlt = wer;
+    beschriften();
+    oeffnen();
+  });
   /* Eine neue Seite entscheidet neu, wer antwortet. */
   window.addEventListener('tvza-route', () => { gewaehlt = ''; beschriften(); });
   window.addEventListener('popstate', () => { gewaehlt = ''; beschriften(); });

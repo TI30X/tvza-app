@@ -22,9 +22,10 @@
   </script>
   <script src="assets/js/theme.js?v=3"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=30" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=31" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="assets/css/feature/access.css?v=2" />
+  <link rel="stylesheet" href="assets/css/feature/start.css?v=1" />
   <title data-i18n="home.seitentitel">Firn</title>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
   <script src="assets/js/ui-fx.js?v=26" defer></script>
@@ -71,6 +72,25 @@
     </header>
 
     <main class="main">
+
+      <!-- Der Überblick (v.35.66.0): nie leer. Was heute und demnächst
+           ansteht (Trainings mit Fortschritt, Termine, Absagen, neue Pläne,
+           Erinnerungen), die eigenen Gruppen — oder, ohne Gruppe, die zwei
+           Wege hinein — und der Assistent, den man hat. Zeichnet
+           feature/start/ueberblick.js; "lädt", "offline", "gescheitert"
+           und "nichts geplant" sind vier verschiedene Sätze. -->
+      <section class="section ueberblick" id="ueberblick" aria-busy="true">
+        <div class="wichtig" id="wichtig">
+          <div class="wichtig__kopf">
+            <span class="wichtig__icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg></span>
+            <span class="wichtig__titel" id="wichtigTitel">Heute</span>
+            <span class="wichtig__stand" id="wichtigStand" hidden></span>
+          </div>
+          <div class="wichtig__liste rows" id="wichtigListe"></div>
+        </div>
+        <div class="start-gruppen" id="startGruppen" hidden></div>
+        <div class="rows start-ki" id="startKi" hidden></div>
+      </section>
 
       <!-- Der proaktive Hinweis (§8) und die Tageszusammenfassung.
            Bleibt leer, wenn heute nichts zu sagen ist — eine Karte, die
@@ -520,7 +540,8 @@
   <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=18"></script>
 
   <!-- ═══ Live dashboard tile content (weather, watchlist, matura, food, calendar) ═══ -->
-  <script type="module" src="./assets/js/feature/start/heute.js?v=22"></script>
+  <script type="module" src="./assets/js/feature/start/heute.js?v=24"></script>
+  <script type="module" src="./assets/js/feature/start/ueberblick.js?v=1"></script>
   <script type="module" src="./assets/js/nav.js?v=28"></script>
 </body>
 </html>

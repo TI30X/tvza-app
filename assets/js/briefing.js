@@ -223,8 +223,9 @@ export function buildBriefing({ termine, hint, now = new Date(),
 
 /* ── Darstellung ───────────────────────────────────────────────────
    Getrennt von der Logik oben, damit die Tests ohne DOM auskommen.
-   Das Plättchen trägt das "n" aus dem Wortzeichen — dasselbe Zeichen,
-   das später App-Symbol und Gruppenplättchen wird. */
+   Das Plättchen trug bis v.35.65.0 ein oranges "n" aus dem Wortzeichen —
+   Michel: "das orange N durch ein dezentes Symbol ersetzen, passend zum
+   blauen Design". Jetzt ein Info-Zeichen in der Farbe der Bedienung. */
 
 export function renderBriefing(briefing, { onDismiss, onLater, titel } = {}) {
   const i18n = globalThis.window?.TVZAI18n;
@@ -247,7 +248,8 @@ export function renderBriefing(briefing, { onDismiss, onLater, titel } = {}) {
 
   const marke = document.createElement('span');
   marke.className = 'hint__marke';
-  marke.textContent = 'n';
+  marke.innerHTML = '<svg class="ic" viewBox="0 0 24 24" width="14" height="14">'
+    + '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>';
   marke.setAttribute('aria-hidden', 'true');
 
   const label = document.createElement('span');

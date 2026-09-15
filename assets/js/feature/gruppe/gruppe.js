@@ -102,6 +102,8 @@ let neuAusAdresse = /^\d{4}-\d{2}-\d{2}$/.test(adresse.get('neu') || '') ? adres
 let anlegenAusAdresse = adresse.get('anlegen') === '1';
 /* ?einst=1: aus den Einstellungen der App direkt in die der Gruppe (v.35.60.0). */
 let einstAusAdresse = adresse.get('einst') === '1';
+/* ?beitreten=1: "Mit Code beitreten" auf Start (v.35.66.0). */
+let beitretenAusAdresse = adresse.get('beitreten') === '1';
 
 /* Die Einmal-Anweisungen oben sind gelesen — raus aus der Adresse
    (v.35.57.1). Michel: "beim Neuladen spickt das plötzlich raus": nach
@@ -110,7 +112,7 @@ let einstAusAdresse = adresse.get('einst') === '1';
    Dasselbe mit ?neu= (Formular) und ?termin= (Termin ging wieder auf). Im
    Rahmen gehört die Adresszeile dem Router — er erfährt es über
    tvzaAdresseErsetzen. */
-const EINMAL = ['anlegen', 'neu', 'termin', 'g', 'einst'];
+const EINMAL = ['anlegen', 'neu', 'termin', 'g', 'einst', 'beitreten'];
 function adresseAufraeumen() {
   const url = new URL(location.href);
   if (!EINMAL.some(p => url.searchParams.has(p))) return;
@@ -3661,6 +3663,10 @@ async function einladungZurueckziehen() {
     if (anlegenAusAdresse) {
       anlegenAusAdresse = false;
       neueGruppe();
+    }
+    if (beitretenAusAdresse) {
+      beitretenAusAdresse = false;
+      void codeEinloesen();
     }
     if (einstAusAdresse && aktiv) {
       einstAusAdresse = false;

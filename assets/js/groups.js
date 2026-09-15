@@ -36,7 +36,7 @@
 import { db } from './firebase-config.js';
 import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
-  getDocFromCache, getDocsFromServer,
+  getDocFromCache, getDocFromServer, getDocsFromServer,
   onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp, deleteField, addDoc, setDoc, Timestamp,
   runTransaction,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -138,11 +138,27 @@ export function assistentSetzen(gid, assistent) {
    gemeinsamen Speicher meldet Firestore dann "offline", v.35.62.0), gilt
    der gespeicherte Stand — eine Gruppe, die man kennt, verschwindet nicht,
    nur weil der Server einen Augenblick nicht antwortet. */
+/* "Gibt es nicht" aus dem Speicher des Geräts ist keine Auskunft
+   (v.35.66.0). Michel: "Babelek van Zanten" stand im Assistenten, aber
+   nicht unter den Gruppen. Beide lesen dieselben Mitgliedschaften und
+   dieselbe Gruppe — der Unterschied war der Zeitpunkt: die Leiste fragte
+   beim Start, und am Laptop antwortete Firestore dann aus dem Speicher.
+   Stand dort von früher "diese Gruppe gibt es nicht" (eine Familie
+   wird zur Gruppe mit DERSELBEN Kennung, Falle 13 — wer die Kennung vor
+   der Übernahme las, hat genau diesen Eintrag), galt sie als gelöscht und
+   wurde nie wieder gefragt; die Pille fragte später, mit Netz, und bekam
+   sie. Vermutet, nicht bewiesen — ohne Zugriff auf Michels Browser. Jetzt
+   fragt ein solches "gibt es nicht" den Server; antwortet der nicht,
+   ist die Gruppe unbekannt (undefined), nicht gelöscht. */
 export async function ladeGruppe(gid) {
   let snap;
   try { snap = await getDoc(gruppeRef(gid)); }
   catch (fehler) {
     try { snap = await getDocFromCache(gruppeRef(gid)); } catch { throw fehler; }
+  }
+  if (!snap.exists() && snap.metadata?.fromCache) {
+    try { snap = await getDocFromServer(gruppeRef(gid)); }
+    catch { return undefined; }
   }
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
@@ -199,6 +215,8 @@ async function zuGruppen(mitgliedschaften) {
   const gruppen = await Promise.all(mitgliedschaften.map(async m => {
     try {
       const g = await ladeGruppe(m.gid);
+      /* undefined: unbekannt — die Liste ist unvollständig und fragt nach. */
+      if (g === undefined) return null;
       return g ? { ...g, meineRolle: m.rolle } : GELOESCHT;
     } catch { return null; }
   }));

@@ -239,30 +239,23 @@ test('der Index für die Sammelgruppen-Abfrage ist hinterlegt', async () => {
 
 /* ── Gruppentermine auf dem privaten Start ─────────────────────────*/
 
-test('die Tageszusammenfassung nimmt Gruppentermine auf, ohne an ihnen zu hängen', async () => {
+/* Bis v.35.65.0 stand hier, WIE die Tageskarte ihre Gruppentermine
+   holte: Promise.race gegen 900 ms, window.tvzaHeuteTermine aus der
+   Kachel des Kalenders nach 1,2 s. Genau das war der Grund, warum die
+   Karte "nur selten" erschien (Michel): was nach der Frist kam, fiel weg
+   und wurde nie nachgezeichnet. Der Test hielt die Frist fest. Die
+   Zusagen dahinter gelten weiter — im Überblick (v.35.66.0). */
+test('der Überblick nimmt Gruppentermine auf, ohne an einer Gruppe oder einer Frist zu hängen', async () => {
   const html = await read('index.html');
-
-  // Was heute in einer Gruppe läuft, gehört in den Tag — ein Training
-  // um 14:00 auch dann, wenn der Trainer es eingetragen hat.
-  assert.match(html, /import \{ meineGruppen, ladeTermine \}/);
-  /* Nicht die ganze Zeile wörtlich: seit v.35.46.0 holt heute.js auch
-     tageBis von dort, und ein wörtlicher Test hätte das nur verboten. */
-  assert.match(html, /import \{[^}]*\balsBriefingTermine, alsVorschauTermine\b[^}]*\} from '\.\.\/\.\.\/termine\.js'/);
-  /* Der Tagesteil kommt aus dem Stichtag des Fensters, die Vorschau
-     aus dem Zeitraum danach — beides aus DERSELBEN Abfrage. Zweimal
-     zu laden waere derselbe Weg fuer dieselben Daten. */
-  assert.match(html, /window\.tvzaHeuteTermine/);
-  assert.match(html, /alsBriefingTermine\(roh, stichtag\)/);
-  assert.match(html, /alsVorschauTermine\(roh, /);
-
-  // Die Gruppenabfrage ist das Einzige auf dieser Seite, das den
-  // COLLECTION_GROUP-Index braucht. Fehlt er, muss die Karte trotzdem
-  // erscheinen — mit den eigenen Terminen.
-  const lader = html.slice(html.indexOf('const gruppenTermine'));
-  assert.match(lader.slice(0, 700), /catch \{ return \[\]; \}/);
-
-  // Und eine langsame Verbindung darf die Karte nicht verschlucken.
-  assert.match(html, /Promise\.race\(\[\s*\n?\s*gruppenTermine/);
+  // Was in einer Gruppe läuft, gehört in den Tag.
+  assert.match(html, /ladeTermine\(g\.id\)/);
+  // Eine Gruppe, deren Termine scheitern, nimmt die anderen nicht mit.
+  assert.match(html, /const jeGruppe = await Promise\.allSettled\(liste\.map\(async g => \{/);
+  // Keine Frist, nach der etwas still wegfällt — und neu gezeichnet wird,
+  // sobald es ankommt.
+  const ueberblick = await readFile(join(root, 'assets/js/feature/start/ueberblick.js'), 'utf8');
+  assert.doesNotMatch(ueberblick, /Promise\.race/);
+  assert.match(ueberblick, /stand = neu;\s*quellen = n;\s*fehler = weg;\s*laedt = false;\s*zeichneWichtig\(\);/);
 });
 
 test('abgemeldete Besucher landen auf Willkommen, nie bei den Projekten', async () => {

@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.65.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.66.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-81 Testdateien, **820 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+82 Testdateien, **828 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -1011,6 +1011,51 @@ echten Daten); was überschrieben wurde, ist weg.
 
 `dev/gruppe-einstellungen.test.mjs`.
 
+**28. Start ist nie leer — der Überblick** (v.35.66.0). Michel: ein
+Athlet in einer Gruppe sah „Keine Bereiche aktiviert" und sonst nichts, und
+die Karte mit den wichtigen Infos „erscheint nur selten". Belegt: die
+Tageskarte (heute.js) wartete 1,2 s auf die eigenen und höchstens 0,9 s auf
+die Termine der Gruppen, was später kam, fiel weg und wurde nie
+nachgezeichnet; sie zählte nur heute (am Abend morgen), und Trainings aus
+den Plänen kamen nicht vor.
+
+- `#ueberblick` oben auf Start, für jedes Konto
+  (`feature/start/ueberblick.js` lädt und zeichnet, `ueberblick.js`
+  entscheidet rein): **Heute/Morgen** — Trainings aus den Plänen mit dem
+  eigenen Fortschritt (Tipp → Player), Termine samt Notiz, Absagen im
+  Fenster, neue Pläne (drei Tage), überfällige Erinnerungen —, darunter
+  **Demnächst** (14 Tage). Kompakt: fünf plus drei, der Rest im Kalender.
+  Nichts Vergangenes, nichts Abgehaktes. Alle Quellen nebeneinander
+  (`Promise.allSettled`), keine Frist; neu gezeichnet, sobald etwas kommt,
+  bei `online`, bei `firn.daten` und alle fünf Minuten.
+- **Vier Zustände:** lädt / offline / gescheitert (mit „Erneut laden") /
+  nichts geplant — nie dieselbe leere Fläche. Eine leere, unvollständige
+  Gruppenliste ist „lädt", nicht „keine Gruppe".
+- **Deine Gruppen** als Plättchen in ihrer Farbe; **ohne Gruppe** zwei
+  Wege hinein (`gruppe.html?anlegen=1`, `?beitreten=1` → `codeEinloesen`).
+- **Der Assistent, den man hat:** je Assistent eine Zeile („Coach Maxi
+  fragen · Assistent von «BSV»"); die Liste kommt von der Pille
+  (`window.__firnAssistenten`, `firn-ki-liste`), geöffnet wird über
+  `firn-ki-oeffnen`. Für Athleten gilt, was vorher galt und jetzt geprüft
+  ist: den Assistenten einer Gruppe hat, wer in einer freigeschalteten
+  Gruppe ist (`gruppeFrei`), er sieht nur diese Gruppe, darf erinnern und
+  fragen, einen Gruppentermin trägt nur die Leitung ein (`aktionPruefen`).
+- Die Hinweiskarte (hints.js) bleibt, mit einem leisen Info-Zeichen statt
+  des orangen „n" (Michel: „dezent, passend zum blauen Design"). Die
+  Kalenderzeile in „Heute" ist weg — sie stand im Überblick schon.
+- **Babelek** (Punkt 7): eine Gruppe, die im Assistenten stand, fehlte in
+  der Leiste. Vermutete Ursache (ohne Zugriff auf Michels Browser nicht
+  bewiesen): der Speicher des Laptops hielt für `groups/{familyId}` noch
+  „gibt es nicht" aus der Zeit vor der Übernahme (Falle 13, dieselbe
+  Kennung), `zuGruppen` nahm das als gelöscht und fragte nie wieder; die
+  Pille fragte später, mit Netz. Jetzt fragt ein „gibt es nicht" aus dem
+  Speicher den Server (`getDocFromServer`), ohne Antwort ist die Gruppe
+  unbekannt und die Liste unvollständig (wird nachgefragt). Nichts wird
+  angelegt, verschoben oder gelöscht; Mitglieder, Rollen, Termine, Chats
+  bleiben, wie sie sind.
+
+`dev/start-ueberblick.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -1023,7 +1068,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1158 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1184 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel

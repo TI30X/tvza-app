@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.35.65.0';
+const CACHE = 'tvza-v.35.66.0';
 // Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
@@ -24,7 +24,7 @@ const SHELL = [
   './login.html',
   './willkommen.html',
   './nutzung.html',
-  './assets/css/kit.css?v=30',
+  './assets/css/kit.css?v=31',
   './assets/css/feature/willkommen.css?v=4',
   './assets/css/feature/nutzung.css?v=1',
   './assets/css/legacy.css?v=1',
@@ -44,7 +44,10 @@ const SHELL = [
   // Der Start traegt seinen Code seit v.35.19.0 in eigenen Dateien.
   './assets/js/feature/start/start.js?v=30',
   './assets/js/feature/start/wetter-chip.js?v=18',
-  './assets/js/feature/start/heute.js?v=22',
+  './assets/js/feature/start/heute.js?v=24',
+  './assets/js/feature/start/ueberblick.js?v=1',
+  './assets/js/ueberblick.js',
+  './assets/css/feature/start.css?v=1',
   './assets/js/i18n.js?v=1',
   // Sprachdateien gehoeren in den Vorrat: sonst laesst sich offline
   // zwar umschalten, aber der Katalog fehlt und alles bleibt deutsch.
@@ -111,7 +114,7 @@ const SHELL = [
   './assets/js/formatierung.js',
   './assets/js/chat-modell.js',
   './assets/js/chat-stand.js',
-  './assets/js/feature/gruppe/gruppe.js?v=34',
+  './assets/js/feature/gruppe/gruppe.js?v=35',
   './assets/css/feature/gruppe.css?v=12',
   './assets/js/feature/ski/ski.js?v=1',
   './pages/gruppe.html',
