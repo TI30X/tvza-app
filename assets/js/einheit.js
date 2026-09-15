@@ -65,26 +65,47 @@ export function einheitTitel(programm, unitId) {
 
 /* ── Protokoll ─────────────────────────────────────────────────────*/
 
-const LEER = Object.freeze({ done: false, note: '', sets: [] });
+/* Ein Satz im Protokoll. Bis v.35.63.0 war ein Satz "gemacht", sobald
+   irgendein Wert darin stand — wer ein Gewicht korrigierte, hakte den
+   Satz damit auch ab (Michel: "Bearbeiten darf den Satz nicht zusätzlich
+   abhaken"). Seit v.35.64.0 trägt er seinen Haken selbst (ok); alte
+   Protokolle ohne ok zählen wie früher. Dauer, Strecke und
+   Körpergewicht nur, wo jemand sie einträgt. */
+function satzAus(s) {
+  const raus = { weight: String(s?.weight ?? ''), reps: String(s?.reps ?? '') };
+  if (typeof s?.ok === 'boolean') raus.ok = s.ok;
+  for (const feld of ['dauer', 'strecke']) {
+    if (s?.[feld] !== undefined && String(s[feld]) !== '') raus[feld] = String(s[feld]);
+  }
+  if (s?.koerper === true) raus.koerper = true;
+  return raus;
+}
+
+/** Ist dieser Satz abgehakt? */
+export function satzOk(s) {
+  if (typeof s?.ok === 'boolean') return s.ok;
+  return Boolean(String(s?.weight ?? '').trim() || String(s?.reps ?? '').trim());
+}
 
 /**
  * Der Eintrag zu einer Übung — immer vollständig, auch wenn im
  * Protokoll nichts steht. Die Oberfläche soll nicht an jeder Stelle
  * prüfen müssen, ob ein Zwischenobjekt existiert.
+ *
+ * stand (ms) sagt, wann das Gerät ihn zuletzt geändert hat — damit
+ * gewinnt zwischen zwei Geräten der neuere (v.35.64.0).
  */
 export function eintrag(protokoll, unitId, itemKey) {
   const roh = protokoll?.units?.[unitId]?.items?.[itemKey];
-  if (!roh || typeof roh !== 'object') return { ...LEER };
-  return {
+  if (!roh || typeof roh !== 'object') return { done: false, note: '', sets: [] };
+  const e = {
     done: roh.done === true,
     note: String(roh.note ?? ''),
-    sets: Array.isArray(roh.sets)
-      ? roh.sets.map(s => ({
-          weight: String(s?.weight ?? ''),
-          reps: String(s?.reps ?? ''),
-        }))
-      : [],
+    sets: Array.isArray(roh.sets) ? roh.sets.map(satzAus) : [],
   };
+  const stand = Number(roh.stand);
+  if (stand > 0) e.stand = stand;
+  return e;
 }
 
 /**
@@ -99,11 +120,10 @@ export function mitEintrag(protokoll, unitId, itemKey, patch) {
   const neu = {
     done: patch.done === undefined ? alt.done : patch.done === true,
     note: patch.note === undefined ? alt.note : String(patch.note ?? ''),
-    sets: patch.sets === undefined ? alt.sets : patch.sets.map(s => ({
-      weight: String(s?.weight ?? ''),
-      reps: String(s?.reps ?? ''),
-    })),
+    sets: patch.sets === undefined ? alt.sets : patch.sets.map(satzAus),
   };
+  const stand = patch.stand ?? alt.stand;
+  if (stand) neu.stand = stand;
 
   const units = { ...(protokoll?.units || {}) };
   const einheit = { ...(units[unitId] || {}) };
@@ -116,7 +136,33 @@ export function mitEintrag(protokoll, unitId, itemKey, patch) {
 export function hatInhalt(e) {
   return e.done
     || !!e.note
-    || e.sets.some(s => s.weight !== '' || s.reps !== '');
+    || e.sets.some(s => s.weight !== '' || s.reps !== '' || s.ok === true || !!s.dauer || !!s.strecke);
+}
+
+/**
+ * Ein Eintrag, wie er gespeichert wird — mit den Grenzen der Regeln.
+ * Ein leerer bleibt als { stand } stehen: so weiss ein anderes Gerät,
+ * das offline war, dass hier jemand NACH ihm geleert hat, und schreibt
+ * seinen älteren Stand nicht darüber (aenderungenPruefen).
+ */
+export function eintragSauber(e) {
+  if (!hatInhalt(e)) return e.stand ? { stand: e.stand } : null;
+  const raus = {
+    done: e.done,
+    note: e.note.slice(0, 200),
+    /* Zwölf Sätze sind mehr, als je jemand macht; die Grenze steht
+       genauso in den Regeln. */
+    sets: e.sets.slice(0, 12).map(s => {
+      const x = { weight: s.weight.slice(0, 20), reps: s.reps.slice(0, 20) };
+      if (typeof s.ok === 'boolean') x.ok = s.ok;
+      if (s.dauer) x.dauer = s.dauer.slice(0, 20);
+      if (s.strecke) x.strecke = s.strecke.slice(0, 20);
+      if (s.koerper) x.koerper = true;
+      return x;
+    }),
+  };
+  if (e.stand) raus.stand = e.stand;
+  return raus;
 }
 
 /**
@@ -134,20 +180,102 @@ export function sauber(protokoll) {
     for (const [key, roh] of Object.entries(einheit?.items || {})) {
       const e = eintrag({ units: { [unitId]: { items: { [key]: roh } } } }, unitId, key);
       if (!hatInhalt(e)) continue;
-      items[key] = {
-        done: e.done,
-        note: e.note.slice(0, 200),
-        /* Zwölf Sätze sind mehr, als je jemand macht; die Grenze steht
-           genauso in den Regeln. */
-        sets: e.sets.slice(0, 12).map(s => ({
-          weight: s.weight.slice(0, 20),
-          reps: s.reps.slice(0, 20),
-        })),
-      };
+      items[key] = eintragSauber(e);
     }
     if (Object.keys(items).length) raus[unitId] = { items };
   }
   return raus;
+}
+
+/* ── Zwischen Geräten (v.35.64.0) ──────────────────────────────────
+   Michel: am Handy trainiert, am PC stand nichts davon, Notizen waren
+   weg. Im Code belegt sind zwei Ursachen:
+   - Das Protokoll wurde als GANZES Dokument geschrieben (set ohne
+     merge). Wer die Einheit auf einem zweiten Gerät offen hatte oder
+     sie mit einem alten Stand öffnete und dann etwas antippte, schrieb
+     diesen alten Stand über alles, was das andere Gerät inzwischen
+     eingetragen hatte — Sätze und Notizen.
+   - Gespeichert wurde 900 ms nach der letzten Eingabe. Wer innerhalb
+     dieser Zeit die Seite verliess ("Zurück", App wechseln), dessen
+     letzte Eingabe — oft die Notiz — ging nie hinaus.
+   Jetzt wird je Übung geschrieben, jede mit ihrem Stand; der Server
+   entscheidet in einer Transaktion, und der neuere gewinnt. Was noch
+   nicht hinaus ist, liegt zusätzlich im Gerät (protokoll-sicherung.js). */
+
+export const eintragSchluessel = (unitId, key) => `${unitId}${key}`;
+
+/**
+ * Das Protokoll vom Server über das eigene legen: je Übung gilt der
+ * Server — ausser wo hier etwas geändert und noch nicht geschrieben ist.
+ * @param offen  Set/Map der eintragSchluessel mit eigenen Änderungen
+ */
+export function abgleichen(lokal, fern, offen = new Set()) {
+  const units = {};
+  const namen = new Set([...Object.keys(lokal?.units || {}), ...Object.keys(fern?.units || {})]);
+  for (const u of namen) {
+    const li = lokal?.units?.[u]?.items || {};
+    const fi = fern?.units?.[u]?.items || {};
+    const items = {};
+    for (const k of new Set([...Object.keys(li), ...Object.keys(fi)])) {
+      const w = offen.has(eintragSchluessel(u, k)) ? li[k] : fi[k];
+      if (w !== undefined) items[k] = w;
+    }
+    units[u] = { ...(lokal?.units?.[u] || {}), ...(fern?.units?.[u] || {}), items };
+  }
+  return { ...(lokal || {}), ...(fern || {}), units };
+}
+
+/**
+ * Was ein Gerät schreiben darf, gegen den Stand des Servers: eine
+ * Übung, die dort NEUER ist, bleibt, wie sie ist — ein Gerät, das
+ * offline war, überschreibt nicht, was ein anderes seither eingetragen
+ * hat.
+ * @param server       das Protokoll auf dem Server, oder null
+ * @param aenderungen  [{ unitId, key, eintrag, stand }] — eintrag aus eintragSauber
+ * @returns {{ units, geschrieben: string[], verworfen: string[] }}
+ */
+export function aenderungenPruefen(server, aenderungen = []) {
+  const units = {};
+  const geschrieben = [];
+  const verworfen = [];
+  for (const a of aenderungen) {
+    const s = eintragSchluessel(a.unitId, a.key);
+    const dort = Number(server?.units?.[a.unitId]?.items?.[a.key]?.stand) || 0;
+    if (dort > (Number(a.stand) || 0)) { verworfen.push(s); continue; }
+    (units[a.unitId] ||= { items: {} }).items[a.key] = a.eintrag || { stand: a.stand };
+    geschrieben.push(s);
+  }
+  return { units, geschrieben, verworfen };
+}
+
+/**
+ * Wie weit eine Einheit ist — für die Leitung (v.35.64.0).
+ * 'offen' heisst: im Protokoll steht nichts. Ob das Protokoll überhaupt
+ * geladen werden konnte, weiss der Aufrufer; ohne es ist der Status
+ * unbekannt, nicht "offen".
+ */
+export function einheitStatus(items, protokoll, unitId) {
+  const f = fortschritt(items, protokoll, unitId);
+  const s = satzFortschritt(items, protokoll, unitId);
+  if (items.length && f.fertig) return 'fertig';
+  const begonnen = items.some(i => hatInhalt(eintrag(protokoll, unitId, i.key)));
+  return begonnen || s.ok ? 'begonnen' : 'offen';
+}
+
+/**
+ * Die Sätze einer Einheit: wie viele abgehakt sind, von wie vielen
+ * geplanten (oder eingetragenen, wo es mehr sind).
+ */
+export function satzFortschritt(items, protokoll, unitId) {
+  let ok = 0;
+  let gesamt = 0;
+  for (const item of items) {
+    const e = eintrag(protokoll, unitId, item.key);
+    const geplant = Array.isArray(item?.sets) ? item.sets.length : 0;
+    gesamt += Math.max(geplant, e.sets.length);
+    ok += e.sets.filter(satzOk).length;
+  }
+  return { ok, gesamt };
 }
 
 /* ── Fortschritt ───────────────────────────────────────────────────*/
@@ -230,6 +358,12 @@ export function saetze(item, e, zuletzt = []) {
       vorschlagZuletzt: !zielWert && !ausDavor && !!letztes,
       weight: e.sets[i]?.weight ?? '',
       reps: e.sets[i]?.reps ?? '',
+      /* Abgehakt ist er, wenn er es sagt (v.35.64.0) — nicht, weil ein
+         Wert darin steht. */
+      ok: e.sets[i] ? satzOk(e.sets[i]) : false,
+      dauer: e.sets[i]?.dauer ?? '',
+      strecke: e.sets[i]?.strecke ?? '',
+      koerper: e.sets[i]?.koerper === true,
     };
   });
 }
@@ -280,6 +414,22 @@ export function sekundenAus(text) {
 /** Die Pause nach einem Satz, in Sekunden — 0, wenn der Plan keine nennt. */
 export function pauseSekunden(item) {
   return sekundenAus(item?.pause);
+}
+
+/**
+ * Die Pause als Bereich (v.35.64.0): "180-240 Sec" → { von: 180, bis: 240 },
+ * "2-3 min" → { von: 120, bis: 180 }, "90 Sec" → { von: 90, bis: 90 }.
+ * Bis dahin lief stillschweigend die untere Grenze — wer 4 Minuten
+ * Pause wollte, sah nirgends, dass es sie gab. Jetzt steht beides zur
+ * Wahl, die untere ist vorgewählt. null ohne Pause.
+ */
+export function pauseBereich(item) {
+  const text = String(item?.pause ?? '').toLowerCase().replace(',', '.');
+  const von = sekundenAus(text);
+  if (!von) return null;
+  const m = text.match(/(\d+(?:\.\d+)?)\s*(?:-|–|bis)\s*(\d+(?:\.\d+)?)/);
+  const bis = m ? Math.round(Number(m[2]) * (/min/.test(text) ? 60 : 1)) : von;
+  return { von, bis: Math.max(von, bis) };
 }
 
 /** Eine Übung auf Zeit: { sekunden, runden, proSeite } oder null.

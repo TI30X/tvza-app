@@ -285,6 +285,28 @@ export async function updateDoc(ref, daten) { await bereit; lesen(); aendern(ref
 export async function deleteDoc(ref) { await bereit; lesen(); delete speicher[ref.path]; schreiben(); }
 export async function addDoc(coll, daten) { const ref = doc(coll); await setDoc(ref, daten); return ref; }
 
+/* Transaktion (v.35.64.0, das Protokoll des Players): lesen, dann
+   schreiben — alles oder nichts, wie writeBatch. Offline gibt es in der
+   Attrappe nicht; wer das prüfen will, setzt window.__attrappeOffline. */
+export async function runTransaction(db, fn) {
+  await bereit; lesen();
+  if (globalThis.__attrappeOffline) throw fehler('unavailable', 'Failed to get document because the client is offline.');
+  const schritte = [];
+  const tx = {
+    async get(ref) { darfLesen(ref); return new DocumentSnapshot(ref, speicher[ref.path]); },
+    set(ref, d, o) { schritte.push(() => setzen(ref, d, o)); return tx; },
+    update(ref, d) { schritte.push(() => aendern(ref, d)); return tx; },
+    delete(ref) { schritte.push(() => { delete speicher[ref.path]; }); return tx; },
+  };
+  const ergebnis = await fn(tx);
+  lesen();
+  const vorher = JSON.stringify(speicher);
+  try { schritte.forEach(s => s()); }
+  catch (e) { speicher = JSON.parse(vorher); throw e; }
+  schreiben();
+  return ergebnis;
+}
+
 export function writeBatch() {
   const schritte = [];
   const stapel = {

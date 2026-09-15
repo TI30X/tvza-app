@@ -260,6 +260,22 @@ export function planTageMitDatum(programm, heute) {
   return tage.slice(0, 7).map((t, i) => ({ ...t, datum: plusTage(montag, i) }));
 }
 
+/**
+ * Die Einheiten eines Tages, in der Folge des Plans — nur die mit Blatt
+ * (v.35.64.0). Michel: "Aus dem Wochenplan soll ein Athlet die
+ * zugewiesene Einheit direkt öffnen … gibt es an einem Tag mehrere,
+ * nur diese." Der Player zeigt keine Liste aller Einheiten der Woche
+ * mehr, sondern höchstens die des Tages.
+ */
+export function einheitenAmTag(programm, datum, heute = '') {
+  const tag = planTageMitDatum(programm, heute || datum).find(t => t.datum === datum);
+  const ids = [];
+  for (const e of tag?.eintraege || []) {
+    if (e.unit && !ids.includes(e.unit) && uebungen(programm, e.unit).length) ids.push(e.unit);
+  }
+  return ids;
+}
+
 /* Wann ein Plan veröffentlicht wurde — für "der neuere gewinnt". */
 function zeitVon(plan) {
   const e = plan?.erstelltAm;

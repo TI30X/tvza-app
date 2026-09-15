@@ -46,9 +46,13 @@ test('gespeichert wird verzögert, nicht bei jedem Tastendruck', async () => {
   assert.match(js, /clearTimeout\(timer\)/);
   assert.match(js, /timer = setTimeout\(/);
 
-  // sauber() wirft leere Einträge weg, sonst wüchse das Protokoll mit
-  // jeder geöffneten Einheit.
-  assert.match(js, /protokollSpeichern\(gid, user\.uid, datum, sauber\(protokoll\)\)/);
+  // Seit v.35.64.0 je Übung und nur, was geändert ist (offen) — nicht
+  // mehr das ganze Protokoll mit sauber(): das schrieb über ein zweites
+  // Gerät hinweg (Michel: "am Handy trainiert, am PC stand nichts").
+  // eintragSauber() hält weiter die Grenzen der Regeln ein.
+  assert.match(js, /protokollAbgleichen\(gid, user\.uid, datum,/);
+  assert.match(js, /eintrag: eintragSauber\(eintrag\(protokoll, o\.unitId, o\.key\)\)/);
+  assert.doesNotMatch(js, /protokollSpeichern/);
 
   // Und ein Fehler beim Speichern darf keinen Dialog aufwerfen: man
   // steht mit einer Hantel da.
@@ -107,8 +111,10 @@ test('die Leitung öffnet die Einheit eines Athleten und sieht dessen Protokoll'
     assert.equal(doc.getElementById('uebNotiz').readOnly, true);
     assert.equal(doc.getElementById('btnErledigt').hidden, true);
     await new Promise(r => setTimeout(r, 1000));
-    assert.equal(globalThis.__aufrufe.filter(a => a[0] === 'protokollSpeichern').length, 0,
+    assert.equal(globalThis.__aufrufe.filter(a => a[0] === 'protokollAbgleichen').length, 0,
       'die Leitung schreibt ein Protokoll auf den Plan eines Athleten');
+    assert.equal(doc.getElementById('grpPrivat').hidden, true, 'die private Notiz des Athleten gehört nicht in die Ansicht');
+    assert.equal(doc.getElementById('ansichtStand').hidden, false, 'die Leitung sieht nicht, wie aktuell das ist');
   } finally { zurueck(); delete globalThis.__protokoll; }
 });
 
@@ -122,10 +128,76 @@ test('ein Athlet öffnet seinen eigenen Plan und trägt ein', async () => {
     assert.equal(doc.getElementById('ansichtHinweis').hidden, true);
     assert.equal(doc.getElementById('btnErledigt').hidden, false);
     doc.getElementById('btnErledigt').click();
-    await warte(() => globalThis.__aufrufe.some(a => a[0] === 'protokollSpeichern'), 200);
-    const gespeichert = globalThis.__aufrufe.find(a => a[0] === 'protokollSpeichern');
+    await warte(() => globalThis.__aufrufe.some(a => a[0] === 'protokollAbgleichen'), 200);
+    const gespeichert = globalThis.__aufrufe.find(a => a[0] === 'protokollAbgleichen');
     assert.ok(gespeichert, 'nichts gespeichert');
     assert.equal(gespeichert[2], 'timo');
+    /* Beim Wechsel der Übung sofort, nicht erst nach 900 ms. */
+    assert.equal(gespeichert[4].length, 1, 'mehr als die eine geänderte Übung geschrieben');
+    assert.equal(gespeichert[4][0].eintrag.done, true);
+    assert.ok(gespeichert[4][0].stand > 0, 'ohne Stand weiss der Server nicht, was neuer ist');
+    assert.equal(gespeichert[5], 'p2', 'der Plan gehört zum Eintrag');
+    /* Rückgängig holt die Übung zurück. */
+    assert.equal(doc.getElementById('rueckgaengig').hidden, false);
+    doc.getElementById('btnRueck').click();
+    assert.equal(doc.getElementById('btnErledigt').textContent, 'Übung erledigt');
+    assert.ok(await warte(() => doc.getElementById('speicherStand').dataset.stand === 'gespeichert'), 'oben steht nicht "Gespeichert"');
+  } finally { zurueck(); }
+});
+
+test('eine Eingabe, die offline nicht hinausgeht, bleibt im Gerät und oben steht es', async () => {
+  const { doc, window, zurueck } = await starteEinheit({
+    suche: `?g=g1&p=p2&u=${kraft}&d=2026-08-05`, plaene: [plan('p2', 'timo')], mitglieder: MITGLIEDER,
+  });
+  try {
+    await warte(() => !doc.getElementById('secPlayer').hidden);
+    globalThis.__abgleich = Object.assign(new Error('Failed to get document because the client is offline.'), { code: 'unavailable' });
+    const notiz = doc.getElementById('uebNotiz');
+    notiz.value = 'Knie zieht';
+    notiz.dispatchEvent(new window.Event('input', { bubbles: true }));
+    /* Sofort im Gerät — noch bevor die 900 ms um sind. */
+    const roh = JSON.parse(window.localStorage.getItem('firn.protokoll.offen') || '{}');
+    const tag = roh['g1|timo|2026-08-05'];
+    assert.ok(tag && Object.values(tag).some(x => x.eintrag?.note === 'Knie zieht'), 'die Notiz liegt nicht im Gerät');
+    /* Die Übung wechseln speichert sofort; offline scheitert es. */
+    doc.getElementById('btnWeiter').click();
+    assert.ok(await warte(() => doc.getElementById('speicherStand').dataset.stand === 'offline'), 'oben steht nicht, dass es aussteht');
+    assert.match(doc.getElementById('speicherText').textContent, /Noch nicht synchronisiert/);
+    assert.equal(doc.getElementById('btnNochmalSpeichern').hidden, false);
+    assert.equal(globalThis.__fehler.filter(f => f[0] === 'einheit/speichern').length, 0, 'offline ist kein Fehler zum Melden');
+    /* Wieder Netz: "Erneut versuchen" — danach ist das Gerät leer. */
+    globalThis.__abgleich = null;
+    doc.getElementById('btnNochmalSpeichern').click();
+    assert.ok(await warte(() => doc.getElementById('speicherStand').dataset.stand === 'gespeichert'));
+    assert.equal(window.localStorage.getItem('firn.protokoll.offen'), null, 'bestätigt, aber nicht aus dem Gerät genommen');
+  } finally { zurueck(); }
+});
+
+test('was ein anderes Gerät einträgt, erscheint live — ohne das Eigene zu überschreiben', async () => {
+  const { doc, window, zurueck } = await starteEinheit({
+    suche: `?g=g1&p=p2&u=${kraft}&d=2026-08-05`, plaene: [plan('p2', 'timo')], mitglieder: MITGLIEDER,
+  });
+  try {
+    await warte(() => !doc.getElementById('secPlayer').hidden);
+    await warte(() => typeof globalThis.__protokollLive === 'function');
+    const items = programm.units[kraft].items;
+    const hier = doc.getElementById('uebName').textContent;
+    const offenHier = items.find(i => i.name === hier);
+    const anderes = items.find(i => i !== offenHier);
+    /* Hier eine Notiz, noch nicht gespeichert … */
+    globalThis.__abgleich = () => new Promise(() => {});   // hängt: bleibt offen
+    const notiz = doc.getElementById('uebNotiz');
+    notiz.value = 'meins';
+    notiz.dispatchEvent(new window.Event('input', { bubbles: true }));
+    /* … und vom Handy kommt die andere Übung als erledigt. */
+    globalThis.__protokollLive({ uid: 'timo', datum: '2026-08-05', units: { [kraft]: { items: {
+      [anderes.key]: { done: true, note: '', sets: [], stand: 500 },
+      [offenHier.key]: { done: false, note: 'vom Handy', sets: [], stand: 1 },
+    } } } });
+    notiz.blur();
+    await new Promise(r => setTimeout(r, 20));
+    assert.equal(doc.getElementById('uebNotiz').value, 'meins', 'die eigene, noch offene Notiz wurde überschrieben');
+    assert.match(doc.querySelector('.appbar__date')?.textContent || '', /1 von/, 'die erledigte Übung vom anderen Gerät zählt nicht');
   } finally { zurueck(); }
 });
 

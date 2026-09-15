@@ -370,6 +370,7 @@ export function mountRail({ profile = null } = {}) {
   verkabelLeiste();
   gruppeInDerLeiste(nav);
   pilleLaden();
+  offenesNachtragen();
   return nav;
 }
 
@@ -487,6 +488,24 @@ function gruppeInDerLeiste(nav) {
    obersten Dokument, nie in einem Rahmen des Routers, und nur, wenn es
    einen Worker gibt. Geladen erst hier, damit eine Seite ohne Assistent
    nichts davon mitschleppt. */
+/* Trainingseinträge, die im Gerät liegen geblieben sind (v.35.64.0 —
+   offline im Kraftraum, Seite zu früh zu): beim Start der App hinaus.
+   Hier und nicht in nav.js, weil Gruppe, Training und Einheit nav.js nicht
+   laden. Nur oben, nie in einem Rahmen, und nur, wenn es etwas gibt. */
+let nachgetragen = false;
+function offenesNachtragen() {
+  if (nachgetragen || imRahmen() || typeof auth?.onAuthStateChanged !== 'function') return;
+  try { if (!localStorage.getItem('firn.protokoll.offen')) return; } catch { return; }
+  nachgetragen = true;
+  const weg = auth.onAuthStateChanged(user => {
+    if (!user) return;
+    try { weg?.(); } catch { /* einmal genügt */ }
+    Promise.all([import('./protokoll-sicherung.js'), import('./groups.js')])
+      .then(([s, g]) => s.nachtragen(localStorage, user.uid, g.protokollAbgleichen))
+      .catch(() => { /* bleibt im Gerät, nächstes Mal */ });
+  });
+}
+
 function pilleLaden() {
   if (imRahmen() || !(globalThis.FIRN_KI_BASIS || WORKER_BASIS)) return;
   import('./ki-pille.js').then(m => m.pilleZeigen()).catch(() => { /* ohne Pille geht alles weiter */ });

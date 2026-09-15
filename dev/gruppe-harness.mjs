@@ -169,7 +169,26 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
       if (globalThis.__protokollAbgelehnt) throw new Error('Missing or insufficient permissions.');
       return globalThis.__protokoll?.[uid] || { uid, datum, units: {} };
     };
-    export const protokollSpeichern = ${merke('protokollSpeichern')};
+    /* Seit v.35.64.0 je Übung, in einer Transaktion: mitgeschrieben,
+       und alles gilt als geschrieben — ausser der Test legt in
+       globalThis.__abgleich eine Antwort (oder einen Fehler) fest. */
+    export const protokollAbgleichen = async (...a) => {
+      (globalThis.__aufrufe ||= []).push(['protokollAbgleichen', ...a]);
+      const antwort = globalThis.__abgleich;
+      if (antwort instanceof Error) throw antwort;
+      if (typeof antwort === 'function') return antwort(...a);
+      return { server: null, geschrieben: a[3].map(x => x.unitId + '\\u001f' + x.key), verworfen: [] };
+    };
+    /* Live: meldet einmal, was in __protokoll steht; __protokollLive(daten)
+       spielt eine Meldung von einem anderen Gerät nach. */
+    export const beobachteProtokoll = (gid, uid, datum, cb) => {
+      globalThis.__protokollLive = daten => cb({ daten, ausSpeicher: false });
+      setTimeout(() => cb({ daten: globalThis.__protokoll?.[uid] || null, ausSpeicher: false }), 0);
+      return () => {};
+    };
+    export const privatEinheit = (gid, unitId) => gid + '~' + unitId;
+    export const ladePrivat = async () => globalThis.__privat || {};
+    export const privatSetzen = ${merke('privatSetzen')};
   `;
 }
 
@@ -238,6 +257,9 @@ async function lade({
   globalThis.__bekannte = [];
   globalThis.__partner = [];
   globalThis.__aufrufe = [];
+  globalThis.__abgleich = null;
+  globalThis.__privat = null;
+  globalThis.__protokollLive = null;
   globalThis.__termine = termine;
   globalThis.__profil = profil;
   globalThis.__antwort = { gruppeAnlegen: 'g-neu' };
@@ -282,6 +304,7 @@ async function lade({
     .replace(`'../../programm.js'`, `'${datei('assets/js/programm.js')}'`)
     .replace(`'../../calendar-interop.js'`, `'${datei('assets/js/calendar-interop.js')}'`)
     .replace(`'../../einheit.js'`, `'${datei('assets/js/einheit.js')}'`)
+    .replace(`'../../protokoll-sicherung.js'`, `'${datei('assets/js/protokoll-sicherung.js')}'`)
     .replace(`'../../zuordnung.js'`, `'${datei('assets/js/zuordnung.js')}'`)
     .replace(`'../../fispunkte.js'`, `'${datei('assets/js/fispunkte.js')}'`)
     .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`)

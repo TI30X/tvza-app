@@ -38,7 +38,9 @@ import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
   getDocFromCache, getDocsFromServer,
   onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp, deleteField, addDoc, setDoc, Timestamp,
+  runTransaction,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { aenderungenPruefen } from './einheit.js';
 import { neuerCode, codeSauber, ablaufAb, abgelaufen } from './einladung.js';
 import { reiseUebernehmen } from './reise-uebernahme.js';
 import { nameVon, kreisMitglieder } from './personen.js';
@@ -928,11 +930,56 @@ export async function ladeProtokolle(gid, uid) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-export function protokollSpeichern(gid, uid, datum, units) {
-  return writeBatch(db)
-    .set(protokollRef(gid, uid, datum),
-         { uid, datum, units, updatedAt: serverTimestamp() })
-    .commit();
+/* Je Übung, nicht das ganze Dokument (v.35.64.0, siehe einheit.js
+   "Zwischen Geräten"). Bis dahin schrieb protokollSpeichern mit set()
+   den ganzen Tag — ein zweites Gerät mit altem Stand löschte, was das
+   erste eingetragen hatte. Die Transaktion liest den Stand des Servers
+   und schreibt nur, was dort nicht neuer ist. Offline scheitert sie; das
+   Eingetragene bleibt dann im Gerät (protokoll-sicherung.js) und geht
+   hinaus, sobald wieder Netz ist. */
+export function protokollAbgleichen(gid, uid, datum, aenderungen, planId = '') {
+  const ref = protokollRef(gid, uid, datum);
+  return runTransaction(db, async tx => {
+    const snap = await tx.get(ref);
+    const server = snap.exists() ? snap.data() : null;
+    const { units, geschrieben, verworfen } = aenderungenPruefen(server, aenderungen);
+    if (geschrieben.length) {
+      const daten = {};
+      for (const [unitId, u] of Object.entries(units)) {
+        daten[unitId] = { ...(planId ? { plan: planId } : {}), items: u.items };
+      }
+      tx.set(ref, { uid, datum, units: daten, updatedAt: serverTimestamp() }, { merge: true });
+    }
+    return { server, geschrieben, verworfen };
+  });
+}
+
+/* Live: was ein anderes Gerät einträgt, erscheint hier (v.35.64.0). */
+export function beobachteProtokoll(gid, uid, datum, cb, fehler) {
+  return onSnapshot(protokollRef(gid, uid, datum), { includeMetadataChanges: true },
+    snap => cb({ daten: snap.exists() ? snap.data() : null, ausSpeicher: snap.metadata.fromCache }),
+    fehler);
+}
+
+/* Private Notizen (v.35.64.0). Michel: "Private Notizen bleiben privat."
+   Das Protokoll der Gruppe liest die Leitung — eine Notiz dort sieht
+   sie. Was nur für einen selbst ist, liegt unter
+   users/{uid}/trainingLogs/{datum} (nur die Person, Regel seit jeher,
+   schema 1), je Gruppe und Einheit: units["gid~unitId"].items[key].privat. */
+const privatRef = (uid, datum) => doc(db, 'users', uid, 'trainingLogs', datum);
+export const privatEinheit = (gid, unitId) => `${gid}~${unitId}`;
+
+export async function ladePrivat(uid, datum) {
+  const snap = await getDoc(privatRef(uid, datum));
+  return snap.exists() ? (snap.data().units || {}) : {};
+}
+
+export function privatSetzen(uid, datum, gid, unitId, key, text) {
+  return setDoc(privatRef(uid, datum), {
+    schema: 1,
+    units: { [privatEinheit(gid, unitId)]: { items: { [key]: { privat: String(text || '').slice(0, 500) } } } },
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
 }
 
 /* ── Rennergebnisse ────────────────────────────────────────────────

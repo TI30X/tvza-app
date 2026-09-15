@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="../assets/css/kit.css?v=29" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
+  <link rel="stylesheet" href="../assets/css/feature/einheit.css?v=1" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
   <title data-i18n="eh.seitentitel">Einheit — Firn</title>
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
@@ -34,6 +35,8 @@
     <!-- Die Leitung sieht den Plan eines Athleten an: der Code sagt, wessen
          er ist. Kein data-i18n — den Namen kennt nur der Code. -->
     <p class="empty-hint" id="ansichtHinweis" hidden></p>
+    <!-- Wie aktuell das ist, was die Leitung sieht (v.35.64.0). -->
+    <p class="empty-hint" id="ansichtStand" hidden></p>
 
     <!-- Erst wählen, welche Einheit. Ein Wochenplan hat mehrere, und
          der Player zeigt immer genau eine. -->
@@ -43,14 +46,26 @@
            data-i18n — der Katalog kaeme spaeter und schriebe das
            falsche Ziel darueber. -->
       <button class="backlink" id="btnZurueckGruppe" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span id="zurueckText">Zur Gruppe</span></button>
-      <div class="marke" data-i18n="eh.waehlen">Einheit wählen</div>
+      <!-- "Einheiten an diesem Tag" oder "Einheit wählen" — setzt der Code. -->
+      <div class="marke" id="wahlTitel">Einheit wählen</div>
       <div class="rows" id="listEinheiten"></div>
     </section>
 
     <!-- Der Player. Eine Übung, gross, mit den Sätzen darunter — im
          Kraftraum hält man das Telefon in einer Hand. -->
     <section class="section" id="secPlayer" hidden>
-      <button class="backlink" id="btnZurWahl" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Einheit wechseln</button>
+      <!-- Die ganze Liste der Einheiten nur, wo kein Tag sie eingrenzt
+           (v.35.64.0): aus der Woche öffnet man die Einheit direkt. -->
+      <button class="backlink" id="btnZurWahl" type="button" hidden><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="eh.alleEinheiten">Alle Einheiten</span></button>
+
+      <!-- Mehrere Einheiten am selben Tag: nur diese, zum Umschalten. -->
+      <div class="seg tag-einheiten" id="tagEinheiten" role="group" aria-label="Einheiten an diesem Tag" data-i18n-attr="aria-label:eh.einheitenAmTag" hidden></div>
+
+      <!-- Gespeichert, noch nicht synchronisiert oder gescheitert (v.35.64.0). -->
+      <p class="speicherstand" id="speicherStand" role="status" aria-live="polite" hidden>
+        <span id="speicherText"></span>
+        <button class="linkknopf" id="btnNochmalSpeichern" type="button" hidden data-i18n="eh.st.nochmal">Erneut versuchen</button>
+      </p>
 
       <!-- Der Fortschritt als Leiste, nicht als graue Zeile. Er ist
            das, was einen bei der Stange haelt. -->
@@ -85,9 +100,12 @@
           </div>
           <div class="uhr__zeit" id="uhrZeit" role="timer" aria-live="off">0:00</div>
           <div class="uhr__leiste"><span class="uhr__fuellung" id="uhrFuellung"></span></div>
+          <!-- "180-240 Sec": beide Längen zur Wahl (v.35.64.0). -->
+          <div class="seg uhr__bereich" id="uhrBereich" role="group" aria-label="Länge der Pause" data-i18n-attr="aria-label:eh.pauseLaenge" hidden></div>
           <div class="uhr__knoepfe">
             <button class="b b--primary" id="uhrStart" type="button">Start</button>
             <button class="b b--secondary" id="uhrPlus" type="button" hidden>+15 s</button>
+            <button class="b b--secondary" id="uhrReset" type="button" hidden>Neu starten</button>
             <button class="b b--secondary" id="uhrStopp" type="button">Zurücksetzen</button>
           </div>
         </div>
@@ -97,15 +115,23 @@
              beim Umzug auf die Gruppe durften sie nicht verloren gehen. -->
         <div class="ueb-bilder" id="uebBilder" hidden></div>
 
-        <div class="rows" id="listSaetze"></div>
+        <div class="saetze" id="listSaetze"></div>
+        <!-- Für Screenreader: "Satz 2 abgehakt". -->
+        <p class="nur-vorlesen" id="ansage" aria-live="polite"></p>
 
         <!-- Die andere Trainingswoche. Genau daraus liest man ab, ob
              es besser geworden ist. -->
         <div id="uebVorwochen" hidden></div>
 
+        <!-- Zwei Notizen (v.35.64.0): die eine liest die Leitung mit, die
+             andere nur man selbst (users/{uid}/trainingLogs). -->
         <div class="form-group">
-          <label class="form-label" for="uebNotiz">Notiz</label>
-          <input class="form-input" id="uebNotiz" type="text" maxlength="200" placeholder="z.B. zog im Knie" />
+          <label class="form-label" for="uebNotiz" data-i18n="eh.notizLeitung">Notiz für die Leitung</label>
+          <textarea class="form-input notiz" id="uebNotiz" rows="2" maxlength="200" placeholder="z.B. zog im Knie" data-i18n-attr="placeholder:eh.notizBsp"></textarea>
+        </div>
+        <div class="form-group" id="grpPrivat">
+          <label class="form-label" for="uebPrivat" data-i18n="eh.notizPrivat">Nur für mich</label>
+          <textarea class="form-input notiz" id="uebPrivat" rows="2" maxlength="500"></textarea>
         </div>
 
         <button class="b b--primary b--block" id="btnErledigt" type="button" data-i18n="eh.erledigt">Übung erledigt</button>
@@ -131,8 +157,14 @@
 
     <p class="empty-hint" id="ladeFehler" hidden></p>
 
+    <!-- Rückgängig nach "Übung erledigt" (v.35.64.0). -->
+    <div class="rueckgaengig" id="rueckgaengig" role="status" hidden>
+      <span id="rueckText"></span>
+      <button class="linkknopf" id="btnRueck" type="button" data-i18n="eh.rueckgaengig">Rückgängig</button>
+    </div>
+
   </main>
 
-  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=22"></script>
+  <script type="module" src="../assets/js/feature/einheit/einheit.js?v=24"></script>
 </body>
 </html>

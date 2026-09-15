@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.63.1**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.64.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-80 Testdateien, **803 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+81 Testdateien, **817 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -932,6 +932,55 @@ dorthin** steht im Kontomenü („Admin", nur mit `isTimo`, v.35.63.1) — Start
 nimmt den Admin aus der Bereichsliste, und bis dahin führte für ein
 Admin-Konto kein Link mehr zu `pages/admin.html`. `dev/admin-weg.test.mjs`.
 
+**26. Das Trainingsprotokoll wird je Übung geschrieben** (v.35.64.0).
+Michel: „Fortschritt vom Handy kam nicht auf den PC, Notizen sind
+verschwunden". Im Code belegt waren zwei Ursachen: `protokollSpeichern`
+schrieb mit `set()` das GANZE Protokoll des Tages — ein zweites Gerät, das
+die Einheit mit altem Stand offen hatte, schrieb beim nächsten Tipp über
+alles, was das erste eingetragen hatte —, und gespeichert wurde 900 ms nach
+der letzten Eingabe, ohne `pagehide`: wer vorher „Zurück" tippte, verlor die
+letzte Eingabe (oft die Notiz). Ob Michels verlorene Einträge noch
+irgendwo liegen, lässt sich von hier nicht prüfen (kein Zugriff auf die
+echten Daten); was überschrieben wurde, ist weg.
+
+- Jeder Eintrag einer Übung trägt `stand` (ms). `protokollAbgleichen`
+  (groups.js) schreibt in einer **Transaktion** nur die geänderten Übungen
+  und nur, wo der Server nicht neuer ist (`aenderungenPruefen`, einheit.js);
+  eine geleerte Übung bleibt als `{ stand }` stehen, damit ein älteres
+  Gerät sie nicht zurückbringt. Die Kennung bleibt `uid__datum` (Regeln,
+  Trainerzugriff, alte Daten), der Plan steht an der Einheit (`plan`) — ein
+  korrigierter Plan derselben Woche setzt den Fortschritt nicht zurück.
+- **Das Gerät hält, was noch aussteht** (`protokoll-sicherung.js`,
+  `localStorage['firn.protokoll.offen']`): synchron bei jeder Änderung,
+  weg erst nach der Bestätigung genau dieses Stands. Der Player schickt es
+  beim Öffnen, die Leiste beim Start der App (`offenesNachtragen` in
+  shell.js — nicht nav.js, das Gruppe, Training und Einheit nicht laden).
+  Offline scheitert die Transaktion, oben steht „Noch nicht synchronisiert".
+- Sofort gespeichert wird beim Übungswechsel, „Übung erledigt", Verlassen
+  und Wegschalten der App; sonst nach 900 ms. `beobachteProtokoll` zeigt
+  live, was ein anderes Gerät einträgt; wer gerade tippt, wird nicht neu
+  gezeichnet. Die Leitung sieht in der Ansicht „Zuletzt synchronisiert".
+- **Ein Satz trägt seinen Haken selbst** (`ok`). Die grosse Fläche hakt ab
+  (mit der Vorgabe), ein zweiter Tipp nimmt zurück (die Werte bleiben); der
+  Stift daneben öffnet „Wiederholungen × Gewicht" (+ Körpergewicht, Dauer,
+  Strecke, wo die Übung davon spricht) und hakt nichts ab. Alte Protokolle
+  ohne `ok` zählen wie früher. „Übung erledigt" hat ein Rückgängig.
+- **Zwei Notizen:** „Notiz für die Leitung" im Protokoll, „Nur für mich"
+  unter `users/{uid}/trainingLogs/{datum}` (owner-only, Regel seit jeher).
+- **Die Pause:** ein Bereich („180-240 Sec") hat beide Längen zur Wahl
+  (`pauseBereich`), dazu Anhalten/Fortsetzen, +15 s, Neu starten,
+  Überspringen; eine Uhr, mit der Endzeit gerechnet, übersteht Übungswechsel
+  und Neuladen (`sessionStorage`). Wer den Satz zurücknimmt, beendet seine
+  Pause.
+- **Direkt in die Einheit:** aus der Woche öffnet der Player die Einheit
+  des Tages; hat der Tag mehrere, stehen nur diese oben zum Umschalten
+  (`einheitenAmTag`, wochenplan.js). „Einheit wechseln" gibt es nur noch
+  ohne Tag.
+- Attrappe: `runTransaction`, offline mit `window.__attrappeOffline = true`.
+  Zwei Tabs sind zwei Geräte (BroadcastChannel).
+
+`dev/protokoll-sync.test.mjs`, `einheit-seite`, `einheit-timer`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -944,7 +993,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1095 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1129 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel

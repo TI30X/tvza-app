@@ -146,10 +146,12 @@ test('Player: ein Tipp auf den Satz bestätigt das Gewicht und startet die Pause
     assert.match(doc.getElementById('uhrZeit').textContent, /^[12]:\d\d$/);
     assert.equal(doc.getElementById('uhrStart').textContent, 'Anhalten');
     assert.equal(doc.getElementById('uhrPlus').hidden, false);
-    await warte(() => globalThis.__aufrufe.some(a => a[0] === 'protokollSpeichern'), 200);
-    const gespeichert = globalThis.__aufrufe.find(a => a[0] === 'protokollSpeichern')?.[4];
-    const satz = gespeichert?.['kraft-beine']?.items?.[erste.key]?.sets?.[0];
+    /* Seit v.35.64.0 je Übung (protokollAbgleichen), mit eigenem Haken. */
+    await warte(() => globalThis.__aufrufe.some(a => a[0] === 'protokollAbgleichen'), 200);
+    const gespeichert = globalThis.__aufrufe.find(a => a[0] === 'protokollAbgleichen')?.[4];
+    const satz = gespeichert?.find(x => x.key === erste.key)?.eintrag?.sets?.[0];
     assert.equal(satz?.weight, String(erste.sets[0].weight), 'bestätigt ist das Gewicht des Plans');
+    assert.equal(satz?.ok, true, 'der Satz trägt seinen Haken nicht');
 
     klick(doc.getElementById('uhrStopp'));
     assert.equal(doc.getElementById('uhr').hidden, true, 'Überspringen beendet die Pause');
@@ -170,7 +172,7 @@ test('Player: sagt der Plan "??", fragt ein Tipp nach dem Gewicht, statt "??" zu
     assert.ok(feld, 'das Gewichtsfeld geht nicht auf');
     assert.equal(feld.placeholder, 'kg');
     await new Promise(r => setTimeout(r, 1000));
-    assert.equal(globalThis.__aufrufe.some(a => a[0] === 'protokollSpeichern'), false, 'gespeichert wurde, bevor jemand etwas eintrug');
+    assert.equal(globalThis.__aufrufe.some(a => a[0] === 'protokollAbgleichen'), false, 'gespeichert wurde, bevor jemand etwas eintrug');
   } finally { zurueck(); }
 });
 
@@ -219,5 +221,91 @@ test('die Leitung sieht, mit wie viel Gewicht wirklich trainiert wird', async ()
     klick(doc.querySelector('[data-person="timo"]'));
     assert.ok(await warte(() => !doc.getElementById('secGewichte').hidden), 'die Gewichte stehen nicht im Profil');
     assert.match(doc.getElementById('listGewichte').textContent, /Kniebeuge hinten[\s\S]*9× 52 kg · 9× 52 kg/);
+  } finally { zurueck(); }
+});
+
+/* ── Bearbeiten und Abhaken sind zwei Dinge (v.35.64.0) ─────────── */
+
+test('Player: Bearbeiten hakt nicht ab, die Fläche schon — und ein zweiter Tipp nimmt es zurück', async () => {
+  const { doc, window, zurueck } = await starteEinheit({
+    suche: '?g=g1&p=p1&u=kraft-beine&d=2026-08-04', plaene: [plan(programm)], mitglieder: MITGLIEDER,
+  });
+  try {
+    await warte(() => !doc.getElementById('secPlayer').hidden);
+    const alle = programm.units['kraft-beine'].items;
+    const n = alle.findIndex(i => /^\d/.test(i.sets?.[0]?.weight || ''));
+    for (let i = 0; i < n; i++) klick(doc.getElementById('btnWeiter'));
+    const erste = alle[n];
+
+    /* Der Stift öffnet Wiederholungen × Gewicht, in dieser Folge. */
+    klick(doc.querySelector('[data-satz-oeffnen="0"]'));
+    const felder = [...doc.querySelectorAll('[data-satz-felder="0"] input.form-input')].map(f => f.dataset.feld);
+    assert.deepEqual(felder.slice(0, 2), ['reps', 'weight'], 'die Felder stehen nicht in der Folge "5 × 40 kg"');
+    const gewicht = doc.querySelector('[data-satz="0"][data-feld="weight"]');
+    gewicht.value = '55';
+    gewicht.dispatchEvent(new window.Event('input', { bubbles: true }));
+    klick(doc.querySelector('[data-satz-zu="0"]'));
+    assert.equal(doc.querySelector('[data-satz-zeile="0"]').classList.contains('satz--gemacht'), false,
+      'ein korrigiertes Gewicht hat den Satz abgehakt');
+    assert.equal(doc.getElementById('uhr').hidden, true, 'Bearbeiten startete die Pause');
+
+    /* Die Fläche hakt ab — mit dem eben eingetragenen Gewicht. */
+    klick(doc.querySelector('[data-satz-tippen="0"]'));
+    assert.equal(doc.querySelector('[data-satz-zeile="0"]').classList.contains('satz--gemacht'), true);
+    assert.match(doc.querySelector('[data-satz-wert="0"]').textContent, /^\S+ × 55 kg$/, '"Wiederholungen × Gewicht"');
+
+    /* Zurück: der Haken geht, das Gewicht bleibt. */
+    klick(doc.querySelector('[data-satz-tippen="0"]'));
+    assert.equal(doc.querySelector('[data-satz-zeile="0"]').classList.contains('satz--gemacht'), false);
+    assert.match(doc.querySelector('[data-satz-wert="0"]').textContent, /55 kg/);
+    await warte(() => globalThis.__aufrufe.some(a => a[0] === 'protokollAbgleichen'), 200);
+    const letzte = globalThis.__aufrufe.filter(a => a[0] === 'protokollAbgleichen').at(-1)[4];
+    const satz = letzte.find(x => x.key === erste.key).eintrag.sets[0];
+    assert.deepEqual([satz.weight, satz.ok], ['55', false]);
+  } finally { zurueck(); }
+});
+
+test('Player: eine Pause "180-240 Sec" hat beide Längen, fortsetzen, neu starten — und endet mit dem Satz', async () => {
+  const mitBereich = structuredClone(programm);
+  const alle = mitBereich.units['kraft-beine'].items;
+  const n = alle.findIndex(i => /^\d/.test(i.sets?.[0]?.weight || ''));
+  alle[n].pause = '180-240 Sec';
+  const { doc, zurueck } = await starteEinheit({
+    suche: '?g=g1&p=p1&u=kraft-beine&d=2026-08-04', plaene: [plan(mitBereich)], mitglieder: MITGLIEDER,
+  });
+  try {
+    await warte(() => !doc.getElementById('secPlayer').hidden);
+    for (let i = 0; i < n; i++) klick(doc.getElementById('btnWeiter'));
+    klick(doc.querySelector('[data-satz-tippen="0"]'));
+    assert.equal(doc.getElementById('uhrZeit').textContent, '3:00', 'die untere Grenze ist nicht vorgewählt');
+    const wahl = [...doc.querySelectorAll('#uhrBereich [data-uhr-laenge]')];
+    assert.deepEqual(wahl.map(b => b.textContent.trim()), ['3:00', '4:00']);
+    klick(wahl[1]);
+    assert.equal(doc.getElementById('uhrZeit').textContent, '4:00');
+    klick(doc.getElementById('uhrStart'));          // anhalten
+    assert.equal(doc.getElementById('uhrStart').textContent, 'Start', 'bei voller Zeit heisst es Start');
+    klick(doc.getElementById('uhrPlus'));
+    assert.equal(doc.getElementById('uhrZeit').textContent, '4:15');
+    klick(doc.getElementById('uhrReset'));          // neu starten
+    assert.equal(doc.getElementById('uhrStart').textContent, 'Anhalten');
+    /* Keine zweite Uhr: ein weiterer Satz startet dieselbe neu. */
+    klick(doc.querySelector('[data-satz-tippen="1"]'));
+    assert.equal(doc.querySelectorAll('.uhr').length, 1);
+    /* Den Satz zurücknehmen, dessen Pause läuft: sie endet. */
+    klick(doc.querySelector('[data-satz-tippen="1"]'));
+    assert.equal(doc.getElementById('uhr').hidden, true, 'die Pause lief weiter, obwohl der Satz zurückgenommen ist');
+  } finally { zurueck(); }
+});
+
+test('Player: aus der Woche mit einem Tag öffnet die Einheit des Tages direkt — keine Liste', async () => {
+  const tage = (await import('../assets/js/wochenplan.js')).planTageMitDatum(programm, '2026-08-05');
+  const tag = tage.find(t => t.eintraege.filter(e => e.unit && programm.units[e.unit]?.items?.length).length === 1);
+  const { doc, zurueck } = await starteEinheit({
+    suche: `?g=g1&p=p1&d=${tag.datum}`, plaene: [plan(programm)], mitglieder: MITGLIEDER,
+  });
+  try {
+    assert.ok(await warte(() => !doc.getElementById('secPlayer').hidden), 'statt der Einheit steht eine Liste');
+    assert.equal(doc.getElementById('secWahl').hidden, true);
+    assert.equal(doc.getElementById('btnZurWahl').hidden, true, '"Einheit wechseln" gehört nicht in den normalen Ablauf');
   } finally { zurueck(); }
 });

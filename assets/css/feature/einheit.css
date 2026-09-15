@@ -1,0 +1,146 @@
+/* ══════════════════════════════════════════════════════════════════
+   Der Einheiten-Player (v.35.64.0) — was zu kit.css (Timer, Haken,
+   Fortschritt) dazukam, als der Satz eine grosse Fläche zum Abhaken und
+   einen eigenen Knopf zum Bearbeiten bekam.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Gespeichert / noch nicht synchronisiert / gescheitert. Leise, bis
+   etwas nicht stimmt. */
+.speicherstand {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2);
+  margin: 0 0 var(--s3);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+.speicherstand[data-stand="gespeichert"]::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--success, var(--accent));
+}
+.speicherstand[data-stand="offline"],
+.speicherstand[data-stand="konflikt"] { color: var(--ink); }
+.speicherstand[data-stand="fehler"] { color: var(--danger); }
+
+.linkknopf {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit; font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.nur-vorlesen {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tag-einheiten { margin-bottom: var(--s3); }
+.uhr__bereich { margin-top: var(--s3); }
+
+/* ── Ein Satz ──────────────────────────────────────────────────────
+   Die Fläche ist der Haken: gross genug für einen Daumen mit Kreide
+   daran. Der Stift daneben ist ein eigener Knopf. */
+.saetze { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s3) 0; }
+
+.satz {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface);
+  overflow: hidden;
+}
+.satz--gemacht {
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
+  background: color-mix(in oklab, var(--accent) 7%, var(--surface));
+}
+
+.satz__flaeche {
+  display: flex; align-items: center; gap: var(--s3);
+  min-height: 60px;
+  padding: var(--s2) var(--s3);
+  border: 0;
+  border-radius: var(--r-row);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.satz__flaeche:disabled { cursor: default; }
+.satz__flaeche:focus-visible,
+.satz__stift:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.satz--gemacht .satz__haken {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}
+
+.satz__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.satz__titel { font-weight: 700; color: var(--ink); }
+.satz__ziel { font-size: var(--text-sm); color: var(--ink-soft); }
+
+.satz__stift {
+  width: 52px;
+  display: grid; place-items: center;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.satz__stift:hover { color: var(--ink); }
+.satz__stift[aria-expanded="true"] { color: var(--accent); }
+
+/* Bearbeiten: Wiederholungen × Gewicht, in dieser Folge — wie es dasteht. */
+.satz__felder {
+  grid-column: 1 / -1;
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s2) var(--s3);
+  padding: var(--s3);
+  border-top: 1px solid var(--border);
+}
+.satz__feld { display: flex; flex-direction: column; gap: var(--s1); flex: 1 1 7em; min-width: 0; }
+.satz__feld .form-input { min-height: 48px; font-size: 16px; }
+.satz__feldname { font-size: var(--text-sm); color: var(--ink-soft); }
+.satz__mal { align-self: center; padding-top: var(--s4); color: var(--ink-soft); font-weight: 700; }
+.satz__koerper {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  min-height: 48px;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.satz__koerper input { width: 20px; height: 20px; accent-color: var(--accent); }
+.satz__fertig { flex: 1 1 100%; }
+
+/* Alle Sätze abgehakt: "Übung erledigt" ist der nächste Schritt. */
+#btnErledigt.is-bereit { outline: 3px solid color-mix(in oklab, var(--accent) 35%, transparent); outline-offset: 2px; }
+
+.notiz { min-height: 48px; resize: vertical; line-height: 1.4; }
+
+/* Rückgängig: unten, über der Leiste und dem Rand des Geräts. */
+.rueckgaengig {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--s4) + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  translate: -50% 0;
+  display: flex; align-items: center; gap: var(--s4);
+  max-width: calc(100vw - 2 * var(--s4));
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-row);
+  background: var(--brand-navy, var(--ink));
+  color: var(--surface);
+  font-size: var(--text-sm);
+}
+.rueckgaengig .linkknopf { color: inherit; }
+body.has-nav .rueckgaengig { bottom: calc(var(--nav-hoehe) + var(--s3) + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 900px) { body.has-nav .rueckgaengig { bottom: var(--s5); } }
