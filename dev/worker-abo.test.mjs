@@ -96,8 +96,11 @@ test('ohne Worker gibt es keinen Abo-Knopf', async () => {
 
   // Eine statische Seite kann kein text/calendar ausliefern. Ein Knopf,
   // der zuverlässig scheitert, ist schlechter als keiner.
-  assert.match(config, /export const WORKER_BASIS = ''/);
-  assert.match(js, /abo\.hidden = !darfFuehren \|\| !WORKER_BASIS/);
+  /* Seit v.35.57.0 steht die Adresse drin (für den Assistenten), der
+     Service-Account aber noch nicht — das Abo hat darum einen eigenen
+     Schalter und bleibt aus, bis /health "konto=vorhanden" meldet. */
+  assert.match(config, /export const KALENDER_ABO = false;/);
+  assert.match(js, /abo\.hidden = !darfFuehren \|\| !WORKER_BASIS \|\| !KALENDER_ABO/);
   assert.match(html, /id="btnAbo"[^>]*hidden/);
 });
 

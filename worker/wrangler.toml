@@ -16,6 +16,11 @@ name = "firn-worker"
 main = "index.js"
 compatibility_date = "2026-01-01"
 
+# Die Adresse https://firn-worker.tvza-app.workers.dev (v.35.57.0). Vorschau-
+# Adressen je Version braucht niemand — sie wären nur weitere Wege hinein.
+workers_dev = true
+preview_urls = false
+
 # nodejs_compat wird nicht gebraucht: der Worker benutzt nur fetch,
 # WebCrypto und TextEncoder. Sollte hier je eine Node-Abhängigkeit
 # nötig werden, ist das ein Zeichen, dass die Aufgabe nicht auf einen
@@ -38,7 +43,7 @@ KI_ORIGINS = "https://ti30x.github.io,http://localhost:4174"
 # `npx wrangler kv namespace create KI` aus — hier eintragen.
 [[kv_namespaces]]
 binding = "KI"
-id = "HIER_DIE_ID_EINTRAGEN"
+id = "1984824514c340efad07e8b1b5f337ce"
 
 [observability]
 enabled = true

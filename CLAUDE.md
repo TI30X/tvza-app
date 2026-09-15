@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.56.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.57.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -765,11 +765,16 @@ Zwei Dinge, die leicht übersehen werden:
 
 ## Offene Punkte
 
-- **Der Worker ist nicht ausgerollt** — darum ist `WORKER_BASIS` leer und
-  die Pille (Falle 20) unsichtbar. Für den Assistenten allein reichen KV
-  anlegen, `GEMINI_API_KEY` als Secret, `wrangler deploy`, Adresse in
-  `worker-config.js` (`worker/README.md`). Michel macht das selbst — der
-  Schlüssel geht nie durch das Repo.
+- **Der Worker läuft seit 15.09.2026** unter
+  `https://firn-worker.tvza-app.workers.dev` (Michels Cloudflare-Konto,
+  KV `KI`, Gemini-Schlüssel als Secret — von Michel selbst gesetzt, nie
+  durch das Repo). `/health` meldet `ki=bereit`, `konto=FEHLT`: der
+  Service-Account fehlt noch. Darum steht das Kalender-Abo hinter einem
+  eigenen Schalter (`KALENDER_ABO = false` in `worker-config.js`) — mit
+  der Adresse allein stünde sonst ein Knopf da, der zuverlässig scheitert.
+  Ohne Service-Account prüft der Worker die Freischaltung nicht selbst
+  (Falle 20). Auf Windows: PowerShell kennt kein `&&` und blockiert
+  `npx.ps1` — `npx.cmd wrangler …` im Ordner `worker`.
 - **Kein Server.** Das blockiert vier Dinge auf einmal: Einladungsmails
   (`mailer/` schreibt in die `mail`-Sammlung, niemand leert sie), das
   Kalender-Abo (`worker/` ist fertig, nirgends ausgerollt), das Abo/Bezahlen
@@ -836,7 +841,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.56.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.57.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

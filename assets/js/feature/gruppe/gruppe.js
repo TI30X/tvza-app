@@ -61,7 +61,7 @@ import { gewichtsVerlauf } from '../../einheit.js';
 import {
   rennpunkte, gesamtpunkte, standMit, standJeDisziplin,
 } from '../../fispunkte.js';
-import { WORKER_BASIS } from '../../worker-config.js';
+import { WORKER_BASIS, KALENDER_ABO } from '../../worker-config.js';
 import { passendesMitglied } from '../../zuordnung.js';
 
 const $ = id => document.getElementById(id);
@@ -781,7 +781,7 @@ function zeichne() {
   /* Ohne Worker gibt es keine Adresse, die man abonnieren könnte —
      eine statische Seite kann kein text/calendar ausliefern. */
   const abo = $('btnAbo');
-  if (abo) abo.hidden = !darfFuehren || !WORKER_BASIS;
+  if (abo) abo.hidden = !darfFuehren || !WORKER_BASIS || !KALENDER_ABO;
 
   if (!hat) {
     setShellTitle(t('nav.gruppe', 'Gruppe'));
