@@ -23,8 +23,8 @@
 import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=24';
-import { mountAppRouter } from './router.js?v=17';
+import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=25';
+import { mountAppRouter } from './router.js?v=18';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 import { eigeneKarte, kartenNachtragen } from './personen.js';
 import { beobachteUnterhaltungen } from './chat-stand.js';
@@ -53,7 +53,7 @@ const relabel = root => window.TVZAI18n?.applyTo(root);
    Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
    weitergereicht, damit index.html sie wie bisher
    von nav.js beziehen können. */
-export { ownsTab } from './shell.js?v=24';
+export { ownsTab } from './shell.js?v=25';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');
@@ -187,9 +187,24 @@ function watchKeyboard() {
     el.tagName === 'TEXTAREA' ||
     el.isContentEditable ||
     (el.tagName === 'INPUT' &&
-      !/^(button|submit|reset|checkbox|radio|file|range|color|image)$/i.test(el.type || 'text'))
+      !/^(button|submit|reset|checkbox|radio|file|range|color|image)$/i.test(el.type || 'text')) ||
+    /* Der Fokus liegt in einem Rahmen des Routers (Chat, Kalender): für die
+       Seite oben ist dann der Rahmen das aktive Element (v.35.62.0). */
+    (el.tagName === 'IFRAME' && (() => { try { return writable(el.contentDocument?.activeElement); } catch { return false; } })())
   );
-  const sync = () => document.body.classList.toggle('kb-open', writable(document.activeElement));
+  /* Michel: "auf dem Handy verschwindet die Textbox, wenn man die Tastatur
+     ausfährt". Im Rahmen weiss nur der Rahmen, dass getippt wird — die
+     Seite oben liess darum ihre Leiste stehen und den Rahmen darüber
+     enden, die Tastatur deckte das Eingabefeld zu. Jetzt sagt der Rahmen
+     es nach oben (v.35.62.0); dort rechnet der Router die Unterkante mit
+     der Tastatur (visualViewport). */
+  const sync = () => {
+    const offen = writable(document.activeElement);
+    document.body.classList.toggle('kb-open', offen);
+    if (window.parent !== window) {
+      try { window.parent.document.body.classList.toggle('kb-open', offen); } catch { /* fremdes Dokument */ }
+    }
+  };
   document.addEventListener('focusin', sync);
   // Kurz warten: beim Wechsel zwischen zwei Feldern liegt der Fokus
   // einen Moment nirgends, das darf die Leiste nicht aufblitzen lassen.

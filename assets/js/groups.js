@@ -36,6 +36,7 @@
 import { db } from './firebase-config.js';
 import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
+  getDocFromCache, getDocsFromServer,
   onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp, deleteField, addDoc, setDoc, Timestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { neuerCode, codeSauber, ablaufAb, abgelaufen } from './einladung.js';
@@ -131,8 +132,16 @@ export function assistentSetzen(gid, assistent) {
   return updateDoc(gruppeRef(gid), { assistent: assistent || deleteField() });
 }
 
+/* Scheitert das Lesen (am Laptop mit vielen Rahmen des Routers auf einem
+   gemeinsamen Speicher meldet Firestore dann "offline", v.35.62.0), gilt
+   der gespeicherte Stand — eine Gruppe, die man kennt, verschwindet nicht,
+   nur weil der Server einen Augenblick nicht antwortet. */
 export async function ladeGruppe(gid) {
-  const snap = await getDoc(gruppeRef(gid));
+  let snap;
+  try { snap = await getDoc(gruppeRef(gid)); }
+  catch (fehler) {
+    try { snap = await getDocFromCache(gruppeRef(gid)); } catch { throw fehler; }
+  }
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
@@ -210,9 +219,18 @@ export async function meineGruppen(uid) {
 /* Mit den Metadaten: eine eben angelegte Gruppe lässt sich erst lesen,
    wenn der Server den Stapel bestätigt hat — und diese Bestätigung kommt
    nur als Änderung der Metadaten (gruppen-strom.js, v.35.59.0). */
+/* Und einmal direkt beim Server (v.35.62.0). Michel: "auf dem Handy ist
+   die Gruppe meiner Familie, auf dem Laptop nicht — dasselbe Konto". Die
+   Abfrage allein kann aus einem veralteten Speicher antworten, wenn im
+   Browser mehrere Rahmen denselben Speicher teilen und keiner die
+   Verbindung hält. Die Antwort des Servers geht durch denselben Strom;
+   stimmt sie mit dem Speicher überein, geschieht nichts. Bei einem
+   Fehler ist die Liste nicht leer, sondern unbekannt — die Seite wartet. */
 export function beobachteMeineGruppen(uid, cb) {
-  return onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true },
-    mitgliedschaftenFolgen(zuGruppen, cb), () => cb([]));
+  const folgen = mitgliedschaftenFolgen(zuGruppen, cb);
+  const weg = onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true }, folgen, () => cb([]));
+  getDocsFromServer(eigeneMitgliedschaften(uid)).then(folgen, () => {});
+  return weg;
 }
 
 /* ── Schreiben ─────────────────────────────────────────────────────*/

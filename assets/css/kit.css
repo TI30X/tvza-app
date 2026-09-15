@@ -3637,7 +3637,9 @@ body.settings-layer-open .ki-pille { display: none; }
   bottom: var(--tvza-shell-bottom, calc(var(--nav-hoehe) + env(safe-area-inset-bottom)));
   display: flex;
   flex-direction: column;
-  max-height: min(78dvh, 640px);
+  /* Mit offener Tastatur ist nur der sichtbare Ausschnitt da (--vv-hoehe,
+     router.js) — das Blatt passt sich an, statt oben hinauszuragen. */
+  max-height: min(78dvh, 640px, calc(var(--vv-hoehe, 100dvh) - var(--s3)));
   border: 1px solid var(--border);
   border-bottom: 0;
   border-radius: var(--r-panel) var(--r-panel) 0 0;

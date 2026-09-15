@@ -264,6 +264,8 @@ function darfListen(q) {
 
 export async function getDoc(ref) { await bereit; lesen(); darfLesen(ref); return new DocumentSnapshot(ref, speicher[ref.path]); }
 export const getDocFromServer = getDoc;
+export const getDocFromCache = getDoc;
+export const getDocsFromServer = (...a) => getDocs(...a);
 export async function getDocs(q) { await bereit; lesen(); darfListen(q); return querySnap(treffer(q)); }
 
 /* ── Schreiben ─────────────────────────────────────────────────────*/

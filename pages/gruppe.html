@@ -13,10 +13,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=28" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=29" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=10" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=11" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -36,16 +36,26 @@
     <!-- Der Bildschirm, den jemand ohne Gruppe zuerst sieht. Er sagt
          nicht "nichts vorhanden", sondern zeigt die zwei Wege hinein.
          Ein leerer Tab wäre ein Grund, nicht wiederzukommen. -->
-    <section class="section" id="secLeer" hidden>
-      <div class="hint">
-        <div class="hint__text" id="leerText" data-i18n="grp.leerText">
-          Eine Gruppe ist der Ort, an dem ihr Termine, Pläne und Nachrichten
-          teilt — als Familie oder als Kader.
-        </div>
+    <!-- Seit v.35.62.0 eine Seite mit Mitte statt eines Hinweises und
+         zweier Balken am oberen Rand (Michel: "sieht nicht gerade super
+         schön aus"): ein Zeichen, ein Satz, zwei Wege als Karten. -->
+    <section class="section grp-leer" id="secLeer" hidden>
+      <div class="grp-leer__zeichen" aria-hidden="true">
+        <svg class="ic" viewBox="0 0 24 24" width="30" height="30"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c3 .3 5.5 2.7 5.5 5.8"/></svg>
       </div>
-      <div class="rows">
-        <button class="b b--primary b--block" id="btnNeu" type="button" data-i18n="grp.neu">Gruppe erstellen</button>
-        <button class="b b--secondary b--block" id="btnBeitreten" type="button" data-i18n="grp.beitreten">Mit einem Code beitreten</button>
+      <h2 class="grp-leer__titel" data-i18n="grp.leerTitel">Noch in keiner Gruppe</h2>
+      <p class="grp-leer__text" id="leerText" data-i18n="grp.leerText">Eine Gruppe ist der Ort, an dem ihr Termine, Pläne und Nachrichten teilt — als Familie oder als Kader.</p>
+      <div class="grp-leer__wege">
+        <button class="grp-leer__weg grp-leer__weg--haupt" id="btnNeu" type="button">
+          <span class="grp-leer__icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="20" height="20"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="grp-leer__wort" data-i18n="grp.neu">Gruppe erstellen</span>
+          <span class="grp-leer__sub" data-i18n="grp.neuSub">Für deinen Kader, Verein oder deine Familie.</span>
+        </button>
+        <button class="grp-leer__weg" id="btnBeitreten" type="button">
+          <span class="grp-leer__icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg></span>
+          <span class="grp-leer__wort" data-i18n="grp.beitreten">Mit einem Code beitreten</span>
+          <span class="grp-leer__sub" data-i18n="grp.beitretenSub">Du hast einen Link oder Code bekommen.</span>
+        </button>
       </div>
     </section>
 
@@ -674,6 +684,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=30"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=31"></script>
 </body>
 </html>

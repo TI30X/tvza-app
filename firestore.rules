@@ -596,6 +596,22 @@ service cloud.firestore {
         && d.name is string && d.name.size() > 0 && d.name.size() <= 40
         && d.farbe is string && d.farbe.size() <= 20;
     }
+    /* Finden über die E-Mail (v.35.62.0, personen.js): unter dem Hash der
+       eigenen, angemeldeten Adresse die eigene uid und der Name. Lesen
+       nur, wer die Adresse kennt — auflisten niemand. */
+    match /emailKarten/{hash} {
+      allow get: if isMember();
+      allow list: if false;
+      allow create, update: if isMember()
+                            && 'email' in request.auth.token
+                            && hash == hashing.sha256(request.auth.token.email.lower()).toHexString().lower()
+                            && request.resource.data.uid == request.auth.uid
+                            && request.resource.data.name is string
+                            && request.resource.data.name.size() <= 80
+                            && request.resource.data.keys().hasOnly(['uid', 'name', 'aktualisiert']);
+      allow delete: if isMember() && resource.data.uid == request.auth.uid;
+    }
+
     /* Was man selbst zu einer Unterhaltung weiss (v.35.61.0): stumm, und
        bis wann ein Gruppenchat gelesen ist. Nur die Person selbst. */
     match /users/{uid}/chat/{schluessel} {

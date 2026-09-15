@@ -97,6 +97,9 @@ test('jeder Regelhelfer ist definiert und wird auch benutzt', async () => {
     /* duration.value(15, 'd'), timestamp.date(2026, 10, 15) — der
        Ablauf der Einladungen (v.35.53.0). */
     'value', 'date',
+    /* hashing.sha256(…).toHexString() — die Kennung der emailKarten
+       (v.35.62.0). */
+    'sha256', 'toHexString',
   ]);
 
   const called = [

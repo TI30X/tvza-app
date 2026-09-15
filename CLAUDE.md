@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.61.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.62.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-78 Testdateien, **798 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+79 Testdateien, **802 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -873,6 +873,47 @@ versendet … bestimmte Chats stummschalten".
 
 `dev/chat-gruppen.test.mjs`.
 
+**Wem schreiben — und finden über die Adresse** (v.35.62.0). Michel: „beim
+Gruppenchat sollten nicht einfach alle Leute aufgelistet sein … die, die
+schon mit dir schreiben, und die Leute in deiner Gruppe … und man sollte
+die E-Mail eintragen können, dann zeigt sich der Name". Die Auswahl zeigt
+nur noch die eigenen Gruppen und die, mit denen man schreibt (der
+TVZA-Kreis nicht mehr); wer eine Adresse eintippt, findet das Konto über
+`emailKarten/{sha256 der Adresse}` = `{ uid, name }`. Jede Person legt
+ihre Karte selbst an (`eigeneKarte` → `eigeneEmailKarte`); die Regel
+prüft mit `hashing.sha256(request.auth.token.email.lower())`, dass die
+Kennung wirklich die eigene Adresse ist, lesen darf nur, wer die Adresse
+kennt (`get`, nie `list`). Die Adresse selbst steht nirgends. Ein Fenster
+für beides: zu zweit (ein Tipp öffnet) oder Gruppenchat (Häkchen, „Weiter
+(n)" ab zwei). `dev/chat-suche.test.mjs`.
+
+**Die Tastatur am Handy** (v.35.62.0). Michel: „auf dem Handy verschwindet
+die Textbox, wenn man die Tastatur ausfährt". Das iPhone schrumpft die
+Seite nicht (`interactive-widget` kennt es nicht), es legt die Tastatur
+darüber; der Rahmen des Routers und das Blatt des Assistenten endeten
+hinter ihr. Und stand der Fokus im Rahmen, wusste die Seite oben nichts
+davon. Jetzt meldet `watchKeyboard` (nav.js) `kb-open` auch nach oben,
+oben zählt ein Fokus im Rahmen, und `syncShellBounds` (router.js) nimmt
+als Unterkante die Überdeckung `innerHeight − visualViewport.height −
+offsetTop`, dazu `--vv-hoehe` für die Höhe des Blatts.
+
+**Keine lesbare Gruppe ist nicht „keine Gruppe"** (v.35.62.0). Michel: „auf
+dem Handy ist die Gruppe meiner Familie, auf dem Laptop nicht — dasselbe
+Konto", und am Laptop warf ein Wechsel auf „Noch in keiner Gruppe". Im
+Attrappen-Modus nie zu sehen. Vermutete Ursache: am Laptop lädt der Router
+alle Tabs vor, jeder Rahmen hat seine Firestore-Instanz auf EINEM
+gemeinsamen Speicher (`persistentMultipleTabManager`); ein veralteter
+Speicher oder ein „offline" beim Lesen einer Gruppe liess Gruppen aus der
+Liste fallen. Jetzt: `beobachteMeineGruppen` fragt einmal direkt beim
+Server (`getDocsFromServer`), `ladeGruppe` fällt auf den Speicher zurück,
+und die Gruppenseite zeichnet eine leere, unvollständige Liste nicht als
+„Noch in keiner Gruppe". Die Seite selbst ist neu gestaltet (`.grp-leer`:
+Zeichen, Satz, zwei Karten).
+
+**Admin** ist, wer im eigenen Profil `isTimo: true` hat — setzen kann das
+nur ein Admin (Admin → Benutzer → „Admin") oder die Firebase-Konsole,
+nie die Person selbst (Regel beim Anlegen und am eigenen Profil).
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -885,7 +926,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1085 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1095 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -1019,11 +1060,14 @@ Zwei Dinge, die leicht übersehen werden:
   ohne sie scheitern Gruppenchats, der Chat der Gruppe, stumm und Karten;
   Nachrichten zu zweit gehen weiter. Ausgerollt am 15.09.2026 (zusammen mit
   v.35.60.0), vor dem Push.
+  v.35.62.0 (`emailKarten`) erweitert nur — ohne die Regel findet die
+  Suche per Adresse niemanden, sonst geht alles. Regeln vor oder mit dem
+  Code.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.61.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.62.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

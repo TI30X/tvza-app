@@ -84,7 +84,15 @@ test('eine Gruppe, die es nie mehr gibt, wird nicht endlos nachgefragt', async (
 
 test('groups.js hört mit den Metadaten und nimmt den Strom', async () => {
   const q = await readFile(join(root, 'assets/js/groups.js'), 'utf8');
-  assert.match(q, /onSnapshot\(eigeneMitgliedschaften\(uid\), \{ includeMetadataChanges: true \},\s*mitgliedschaftenFolgen\(zuGruppen, cb\)/);
+  assert.match(q, /const folgen = mitgliedschaftenFolgen\(zuGruppen, cb\);\s*const weg = onSnapshot\(eigeneMitgliedschaften\(uid\), \{ includeMetadataChanges: true \}, folgen,/);
+  // v.35.62.0: und einmal direkt beim Server — ein veralteter Speicher
+  // (mehrere Rahmen, ein gemeinsamer Speicher) hielt am Laptop eine Gruppe
+  // zurück, die das Handy zeigte.
+  assert.match(q, /getDocsFromServer\(eigeneMitgliedschaften\(uid\)\)\.then\(folgen, \(\) => \{\}\);/);
+  assert.match(q, /try \{ snap = await getDoc\(gruppeRef\(gid\)\); \}\s*catch \(fehler\) \{\s*try \{ snap = await getDocFromCache\(gruppeRef\(gid\)\); \}/);
+  // Keine lesbare Gruppe ist nicht "keine Gruppe".
+  const seite = await readFile(join(root, 'assets/js/feature/gruppe/gruppe.js'), 'utf8');
+  assert.match(seite, /if \(!liste\.length && liste\.unvollstaendig\) return;/);
   const sw = await readFile(join(root, 'sw.js'), 'utf8');
   assert.match(sw, /'\.\/assets\/js\/gruppen-strom\.js'/);
 });

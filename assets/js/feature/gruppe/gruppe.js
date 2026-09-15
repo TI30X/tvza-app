@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError, imKreis }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=24';
+import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=25';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -3346,6 +3346,10 @@ async function einladungZurueckziehen() {
   window.addEventListener('firn-gruppe', event => wechsleZu(event.detail?.gid));
 
   beobachteMeineGruppen(user.uid, liste => {
+    /* Keine Gruppe lesbar, aber Mitgliedschaften da (v.35.62.0): das ist
+       ein Augenblick ohne Server, nicht "noch in keiner Gruppe". Die Seite
+       bleibt, wie sie ist; der Strom versucht es gleich wieder. */
+    if (!liste.length && liste.unvollstaendig) return;
     gruppen = liste;
     /* ?g=<gruppe>&termin=<id>: der Bereich Training zeigt die Termine
        aller Gruppen, geöffnet werden sie hier. Die Gruppe wird aktiv,

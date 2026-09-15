@@ -441,16 +441,31 @@ export function mountAppRouter(nav) {
   progress.setAttribute('aria-hidden', 'true');
   document.body.appendChild(progress);
 
+  /* Die Tastatur (v.35.62.0): das iPhone schrumpft die Seite nicht, wenn
+     sie ausfährt — es legt sie darüber. Was unten klebt (der Rahmen mit
+     dem Chat, das Blatt des Assistenten), endete darum hinter ihr. Die
+     Überdeckung ist, was vom Layout unter dem sichtbaren Ausschnitt liegt. */
+  const tastatur = () => {
+    const vv = window.visualViewport;
+    if (!vv || !document.body.classList.contains('kb-open')) return 0;
+    return Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop));
+  };
   const syncShellBounds = () => {
     const top = Math.max(0, header.bar?.getBoundingClientRect().bottom || 0);
     const bottom = matchMedia('(max-width:899px)').matches
-      ? Math.max(0, nav.getBoundingClientRect().height || 0)
+      ? Math.max(tastatur(), nav.getBoundingClientRect().height || 0)
       : 0;
     document.documentElement.style.setProperty('--tvza-shell-top', `${top}px`);
     document.documentElement.style.setProperty('--tvza-shell-bottom', `${bottom}px`);
+    document.documentElement.style.setProperty('--vv-hoehe', `${Math.round(window.visualViewport?.height || innerHeight)}px`);
   };
   syncShellBounds();
   addEventListener('resize', syncShellBounds, { passive:true });
+  window.visualViewport?.addEventListener('resize', syncShellBounds, { passive:true });
+  window.visualViewport?.addEventListener('scroll', syncShellBounds, { passive:true });
+  /* kb-open wechselt auch, ohne dass sich eine Grösse ändert (der Rahmen
+     meldet es von innen). */
+  new MutationObserver(syncShellBounds).observe(document.body, { attributes:true, attributeFilter:['class'] });
   if ('ResizeObserver' in window) {
     const shellBoundsObserver = new ResizeObserver(syncShellBounds);
     shellBoundsObserver.observe(nav);

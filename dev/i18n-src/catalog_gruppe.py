@@ -400,4 +400,8 @@ KEYS = {
 'grp.mehrereN': ('Mehrere Personen ({n})', 'Several people ({n})', 'Plusieurs personnes ({n})', 'Più persone ({n})', 'Kilka osób ({n})', 'Meerdere personen ({n})', 'Varias personas ({n})'),
 'grp.mehrereText': ('Jede Person bekommt den Plan als ihren eigenen.', 'Each person gets the plan as their own.', 'Chaque personne reçoit le plan comme le sien.', 'Ogni persona riceve il piano come proprio.', 'Każda osoba dostaje plan jako własny.', 'Iedere persoon krijgt het plan als eigen plan.', 'Cada persona recibe el plan como propio.'),
 'grp.mehrereFuer': ('Für {namen}', 'For {namen}', 'Pour {namen}', 'Per {namen}', 'Dla: {namen}', 'Voor {namen}', 'Para {namen}'),
+# v.35.62.0: noch in keiner Gruppe
+'grp.leerTitel': ('Noch in keiner Gruppe', 'Not in a group yet', 'Pas encore dans un groupe', 'Non sei ancora in un gruppo', 'Jeszcze nie jesteś w grupie', 'Nog in geen groep', 'Todavía no estás en un grupo'),
+'grp.neuSub': ('Für deinen Kader, Verein oder deine Familie.', 'For your squad, club or family.', 'Pour ton équipe, ton club ou ta famille.', 'Per la tua squadra, il tuo club o la tua famiglia.', 'Dla twojej kadry, klubu lub rodziny.', 'Voor je selectie, club of gezin.', 'Para tu equipo, club o familia.'),
+'grp.beitretenSub': ('Du hast einen Link oder Code bekommen.', 'You received a link or code.', 'Tu as reçu un lien ou un code.', 'Hai ricevuto un link o un codice.', 'Otrzymałeś link lub kod.', 'Je hebt een link of code gekregen.', 'Has recibido un enlace o un código.'),
 }

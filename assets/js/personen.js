@@ -22,7 +22,7 @@
    Admin sie nach (kartenNachtragen) — er darf die Profile lesen.
    ══════════════════════════════════════════════════════════════════ */
 
-import { db, imKreis } from './firebase-config.js';
+import { db, auth, imKreis } from './firebase-config.js';
 import {
   collection, doc, getDoc, getDocs, setDoc, writeBatch, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -61,9 +61,50 @@ async function lies(uid) {
    Merker im Gerät spart den Lesezugriff bei jedem Öffnen; fehlt er,
    wird einmal gelesen. Scheitert es — alte Regeln, offline —, bleibt
    alles wie es war, und beim nächsten Öffnen wird es erneut versucht. */
+/* ── Finden über die E-Mail (v.35.62.0) ─────────────────────────────
+   Michel: "beim Gruppenchat sollten nicht einfach alle Leute aufgelistet
+   sein — da sollte man die E-Mail eintragen können … wenn du die E-Mail
+   eingibst, sollte sich der Name zeigen und das Konto".
+
+   Jede Person legt unter emailKarten/{sha256 ihrer E-Mail} ihre uid und
+   ihren Namen ab. Die Adresse selbst steht nirgends; lesen kann eine Karte
+   nur, wer die Adresse schon kennt (get, nie list), und die Regel prüft,
+   dass die Kennung wirklich der Hash der eigenen, angemeldeten Adresse ist
+   — niemand legt eine Karte unter fremder Adresse ab. */
+export async function emailHash(email) {
+  const sauber = String(email || '').trim().toLowerCase();
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sauber));
+  return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+export const istEmail = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
+
+/** { uid, name } zu einer E-Mail — oder null, wenn es kein Konto gibt. */
+export async function personPerEmail(email) {
+  if (!istEmail(email)) return null;
+  try {
+    const karte = await getDoc(doc(db, 'emailKarten', await emailHash(email)));
+    if (!karte.exists()) return null;
+    const { uid, name } = karte.data();
+    return uid ? { uid, name: String(name || '') } : null;
+  } catch { return null; }
+}
+
+async function eigeneEmailKarte(uid, name) {
+  const email = auth.currentUser?.email;
+  if (!email) return;
+  const merker = `firn.emailkarte.${uid}`;
+  const stand = `${email.toLowerCase()}|${name}`;
+  try { if (localStorage.getItem(merker) === stand) return; } catch { /* dann eben schreiben */ }
+  try {
+    await setDoc(doc(db, 'emailKarten', await emailHash(email)), { uid, name, aktualisiert: serverTimestamp() });
+    try { localStorage.setItem(merker, stand); } catch { /* nicht schlimm */ }
+  } catch { /* Regel noch nicht ausgerollt oder offline: beim nächsten Mal */ }
+}
+
 export async function eigeneKarte(uid, profil) {
   const name = nameAus(profil);
   if (!uid || !name) return false;
+  void eigeneEmailKarte(uid, name);
   const merker = `firn.karte.${uid}`;
   try { if (localStorage.getItem(merker) === name) return false; } catch { /* ohne Speicher eben lesen */ }
   try {

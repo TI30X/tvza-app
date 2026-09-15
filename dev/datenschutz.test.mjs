@@ -126,7 +126,11 @@ test('der Chat bietet Leute aus den eigenen Gruppen an, ohne E-Mail', async () =
   const chat = await lies('pages/messages.html');
   assert.doesNotMatch(chat, /collection\(db, 'users'\)/);
   assert.match(chat, /import \{ kontakte \} from '\.\.\/assets\/js\/groups\.js';/);
-  assert.match(chat, /liste = await kontakte\(me, \{ kreis: imKreis\(profile\) \}\)/);
+  // Seit v.35.62.0 nur die eigenen Gruppen und wer schon schreibt — der
+  // TVZA-Kreis nicht mehr (Michel: "nicht einfach alle Leute auflisten").
+  // Wer sonst gemeint ist, findet man über die Adresse (emailKarten).
+  assert.match(chat, /liste = await kontakte\(me\);/);
+  assert.match(chat, /personPerEmail as perAdresse/);
   const auswahl = chat.slice(chat.indexOf('function renderUsers('), chat.indexOf("$('newChatBtn')"));
   assert.doesNotMatch(auswahl, /email/i, 'die Auswahl zeigt wieder E-Mail-Adressen');
   // Wer schon schreibt, bleibt erreichbar — auch ohne gemeinsame Gruppe.
