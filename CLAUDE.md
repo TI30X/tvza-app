@@ -812,7 +812,8 @@ Zwei Dinge, die leicht übersehen werden:
   die neuen vertragen den alten Code. Ausgerollt am 15.09.2026.
   v.35.55.0 (Freischaltung: Admin liest Gruppen und schreibt `groups.ki`)
   erweitert nur — der alte Code braucht sie nicht, der neue nur fürs
-  Freischalten im Admin. Regeln vor oder mit dem Code.
+  Freischalten im Admin. Regeln vor oder mit dem Code. Ausgerollt am
+  15.09.2026, vor dem Push.
 
 ## Gewohnheiten
 
