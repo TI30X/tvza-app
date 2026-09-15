@@ -330,6 +330,10 @@ test('die Pille schwebt überall — nur oben, nur mit Worker, nicht in Einheit 
   assert.match(css, /\.ki-pille \{[\s\S]*?position: fixed;/);
   assert.match(css, /body\.settings-layer-open \.ki-pille \{ display: none; \}/,
     'nicht body:has(.global-settings-layer): die Ebene steht immer im Dokument, nur versteckt');
+  // Derselbe Fehler hielt den Erinnerungs-Knopf am Handy bis v.35.54.1
+  // unsichtbar (Michel: "mach den Erinnerungs-Knopf wieder sichtbar").
+  assert.doesNotMatch(css, /body:has\(\.global-settings-layer\)/);
+  assert.match(css, /body\.settings-layer-open \.global-reminder-fab,/);
   // Was die Pille einträgt, sieht der geparkte Kalender.
   assert.match(kalender, /addEventListener\('storage', e => \{ if \(e\.key === 'firn\.daten' && user\) reload\(\)/);
 });

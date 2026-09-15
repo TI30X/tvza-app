@@ -2243,7 +2243,10 @@ body.reorder-editing .module-tile::after {
   .global-reminder-fab__count.has-open { background:#cf2f3b; }
   body:has(.modal-backdrop.visible) .global-reminder-fab,
   body:has(.modal-backdrop.show) .global-reminder-fab,
-  body:has(.global-settings-layer) .global-reminder-fab,
+  /* Nur, solange die Einstellungen OFFEN sind. Bis v.35.54.0 hing das
+     am blossen Vorhandensein der Einstellungs-Ebene — die steht aber immer
+     (versteckt) im Dokument, und der Knopf war darum nie zu sehen. */
+  body.settings-layer-open .global-reminder-fab,
   body.global-reminders-open .global-reminder-fab {
     display:none;
   }

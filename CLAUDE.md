@@ -83,7 +83,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.54.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.54.1**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -734,11 +734,6 @@ Zwei Dinge, die leicht übersehen werden:
   anlegen, `GEMINI_API_KEY` als Secret, `wrangler deploy`, Adresse in
   `worker-config.js` (`worker/README.md`). Michel macht das selbst — der
   Schlüssel geht nie durch das Repo.
-- **Der Erinnerungs-Knopf am Handy ist nie zu sehen:** `kit.css` versteckt
-  `.global-reminder-fab` bei `body:has(.global-settings-layer)`, und die
-  Einstellungs-Ebene steht immer (versteckt) im Dokument. Gefunden mit
-  v.35.54.0 an der Pille (dort `body.settings-layer-open`); beim Knopf
-  nicht angefasst, bis Michel entscheidet, ob er ihn neben der Pille will.
 - **Kein Server.** Das blockiert vier Dinge auf einmal: Einladungsmails
   (`mailer/` schreibt in die `mail`-Sammlung, niemand leert sie), das
   Kalender-Abo (`worker/` ist fertig, nirgends ausgerollt), das Abo/Bezahlen
@@ -797,7 +792,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.54.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.54.1: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.
