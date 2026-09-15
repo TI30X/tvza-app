@@ -23,8 +23,8 @@
 import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=27';
-import { mountAppRouter } from './router.js?v=18';
+import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=28';
+import { mountAppRouter } from './router.js?v=19';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 import { eigeneKarte, kartenNachtragen } from './personen.js';
 import { beobachteUnterhaltungen } from './chat-stand.js';
@@ -53,7 +53,7 @@ const relabel = root => window.TVZAI18n?.applyTo(root);
    Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
    weitergereicht, damit index.html sie wie bisher
    von nav.js beziehen können. */
-export { ownsTab } from './shell.js?v=27';
+export { ownsTab } from './shell.js?v=28';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');

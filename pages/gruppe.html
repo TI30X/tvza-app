@@ -13,10 +13,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=32" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=33" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=12" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=13" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -671,6 +671,11 @@
         <p class="einladung__titel" data-i18n="grp.farbe">Farbe der Gruppe</p>
         <p class="einladung__meta" data-i18n="grp.farbeText">So erkennst du die Gruppe in der Leiste, im Kalender und beim Assistenten.</p>
         <div class="farbwahl" id="gruppeFarbe" role="radiogroup" aria-label="Farbe der Gruppe" data-i18n-attr="aria-label:grp.farbe"></div>
+        <!-- Die Farben der Arten (v.35.68.0): Training, Lager, Rennen eigen —
+             sonst die Farbe der Gruppe. Ein Kalender der Gruppe mit eigener
+             Farbe geht beiden vor. Zeichnet zeichneArtFarben(). -->
+        <p class="einladung__meta" data-i18n="grp.artFarbenText">Eigene Farben für Trainings, Lager oder Rennen im Kalender — sonst gilt die Farbe der Gruppe.</p>
+        <div class="art-farben" id="artFarben"></div>
       </div>
 
       <!-- Die Kalender der Gruppe (v.35.60.0). Die Arten der Termine
@@ -722,6 +727,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=35"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=36"></script>
 </body>
 </html>

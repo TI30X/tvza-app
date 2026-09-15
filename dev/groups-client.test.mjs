@@ -116,12 +116,12 @@ test('gruppeAendern schreibt nur, was die Regeln erlauben', async () => {
   // 'icsToken' kam mit dem Kalender-Abo dazu: ein EIGENES Token, nicht
   // der Beitrittscode — wer den Kalender liest, soll nicht beitreten
   // können.
-  assert.match(body, /\['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'\]/);
+  assert.match(body, /\['name', 'farbe', 'artFarben', 'bereiche', 'inviteToken', 'icsToken'\]/);
   assert.match(body, /\.filter\(\(\[k\]\) => erlaubt\.includes\(k\)\)/);
 
   const rules = await read('firestore.rules');
   /* 'assistent' schreibt assistentSetzen (v.35.53.0), nicht gruppeAendern. */
-  assert.match(rules, /hasOnly\(\['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken', 'assistent'\]\)/);
+  assert.match(rules, /hasOnly\(\['name', 'farbe', 'artFarben', 'bereiche', 'inviteToken', 'icsToken', 'assistent'\]\)/);
 });
 
 test('die aktive Gruppe ist eine Gerätevorliebe und überlebt ihr Verschwinden', async () => {

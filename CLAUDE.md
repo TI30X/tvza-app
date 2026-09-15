@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.67.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.68.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-83 Testdateien, **836 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+84 Testdateien, **842 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -773,7 +773,8 @@ Anlegen einer Gruppe:
   Schreibvorgänge — dort sah man den Fehler nie; `dev/gruppen-strom.test.mjs`.
 - **Farbe:** die Leitung wählt sie aus den Kalenderfarben (`groups.farbe`,
   die Regel kannte das Feld immer). Die Seite trägt sie oben als Band
-  (`--gruppe-farbe`), Leiste und Pille ziehen über `firn-gruppe-geaendert`
+  (`--gruppe-farbe`; seit v.35.68.0 statt des Bands ein Punkt am Namen im
+  Kopf, siehe 30), Leiste und Pille ziehen über `firn-gruppe-geaendert`
   mit (die Mitgliedschaften ändern sich dabei nicht). Ein Logo braucht
   Speicher für Bilder — später.
 - **Löschen** nur der Kopf, nach einer Frage mit dem Namen
@@ -1088,6 +1089,34 @@ den Plänen kamen nicht vor.
 
 `dev/chat-ki-nachricht.test.mjs`.
 
+**30. Gruppen: eigene Reihenfolge, Farben der Arten, kein Band** (v.35.68.0).
+
+- **Reihenfolge je Person** (`gruppen-folge.js` rein): Einstellungen →
+  „Deine Gruppen" zeigt ALLE Gruppen mit Griff (ziehen per Pointer, mit
+  Finger und Maus; auf dem Griff auch Pfeil hoch/runter) und Pfeilknöpfen;
+  wer leitet, kommt von dort in die Einstellungen der Gruppe. Gespeichert
+  im Gerät (`localStorage['firn.gruppenFolge']`) und unter
+  `users/{uid}/einstellungen/gruppen` (`gruppenFolgeSetzen`). Die
+  gemeinsame Liste (`gruppenQuelle`) und `meineGruppen` ordnen danach
+  (`geordnet`, `unvollstaendig` bleibt), neu geordnet bei `storage`,
+  `firn-gruppen-folge` und Meldungen des Servers — Leiste, Wähler,
+  Kalender (`vereinigeGruppen` sortiert nicht mehr nach dem Namen), Chat,
+  Pille und Start. Eine neue Gruppe kommt hinten dazu, nach dem Namen.
+  Farben hängen an der Kennung (`teamFarben` sortiert selbst) — Ordnen
+  färbt nichts um. Ohne Regel bleibt die Folge im Gerät, und dort steht es.
+- **Farben der Arten** (`groups.artFarben`, nur die Leitung, in den
+  Einstellungen der Gruppe unter der Gruppenfarbe, je Art „wie die Gruppe"
+  oder eine der Kalenderfarben). Im Kalender gilt: Kalender der Gruppe >
+  Art > Gruppe, in der Quellenliste ebenso; die Gruppe steht weiter in der
+  Zeile jedes Eintrags (`quelle`) und in seiner Karte. Bestehende Farben
+  bleiben, wie sie sind — ohne `artFarben` ändert sich nichts.
+- **Kein Band mehr** über der Gruppenseite; die Farbe steht als Punkt vor
+  dem Namen im Kopf (`setShellTitleFarbe` → `tvza-titel-farbe` →
+  `titelFarbeSetzen` im Router, wie Titel und Wahl). Die aktive Gruppe
+  erkennt man am Namen im Kopf und an der Auswahl in der Leiste.
+
+`dev/gruppen-folge-farben.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -1100,7 +1129,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1208 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1216 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -1246,6 +1275,11 @@ Zwei Dinge, die leicht übersehen werden:
   v.35.67.0 braucht keine neue Regel (Nachrichten wie im Chat), aber den
   **Worker** (`nachricht_senden` in `worker/ki.js`): `npx.cmd wrangler
   deploy` im Ordner `worker`. **Vorbereitet, noch nicht ausgerollt.**
+  v.35.68.0 (`users/{uid}/einstellungen/gruppen`, `artFarben` an
+  `groups` samt `artFarbenGueltig`) erweitert nur — ohne sie bleibt die
+  Reihenfolge im Gerät (mit Hinweis) und die Farbe einer Art lässt sich
+  nicht speichern (Meldung), sonst geht alles. Mit `--dry-run`
+  kompiliert. **Vorbereitet, noch nicht ausgerollt.**
 
 ## Gewohnheiten
 

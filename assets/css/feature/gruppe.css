@@ -123,7 +123,8 @@
 /* ── Die Farbe der Gruppe (v.35.59.0) ────────────────────────────────
    Oben auf der Seite ein Band in der Farbe der Gruppe — wer zwischen
    Kader und Familie wechselt, sieht es, bevor er einen Namen liest. */
-.main { border-top: 4px solid var(--gruppe-farbe, transparent); }
+/* Das Band über der Seite ist weg (v.35.68.0) — die Farbe steht als Punkt
+   am Namen im Kopf (.appbar__title--punkt in kit.css). */
 .farbwahl {
   display: flex;
   flex-wrap: wrap;
@@ -333,3 +334,12 @@
 .fs-status[data-status="fertig"] { background: color-mix(in oklab, var(--success, var(--accent)) 16%, var(--surface)); color: var(--ink); }
 .fs-status[data-status="begonnen"] { background: var(--accent-bg); color: var(--accent); }
 .fs-status[data-status="unbekannt"] { background: transparent; border: 1px dashed var(--border); }
+
+/* ── Die Farben der Arten (v.35.68.0) ───────────────────────────────── */
+.art-farben { display: grid; gap: var(--s2); margin-top: var(--s2); }
+.art-farben__zeile { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: var(--s2); align-items: center; }
+.art-farben__art { font-size: 13px; font-weight: 650; color: var(--ink); }
+.farbwahl--klein { gap: var(--s1); }
+.farbwahl--klein .farbwahl__feld { width: 28px; height: 28px; }
+/* "Wie die Gruppe": die Farbe der Gruppe mit einem Strich — keine eigene. */
+.farbwahl__feld--gruppe { background-image: linear-gradient(135deg, transparent 45%, var(--surface) 45%, var(--surface) 55%, transparent 55%); }

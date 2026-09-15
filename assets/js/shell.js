@@ -20,7 +20,7 @@
 import { auth, MODULES, enabledModules, imKreis } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { frage } from './dialog.js';
-import { mountAppRouter, basisTitel, basisTitelWahl } from './router.js?v=18';
+import { mountAppRouter, basisTitel, basisTitelWahl, basisTitelFarbe } from './router.js?v=19';
 import { zeichen, wort, softwareZeigen, markeSetzen, aktuelleMarke, seiteMarkieren } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 import { WORKER_BASIS } from './worker-config.js';
@@ -684,6 +684,16 @@ export function setShellTitleWahl(handler, beschriftung = '') {
   /* Oben: der Router hält den Kopf — auch wenn gerade ein Rahmen ihn
      trägt, gilt die Wahl wieder, sobald man hierher zurückkommt. */
   basisTitelWahl(handler, beschriftung);
+}
+
+/** Ein Farbpunkt am Titel — die Farbe der aktiven Gruppe (v.35.68.0).
+    Wie setShellTitle: im Rahmen als Nachricht nach oben. */
+export function setShellTitleFarbe(farbe = '') {
+  if (imRahmen()) {
+    window.parent.postMessage({ type:'tvza-titel-farbe', farbe }, location.origin);
+    return;
+  }
+  basisTitelFarbe(farbe);
 }
 
 /**

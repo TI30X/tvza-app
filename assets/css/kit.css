@@ -2075,6 +2075,17 @@ body.reorder-editing .module-tile::after {
   transform: translateY(-70%) rotate(45deg);
 }
 .appbar__title--wahl:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+/* Der Farbpunkt der Gruppe vor dem Namen (v.35.68.0, titelFarbeSetzen). */
+.appbar__title--punkt::before {
+  content: "";
+  display: inline-block;
+  width: 10px; height: 10px;
+  margin-right: var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--titel-punkt);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.85);
+  vertical-align: 0.05em;
+}
 .appbar--bereich .appbar__title {
   display: block;
   margin-right: auto;
@@ -3261,6 +3272,35 @@ html.tvza-content-frame body > main {
 #settingsModal .settings-row .seg { flex: 0 1 320px; }
 #settingsModal .settings-select { flex: 0 1 200px; width: auto; min-width: 0; }
 #settingsModal .settings-section > .form-hint { margin-top: var(--s1); }
+/* Deine Gruppen ordnen (v.35.68.0): Griff zum Ziehen, Pfeile, dazu bei
+   der Leitung der Weg in die Einstellungen der Gruppe. */
+.gruppen-folge { justify-content: flex-start; }
+.gruppen-folge .settings-row-label { flex: 1; }
+.gruppen-folge__griff {
+  width: 36px; height: 44px; flex: none;
+  display: grid; place-items: center;
+  border: 0; border-radius: var(--r-icon);
+  background: transparent; color: var(--ink-soft);
+  cursor: grab; touch-action: none;
+}
+.gruppen-folge__griff:active { cursor: grabbing; }
+.gruppen-folge__griff:focus-visible, .gruppen-folge__pfeil:focus-visible, .gruppen-folge__einst:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.gruppen-folge.is-zieht { background: var(--accent-bg); }
+.gruppen-folge__pfeile { display: inline-flex; gap: var(--s1); flex: none; }
+.gruppen-folge__pfeil {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.gruppen-folge__pfeil:disabled { opacity: .35; cursor: default; }
+.gruppen-folge__einst {
+  flex: none; padding: 0 var(--s2); min-height: 40px;
+  border: 0; background: none; color: var(--accent);
+  font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+@media (max-width: 480px) { .gruppen-folge { flex-wrap: wrap; } .gruppen-folge__einst { order: 5; margin-left: calc(var(--s7) + var(--s1)); } }
+
 
 /* Am Handy steht das Erscheinungsbild über seinen drei Knöpfen — neben
    dem Wort hätten "Automatisch", "Hell" und "Dunkel" keinen Platz. */

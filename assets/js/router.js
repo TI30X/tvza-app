@@ -173,16 +173,31 @@ export function titelWahlSetzen(el, handler, beschriftung = '') {
     : null;
 }
 
+/* Ein Farbpunkt am Titel — die Farbe der Gruppe (v.35.68.0). Michel: "den
+   dicken farbigen Balken unter dem Gruppenkopf entfernen, stattdessen ein
+   kleines farbiges Gruppensymbol neben dem Namen". Leer nimmt ihn weg. */
+export function titelFarbeSetzen(el, farbe = '') {
+  if (!el) return;
+  const gut = /^#[0-9a-f]{6}$/i.test(String(farbe || ''));
+  el.classList.toggle('appbar__title--punkt', gut);
+  if (gut) el.style.setProperty('--titel-punkt', farbe);
+  else el.style.removeProperty('--titel-punkt');
+}
+
 /* Was die Seite OBEN selbst in ihren Kopf schreibt (setShellTitle,
    setShellTitleWahl). Zeigt der Router gerade einen Rahmen, gehört der
    Kopf dem Rahmen; kommt man zurück, gilt wieder das hier. */
-const basisKopf = { titel:null, wahl:null, beschriftung:'' };
+const basisKopf = { titel:null, wahl:null, beschriftung:'', farbe:'' };
 let basisSichtbar = true;
 export function basisTitel(text) {
   basisKopf.titel = String(text ?? '');
   if (!basisSichtbar) return;
   const el = document.querySelector('.appbar__title, .appbar__greet');
   if (el) el.textContent = basisKopf.titel;
+}
+export function basisTitelFarbe(farbe = '') {
+  basisKopf.farbe = farbe || '';
+  if (basisSichtbar) titelFarbeSetzen(document.querySelector('.appbar__title'), basisKopf.farbe);
 }
 export function basisTitelWahl(handler, beschriftung = '') {
   basisKopf.wahl = handler || null;
@@ -512,6 +527,7 @@ export function mountAppRouter(nav) {
     if (eintrag.kopf.titel && fileOf(eintrag.url) !== 'index.html') el.textContent = eintrag.kopf.titel;
     titelWahlSetzen(el, eintrag.kopf.wahl ? () => nachricht(eintrag, { type:'tvza-titel-klick' }) : null,
       eintrag.kopf.beschriftung);
+    titelFarbeSetzen(el, eintrag.kopf.farbe);
   };
 
   const revealBasePage = target => {
@@ -528,6 +544,7 @@ export function mountAppRouter(nav) {
       if (el) el.textContent = basisKopf.titel;
     }
     titelWahlSetzen(titelEl(), basisKopf.wahl, basisKopf.beschriftung);
+    titelFarbeSetzen(titelEl(), basisKopf.farbe);
     tabFolgen(document, null, eigen);
     /* Wer mitliest (die Pille des Assistenten), erfährt die neue Seite. */
     dispatchEvent(new CustomEvent('tvza-route'));
@@ -549,7 +566,7 @@ export function mountAppRouter(nav) {
       ...zielVon(target),
       url: new URL(target.href),
       wrap, iframe: contentFrame, zustand, zuletzt: Date.now(),
-      kopf: { titel:null, wahl:false, beschriftung:'' },
+      kopf: { titel:null, wahl:false, beschriftung:'', farbe:'' },
     };
     /* Eine Seite läuft nur einmal: ein älterer Rahmen derselben Seite
        (etwa die Gruppe ohne ?termin=) geht, statt doppelt zu lauschen. */
@@ -779,10 +796,11 @@ export function mountAppRouter(nav) {
       if (eintrag && ziel && pfadVon(ziel) === eintrag.pfad) adresseSetzen(eintrag, ziel);
       return;
     }
-    if (typ === 'tvza-titel' || typ === 'tvza-titel-wahl') {
+    if (typ === 'tvza-titel' || typ === 'tvza-titel-wahl' || typ === 'tvza-titel-farbe') {
       const eintrag = [...rahmen].find(r => r.iframe.contentWindow === event.source);
       if (!eintrag) return;
       if (typ === 'tvza-titel') eintrag.kopf.titel = String(event.data.text ?? '').slice(0, 120);
+      else if (typ === 'tvza-titel-farbe') eintrag.kopf.farbe = String(event.data.farbe ?? '').slice(0, 7);
       else {
         eintrag.kopf.wahl = !!event.data.an;
         eintrag.kopf.beschriftung = String(event.data.beschriftung ?? '').slice(0, 80);

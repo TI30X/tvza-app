@@ -141,7 +141,10 @@ test('der Kalender zeigt jede Gruppe einmal: uebernommene Familien nur als Grupp
   const gruppen = [{ id: 'fam1', name: 'Familie van Zanten', art: 'familie' }, { id: 'k1', name: 'BSV Kader', art: 'kader' }];
   const familien = [FAMILIE, { id: 'fam2', name: 'Grosseltern', calendarColor: '#7f77dd', headUid: 'oma' }];
   const liste = vereinigeGruppen(gruppen, familien);
-  assert.deepEqual(liste.map(g => g.id), ['k1', 'fam1', 'fam2']);
+  /* Seit v.35.68.0 in der Folge, in der die Gruppen kommen (die eigene
+     Reihenfolge, gruppen-folge.js) — nicht mehr nach dem Namen; die alten
+     Familien danach. */
+  assert.deepEqual(liste.map(g => g.id), ['fam1', 'k1', 'fam2']);
   const alt = liste.find(g => g.id === 'fam2');
   assert.equal(alt.alt, true, 'eine noch nicht uebernommene Familie bleibt sichtbar');
   assert.equal(alt.farbe, '#7f77dd', 'mit ihrer Kalenderfarbe');

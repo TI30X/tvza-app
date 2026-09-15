@@ -308,7 +308,7 @@ test('der Name des Assistenten gehört der Gruppe', async () => {
   assert.equal(assistentSauber({ name: '', anweisung: 'egal' }), null, 'ohne Namen wieder der Standard');
 
   const regeln = await read('firestore.rules');
-  assert.match(regeln, /\.hasOnly\(\['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken', 'assistent'\]\)[\s\S]{0,400}assistentGueltig\(request\.resource\.data\)/);
+  assert.match(regeln, /\.hasOnly\(\['name', 'farbe', 'artFarben', 'bereiche', 'inviteToken', 'icsToken', 'assistent'\]\)[\s\S]{0,400}assistentGueltig\(request\.resource\.data\)/);
   assert.match(regeln, /d\.assistent\.get\('name', ''\)\.size\(\) <= 30/);
   assert.match(regeln, /d\.assistent\.get\('anweisung', ''\)\.size\(\) <= 600/);
 });

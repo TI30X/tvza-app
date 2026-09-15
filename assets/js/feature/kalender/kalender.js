@@ -63,7 +63,7 @@ import {
 /* Die Hülle: Leiste, Router, Konto, Namenskarte. Früher ein zweites
    <script type="module"> in der Seite — die Seiten-Invariante erlaubt
    eins. */
-import '../../nav.js?v=28';
+import '../../nav.js?v=29';
 
 const tt = (key, deutsch, vars) => (window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch, vars)
   : String(deutsch).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz)));
@@ -864,8 +864,13 @@ function eintraegeJetzt() {
     eigene:new Set(eigeneKalender.map(k => k.id)),
     jeGruppe:new Map([...gruppenKalender].map(([gid, liste]) => [gid, new Set(liste.map(k => k.id))])),
   };
+  /* Welche Farbe ein Eintrag trägt (v.35.68.0): der Kalender der Gruppe,
+     dem er gehört, sonst die Farbe seiner Art (artFarben), sonst die der
+     Gruppe (e.farbe). Zu welcher Gruppe er gehört, steht weiter in der
+     Zeile (quelle) und in seiner Karte. */
   const farben = new Map([
     ...eigeneKalender.map(k => [`pk:${k.id}`, k.farbe]),
+    ...groups.flatMap(g => Object.entries(g.artFarben || {}).map(([art, farbe]) => [`g:${g.id}:art:${art}`, farbe])),
     ...[...gruppenKalender].flatMap(([gid, liste]) => liste.map(k => [`g:${gid}:k:${k.id}`, k.farbe])),
   ]);
   return sammelnRoh().flatMap(e => {

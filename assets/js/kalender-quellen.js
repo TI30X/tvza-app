@@ -92,7 +92,8 @@ export function quellenBaum({
   for (const g of gruppen) {
     const farbe = farbeVon(g.id);
     const kinder = [
-      ...arten(g.art).map(art => ({ schluessel: `g:${g.id}:art:${art}`, name: artWort(art, g.art), farbe })),
+      /* Eine eigene Farbe der Art geht der Gruppe vor (v.35.68.0, artFarben). */
+      ...arten(g.art).map(art => ({ schluessel: `g:${g.id}:art:${art}`, name: artWort(art, g.art), farbe: g.artFarben?.[art] || farbe })),
       ...(jeGruppe.get(g.id) || []).map(k => ({ schluessel: `g:${g.id}:k:${k.id}`, name: k.name, farbe: k.farbe || farbe, id: k.id })),
       ...(mitPlaenen.has(g.id) ? [{ schluessel: `g:${g.id}:plaene`, name: t('kal.plaene', 'Trainingspläne'), farbe }] : []),
     ];

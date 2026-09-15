@@ -51,6 +51,13 @@ const SHELL_STUB = `
     else { el.removeAttribute('role'); el.removeAttribute('title'); }
     el.onclick = handler ? () => handler() : null;
   };
+  /* Der Farbpunkt am Titel (v.35.68.0): wie titelFarbeSetzen im Router. */
+  export const setShellTitleFarbe = farbe => {
+    const el = document.querySelector('.appbar__title');
+    if (!el) return;
+    el.classList.toggle('appbar__title--punkt', !!farbe);
+    if (farbe) el.style.setProperty('--titel-punkt', farbe); else el.style.removeProperty('--titel-punkt');
+  };
   export const setShellMeta = text => {
     const spacer = document.querySelector('.appbar__spacer');
     if (!spacer) return;

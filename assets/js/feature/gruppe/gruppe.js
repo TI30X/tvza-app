@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError, imKreis }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=27';
+import { mountShell, setShellTitle, setShellTitleWahl, setShellTitleFarbe } from '../../shell.js?v=28';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -1308,13 +1308,21 @@ function kalenderWahl(wert = '') {
    Kalender, Pille), gewählt hat sie der Zufall der Reihenfolge. Jetzt
    wählt die Leitung aus den Kalenderfarben, und die Seite trägt sie
    oben als Band. Ein Logo braucht Speicher für Bilder — später. */
+/* Die Farbe der Gruppe als Punkt am Namen im Kopf (v.35.68.0) — bis dahin
+   ein 4 px breites Band über der ganzen Seite (Michel: "den dicken
+   farbigen Balken entfernen"). Erkennbar ist die aktive Gruppe am Namen im
+   Kopf und an der Auswahl in der Leiste, nicht nur an der Farbe.
+   --gruppe-farbe bleibt für die Stellen der Seite, die sie tragen. */
 function seiteFaerben() {
   const wurzel = document.documentElement;
-  if (aktiv) wurzel.style.setProperty('--gruppe-farbe', gruppenFarbe(gruppen, aktiv.id));
+  const farbe = aktiv ? gruppenFarbe(gruppen, aktiv.id) : '';
+  if (farbe) wurzel.style.setProperty('--gruppe-farbe', farbe);
   else wurzel.style.removeProperty('--gruppe-farbe');
+  setShellTitleFarbe(farbe);
 }
 
 function zeichneFarbwahl() {
+  zeichneArtFarben();
   const feld = $('gruppeFarbe');
   if (!feld || !aktiv) return;
   const jetzt = gruppenFarbe(gruppen, aktiv.id);
@@ -1322,6 +1330,52 @@ function zeichneFarbwahl() {
     <button class="farbwahl__feld" type="button" role="radio" data-farbe="${escHtml(f.value)}"
             aria-checked="${f.value === jetzt}" aria-label="${escHtml(f.label)}" title="${escHtml(f.label)}"
             style="--tint:${escHtml(f.value)}"></button>`).join('');
+}
+
+/* Die Farben der Arten (v.35.68.0). Michel: "Unterkalender- und
+   Kategoriefarben von Berechtigten festlegen; die Unterfarbe überschreibt
+   die Gruppenfarbe". Die Leitung wählt je Art eine Farbe oder "wie die
+   Gruppe"; gespeichert an der Gruppe (artFarben), also für alle und auf
+   jedem Gerät. Der Kalender nimmt: Kalender der Gruppe > Art > Gruppe. */
+function zeichneArtFarben() {
+  const feld = $('artFarben');
+  if (!feld || !aktiv) return;
+  const eigen = aktiv.artFarben || {};
+  feld.innerHTML = artenFuer(aktiv.art).map(art => `
+    <div class="art-farben__zeile">
+      <span class="art-farben__art">${escHtml(artWort(art, aktiv.art))}</span>
+      <div class="farbwahl farbwahl--klein" role="radiogroup" aria-label="${escHtml(artWort(art, aktiv.art))}">
+        <button class="farbwahl__feld farbwahl__feld--gruppe" type="button" role="radio" data-art-farbe="${escHtml(art)}" data-farbe=""
+                aria-checked="${!eigen[art]}" title="${escHtml(t('grp.wieGruppe', 'Wie die Gruppe'))}" aria-label="${escHtml(t('grp.wieGruppe', 'Wie die Gruppe'))}"
+                style="--tint:${escHtml(gruppenFarbe(gruppen, aktiv.id))}"></button>
+        ${FARBEN.map(f => `
+        <button class="farbwahl__feld" type="button" role="radio" data-art-farbe="${escHtml(art)}" data-farbe="${escHtml(f.value)}"
+                aria-checked="${eigen[art] === f.value}" aria-label="${escHtml(f.label)}" title="${escHtml(f.label)}"
+                style="--tint:${escHtml(f.value)}"></button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+async function artFarbeWaehlen(art, farbe) {
+  if (!aktiv || !leitet(aktiv.meineRolle) || !artenFuer(aktiv.art).includes(art)) return;
+  if (farbe && !FARBEN.some(f => f.value === farbe)) return;
+  const vorher = aktiv.artFarben || {};
+  const neu = { ...vorher };
+  if (farbe) neu[art] = farbe; else delete neu[art];
+  aktiv = { ...aktiv, artFarben: neu };
+  gruppen = gruppen.map(g => (g.id === aktiv.id ? aktiv : g));
+  zeichneArtFarben();
+  gruppeGeaendert(aktiv.id, { artFarben: neu });
+  try {
+    await gruppeAendern(aktiv.id, { artFarben: neu });
+  } catch (e) {
+    reportClientError('gruppe/artfarbe', e);
+    aktiv = { ...aktiv, artFarben: vorher };
+    gruppen = gruppen.map(g => (g.id === aktiv.id ? aktiv : g));
+    zeichneArtFarben();
+    gruppeGeaendert(aktiv.id, { artFarben: vorher });
+    await meldung({ titel: t('grp.farbe', 'Farbe der Gruppe'), text: t('grp.f.farbe', 'Die Farbe liess sich nicht speichern.') });
+  }
 }
 
 async function farbeWaehlen(farbe) {
@@ -3431,6 +3485,10 @@ async function einladungZurueckziehen() {
   $('gruppeFarbe')?.addEventListener('click', event => {
     const feld = event.target.closest('[data-farbe]');
     if (feld) farbeWaehlen(feld.dataset.farbe);
+  });
+  $('artFarben')?.addEventListener('click', event => {
+    const feld = event.target.closest('[data-art-farbe]');
+    if (feld) void artFarbeWaehlen(feld.dataset.artFarbe, feld.dataset.farbe);
   });
   $('btnGruppeLoeschen')?.addEventListener('click', gruppeLoeschenFragen);
   $('btnGruppeEinst')?.addEventListener('click', einstOeffnen);

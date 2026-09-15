@@ -64,7 +64,10 @@ export function vereinigeGruppen(gruppen = [], familien = []) {
   const alt = familien
     .filter(f => f && !ids.has(f.id))
     .map(f => ({ ...f, farbe: f.calendarColor, alt: true }));
-  return [...gruppen, ...alt].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de'));
+  /* Die Gruppen in der eigenen Reihenfolge (v.35.68.0, gruppen-folge.js),
+     die alten Familien danach. Bis dahin sortierte der Kalender nach dem
+     Namen und stand damit anders als Leiste und Wähler. */
+  return [...gruppen, ...alt.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de'))];
 }
 
 /** Soll dieser Nutzer diese Familie jetzt uebernehmen? Nur der Kopf,

@@ -38,7 +38,7 @@
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle, setShellMeta } from '../../shell.js?v=27';
+import { mountShell, setShellTitle, setShellMeta } from '../../shell.js?v=28';
 import {
   ladeGruppe, ladePlan, ladeProtokoll, ladeProtokolle, ladeMitglieder, PLAN_FUER_ALLE,
   protokollAbgleichen, beobachteProtokoll, ladePrivat, privatSetzen, privatEinheit,

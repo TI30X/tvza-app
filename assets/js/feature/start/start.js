@@ -32,11 +32,12 @@ import {
   doc, getDoc, getDocFromServer, setDoc, collection, addDoc, onSnapshot, updateDoc,
   deleteDoc, serverTimestamp, query, orderBy, where, getDocs, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon } from '../../shell.js?v=27';
-import { initialsOf } from '../../nav.js?v=28';
+import { ICONS, icon } from '../../shell.js?v=28';
+import { initialsOf } from '../../nav.js?v=29';
 import { frage, meldung } from '../../dialog.js';
 import { gemerktEinloesen, einladungsLink, kreisEinladungsText, codeZeigen } from '../../einladung.js';
-import { meineGruppen, leitet, kontakte } from '../../groups.js';
+import { meineGruppen, leitet, kontakte, gruppenFolgeSetzen } from '../../groups.js';
+import { verschieben, anStelle, nachFolge } from '../../gruppen-folge.js';
 import { beobachteUnterhaltungen } from '../../chat-stand.js';
 import { ungelesenGesamt } from '../../chat-modell.js';
 import { nameAus } from '../../bekannte.js';
@@ -708,22 +709,111 @@ if (themeWahl && window.TVZATheme) {
    ihre Einstellungen (gruppe.html?g=…&einst=1). Die Einstellungen stehen
    meist als Ebene über einer anderen Seite — dann führt die Ebene hin
    (tvza-settings-gehe), sonst die Seite selbst. */
-async function renderGruppenEinst() {
+/* Deine Gruppen (v.35.68.0): alle, in der eigenen Reihenfolge. Michel:
+   "Drag-and-drop und Hoch/Runter, am Desktop und am Handy". Gespeichert
+   pro Person (gruppenFolgeSetzen) — die Leiste, der Wähler, der Kalender
+   und Start ordnen danach. Wer leitet, kommt hier in die Einstellungen der
+   Gruppe. */
+let gruppenEinst = [];
+const PFEIL_HOCH = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M18 15l-6-6-6 6"/></svg>';
+const PFEIL_RUNTER = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const GRIFF = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/></svg>';
+function zeichneGruppenEinst(fokus = '') {
   const teil = document.getElementById('gruppenEinstSection');
   const liste = document.getElementById('gruppenEinstListe');
-  if (!teil || !liste || !user) return;
-  let geleitet = [];
-  try { geleitet = (await meineGruppen(user.uid)).filter(g => leitet(g.meineRolle)); }
-  catch (error) { reportClientError('settings-gruppen', error); }
-  teil.hidden = !geleitet.length;
-  liste.innerHTML = geleitet.map(g => `
-    <button class="settings-row settings-row--link" type="button" data-gruppe-einst="${escHtml(g.id)}">
-      <span class="settings-row-label">${escHtml(g.name || t('nav.gruppe', 'Gruppe'))}</span>
-      <span class="settings-row-mehr">${escHtml(t('grp.einst', 'Einstellungen der Gruppe'))}
-        <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span>
-    </button>`).join('');
+  if (!teil || !liste) return;
+  teil.hidden = !gruppenEinst.length;
+  const n = gruppenEinst.length;
+  liste.innerHTML = gruppenEinst.map((g, i) => {
+    const name = g.name || t('nav.gruppe', 'Gruppe');
+    return `
+    <div class="settings-row gruppen-folge" data-folge-zeile="${escHtml(g.id)}">
+      <button class="gruppen-folge__griff" type="button" data-folge-griff="${escHtml(g.id)}"
+              aria-label="${escHtml(t('set.ziehen', '{name} ziehen', { name }))}" title="${escHtml(t('set.ziehenTitel', 'Ziehen, um die Reihenfolge zu ändern'))}">${GRIFF}</button>
+      <span class="settings-row-label">${escHtml(name)}</span>
+      ${leitet(g.meineRolle) ? `<button class="gruppen-folge__einst" type="button" data-gruppe-einst="${escHtml(g.id)}">${escHtml(t('grp.einst', 'Einstellungen der Gruppe'))}</button>` : ''}
+      <span class="gruppen-folge__pfeile">
+        <button class="gruppen-folge__pfeil" type="button" data-folge-hoch="${escHtml(g.id)}"${i === 0 ? ' disabled' : ''}
+                aria-label="${escHtml(t('set.hoch', '{name} nach oben', { name }))}">${PFEIL_HOCH}</button>
+        <button class="gruppen-folge__pfeil" type="button" data-folge-runter="${escHtml(g.id)}"${i === n - 1 ? ' disabled' : ''}
+                aria-label="${escHtml(t('set.runter', '{name} nach unten', { name }))}">${PFEIL_RUNTER}</button>
+      </span>
+    </div>`;
+  }).join('');
+  if (fokus) liste.querySelector(fokus)?.focus();
 }
+async function renderGruppenEinst() {
+  if (!user) return;
+  try { gruppenEinst = await meineGruppen(user.uid); }
+  catch (error) { reportClientError('settings-gruppen', error); gruppenEinst = []; }
+  zeichneGruppenEinst();
+}
+async function folgeSpeichern(folge, fokus = '') {
+  gruppenEinst = nachFolge(gruppenEinst, folge);
+  zeichneGruppenEinst(fokus);
+  const hinweis = document.getElementById('gruppenFolgeHinweis');
+  try {
+    await gruppenFolgeSetzen(user.uid, folge);
+    if (hinweis) hinweis.hidden = true;
+  } catch (error) {
+    reportClientError('settings-gruppenfolge', error);
+    /* Im Gerät gilt sie schon; nur die anderen Geräte wissen es nicht. */
+    if (hinweis) {
+      hinweis.textContent = t('set.folgeNurHier', 'Auf diesem Gerät gespeichert — auf deinen anderen Geräten noch nicht.');
+      hinweis.hidden = false;
+    }
+  }
+}
+/* Ziehen — mit dem Finger wie mit der Maus (Pointer-Ereignisse): die Zeile
+   wandert mit, losgelassen gilt die Stelle. */
+(function ziehenVerkabeln() {
+  const liste = document.getElementById('gruppenEinstListe');
+  if (!liste) return;
+  let zieht = null;
+  liste.addEventListener('pointerdown', event => {
+    const griff = event.target.closest('[data-folge-griff]');
+    if (!griff) return;
+    event.preventDefault();
+    zieht = { id: griff.dataset.folgeGriff, zeile: griff.closest('[data-folge-zeile]') };
+    zieht.zeile.classList.add('is-zieht');
+    try { griff.setPointerCapture(event.pointerId); } catch { /* ältere Browser */ }
+  });
+  liste.addEventListener('pointermove', event => {
+    if (!zieht) return;
+    const zeilen = [...liste.querySelectorAll('[data-folge-zeile]')];
+    const ueber = zeilen.find(z => { const r = z.getBoundingClientRect(); return event.clientY >= r.top && event.clientY <= r.bottom; });
+    if (!ueber || ueber === zieht.zeile) return;
+    const r = ueber.getBoundingClientRect();
+    ueber.parentNode.insertBefore(zieht.zeile, event.clientY < r.top + r.height / 2 ? ueber : ueber.nextSibling);
+  });
+  const loslassen = () => {
+    if (!zieht) return;
+    const stelle = [...liste.querySelectorAll('[data-folge-zeile]')].indexOf(zieht.zeile);
+    const id = zieht.id;
+    zieht.zeile.classList.remove('is-zieht');
+    zieht = null;
+    void folgeSpeichern(anStelle(gruppenEinst, id, stelle), `[data-folge-griff="${CSS.escape(id)}"]`);
+  };
+  liste.addEventListener('pointerup', loslassen);
+  liste.addEventListener('pointercancel', loslassen);
+  liste.addEventListener('keydown', event => {
+    /* Tastatur: auf dem Griff mit Pfeil hoch/runter. */
+    const griff = event.target.closest('[data-folge-griff]');
+    if (!griff || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+    event.preventDefault();
+    const id = griff.dataset.folgeGriff;
+    void folgeSpeichern(verschieben(gruppenEinst, id, event.key === 'ArrowUp' ? -1 : 1), `[data-folge-griff="${CSS.escape(id)}"]`);
+  });
+}());
 document.getElementById('gruppenEinstListe')?.addEventListener('click', event => {
+  const hoch = event.target.closest('[data-folge-hoch]');
+  const runter = event.target.closest('[data-folge-runter]');
+  if (hoch || runter) {
+    const id = (hoch || runter).dataset[hoch ? 'folgeHoch' : 'folgeRunter'];
+    const knopf = hoch ? 'folge-hoch' : 'folge-runter';
+    void folgeSpeichern(verschieben(gruppenEinst, id, hoch ? -1 : 1), `[data-${knopf}="${CSS.escape(id)}"]:not(:disabled), [data-folge-griff="${CSS.escape(id)}"]`);
+    return;
+  }
   const zeile = event.target.closest('[data-gruppe-einst]');
   if (!zeile) return;
   const ziel = new URL(`pages/gruppe.html?g=${encodeURIComponent(zeile.dataset.gruppeEinst)}&einst=1`, location.href).href;

@@ -41,6 +41,7 @@ import {
   runTransaction,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { aenderungenPruefen } from './einheit.js';
+import { nachFolge, folgeSauber } from './gruppen-folge.js';
 import { neuerCode, codeSauber, ablaufAb, abgelaufen } from './einladung.js';
 import { reiseUebernehmen } from './reise-uebernahme.js';
 import { nameVon, kreisMitglieder } from './personen.js';
@@ -231,9 +232,40 @@ async function zuGruppen(mitgliedschaften) {
 
 export async function meineGruppen(uid) {
   const snap = await getDocs(eigeneMitgliedschaften(uid));
-  return zuGruppen(snap.docs.map(d => ({
+  return geordnet(await zuGruppen(snap.docs.map(d => ({
     gid: d.ref.parent.parent.id, rolle: d.data().rolle || '',
-  })));
+  }))));
+}
+
+/* ── Die eigene Reihenfolge (v.35.68.0, gruppen-folge.js) ───────────
+   Im Gerät sofort (localStorage), für alle Geräte unter
+   users/{uid}/einstellungen/gruppen. Die gemeinsame Liste (unten) ordnet
+   danach — Leiste, Wähler, Kalender, Chat, Pille und Start sehen dieselbe
+   Folge. Ohne Regel (noch nicht ausgerollt) bleibt sie im Gerät. */
+const FOLGE_SPEICHER = 'firn.gruppenFolge';
+function folgeAusGeraet() {
+  try { return folgeSauber(JSON.parse(localStorage.getItem(FOLGE_SPEICHER) || '[]')); } catch { return []; }
+}
+let folgeJetzt = folgeAusGeraet();
+export const gruppenFolge = () => folgeJetzt;
+function folgeMerken(folge) {
+  folgeJetzt = folgeSauber(folge);
+  try { localStorage.setItem(FOLGE_SPEICHER, JSON.stringify(folgeJetzt)); } catch { /* dann nur für diese Seite */ }
+}
+function geordnet(liste) {
+  const neu = nachFolge(liste || [], folgeJetzt);
+  Object.defineProperty(neu, 'unvollstaendig', { value: !!liste?.unvollstaendig });
+  return neu;
+}
+const folgeRef = uid => doc(db, 'users', uid, 'einstellungen', 'gruppen');
+
+/** Die Reihenfolge setzen — sofort hier und oben, dann beim Server. */
+export async function gruppenFolgeSetzen(uid, folge) {
+  folgeMerken(folge);
+  for (const w of new Set([window, obersteSeite()])) {
+    try { w.dispatchEvent(new CustomEvent('firn-gruppen-folge')); } catch { /* fremdes Dokument */ }
+  }
+  await setDoc(folgeRef(uid), { gruppenFolge: folgeJetzt, aktualisiert: serverTimestamp() });
 }
 
 /* Mit den Metadaten: eine eben angelegte Gruppe lässt sich erst lesen,
@@ -264,8 +296,11 @@ export async function meineGruppen(uid) {
 function gruppenQuelle(uid) {
   const hoerer = new Set();
   let letzte = null;
+  let roh = null;
   const melden = liste => {
-    letzte = liste;
+    roh = liste;
+    letzte = geordnet(liste);
+    liste = letzte;
     for (const h of [...hoerer]) {
       /* Ein Rahmen, den der Router entfernt hat, meldet sich hier ab —
          spätestens, wenn der Aufruf in sein Dokument scheitert. */
@@ -276,6 +311,17 @@ function gruppenQuelle(uid) {
   onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true }, folgen,
     () => { if (!letzte) melden([]); });
   getDocsFromServer(eigeneMitgliedschaften(uid)).then(folgen, () => {});
+  /* Die Reihenfolge: von einem anderen Gerät (Server), aus einer anderen
+     Seite dieses Geräts (storage) oder von hier (firn-gruppen-folge). */
+  const neuOrdnen = () => { folgeJetzt = folgeAusGeraet(); if (roh) melden(roh); };
+  onSnapshot(folgeRef(uid), snap => {
+    const f = snap.exists() ? snap.data().gruppenFolge : null;
+    if (!Array.isArray(f) || JSON.stringify(folgeSauber(f)) === JSON.stringify(folgeJetzt)) return;
+    folgeMerken(f);
+    if (roh) melden(roh);
+  }, () => { /* ohne Regel: die Folge des Geräts gilt */ });
+  window.addEventListener('firn-gruppen-folge', neuOrdnen);
+  window.addEventListener('storage', e => { if (e.key === FOLGE_SPEICHER) neuOrdnen(); });
   return {
     uid,
     /* Die zuletzt gemeldete Liste (v.35.67.0, für kontakte()). */
@@ -412,7 +458,7 @@ export function gruppenKalenderLoeschen(gid, kid) {
 }
 
 export function gruppeAendern(gid, patch) {
-  const erlaubt = ['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'];
+  const erlaubt = ['name', 'farbe', 'artFarben', 'bereiche', 'inviteToken', 'icsToken'];
   const daten = Object.fromEntries(
     Object.entries(patch).filter(([k]) => erlaubt.includes(k)));
   if (!Object.keys(daten).length) return Promise.resolve();

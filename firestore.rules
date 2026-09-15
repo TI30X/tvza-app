@@ -621,6 +621,17 @@ service cloud.firestore {
                             && request.resource.data.get('stumm', false) is bool;
     }
 
+    /* Einstellungen der Person (v.35.68.0): die eigene Reihenfolge der
+       Gruppen, für alle ihre Geräte. Nur sie selbst. */
+    match /users/{uid}/einstellungen/{name} {
+      allow read, delete: if isMember() && request.auth.uid == uid;
+      allow create, update: if isMember() && request.auth.uid == uid
+                            && name == 'gruppen'
+                            && request.resource.data.keys().hasOnly(['gruppenFolge', 'aktualisiert'])
+                            && request.resource.data.gruppenFolge is list
+                            && request.resource.data.gruppenFolge.size() <= 50;
+    }
+
     match /users/{uid}/kalender/{kalenderId} {
       allow read, delete: if isMember() && request.auth.uid == uid;
       allow create, update: if isMember() && request.auth.uid == uid
@@ -1117,6 +1128,20 @@ service cloud.firestore {
               && d.assistent.get('anweisung', '').size() <= 600);
       }
 
+      /* Die Farben der Arten (v.35.68.0): Training, Lager, Rennen je eine
+         Farbe aus #rrggbb; ohne Eintrag gilt die Farbe der Gruppe. */
+      function artFarbe(m, art) {
+        return !(art in m) || (m[art] is string && m[art].matches('^#[0-9a-fA-F]{6}$'));
+      }
+      function artFarbenGueltig(d) {
+        return !('artFarben' in d)
+          || (d.artFarben is map
+              && d.artFarben.keys().hasOnly(['training', 'lager', 'rennen'])
+              && artFarbe(d.artFarben, 'training')
+              && artFarbe(d.artFarben, 'lager')
+              && artFarbe(d.artFarben, 'rennen'));
+      }
+
       allow update: if
                     // Kuratieren: Name, Farbe, eingeschaltete Bereiche, ein
                     // frischer Einladungscode und der Assistent. 'art' steht
@@ -1126,12 +1151,13 @@ service cloud.firestore {
                     (
                       leadsGroup(gid)
                       && request.resource.data.diff(resource.data).affectedKeys()
-                        .hasOnly(['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken', 'assistent'])
+                        .hasOnly(['name', 'farbe', 'artFarben', 'bereiche', 'inviteToken', 'icsToken', 'assistent'])
                       && request.resource.data.name is string
                       && request.resource.data.name.size() > 0
                       && request.resource.data.name.size() <= 80
                       && request.resource.data.bereiche is map
                       && assistentGueltig(request.resource.data)
+                      && artFarbenGueltig(request.resource.data)
                     )
                     // Freischalten: der Assistent der Gruppe (ki) — nur der
                     // Admin, nie die Leitung selbst (v.35.55.0; spaeter, wenn
