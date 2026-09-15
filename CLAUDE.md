@@ -1062,7 +1062,7 @@ Zwei Dinge, die leicht übersehen werden:
   v.35.60.0), vor dem Push.
   v.35.62.0 (`emailKarten`) erweitert nur — ohne die Regel findet die
   Suche per Adresse niemanden, sonst geht alles. Regeln vor oder mit dem
-  Code.
+  Code. Ausgerollt am 15.09.2026, vor dem Push.
 
 ## Gewohnheiten
 
