@@ -830,7 +830,8 @@ Zwei Dinge, die leicht übersehen werden:
   15.09.2026, vor dem Push.
   v.35.56.0 (TVZA-Einladungslink, `kreisEinladungen`, Selbst-Zweig bei
   `users` und `kreis`) **Regeln VOR dem Code**: ohne sie scheitert das
-  Anlegen eines Links im Admin und das Einlösen.
+  Anlegen eines Links im Admin und das Einlösen. Ausgerollt am 15.09.2026,
+  vor dem Push.
 
 ## Gewohnheiten
 
