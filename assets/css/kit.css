@@ -3656,6 +3656,7 @@ body.settings-layer-open .ki-pille { display: none; }
   }
 }
 .ki-blatt__kopf {
+  flex: none;
   display: flex;
   align-items: center;
   gap: var(--s3);
@@ -3741,6 +3742,7 @@ body.settings-layer-open .ki-pille { display: none; }
 .ki-karte--nein { color: var(--ink-soft); font-size: 13px; border-style: dashed; }
 
 .ki-vorschlaege {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   gap: var(--s2);
@@ -3760,6 +3762,7 @@ body.settings-layer-open .ki-pille { display: none; }
 .ki-vorschlag:hover { border-color: var(--accent); background: var(--accent-bg); }
 
 .ki-eingabe {
+  flex: none;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-auto-flow: column;
@@ -3821,6 +3824,7 @@ body.settings-layer-open .ki-pille { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .ki-mikro.is-hoert { animation: none; } }
 .ki-stufe {
+  flex: none;
   display: flex;
   align-items: center;
   gap: var(--s2);
@@ -3848,17 +3852,29 @@ body.settings-layer-open .ki-pille { display: none; }
 .ki-pille.is-gruppe .ic,
 .ki-blatt__zeichen.is-gruppe { color: var(--deep); }
 
+/* Die Reihe schrumpft nicht (v.35.60.0): im senkrechten Blatt drückte ein
+   langes Gespräch sie zusammen, die Knöpfe waren halb abgeschnitten und
+   die Reihe bekam einen eigenen Scrollbalken (Michels Bildschirm).
+   Seitlich wischen bleibt, ohne sichtbaren Balken. */
 .ki-wahl {
+  flex: none;
   display: flex;
   gap: var(--s2);
-  padding: var(--s2) var(--s4) 0;
+  padding: var(--s2) var(--s4);
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
 }
+.ki-wahl::-webkit-scrollbar { display: none; }
 .ki-wahl__knopf {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
   flex: none;
+  min-height: 34px;
+  max-width: 200px;
+  white-space: nowrap;
   padding: var(--s1) var(--s3) var(--s1) var(--s1);
   border: 1.5px solid var(--border);
   border-radius: var(--r-pill);
@@ -3882,4 +3898,25 @@ body.settings-layer-open .ki-pille { display: none; }
   font-weight: 800;
 }
 .ki-wahl__zeichen .ic { width: 14px; height: 14px; }
+.ki-wahl__zeichen { flex: none; }
+.ki-wahl__knopf > span:last-child { overflow: hidden; text-overflow: ellipsis; }
 .ki-wahl__knopf.is-gruppe .ki-wahl__zeichen { background: var(--tint); color: var(--deep); }
+
+/* ── Formatierter Text (v.35.60.0, formatierung.js) ─────────────────
+   Antworten des Assistenten und Nachrichten im Chat: Absätze, Listen,
+   fett, kursiv, Code. Die Blasen stehen auf pre-wrap — der Inhalt hier
+   bringt seine Umbrüche als <br> und <p> mit. */
+.fmt { white-space: normal; overflow-wrap: anywhere; }
+.fmt p { margin: 0; }
+.fmt > * + * { margin-top: var(--s2); }
+.fmt ul, .fmt ol { margin-block: 0; padding-left: var(--s5); }
+.fmt li + li { margin-top: 2px; }
+.fmt li.fmt-tief { margin-left: var(--s4); list-style-type: circle; }
+.fmt strong { font-weight: 750; }
+.fmt code {
+  padding: 0 3px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .92em;
+}

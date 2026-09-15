@@ -133,7 +133,7 @@ export async function waehle({ titel, text = '', optionen = [], nein } = {}) {
  * Mehrere auf einmal wählen — die fünfte Form (v.35.53.0), für "an wen
  * im Chat schicken". Eine Liste mit Häkchen, ab acht Einträgen mit Suche.
  *
- * optionen: [{ wert, titel, text }]
+ * optionen: [{ wert, titel, text, an }] — an: schon angehakt (v.35.60.0)
  * Ergebnis: die Werte der angehakten, bei Abbruch null. Nichts angehakt
  * ist [] — auch eine Antwort, der Aufrufer entscheidet.
  */
@@ -147,7 +147,7 @@ export async function mehrere({ titel, text = '', optionen = [], ja, nein, leer 
       <div class="mehrere" data-mehrere>
         ${optionen.length ? optionen.map((o, i) => `
           <label class="mehrere__zeile">
-            <input type="checkbox" value="${i}" />
+            <input type="checkbox" value="${i}"${o.an ? ' checked' : ''} />
             <span><span class="mehrere__name">${esc(o.titel)}</span>
               ${o.text ? `<span class="mehrere__text">${esc(o.text)}</span>` : ''}</span>
           </label>`).join('') : `<p class="frage__text">${esc(leer)}</p>`}

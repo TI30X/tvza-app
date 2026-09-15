@@ -34,8 +34,9 @@ import {
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet, eigeneKarte,
   terminAendern, programmSetzen, beobachteGepackt, gepacktSetzen,
   gastTokenSetzen, ladeGaeste, gastEntfernen, reisenDerGruppeUebernehmen,
-  gruppeAendern, gruppeLoeschen,
+  gruppeAendern, gruppeLoeschen, ladeGruppenKalender, gruppenKalenderAnlegen, gruppenKalenderLoeschen,
 } from '../../groups.js';
+import { kalenderName, naechsteFarbe, KALENDER_MAX } from '../../kalender-quellen.js';
 import {
   seiteLesen, programmMitSeite, neuerPunkt, punktSetzen, punkteHtml, jetztFuer,
   abfahrtVon, abfahrtenSauber, packlisteFuer, neuerPackpunkt, haeufigste,
@@ -97,6 +98,8 @@ let terminAusAdresse = adresse.get('termin') || '';
 let neuAusAdresse = /^\d{4}-\d{2}-\d{2}$/.test(adresse.get('neu') || '') ? adresse.get('neu') : '';
 /* ?anlegen=1: "+ Neue Gruppe" in der Leiste am Laptop (v.35.49.0). */
 let anlegenAusAdresse = adresse.get('anlegen') === '1';
+/* ?einst=1: aus den Einstellungen der App direkt in die der Gruppe (v.35.60.0). */
+let einstAusAdresse = adresse.get('einst') === '1';
 
 /* Die Einmal-Anweisungen oben sind gelesen — raus aus der Adresse
    (v.35.57.1). Michel: "beim Neuladen spickt das plötzlich raus": nach
@@ -105,7 +108,7 @@ let anlegenAusAdresse = adresse.get('anlegen') === '1';
    Dasselbe mit ?neu= (Formular) und ?termin= (Termin ging wieder auf). Im
    Rahmen gehört die Adresszeile dem Router — er erfährt es über
    tvzaAdresseErsetzen. */
-const EINMAL = ['anlegen', 'neu', 'termin', 'g'];
+const EINMAL = ['anlegen', 'neu', 'termin', 'g', 'einst'];
 function adresseAufraeumen() {
   const url = new URL(location.href);
   if (!EINMAL.some(p => url.searchParams.has(p))) return;
@@ -348,6 +351,14 @@ async function zeichnePlaene() {
    Athlet soll nie den Plan eines anderen bekommen, weil zwei Namen sich
    aehnelten. */
 let eingelesen = [];            // je Datei: { datei, programm, json, vorschlag, fuer } oder { datei, fehler }
+/* "Mehrere Personen" (v.35.60.0): Michel: "nicht nur an eine Person oder
+   an alle, sondern auch an mehrere gleichzeitig — ähnlich wie bei den
+   Chats". Gewählt wird im selben Dialog wie im Chat (mehrere()); jede
+   Person bekommt ihren eigenen Plan. Ein Plan gilt weiter für alle oder
+   für einen — so bleiben Regeln, Woche und "der neuere gewinnt", wie sie
+   sind. */
+const PLAN_MEHRERE = 'mehrere';
+let planMehrere = [];
 let alsListe = false;           // mehrere Dateien: Karten statt Vorschau und "Für wen"
 let bilder = null;
 
@@ -426,6 +437,11 @@ function fuerOptionen(wert, { nurWen = false } = {}) {
   return [
     wert === '' ? `<option value=""${auswahl('')}>${escHtml(t('grp.waehlen', '— wählen —'))}</option>` : '',
     `<option value="${PLAN_FUER_ALLE}"${auswahl(PLAN_FUER_ALLE)}>${escHtml(t('grp.alleInGruppe', 'Alle in der Gruppe'))}</option>`,
+    nurWen && mitglieder.length > 1
+      ? `<option value="${PLAN_MEHRERE}"${auswahl(PLAN_MEHRERE)}>${escHtml(wert === PLAN_MEHRERE && planMehrere.length
+        ? t('grp.mehrereN', 'Mehrere Personen ({n})', { n: planMehrere.length })
+        : t('grp.mehrere', 'Mehrere Personen …'))}</option>`
+      : '',
     ...mitglieder.map(m => {
       const wen = m.name || m.uid;
       return `<option value="${escHtml(m.uid)}"${auswahl(m.uid)}>${escHtml(nurWen ? t('grp.nurWen', 'Nur {wen}', { wen }) : wen)}</option>`;
@@ -445,6 +461,7 @@ function einzelnZeigen(x) {
      behaelt ihn. */
   const titel = $('planTitel');
   if (!titel.value.trim()) titel.value = planTitelVorschlag(x.programm);
+  planFuerVorher = x.fuer;
   $('planFuer').innerHTML = fuerOptionen(x.fuer, { nurWen: true });
   const hinweis = $('planFuerHinweis');
   hinweis.textContent = zuordnungText(x);
@@ -597,6 +614,8 @@ async function planFormOeffnen() {
   /* "Alle" zuerst — der Normalfall ist ein Plan für den ganzen Kader.
      Ein Plan nur für einen Athleten ist die Ausnahme, und genau die
      soll möglich sein. */
+  planMehrere = [];
+  planFuerVorher = PLAN_FUER_ALLE;
   $('planFuer').innerHTML = fuerOptionen(PLAN_FUER_ALLE, { nurWen: true });
 
   $('planTitel').value = '';
@@ -604,6 +623,39 @@ async function planFormOeffnen() {
   zeige('secPlanForm', true);
   zeige('secWoche', false);
   zeige('secMitglieder', false);
+}
+
+/* "Mehrere Personen …" gewählt: der Dialog wie im Chat. Abbrechen
+   stellt die vorige Wahl wieder her; eine einzige Person ist "Nur …". */
+let planFuerVorher = PLAN_FUER_ALLE;
+async function planFuerGeaendert() {
+  const feld = $('planFuer');
+  if (feld.value !== PLAN_MEHRERE) { planFuerVorher = feld.value; $('planFuerHinweis').hidden = true; return; }
+  const wahl = await mehrere({
+    titel: t('grp.planFuer', 'Für wen'),
+    text: t('grp.mehrereText', 'Jede Person bekommt den Plan als ihren eigenen.'),
+    optionen: mitglieder.map(m => ({ wert: m.uid, titel: m.name || m.uid, text: wort(aktiv?.art, m.rolle), an: planMehrere.includes(m.uid) })),
+    ja: t('common.ok', 'OK'),
+  });
+  if (wahl === null || !wahl.length) {
+    feld.innerHTML = fuerOptionen(planFuerVorher, { nurWen: true });
+  } else if (wahl.length === 1) {
+    planFuerVorher = wahl[0];
+    feld.innerHTML = fuerOptionen(wahl[0], { nurWen: true });
+  } else {
+    planMehrere = wahl;
+    planFuerVorher = PLAN_MEHRERE;
+    feld.innerHTML = fuerOptionen(PLAN_MEHRERE, { nurWen: true });
+  }
+  mehrereHinweis();
+}
+
+function mehrereHinweis() {
+  const hinweis = $('planFuerHinweis');
+  if ($('planFuer').value !== PLAN_MEHRERE) return;
+  const namen = planMehrere.map(uid => mitglieder.find(m => m.uid === uid)?.name || uid);
+  hinweis.textContent = t('grp.mehrereFuer', 'Für {namen}', { namen: namen.join(', ') });
+  hinweis.hidden = false;
 }
 
 function planFormSchliessen() {
@@ -637,7 +689,8 @@ async function planSpeichern() {
   }
 
   const fuer = $('planFuer').value;
-  if (!fuer) {
+  const ziele = fuer === PLAN_MEHRERE ? [...planMehrere] : [fuer].filter(Boolean);
+  if (!ziele.length) {
     fehler.textContent = t('grp.f.fuerWen', 'Wähle, für wen der Plan ist.');
     fehler.hidden = false;
     return;
@@ -645,22 +698,28 @@ async function planSpeichern() {
 
   let neuesProgramm = null;
   try { neuesProgramm = JSON.parse(json); } catch { /* ohne Programm ersetzt der Plan nichts */ }
-  const ersetzt = neuesProgramm ? ersetztePlaene([{ fuer, programm: neuesProgramm }], bestehendePlaene(), isoTag()) : [];
+  const ersetzt = neuesProgramm
+    ? ersetztePlaene(ziele.map(wer => ({ fuer: wer, programm: neuesProgramm })), bestehendePlaene(), isoTag())
+    : [];
 
   const btn = $('btnPlanSpeichern');
   btn.disabled = true;
   try {
-    await planVeroeffentlichen(aktiv.id, user.uid, {
-      titel: $('planTitel').value.trim() || programmId,
-      json,
-      fuer,
-    });
+    /* Je Person ein eigener Plan (siehe PLAN_MEHRERE). */
+    for (const wer of ziele) {
+      await planVeroeffentlichen(aktiv.id, user.uid, {
+        titel: $('planTitel').value.trim() || programmId,
+        json,
+        fuer: wer,
+      });
+    }
+    planMehrere = [];
     eingelesen = [];
     planFormSchliessen();
     await aeltereLoeschen(ersetzt);
     /* Wer eben die Excel für Timo eingelesen hat, will Timos Woche sehen
        — und zwar die, in der der Plan liegt, nicht heute. */
-    wochePerson = fuer || PLAN_FUER_ALLE;
+    wochePerson = ziele[0] || PLAN_FUER_ALLE;
     await zeichnePlaene();
     let ersterTag = '';
     try { ersterTag = planTageMitDatum(JSON.parse(json), isoTag())[0]?.datum || ''; } catch { /* ohne Datum bleibt die Woche */ }
@@ -787,6 +846,7 @@ function zeichneWechsel() {
 function wechsleZu(gid) {
   const neu = gruppen.find(g => g.id === gid);
   if (!neu || neu.id === aktiv?.id) return;
+  einstSchliessen();
   aktiv = neu;
   hoereAufTermine();
   zeichne();
@@ -795,12 +855,16 @@ function wechsleZu(gid) {
 function zeichne() {
   const hat = !!aktiv;
   const darfFuehren = hat && leitet(aktiv.meineRolle);
+  /* Stehen die Einstellungen der Gruppe offen, bleibt das Übrige zu —
+     auch wenn eine neue Meldung die Seite neu zeichnet. */
+  const inEinst = hat && $('secGruppeEinst')?.hidden === false;
+  if (!hat) zeige('secGruppeEinst', false);
 
   zeige('secLeer', !hat);
-  zeige('secWoche', hat);
-  zeige('secMitglieder', hat);
-  zeige('secAktionen', darfFuehren);
-  zeige('secWeitere', hat);
+  zeige('secWoche', hat && !inEinst);
+  zeige('secMitglieder', hat && !inEinst);
+  zeige('secAktionen', darfFuehren && !inEinst);
+  zeige('secWeitere', hat && !inEinst);
   zeichneWechsel();
 
   /* Wer nicht führt, sieht den Knopf gar nicht erst. Die Regeln lehnen
@@ -812,7 +876,9 @@ function zeichne() {
   if (verteilerKnopf) verteilerKnopf.hidden = !darfFuehren;
   const loeschen = $('grpLoeschen');
   if (loeschen) loeschen.hidden = !hat || !fuehrt(aktiv.meineRolle);
+  zeige('grpEinstZeile', darfFuehren && !inEinst);
   seiteFaerben();
+  kalenderDerGruppeLaden();
 
   /* Ohne Worker gibt es keine Adresse, die man abonnieren könnte —
      eine statische Seite kann kein text/calendar ausliefern. */
@@ -832,6 +898,126 @@ function zeichne() {
   zeichnePlaene();
   zeichneAssistent();
   zeichneFarbwahl();
+}
+
+/* ── Die Einstellungen der Gruppe (v.35.60.0) ──────────────────────
+   Farbe, Kalender, Assistent, Abo, Löschen — eine eigene Ansicht statt
+   offen unter der Kaderliste (Michel: "nicht so öffentlich … man kommt
+   sehr schnell durcheinander"). */
+const HAUPTTEILE = ['secWoche', 'secMitglieder', 'secAktionen', 'grpEinstZeile', 'secWeitere'];
+function einstOeffnen() {
+  if (!aktiv || !leitet(aktiv.meineRolle)) return;
+  for (const id of HAUPTTEILE) zeige(id, false);
+  $('grpEinstTitel').textContent = t('grp.einstVon', 'Einstellungen · {name}', { name: aktiv.name });
+  zeichneFarbwahl();
+  zeichneAssistent();
+  zeichneKalenderDerGruppe();
+  zeige('secGruppeEinst', true);
+  window.scrollTo?.(0, 0);
+}
+function einstSchliessen() {
+  if ($('secGruppeEinst')?.hidden !== false) return;
+  zeige('secGruppeEinst', false);
+  const darf = !!aktiv && leitet(aktiv.meineRolle);
+  zeige('secWoche', !!aktiv);
+  zeige('secMitglieder', !!aktiv);
+  zeige('secAktionen', darf);
+  zeige('grpEinstZeile', darf);
+  zeige('secWeitere', !!aktiv);
+}
+
+/* Die Kalender der Gruppe (v.35.60.0, kalender-quellen.js). */
+let kalenderDerGruppe = [];
+let kalenderFuer = '';
+async function kalenderDerGruppeLaden() {
+  if (!aktiv) { kalenderDerGruppe = []; return; }
+  const gid = aktiv.id;
+  kalenderFuer = gid;
+  try {
+    const liste = await ladeGruppenKalender(gid);
+    if (kalenderFuer !== gid) return;
+    kalenderDerGruppe = liste;
+  } catch (e) {
+    reportClientError('gruppe/kalender', e);
+    kalenderDerGruppe = [];
+  }
+  zeichneKalenderDerGruppe();
+  kalenderWahl($('fKalender')?.value || '');
+}
+function zeichneKalenderDerGruppe() {
+  const liste = $('gruppeKalenderListe');
+  if (!liste) return;
+  liste.innerHTML = kalenderDerGruppe.map(k => `
+    <div class="grp-kalender__zeile" style="--tint:${escHtml(k.farbe || '')}">
+      <span class="grp-kalender__punkt" aria-hidden="true"></span>
+      <span class="grp-kalender__name">${escHtml(k.name)}</span>
+      <button class="row__aktion row__aktion--gefahr" type="button" data-kalender-weg="${escHtml(k.id)}"
+              aria-label="${escHtml(t('kal.kalenderLoeschen', '«{name}» löschen', { name: k.name }))}"
+              title="${escHtml(t('kal.kalenderLoeschen', '«{name}» löschen', { name: k.name }))}">
+        <svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>`).join('');
+}
+async function kalenderAnlegen() {
+  if (!aktiv) return;
+  const feld = $('gruppeKalenderName');
+  const fehler = $('gruppeKalenderFehler');
+  fehler.hidden = true;
+  const name = kalenderName(feld.value);
+  if (!name) { feld.focus(); return; }
+  if (kalenderDerGruppe.length >= KALENDER_MAX) {
+    fehler.textContent = t('kal.kalenderGenug', 'Mehr als {n} eigene Kalender gehen nicht.', { n: KALENDER_MAX });
+    fehler.hidden = false;
+    return;
+  }
+  const farbe = naechsteFarbe([gruppenFarbe(gruppen, aktiv.id), ...kalenderDerGruppe.map(k => k.farbe)], FARBEN.map(f => f.value));
+  const knopf = $('btnGruppeKalender');
+  knopf.disabled = true;
+  try {
+    const id = await gruppenKalenderAnlegen(aktiv.id, user.uid, { name, farbe });
+    kalenderDerGruppe = [...kalenderDerGruppe, { id, name, farbe }].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    feld.value = '';
+    zeichneKalenderDerGruppe();
+    kalenderWahl($('fKalender')?.value || '');
+    try { localStorage.setItem('firn.daten', String(Date.now())); } catch {}
+  } catch (e) {
+    reportClientError('gruppe/kalenderAnlegen', e);
+    fehler.textContent = t('kal.f.anlegen', 'Der Kalender liess sich nicht anlegen.');
+    fehler.hidden = false;
+  } finally {
+    knopf.disabled = false;
+  }
+}
+async function kalenderLoeschen(id) {
+  const k = kalenderDerGruppe.find(x => x.id === id);
+  if (!k || !aktiv) return;
+  const ja = await frage({
+    titel: t('kal.kalenderLoeschen', '«{name}» löschen', { name: k.name }),
+    text: t('grp.kalenderLoeschenText', 'Die Termine darin bleiben und stehen danach wieder unter ihrer Art.'),
+    ja: t('common.loeschen', 'Löschen'),
+    nein: t('common.abbrechen', 'Abbrechen'),
+    gefahr: true,
+  });
+  if (!ja) return;
+  try {
+    await gruppenKalenderLoeschen(aktiv.id, id);
+    kalenderDerGruppe = kalenderDerGruppe.filter(x => x.id !== id);
+    zeichneKalenderDerGruppe();
+    kalenderWahl($('fKalender')?.value || '');
+    try { localStorage.setItem('firn.daten', String(Date.now())); } catch {}
+  } catch (e) {
+    reportClientError('gruppe/kalenderLoeschen', e);
+  }
+}
+/* Im Terminformular: in welchem Kalender. Ohne Kalender der Gruppe
+   fehlt das Feld — dann entscheidet die Art. */
+function kalenderWahl(wert = '') {
+  const wahl = $('fKalender');
+  if (!wahl) return;
+  wahl.innerHTML = [`<option value="">${escHtml(t('grp.kalenderNachArt', 'Nach Art (Training, Lager, Rennen)'))}</option>`,
+    ...kalenderDerGruppe.map(k => `<option value="${escHtml(k.id)}">${escHtml(k.name)}</option>`)].join('');
+  wahl.value = kalenderDerGruppe.some(k => k.id === wert) ? wert : '';
+  zeige('grpKalender', kalenderDerGruppe.length > 0);
 }
 
 /* ── Die Farbe der Gruppe (v.35.59.0) ──────────────────────────────
@@ -1977,6 +2163,7 @@ function formOeffnen(datum, termin = null) {
   $('fDisziplin').value = x.disziplin || '';
   $('fOrt').value = x.ort || '';
   $('fNotiz').value = x.notiz || '';
+  kalenderWahl(x.kalender || '');
 
   seiteDateiHtml = '';
   $('fSeiteDatei').value = '';
@@ -2025,6 +2212,7 @@ function formLesen() {
     disziplin: art === 'rennen' ? ($('fDisziplin').value || null) : null,
     ort: $('fOrt').value.trim() || null,
     notiz: $('fNotiz').value.trim() || null,
+    kalender: $('fKalender')?.value || null,
   };
 }
 
@@ -2962,6 +3150,14 @@ async function einladungZurueckziehen() {
     if (feld) farbeWaehlen(feld.dataset.farbe);
   });
   $('btnGruppeLoeschen')?.addEventListener('click', gruppeLoeschenFragen);
+  $('btnGruppeEinst')?.addEventListener('click', einstOeffnen);
+  $('btnGruppeEinstZurueck')?.addEventListener('click', einstSchliessen);
+  $('btnGruppeKalender')?.addEventListener('click', kalenderAnlegen);
+  $('gruppeKalenderName')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); kalenderAnlegen(); } });
+  $('gruppeKalenderListe')?.addEventListener('click', e => {
+    const weg = e.target.closest('[data-kalender-weg]');
+    if (weg) kalenderLoeschen(weg.dataset.kalenderWeg);
+  });
   $('btnAbo')?.addEventListener('click', aboErzeugen);
   $('btnTermin')?.addEventListener('click', formOeffnen);
   $('btnAbbrechen')?.addEventListener('click', formSchliessen);
@@ -3139,6 +3335,7 @@ async function einladungZurueckziehen() {
   });
   $('btnPlanAbbrechen')?.addEventListener('click', planFormSchliessen);
   $('btnPlanSpeichern')?.addEventListener('click', planSpeichern);
+  $('planFuer')?.addEventListener('change', planFuerGeaendert);
   for (const id of ['ergRennen', 'ergZeit', 'ergSieger', 'ergZuschlag']) {
     $(id)?.addEventListener('input', ergVorschau);
     $(id)?.addEventListener('change', ergVorschau);
@@ -3167,6 +3364,10 @@ async function einladungZurueckziehen() {
     if (anlegenAusAdresse) {
       anlegenAusAdresse = false;
       neueGruppe();
+    }
+    if (einstAusAdresse && aktiv) {
+      einstAusAdresse = false;
+      einstOeffnen();
     }
   });
 }());

@@ -69,6 +69,16 @@ export function mountSettingsLayer() {
   window.addEventListener('message', event => {
     if (location.origin !== 'null' && event.origin !== location.origin) return;
     if (event.data?.type === 'tvza-settings-close') close();
+    /* "Deine Gruppen" in den Einstellungen (v.35.60.0): die Ebene geht zu,
+       die Seite darunter wechselt — über den Router, wenn es ihn gibt.
+       Nur Adressen dieser App. */
+    if (event.data?.type === 'tvza-settings-gehe') {
+      let ziel = null;
+      try { ziel = new URL(String(event.data.url || ''), location.href); } catch { /* keine Adresse */ }
+      if (!ziel || ziel.origin !== location.origin) return;
+      close();
+      if (!window.tvzaNavigate?.(ziel.href)) location.href = ziel.href;
+    }
     if (event.data?.type === 'tvza-settings-theme') {
       window.TVZATheme?.applyTheme(event.data.mode);
     }

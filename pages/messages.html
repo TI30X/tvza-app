@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=26" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=27" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <title>Nachrichten — Firn</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
@@ -166,6 +166,7 @@
     import { sucheBekannte } from '../assets/js/bekannte.js';
     import { codeSauber, einloesen, APP_WURZEL } from '../assets/js/einladung.js';
     import { meldung } from '../assets/js/dialog.js';
+    import { formatiert } from '../assets/js/formatierung.js';
     import {
       collection, doc, addDoc, setDoc, updateDoc, onSnapshot,
       query, orderBy, where, serverTimestamp, increment
@@ -349,8 +350,13 @@
        mit einem Tipp beitritt. NUR Einladungslinks dieser App — jede andere
        Adresse bleibt Text, der Chat wird kein Weg für fremde Links. */
     const WURZEL = APP_WURZEL.href;
+    /* Seit v.35.60.0 formatiert (formatierung.js: **fett**, Listen …) —
+       die Einladungslinks entstehen im schon maskierten Text. */
     function mitEinladung(text) {
-      return escHtml(text).replace(/https?:\/\/[^\s<]+/g, url => {
+      return `<div class="fmt">${formatiert(text, { inline: einladungsLinks })}</div>`;
+    }
+    function einladungsLinks(maskiert) {
+      return maskiert.replace(/https?:\/\/[^\s<]+/g, url => {
         const roh = url.replace(/&amp;/g, '&');
         const code = roh.startsWith(WURZEL) ? codeSauber(roh) : '';
         return code

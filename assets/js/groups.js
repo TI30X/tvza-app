@@ -283,6 +283,30 @@ export async function gruppeLoeschen(gid, uid) {
   try { await deleteDoc(mitgliedRef(gid, uid)); } catch { /* siehe oben */ }
 }
 
+/* ── Die Kalender einer Gruppe (v.35.60.0, kalender-quellen.js) ─────
+   Trainings, Lager und Rennen stehen im Kalender ohnehin getrennt (die
+   Art des Termins). Was darüber hinaus gebraucht wird — "Rennplan",
+   "Elternanlässe" —, legt die Leitung hier an; ein Termin kann einem
+   davon zugeordnet werden. Lesen dürfen alle in der Gruppe. */
+export async function ladeGruppenKalender(gid) {
+  const snap = await getDocs(collection(db, 'groups', gid, 'kalender'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de'));
+}
+
+export async function gruppenKalenderAnlegen(gid, uid, { name, farbe }) {
+  const ref = await addDoc(collection(db, 'groups', gid, 'kalender'), {
+    name, farbe, erstelltVon: uid, erstelltAm: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+/* Die Termine darin behalten ihr Feld und stehen danach wieder unter
+   ihrer Art (quelleVon kennt den Kalender nicht mehr). */
+export function gruppenKalenderLoeschen(gid, kid) {
+  return deleteDoc(doc(db, 'groups', gid, 'kalender', kid));
+}
+
 export function gruppeAendern(gid, patch) {
   const erlaubt = ['name', 'farbe', 'bereiche', 'inviteToken', 'icsToken'];
   const daten = Object.fromEntries(
@@ -554,6 +578,9 @@ export async function terminAnlegen(gid, uid, termin) {
       planUrl: termin.planUrl,
       packliste: Array.isArray(termin.packliste) && termin.packliste.length ? termin.packliste : null,
       abfahrten: termin.abfahrten && Object.keys(termin.abfahrten).length ? termin.abfahrten : null,
+      /* Ein Kalender der Gruppe (v.35.60.0) — ohne steht der Termin unter
+         seiner Art. */
+      kalender: termin.kalender,
       createdBy: uid,
       createdAt: serverTimestamp(),
     }))
@@ -572,7 +599,7 @@ export async function terminAnlegen(gid, uid, termin) {
 export const TERMIN_AENDERBAR = Object.freeze([
   'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'bisZeit', 'ort', 'notiz',
   'disziplin', 'startnummer', 'ergebnis', 'programm', 'planHtml', 'planUrl',
-  'abfahrten', 'packliste',
+  'abfahrten', 'packliste', 'kalender',
 ]);
 export function terminAendern(gid, eid, patch) {
   const daten = {};

@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.59.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.60.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-74 Testdateien, **776 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+77 Testdateien, **791 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -792,6 +792,55 @@ Anlegen einer Gruppe:
 
 Tests: `gruppe-verwalten`, `gruppen-strom`, `trainings-assistent`.
 
+**Die Einstellungen der Gruppe sind eine eigene Ansicht** (v.35.60.0).
+Michel: „das sollten gruppenspezifische Einstellungen sein, in den
+Einstellungen vergraben — nicht so öffentlich, man kommt sehr schnell
+durcheinander". Farbe, Kalender der Gruppe, Assistent, Kalender-Abo und
+Löschen stehen in `#secGruppeEinst` (mit Zurück), erreichbar über eine
+leise Zeile im Gruppe-Tab und aus den Einstellungen der App („Deine
+Gruppen", nur wer etwas leitet): `gruppe.html?g=…&einst=1`, die
+Einstellungs-Ebene führt über `tvza-settings-gehe` hin (nur Adressen der
+eigenen App). Offen bleibt die Ansicht auch, wenn eine Meldung die Seite
+neu zeichnet (`inEinst` in `zeichne()`). **„Für wen" bei einem Plan:
+„Mehrere Personen …"** — derselbe Dialog wie im Chat (`mehrere()`, jetzt
+mit vorab angehakten), und jede Person bekommt ihren eigenen Plan. Ein
+Plan gilt weiter für alle oder für einen: Regeln, Woche und „der neuere
+gewinnt" bleiben. `dev/gruppe-einstellungen.test.mjs`.
+
+**23. Mehrere Kalender** (v.35.60.0, `kalender-quellen.js`). Michel: „die
+Gruppe soll mehrere Kalender erstellen können … auch persönlich … zwischen
+Trainings, Trainingslager und Rennen unterscheiden — Rennplan". Jede
+Quelle hat einen Schlüssel, ausgeschaltet wird eine Menge davon (gemerkt im
+Gerät; das alte `{ personal, teamsAus }` gilt weiter): `p` Persönlich,
+`pk:<id>` eigene Kalender (`users/{uid}/kalender`, der eigene Termin trägt
+`kalender`), `r` Erinnerungen, `g:<gid>` die Gruppe als Ganzes, darunter
+`g:<gid>:art:<art>` — die **Arten der Termine** (Training, Lager, Rennen;
+bei der Familie Termin, Reise), nichts anzulegen —, `g:<gid>:k:<id>`
+Kalender, die die Leitung anlegt (`groups/{gid}/kalender`, der Termin trägt
+`kalender`, im Formular „Kalender"), und `g:<gid>:plaene`. Ein Termin in
+einem gelöschten Kalender fällt zurück unter seine Art bzw. „Persönlich" —
+nichts verschwindet. Am Laptop die Liste eingerückt in der Seitenleiste,
+am Handy dieselbe im Blatt „Kalender" und oben Knöpfe für das Eigene und
+die Gruppen. Export nimmt dieselben Quellen. `dev/kalender-quellen.test.mjs`.
+
+**24. Formatierter Text** (v.35.60.0, `formatierung.js`). Michel: „das
+Formatieren der KI … nimmt ** nicht wahr" und „sollte auch vom Chat
+verstanden werden". Erst wird ALLES maskiert, dann kommen fett, kursiv,
+Code, Überschrift, Listen (eine Stufe eingerückt) und Absätze dazu — nie
+ein Link, ein Bild oder ein Attribut aus dem Text. Die Pille formatiert nur
+die Antworten des Assistenten; der Chat jede Nachricht, seine
+Einladungslinks entstehen im schon maskierten Text (`inline`). Achtung:
+im Quelltext stehen Platzhalter als `\uE000` und der Backtick als `\x60`
+— ein echtes Steuerzeichen oder ein Backtick im regulären Ausdruck
+brachte `aufrufe.test.mjs` durcheinander.
+
+Dazu in dieser Runde: **die Glocke** blendet jede Meldung mit × aus
+(`tvza-notif-weg`, im Gerät) — Michel: „die Nachricht von der
+Maturaarbeit … kommt immer wieder"; die Matura-Meldungen hängen am
+Abgabedatum, ein neues Datum ist eine neue Meldung. Und **die Knöpfe oben
+im Assistenten** schrumpfen nicht mehr (`flex: none`): ein langes Gespräch
+drückte sie am Handy zusammen, samt eigenem Scrollbalken.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -804,7 +853,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1046 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1069 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -930,11 +979,14 @@ Zwei Dinge, die leicht übersehen werden:
   eigene Mitgliedschaft bleibt und zeigt auf nichts (`zuGruppen` lässt sie
   weg). Regeln vor oder mit dem Code. Ausgerollt am 15.09.2026, vor dem
   Push.
+  v.35.60.0 (Kalender: `users/{uid}/kalender`, `groups/{gid}/kalender`,
+  `kalender` am Termin) **Regeln VOR dem Code**: ohne sie scheitert das
+  Anlegen eines Kalenders, und ein Termin mit Kalender wird abgelehnt.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.59.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.60.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

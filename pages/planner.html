@@ -12,9 +12,9 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=26" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=27" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
-  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=19" />
+  <link rel="stylesheet" href="../assets/css/feature/calendar.css?v=20" />
   <link rel="stylesheet" href="../assets/css/feature/planner.css?v=4" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <title data-i18n="kal.seitentitel">Kalender — Firn</title>
@@ -157,6 +157,12 @@
     <div class="grip"></div>
     <div class="sheet-head"><span class="sheet-title" data-i18n="kal.einstellungen">Kalender</span>
       <button class="icon-pill" id="calendarSetupClose" type="button" aria-label="Schliessen" data-i18n-attr="aria-label:a11y.schliessen"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <!-- Dieselbe Liste wie links am Laptop (v.35.60.0): am Handy hat die
+         Befehlsleiste nur Platz fuer das Eigene und die Gruppen als Ganzes. -->
+    <section class="blatt-teil">
+      <p class="marke" data-i18n="cal.meine">Meine Kalender</p>
+      <div class="kal-quellenliste" id="calendarSetupSources"></div>
+    </section>
     <section class="blatt-teil">
       <p class="marke" data-i18n="cal.farbe">Farbe für „Persönlich &amp; Erinnerungen“</p>
       <p class="blatt-text" data-i18n="cal.farbeSub">Termine übernehmen immer die Farbe ihres Kalenders.</p>
@@ -214,6 +220,8 @@
       <div class="field"><label for="dEndTime" data-i18n="cal.ende">Ende</label><input class="form-input" id="dEndTime" type="time" /></div>
     </div>
     <div class="field"><label for="dLocation" data-i18n="cal.ort">Ort</label><input class="form-input" id="dLocation" /></div>
+    <!-- In welchen der eigenen Kalender (v.35.60.0) — nur, wenn es welche gibt. -->
+    <div class="field" id="grpDKalender" hidden><label for="dKalender" data-i18n="kal.kalender">Kalender</label><select class="form-select" id="dKalender"></select></div>
     <div class="field"><label for="dNotes" data-i18n="cal.notiz">Notiz</label><textarea class="form-textarea" id="dNotes" rows="3"></textarea></div>
     <div class="field">
       <label data-i18n="cal.infoSeite">Info-Seite</label>
@@ -240,6 +248,6 @@
   <!-- Das Programm eines Termins baut programm.js selbst — derselbe
        Code wie im Gruppe-Tab. -->
 
-  <script type="module" src="../assets/js/feature/kalender/kalender.js?v=10"></script>
+  <script type="module" src="../assets/js/feature/kalender/kalender.js?v=11"></script>
 </body>
 </html>

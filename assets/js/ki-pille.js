@@ -33,6 +33,7 @@ import {
 } from './ki.js';
 import { gruppenStil, kuerzel } from './gruppenwahl.js';
 import { planEinheiten } from './wochenplan.js';
+import { formatiert } from './formatierung.js';
 import {
   collection, doc, getDocs, addDoc, updateDoc, query, where, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -338,7 +339,9 @@ function nachricht(wer, text) {
   const liste = blatt.querySelector('.ki-verlauf');
   const el = document.createElement('div');
   el.className = `ki-nachricht ki-nachricht--${wer}`;
-  el.textContent = text;
+  /* Die Antwort des Assistenten kommt in Markdown (**fett**, Listen) —
+     formatiert statt roh (v.35.60.0). Was man selbst schreibt, bleibt Text. */
+  if (wer === 'ki') { el.classList.add('fmt'); el.innerHTML = formatiert(text); } else el.textContent = text;
   liste.appendChild(el);
   liste.scrollTop = liste.scrollHeight;
   return el;

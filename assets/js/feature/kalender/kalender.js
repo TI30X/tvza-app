@@ -45,14 +45,17 @@ import {
    und stehen bis dahin als Quelle mit ihren Reisen daneben. */
 import {
   beobachteMeineGruppen, beobachteTermine, aktiveGruppeSetzen, aktiveGruppeId, VORGABE_BEREICHE, leitet, wort,
-  eineReiseUebernehmen, ladePlaene,
+  eineReiseUebernehmen, ladePlaene, ladeGruppenKalender,
 } from '../../groups.js';
+import {
+  quelleVon, sichtbar, quellenBaum, ausGemerkt, kalenderName, naechsteFarbe, KALENDER_NAME_MAX, KALENDER_MAX,
+} from '../../kalender-quellen.js';
 import { planEinheiten, einheitZiel } from '../../wochenplan.js';
 import { gruppenOptionen } from '../../gruppenwahl.js';
 import { teamTerminText, teamFarben } from '../../kalender-teams.js';
 import { familieUebernehmen, sollUebernehmen, vereinigeGruppen } from '../../uebernahme.js';
-import { frage, waehle, meldung } from '../../dialog.js';
-import { isoTag, zeitraum, istAbgesagt, alsIcsEintrag } from '../../termine.js';
+import { frage, waehle, meldung, eingabe } from '../../dialog.js';
+import { isoTag, zeitraum, istAbgesagt, alsIcsEintrag, artenFuer, artWort } from '../../termine.js';
 import { sammeln, agenda, monatsWochen, zeitRaster } from './eintraege.js';
 import {
   agendaHtml, monatHtml, tagesListeHtml, zeitHtml, verdrahten, monatJahr, rasterTitel,
@@ -111,6 +114,11 @@ let visibleGroupIds = new Set(), showPersonal = true;
    einschalten zu muessen. */
 let teams = [], teamTermine = new Map(), teamAbos = new Map(), versteckteTeams = new Set();
 let teamTrainings = new Map();   // gid -> Einheiten der Pläne (v.35.59.0)
+/* Mehrere Kalender (v.35.60.0, kalender-quellen.js): die eigenen, die der
+   Gruppen, und welche Quellen ausgeschaltet sind. */
+let eigeneKalender = [];         // users/{uid}/kalender
+const gruppenKalender = new Map(); // gid -> [{ id, name, farbe }]
+let aus = new Set();
 /* familien: die alten Kalendergruppen, in denen man steht. groups ist
    die Vereinigung: alle Gruppen, dazu jede Familie, die (noch) keine
    Gruppe ist. Beide Quellen kommen getrennt an; erst wenn beide da
@@ -240,13 +248,19 @@ async function resolveGroups() {
 function loadVisibleSources() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(sourceKey()) || 'null'); } catch {}
-  versteckteTeams = new Set(Array.isArray(saved?.teamsAus) ? saved.teamsAus : []);
-  showPersonal = saved?.personal !== false;
+  aus = ausGemerkt(saved);
+  abgeleitet();
+}
+/* Aus der einen Menge (aus) folgt, was die alten Stellen fragen: welche
+   Gruppen ganz aus sind. Persönliches filtert eintraegeJetzt einzeln. */
+function abgeleitet() {
+  versteckteTeams = new Set([...aus].filter(s => /^g:[^:]+$/.test(s)).map(s => s.slice(2)));
+  showPersonal = true;
   visibleGroupIds = new Set(groups.map(item => item.id).filter(id => !versteckteTeams.has(id)));
 }
 function saveVisibleSources() {
   try {
-    localStorage.setItem(sourceKey(), JSON.stringify({ personal:showPersonal, teamsAus:[...versteckteTeams] }));
+    localStorage.setItem(sourceKey(), JSON.stringify({ aus:[...aus], teamsAus:[...versteckteTeams] }));
   } catch {}
 }
 
@@ -267,6 +281,7 @@ function watchTeams() {
       teamAbos.delete(gid);
       teamTermine.delete(gid);
       teamTrainings.delete(gid);
+      gruppenKalender.delete(gid);
     }
     for (const gid of ids) {
       if (teamAbos.has(gid)) continue;
@@ -276,6 +291,7 @@ function watchTeams() {
         offenesProgrammNeu();
       }));
       trainingsLaden(liste.find(item => item.id === gid));
+      gruppenKalenderLaden(gid);
     }
     vereinige();
   });
@@ -421,44 +437,145 @@ function uebernimmFamilien(teamIds) {
   }
 }
 
-/* Die Quellen: am Laptop als Liste in der Seitenleiste, am Handy als
-   Knöpfe unter der Befehlsleiste — nur, wenn es mehr als eine gibt. */
-function renderCalendarSources() {
-  const personalColor = personalCalendarColor();
-  const quellen = [
-    { attr:'data-source-personal', an:showPersonal, farbe:personalColor, name:tt('kal.persoenlichUndErinnerungen','Persönlich & Erinnerungen'), kurz:tt('kal.persoenlich','Persönlich') },
-    ...groups.map(item => ({
-      attr:`data-source-team="${esc(item.id)}"`, an:!versteckteTeams.has(item.id), farbe:groupColor(item.id),
-      name:item.name || tt('nav.gruppe','Gruppe'), kurz:item.name || tt('nav.gruppe','Gruppe'),
-    })),
-  ];
-  $('calendarSources').innerHTML = quellen.map(q => `
-    <button class="kal-quelle${q.an?' is-an':''}" type="button" ${q.attr} aria-pressed="${q.an}" style="--farbe:${q.farbe}">
+/* Die Quellen (v.35.60.0): am Laptop als Liste in der Seitenleiste — das
+   Eigene, dann jede Gruppe mit ihren Kalendern eingerückt darunter —,
+   dieselbe Liste im Blatt "Kalender" am Handy, und am Handy oben Knöpfe
+   für das Eigene und die Gruppen als Ganzes. */
+const ANTIPPEN = 'data-quelle';
+function baum() {
+  return quellenBaum({
+    eigene:eigeneKalender,
+    gruppen:groups,
+    jeGruppe:gruppenKalender,
+    mitPlaenen:new Set([...teamTrainings].filter(([, liste]) => liste.length).map(([gid]) => gid)),
+    farbePersoenlich:personalCalendarColor(),
+    farbeVon:groupColor,
+    arten:art => artenFuer(art || 'kader'),
+    artWort:(art, gruppenart) => artWort(art, gruppenart || 'kader'),
+    t:tt,
+  });
+}
+function quelleZeile(q, { kind = false, gruppeAus = false } = {}) {
+  const an = !aus.has(q.schluessel);
+  return `<div class="kal-quelle-zeile${kind ? ' is-kind' : ''}${gruppeAus ? ' is-gedimmt' : ''}">
+    <button class="kal-quelle${an ? ' is-an' : ''}" type="button" ${ANTIPPEN}="${esc(q.schluessel)}" aria-pressed="${an}" style="--farbe:${q.farbe}">
       <span class="kal-quelle__punkt"></span><span>${esc(q.name)}</span>
-    </button>`).join('');
-  $('calendarMobileSources').innerHTML = quellen.length > 1 ? quellen.map(q => `
-    <button class="kal-chip${q.an?' is-an':''}" type="button" ${q.attr} aria-pressed="${q.an}" style="--farbe:${q.farbe}">
-      <span class="kal-quelle__punkt"></span>${esc(q.kurz)}
-    </button>`).join('') : '';
-  $('calendarMobileSources').hidden = quellen.length <= 1;
-
-  document.querySelectorAll('[data-source-personal]').forEach(button => button.onclick = () => {
-    showPersonal = !showPersonal;
+    </button>
+    ${q.eigen ? `<button class="kal-quelle__weg" type="button" data-kalender-weg="${esc(q.id)}" aria-label="${esc(tt('kal.kalenderLoeschen', '«{name}» löschen', { name:q.name }))}" title="${esc(tt('kal.kalenderLoeschen', '«{name}» löschen', { name:q.name }))}">×</button>` : ''}
+  </div>`;
+}
+function quellenListe() {
+  return baum().map(q => quelleZeile(q) + q.kinder.map(k => quelleZeile(k, { kind:true, gruppeAus:aus.has(q.schluessel) })).join('')).join('')
+    + `<button class="kal-link kal-quelle-neu" type="button" data-kalender-neu>+ ${esc(tt('kal.neuerKalender', 'Neuer Kalender'))}</button>`;
+}
+function renderCalendarSources() {
+  const liste = quellenListe();
+  $('calendarSources').innerHTML = liste;
+  const imBlatt = $('calendarSetupSources');
+  if (imBlatt) imBlatt.innerHTML = liste;
+  const oben = baum();
+  $('calendarMobileSources').innerHTML = oben.length > 1 ? oben.map(q => {
+    const an = !aus.has(q.schluessel);
+    return `<button class="kal-chip${an ? ' is-an' : ''}" type="button" ${ANTIPPEN}="${esc(q.schluessel)}" aria-pressed="${an}" style="--farbe:${q.farbe}">
+      <span class="kal-quelle__punkt"></span>${esc(q.name)}
+    </button>`;
+  }).join('') : '';
+  $('calendarMobileSources').hidden = oben.length <= 1;
+}
+/* EIN Zuhörer für alle drei Orte: umschalten, anlegen, löschen. */
+function quellenVerdrahten() {
+  const hier = event => {
+    const knopf = event.target.closest(`[${ANTIPPEN}],[data-kalender-neu],[data-kalender-weg]`);
+    if (!knopf) return;
+    if (knopf.hasAttribute('data-kalender-neu')) { kalenderAnlegen(); return; }
+    if (knopf.dataset.kalenderWeg) { kalenderLoeschen(knopf.dataset.kalenderWeg); return; }
+    const s = knopf.getAttribute(ANTIPPEN);
+    if (aus.has(s)) aus.delete(s); else aus.add(s);
+    abgeleitet();
     saveVisibleSources();
     renderCalendarSources();
     renderReminders();
     renderCurrentView();
+  };
+  for (const id of ['calendarSources', 'calendarMobileSources', 'calendarSetupSources']) $(id)?.addEventListener('click', hier);
+}
+
+/* Eigene Kalender (v.35.60.0): "Familie", "Schule" — neben "Persönlich". */
+async function eigeneKalenderLaden() {
+  try {
+    const s = await getDocs(collection(db, 'users', user.uid, 'kalender'));
+    eigeneKalender = s.docs.map(d => ({ id:d.id, ...d.data() }))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'de'));
+  } catch (error) {
+    reportClientError('kalender-eigene', error);
+    eigeneKalender = [];
+  }
+  kalenderWahlFuellen();
+}
+async function kalenderAnlegen() {
+  if (eigeneKalender.length >= KALENDER_MAX) {
+    await meldung({ titel:tt('kal.neuerKalender', 'Neuer Kalender'), text:tt('kal.kalenderGenug', 'Mehr als {n} eigene Kalender gehen nicht.', { n:KALENDER_MAX }) });
+    return;
+  }
+  const roh = await eingabe({
+    titel:tt('kal.neuerKalender', 'Neuer Kalender'),
+    text:tt('kal.neuerKalenderText', 'Ein eigener Kalender neben «Persönlich», mit eigener Farbe — z.B. für die Familie.'),
+    platzhalter:tt('kal.kalenderPh', 'z.B. Familie'),
+    maxlength:KALENDER_NAME_MAX,
+    ja:tt('kal.anlegen', 'Anlegen'),
   });
-  /* Ausschalten blendet beides aus: die Termine der Gruppe UND ihre
-     Reisen. Eine Gruppe ist eine Quelle, nicht zwei. */
-  document.querySelectorAll('[data-source-team]').forEach(button => button.onclick = () => {
-    const id = button.dataset.sourceTeam;
-    if (versteckteTeams.has(id)) versteckteTeams.delete(id); else versteckteTeams.add(id);
-    visibleGroupIds = new Set(groups.map(item => item.id).filter(gid => !versteckteTeams.has(gid)));
+  const name = kalenderName(roh);
+  if (!name) return;
+  const farbe = naechsteFarbe([personalCalendarColor(), ...eigeneKalender.map(k => k.farbe)], GROUP_COLORS);
+  try {
+    await addDoc(collection(db, 'users', user.uid, 'kalender'), { name, farbe, erstelltAm:serverTimestamp() });
+    await eigeneKalenderLaden();
+    renderCalendarSources();
+  } catch (error) {
+    reportClientError('kalender-anlegen', error);
+    await meldung({ titel:tt('kal.neuerKalender', 'Neuer Kalender'), text:tt('kal.f.anlegen', 'Der Kalender liess sich nicht anlegen.') });
+  }
+}
+async function kalenderLoeschen(id) {
+  const k = eigeneKalender.find(x => x.id === id);
+  if (!k) return;
+  const ja = await frage({
+    titel:tt('kal.kalenderLoeschen', '«{name}» löschen', { name:k.name }),
+    text:tt('kal.kalenderLoeschenText', 'Die Termine darin bleiben und stehen danach unter «Persönlich».'),
+    ja:tt('common.loeschen', 'Löschen'),
+    nein:tt('common.abbrechen', 'Abbrechen'),
+    gefahr:true,
+  });
+  if (!ja) return;
+  try {
+    await deleteDoc(doc(db, 'users', user.uid, 'kalender', id));
+    aus.delete(`pk:${id}`);
     saveVisibleSources();
+    await eigeneKalenderLaden();
     renderCalendarSources();
     renderCurrentView();
-  });
+  } catch (error) {
+    reportClientError('kalender-loeschen', error);
+  }
+}
+/* Im Formular des eigenen Termins: in welchen Kalender. Ohne eigene
+   Kalender gibt es nichts zu wählen — dann fehlt das Feld. */
+function kalenderWahlFuellen(wert) {
+  const wahl = $('dKalender');
+  if (!wahl) return;
+  const jetzt = wert ?? wahl.value;
+  wahl.innerHTML = [`<option value="">${esc(tt('kal.persoenlich', 'Persönlich'))}</option>`,
+    ...eigeneKalender.map(k => `<option value="${esc(k.id)}">${esc(k.name)}</option>`)].join('');
+  wahl.value = eigeneKalender.some(k => k.id === jetzt) ? jetzt : '';
+  $('grpDKalender').hidden = !eigeneKalender.length;
+}
+
+/* Die Kalender, die die Leitung einer Gruppe angelegt hat ("Rennplan"). */
+async function gruppenKalenderLaden(gid) {
+  try { gruppenKalender.set(gid, await ladeGruppenKalender(gid)); }
+  catch (error) { reportClientError('kalender-gruppe', error); gruppenKalender.set(gid, []); }
+  renderCalendarSources();
+  renderCurrentView();
 }
 
 /* Gruppen werden an EINER Stelle angelegt, betreten und verwaltet: im
@@ -526,7 +643,8 @@ async function reload() {
     .then(s=>{ days = s.docs.map(d=>({id:d.id,...d.data()})); })
     .catch(e=>{ reportClientError('calendar-days-load',e); days=[]; })
     .finally(() => { daysLoaded = true; });
-  await Promise.all([t1,t2]);
+  await Promise.all([t1,t2,eigeneKalenderLaden()]);
+  renderCalendarSources();
   renderCurrentView();
 }
 
@@ -742,6 +860,21 @@ async function setReminderCompletion(item, completed) {
    Alle Ansichten aus DERSELBEN Liste von Einträgen (eintraege.js). */
 
 function eintraegeJetzt() {
+  const index = {
+    eigene:new Set(eigeneKalender.map(k => k.id)),
+    jeGruppe:new Map([...gruppenKalender].map(([gid, liste]) => [gid, new Set(liste.map(k => k.id))])),
+  };
+  const farben = new Map([
+    ...eigeneKalender.map(k => [`pk:${k.id}`, k.farbe]),
+    ...[...gruppenKalender].flatMap(([gid, liste]) => liste.map(k => [`g:${gid}:k:${k.id}`, k.farbe])),
+  ]);
+  return sammelnRoh().flatMap(e => {
+    const s = quelleVon(e, index);
+    if (!sichtbar(s, aus)) return [];
+    return [farben.get(s) ? { ...e, farbe:farben.get(s) } : e];
+  });
+}
+function sammelnRoh() {
   return sammeln({
     tage:days,
     erinnerungen:reminders,
@@ -969,6 +1102,7 @@ async function openDayForm(existing){
   $('dStartTime').value=existing?.startTime||'';
   $('dEndTime').value=existing?.endTime||'';
   $('dLocation').value=existing?.location||'';
+  kalenderWahlFuellen(existing?.kalender || '');
   $('dNotes').value=existing?.notes||'';
   $('dHtml').value=existing?.planHtml||''; $('dUrl').value=existing?.planUrl||''; $('dHtmlChosen').hidden=true;
   $('dFileList').innerHTML='';
@@ -1036,17 +1170,22 @@ function icsHerunterladen(body, name) {
    die Termine der eingeschalteten Gruppen (ohne abgesagte) und Reisen,
    die noch keine Termine sind. Bis v.35.49.0 fehlten die Gruppentermine. */
 function exportAllIcs() {
+  const index = {
+    eigene:new Set(eigeneKalender.map(k => k.id)),
+    jeGruppe:new Map([...gruppenKalender].map(([gid, liste]) => [gid, new Set(liste.map(k => k.id))])),
+  };
+  const zu = (art, ref) => sichtbar(quelleVon({ art, ref }, index), aus);
   const events = [
     ...groups.filter(item => !versteckteTeams.has(item.id))
       .flatMap(item => (teamTermine.get(item.id) || [])
-        .filter(termin => !istAbgesagt(termin))
+        .filter(termin => !istAbgesagt(termin) && zu('team', { ...termin, gid:item.id }))
         .map(termin => alsIcsEintrag(termin, item.id))),
     ...sichtbareReisen().map(item => ({ ...item, title:item.name, location:item.destination })),
-    ...(showPersonal ? days : []).map(item => ({ ...item, startDate:item.date, description:item.notes })),
+    ...days.filter(item => zu('tag', item)).map(item => ({ ...item, startDate:item.date, description:item.notes })),
   ];
   icsHerunterladen(buildCalendarIcs({
     events,
-    reminders:showPersonal ? reminders : [],
+    reminders:aus.has('r') ? [] : reminders,
     calendarName:'Firn · Sichtbare Kalender',
   }), 'tvza-kalender');
   $('calendarSyncStatus').textContent = tt('kal.exportiert','Der Kalender wurde exportiert.');
@@ -1127,6 +1266,7 @@ function wireUI(){
   $('calendarSetupBackdrop').onclick=closeCalendarSetup;
   $('manageGroupsBtn').onclick=zurGruppenseite;
   $('settingsGroupsBtn').onclick=zurGruppenseite;
+  quellenVerdrahten();
   $('createBackdrop').onclick=closeCreateSheet;
   $('createSheetClose').onclick=closeCreateSheet;
   $('createEventOption').onclick=()=>{ const tag=neuerTag(); closeCreateSheet(); sheetKey=tag; openDayForm(null); };
@@ -1161,7 +1301,8 @@ function wireUI(){
       location:$('dLocation').value.trim(),
       notes:$('dNotes').value.trim(),
       planHtml,
-      planUrl
+      planUrl,
+      kalender:$('dKalender')?.value || ''
     };
     $('dayFormSave').disabled=true;
     try{

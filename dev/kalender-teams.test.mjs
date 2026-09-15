@@ -149,7 +149,10 @@ test('ein Team-Termin oeffnet die Terminkarte, nie das Formular fuer eigene Term
   /* Seit v.35.50.0: mit Programm das Programm, sonst die Karte — beides
      vor dem Formular für eigene Termine. */
   assert.match(quelle, /function oeffne\(eintrag\) \{\s*if \(eintrag\.art === 'team' \|\| eintrag\.art === 'reise'\) \{[\s\S]*?if \(eintrag\.art === 'team'\) zeigeTeamTermin\(eintrag\); else zeigeReise\(eintrag\);\s*return;\s*\}/);
-  assert.match(quelle, /\[data-source-team\]/, 'Teams lassen sich nicht einzeln ausschalten');
+  // Seit v.35.60.0 ist jede Quelle ein Schlüssel (kalender-quellen.js) —
+  // eine Gruppe als Ganzes ('g:<gid>') wie ihre Kalender darunter.
+  assert.match(quelle, /const ANTIPPEN = 'data-quelle';/, 'Teams lassen sich nicht einzeln ausschalten');
+  assert.match(quelle, /if \(aus\.has\(s\)\) aus\.delete\(s\); else aus\.add\(s\);/);
   assert.match(quelle, /teamsAus:\[\.\.\.versteckteTeams\]/, 'die Wahl wird nicht gemerkt');
   /* Die Karte ist frage() aus dialog.js, kein Browserfenster. */
   const karte = quelle.match(/async function zeigeTeamTermin\(eintrag\) \{[\s\S]*?\n\}/)?.[0] || '';

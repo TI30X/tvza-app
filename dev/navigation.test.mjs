@@ -579,7 +579,8 @@ test('das n im Wortzeichen ist auf Navy sichtbar', async () => {
    Formular "Neue Gruppe" nach "+ Neue Gruppe" und einem Neuladen). */
 test('Einmal-Anweisungen verschwinden aus der Adresse, sobald die Gruppe sie gelesen hat', async () => {
   const [gruppe, router] = await Promise.all([read('assets/js/feature/gruppe/gruppe.js'), read('assets/js/router.js')]);
-  assert.match(gruppe, /const EINMAL = \['anlegen', 'neu', 'termin', 'g'\];/);
+  // 'einst' (v.35.60.0): aus den Einstellungen der App in die der Gruppe.
+  assert.match(gruppe, /const EINMAL = \['anlegen', 'neu', 'termin', 'g', 'einst'\];/);
   assert.match(gruppe, /mountShell\(\{[\s\S]{0,120}\}\);[\s\S]{0,200}adresseAufraeumen\(\);/, 'erst nach mountShell — dann steht Router bzw. Brücke');
   assert.match(gruppe, /window\.tvzaAdresseErsetzen\?\.\(url\.href\);/);
   // Im Rahmen meldet die Brücke es nach oben, oben merkt es sich der Router

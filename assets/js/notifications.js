@@ -25,6 +25,13 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
   const dstr = d => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),x=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${x}`; };
   const getRead = () => { try { return new Set(JSON.parse(localStorage.getItem(READ) || '[]')); } catch(e){ return new Set(); } };
   const setRead = s => { try { localStorage.setItem(READ, JSON.stringify([...s].slice(-300))); } catch(e){} };
+  /* Ausgeblendet (v.35.60.0). Michel: "die Nachricht von der Maturaarbeit
+     — seit 30 Tagen abzugeben — ich kann sie nicht löschen, weil sie immer
+     wieder kommt". Gelesen hiess nur: ohne Punkt; die Meldung stand bei
+     jedem Öffnen wieder da. Jetzt hat jede ein ×, gemerkt auf dem Gerät. */
+  const WEG = 'tvza-notif-weg';
+  const getWeg = () => { try { return new Set(JSON.parse(localStorage.getItem(WEG) || '[]')); } catch(e){ return new Set(); } };
+  const setWeg = s => { try { localStorage.setItem(WEG, JSON.stringify([...s].slice(-300))); } catch(e){} };
   const isDark = () => {
     const t = document.documentElement.dataset.theme;
     if (t) return t === 'dark';
@@ -66,6 +73,11 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
   .tvzn-head h3{ margin:0; font-size:15px; font-weight:700; }
   .tvzn-head .tvzn-x{ margin-left:auto; cursor:pointer; border:0; background:none; color:inherit; font-size:20px; line-height:1; opacity:.6; padding:4px; }
   .tvzn-list{ overflow-y:auto; padding:6px; }
+  .tvzn-zeile{ position:relative; display:flex; align-items:flex-start; }
+  .tvzn-zeile .tvzn-item{ flex:1; min-width:0; padding-right:30px; }
+  .tvzn-weg{ position:absolute; top:6px; right:4px; width:26px; height:26px; border:0; border-radius:50%;
+    background:transparent; color:inherit; opacity:.45; font-size:17px; line-height:1; cursor:pointer; }
+  .tvzn-weg:hover, .tvzn-weg:focus-visible{ opacity:1; background:rgba(127,127,127,.14); }
   .tvzn-item{ display:flex; gap:11px; padding:11px 10px; border-radius:11px; text-decoration:none; color:inherit; cursor:pointer; }
   .tvzn-item:hover{ background:rgba(0,0,0,.05); } .tvzn-dark .tvzn-item:hover{ background:rgba(255,255,255,.06); }
   .tvzn-item.unread{ background:rgba(15,52,96,.07); } .tvzn-dark .tvzn-item.unread{ background:rgba(94,230,163,.10); }
@@ -159,13 +171,13 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const days = Math.ceil((new Date(st.deadline) - today) / 86400000);
       if (days < 0) {
-        out.push({ id: 'matura-overdue', ts: today.getTime(), icon: '⏰',
+        out.push({ id: 'matura-overdue-' + st.deadline, ts: today.getTime(), icon: '⏰',
           title: `Maturaarbeit: Abgabe war vor ${Math.abs(days)} Tag(en)`,
           body: 'Das Abgabedatum im Tracker ist überschritten.',
           href: BASE + 'pages/maturaarbeit-tracker.html' });
       } else if (days <= 60) {
         const bucket = days <= 7 ? '7' : days <= 30 ? '30' : '60';
-        out.push({ id: 'matura-deadline-' + bucket, ts: today.getTime(), icon: '⏳',
+        out.push({ id: 'matura-deadline-' + bucket + '-' + st.deadline, ts: today.getTime(), icon: '⏳',
           title: `Maturaarbeit: noch ${days} Tag(e) bis zur Abgabe`,
           body: days <= 7 ? 'Endspurt – die Abgabe steht kurz bevor.' : 'Behalte den Zeitplan im Blick.',
           href: BASE + 'pages/maturaarbeit-tracker.html' });
@@ -229,7 +241,8 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
 
   async function buildAll(user){
     const groups = await Promise.all([ buildShares(user), buildFood(user), buildMovers(user), buildReminders(user) ]);
-    const out = [].concat(...groups, buildMatura(user));
+    const weg = getWeg();
+    const out = [].concat(...groups, buildMatura(user)).filter(n => !weg.has(n.id));
     out.sort((a, b) => b.ts - a.ts);
     return out;
   }
@@ -272,7 +285,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
     }
     list.innerHTML = notifs.map(n => {
       const unread = !read.has(n.id);
-      return `<a class="tvzn-item ${unread ? 'unread' : ''}" href="${escHtml(n.href)}">
+      return `<div class="tvzn-zeile"><a class="tvzn-item ${unread ? 'unread' : ''}" href="${escHtml(n.href)}">
         <span class="tvzn-ic">${n.icon}</span>
         <span class="tvzn-body">
           <span class="tvzn-title">${n.title}</span>
@@ -280,7 +293,7 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
           <span class="tvzn-time">${rel(n.ts)}</span>
         </span>
         <span class="tvzn-dot"></span>
-      </a>`;
+      </a><button class="tvzn-weg" type="button" data-weg="${escHtml(n.id)}" title="Ausblenden" aria-label="Ausblenden">&times;</button></div>`;
     }).join('');
   }
 
@@ -319,8 +332,16 @@ import { collection, getDocs, query, where } from 'https://www.gstatic.com/fireb
       const read = getRead();
       render(panel, notifs, read);
       panel.querySelector('.tvzn-x').addEventListener('click', close);
-      panel.querySelectorAll('.tvzn-item').forEach(a =>
-        a.addEventListener('click', () => { /* navigation proceeds via href */ }));
+      panel.querySelector('.tvzn-list').addEventListener('click', e => {
+        const knopf = e.target.closest('[data-weg]');
+        if (!knopf) return;
+        e.preventDefault();
+        const weg = getWeg();
+        weg.add(knopf.dataset.weg);
+        setWeg(weg);
+        notifs = notifs.filter(n => n.id !== knopf.dataset.weg);
+        render(panel, notifs, getRead());
+      });
       document.body.appendChild(backdrop);
       document.body.appendChild(panel);
       // Mark everything currently shown as read

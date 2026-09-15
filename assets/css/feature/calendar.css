@@ -223,6 +223,32 @@
 }
 .kal-quelle.is-an { color: var(--ink); }
 .kal-quelle:hover { background: var(--surface-2); }
+/* Mehrere Kalender (v.35.60.0): die Kalender einer Gruppe eingerückt
+   unter ihr, blasser, solange die Gruppe als Ganzes aus ist; ein eigener
+   Kalender hat rechts sein Löschen. */
+.kal-quelle-zeile { display: flex; align-items: center; }
+.kal-quelle-zeile .kal-quelle { flex: 1; min-width: 0; }
+.kal-quelle-zeile.is-kind { padding-left: var(--s4); }
+.kal-quelle-zeile.is-kind .kal-quelle { min-height: 30px; font-size: 12.5px; font-weight: 500; }
+.kal-quelle-zeile.is-gedimmt { opacity: .45; }
+.kal-quelle__weg {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0;
+}
+.kal-quelle-zeile:hover .kal-quelle__weg,
+.kal-quelle__weg:focus-visible { opacity: 1; }
+@media (hover: none) { .kal-quelle__weg { opacity: .7; } }
+.kal-quelle__weg:hover { color: var(--danger); background: var(--surface-2); }
+.kal-quelle-neu { margin-top: var(--s1); }
 
 .kal-link {
   display: inline-flex;

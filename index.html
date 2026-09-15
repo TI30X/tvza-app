@@ -22,7 +22,7 @@
   </script>
   <script src="assets/js/theme.js?v=3"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=26" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=27" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="assets/css/feature/access.css?v=2" />
   <title data-i18n="home.seitentitel">Firn</title>
@@ -355,6 +355,14 @@
 
       <hr class="settings-divider" />
 
+      <!-- Die Gruppen, die man leitet (v.35.60.0): hier liegen ihre
+           Einstellungen — Farbe, Kalender, Assistent, Löschen —, nicht
+           offen im Gruppe-Tab. Nur, wer etwas leitet, sieht den Teil. -->
+      <section class="settings-section" id="gruppenEinstSection" data-settings-section="gruppen" hidden>
+        <p class="settings-section-title" data-i18n="set.gruppen">Deine Gruppen</p>
+        <div id="gruppenEinstListe"></div>
+      </section>
+
       <section class="settings-section settings-section--modules">
         <div class="settings-section-head">
           <div>
@@ -506,7 +514,7 @@
     </div>
   </div>
 
-  <script type="module" src="./assets/js/feature/start/start.js?v=24"></script>
+  <script type="module" src="./assets/js/feature/start/start.js?v=25"></script>
 
   <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
   <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=15"></script>

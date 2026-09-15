@@ -256,4 +256,17 @@ KEYS = {
                      'bijv. verjaardag, concert…', 'p. ej. cumpleaños, concierto…'),
 'cal.bspHtml':      ('HTML hier einfügen…', 'Paste HTML here…', 'Collez le HTML ici…', 'Incolla qui l’HTML…',
                      'Wklej tu HTML…', 'Plak hier HTML…', 'Pega aquí el HTML…'),
+# v.35.60.0: mehrere Kalender
+'kal.kalender': ('Kalender', 'Calendar', 'Calendrier', 'Calendario', 'Kalendarz', 'Agenda', 'Calendario'),
+'kal.anlegen': ('Anlegen', 'Create', 'Créer', 'Crea', 'Utwórz', 'Aanmaken', 'Crear'),
+'kal.neuerKalender': ('Neuer Kalender', 'New calendar', 'Nouveau calendrier', 'Nuovo calendario', 'Nowy kalendarz', 'Nieuwe agenda', 'Nuevo calendario'),
+'kal.neuerKalenderText': ('Ein eigener Kalender neben «Persönlich», mit eigener Farbe — z.B. für die Familie.', 'A calendar of your own next to “Personal”, with its own colour — e.g. for the family.', 'Un calendrier à toi à côté de « Personnel », avec sa propre couleur — p. ex. pour la famille.', 'Un calendario tuo accanto a «Personale», con un colore proprio — p. es. per la famiglia.', 'Własny kalendarz obok „Osobiste”, z własnym kolorem — np. dla rodziny.', 'Een eigen agenda naast ‘Persoonlijk’, met een eigen kleur — bijv. voor het gezin.', 'Un calendario propio junto a «Personal», con su propio color — p. ej. para la familia.'),
+'kal.kalenderPh': ('z.B. Familie', 'e.g. Family', 'p. ex. Famille', 'p. es. Famiglia', 'np. Rodzina', 'bijv. Gezin', 'p. ej. Familia'),
+'kal.kalenderLoeschen': ('«{name}» löschen', 'Delete “{name}”', 'Supprimer « {name} »', 'Elimina «{name}»', 'Usuń „{name}”', '‘{name}’ verwijderen', 'Eliminar «{name}»'),
+'kal.kalenderLoeschenText': ('Die Termine darin bleiben und stehen danach unter «Persönlich».', 'The events stay and move to “Personal”.', 'Les rendez-vous restent et passent sous « Personnel ».', 'Gli appuntamenti restano e passano sotto «Personale».', 'Terminy zostają i trafiają do „Osobiste”.', 'De afspraken blijven en staan daarna onder ‘Persoonlijk’.', 'Las citas se quedan y pasan a «Personal».'),
+'kal.kalenderGenug': ('Mehr als {n} eigene Kalender gehen nicht.', 'No more than {n} calendars.', 'Pas plus de {n} calendriers.', 'Non più di {n} calendari.', 'Nie więcej niż {n} kalendarzy.', 'Niet meer dan {n} agenda’s.', 'No más de {n} calendarios.'),
+'kal.f.anlegen': ('Der Kalender liess sich nicht anlegen.', 'The calendar could not be created.', 'Impossible de créer le calendrier.', 'Non è stato possibile creare il calendario.', 'Nie udało się utworzyć kalendarza.', 'De agenda kon niet worden aangemaakt.', 'No se pudo crear el calendario.'),
+'kal.plaene': ('Trainingspläne', 'Training plans', 'Plans d’entraînement', 'Piani di allenamento', 'Plany treningowe', 'Trainingsschema’s', 'Planes de entrenamiento'),
+'set.gruppen': ('Deine Gruppen', 'Your groups', 'Tes groupes', 'I tuoi gruppi', 'Twoje grupy', 'Jouw groepen', 'Tus grupos'),
+'common.loeschen': ('Löschen', 'Delete', 'Supprimer', 'Elimina', 'Usuń', 'Verwijderen', 'Eliminar'),
 }

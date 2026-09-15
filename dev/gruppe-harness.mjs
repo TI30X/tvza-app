@@ -120,6 +120,9 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const assistentSetzen = ${merke('assistentSetzen')};
     export const gruppeAendern = ${merke('gruppeAendern')};
     export const gruppeLoeschen = ${merke('gruppeLoeschen')};
+    export const ladeGruppenKalender = async gid => (globalThis.__gruppenKalender?.[gid] || []);
+    export const gruppenKalenderAnlegen = async (...a) => { (globalThis.__aufrufe ||= []).push(['gruppenKalenderAnlegen', ...a]); return 'k-neu'; };
+    export const gruppenKalenderLoeschen = ${merke('gruppenKalenderLoeschen')};
     export const beitreten = ${merke('beitreten')};
     export const ergebnisSpeichern = ${merke('ergebnisSpeichern')};
     export const planVeroeffentlichen = ${merke('planVeroeffentlichen')};
@@ -284,6 +287,7 @@ async function lade({
     .replace(`'../../worker-config.js'`, `'${datei('assets/js/worker-config.js')}'`)
     .replace(`'../../einladung.js'`, `'${datei('assets/js/einladung.js')}'`)
     .replace(`'../../ki.js'`, `'${datei('assets/js/ki.js')}'`)
+    .replace(`'../../kalender-quellen.js'`, `'${datei('assets/js/kalender-quellen.js')}'`)
     /* Der Chat: gesendet wird nichts, nur mitgeschrieben. */
     .replace(`'../../chat-senden.js'`, `'${dataUrl(`
       export const gespraechspartner = async () => globalThis.__partner || [];

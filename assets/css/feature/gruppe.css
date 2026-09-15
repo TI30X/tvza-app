@@ -182,3 +182,35 @@
 /* Gruppe löschen — leise, am Ende, rot erst beim Zeigen. */
 .grp-loeschen { margin: var(--s5) 0 0; text-align: center; }
 .grp-loeschen__knopf:hover { color: var(--danger); }
+
+/* ── Die Einstellungen der Gruppe (v.35.60.0) ────────────────────────
+   Eine eigene Ansicht mit Zurück, darin die Karten untereinander. */
+.grp-einst__titel {
+  margin: var(--s2) 0 var(--s3);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+#secGruppeEinst .einladung { margin-block: 0 var(--s3); }
+.grp-kalender { display: grid; gap: var(--s1); }
+.grp-kalender:empty { display: none; }
+.grp-kalender__zeile {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 40px;
+  padding: 0 var(--s1) 0 var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+}
+.grp-kalender__punkt {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border-radius: var(--r-pill);
+  background: var(--tint);
+}
+.grp-kalender__name { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grp-kalender-neu { display: flex; gap: var(--s2); }
+.grp-kalender-neu .form-input { flex: 1; min-width: 0; }
+.grp-kalender-neu .b { flex: none; }

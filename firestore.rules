@@ -589,6 +589,19 @@ service cloud.firestore {
                                            && request.auth.uid == uid;
     }
 
+    /* Eigene Kalender (v.35.60.0): "Familie" neben "Persoenlich". Nur die
+       Person selbst; ein Name und eine Farbe. */
+    function kalenderGueltig(d) {
+      return d.keys().hasOnly(['name', 'farbe', 'erstelltVon', 'erstelltAm'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 40
+        && d.farbe is string && d.farbe.size() <= 20;
+    }
+    match /users/{uid}/kalender/{kalenderId} {
+      allow read, delete: if isMember() && request.auth.uid == uid;
+      allow create, update: if isMember() && request.auth.uid == uid
+                            && kalenderGueltig(request.resource.data);
+    }
+
     // Trainingsbereich: das eingelesene Wochenprogramm liegt als
     // JSON-Zeichenkette, weil Firestore keine Arrays in Arrays kennt und
     // die Originaltabellen genau das sind. Die Grenze hält ein einzelnes
@@ -1220,6 +1233,14 @@ service cloud.firestore {
        verlaesst oder entfernt wird, dessen Karte geht im selben Batch mit
        (groups.js). exists() sieht dabei den Stand VOR dem Batch, also ist
        man beim Loeschen der eigenen Karte noch Mitglied. */
+    /* Die Kalender einer Gruppe (v.35.60.0): "Rennplan" neben Trainings,
+       Lager und Rennen. Sehen alle in der Gruppe, anlegen die Leitung. */
+    match /groups/{gid}/kalender/{kalenderId} {
+      allow get, list: if inGroup(gid);
+      allow create, update: if leadsGroup(gid) && kalenderGueltig(request.resource.data);
+      allow delete: if leadsGroup(gid);
+    }
+
     match /groups/{gid}/kontakte/{uid} {
       function eigene() {
         return inGroup(gid) && request.auth.uid == uid;
@@ -1310,6 +1331,13 @@ service cloud.firestore {
          Dieselben Grenzen wie in programm.js: 300 Punkte, die Seite fast
          so gross, wie das Dokument sein darf. Schreiben darf das alles nur
          die Leitung — abgehakt wird ein Programm nicht (Michel). */
+      /* Der Kalender der Gruppe, in dem der Termin steht (v.35.60.0) —
+         nur eine Kennung; gibt es den Kalender nicht mehr, steht der
+         Termin wieder unter seiner Art. */
+      function terminKalenderGueltig(d) {
+        return !('kalender' in d) || (d.kalender is string && d.kalender.size() <= 40);
+      }
+
       function programmGueltig(d) {
         return (!('programm' in d) || (d.programm is list && d.programm.size() <= 300))
           && (!('packliste' in d) || (d.packliste is list && d.packliste.size() <= 200))
@@ -1337,8 +1365,9 @@ service cloud.firestore {
                       'disziplin', 'startnummer', 'ergebnis',
                       'abgesagt', 'absageGrund',
                       'programm', 'planHtml', 'planUrl', 'gastToken', 'abfahrten', 'packliste',
-                      'createdBy', 'createdAt'
-                    ]);
+                      'kalender', 'createdBy', 'createdAt'
+                    ])
+                    && terminKalenderGueltig(request.resource.data);
 
       /* 'art' fehlt hier mit Absicht. Aus einem Rennen ein Training zu
          machen wuerde Startnummer und Ergebnis sinnlos daneben stehen
@@ -1350,8 +1379,10 @@ service cloud.firestore {
                         'bezeichnung', 'titel', 'von', 'bis', 'zeit', 'bisZeit', 'ort', 'notiz',
                         'disziplin', 'startnummer', 'ergebnis',
                         'abgesagt', 'absageGrund',
-                        'programm', 'planHtml', 'planUrl', 'gastToken', 'abfahrten', 'packliste'
+                        'programm', 'planHtml', 'planUrl', 'gastToken', 'abfahrten', 'packliste',
+                        'kalender'
                       ])
+                    && terminKalenderGueltig(request.resource.data)
                     && bezeichnungGueltig(request.resource.data)
                     && programmGueltig(request.resource.data)
                     && request.resource.data.titel is string

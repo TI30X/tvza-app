@@ -701,6 +701,34 @@ if (themeWahl && window.TVZATheme) {
   zeigen();
 }
 
+/* "Deine Gruppen" (v.35.60.0): je Gruppe, die man leitet, eine Zeile in
+   ihre Einstellungen (gruppe.html?g=…&einst=1). Die Einstellungen stehen
+   meist als Ebene über einer anderen Seite — dann führt die Ebene hin
+   (tvza-settings-gehe), sonst die Seite selbst. */
+async function renderGruppenEinst() {
+  const teil = document.getElementById('gruppenEinstSection');
+  const liste = document.getElementById('gruppenEinstListe');
+  if (!teil || !liste || !user) return;
+  let geleitet = [];
+  try { geleitet = (await meineGruppen(user.uid)).filter(g => leitet(g.meineRolle)); }
+  catch (error) { reportClientError('settings-gruppen', error); }
+  teil.hidden = !geleitet.length;
+  liste.innerHTML = geleitet.map(g => `
+    <button class="settings-row settings-row--link" type="button" data-gruppe-einst="${escHtml(g.id)}">
+      <span class="settings-row-label">${escHtml(g.name || t('nav.gruppe', 'Gruppe'))}</span>
+      <span class="settings-row-mehr">${escHtml(t('grp.einst', 'Einstellungen der Gruppe'))}
+        <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></span>
+    </button>`).join('');
+}
+document.getElementById('gruppenEinstListe')?.addEventListener('click', event => {
+  const zeile = event.target.closest('[data-gruppe-einst]');
+  if (!zeile) return;
+  const ziel = new URL(`pages/gruppe.html?g=${encodeURIComponent(zeile.dataset.gruppeEinst)}&einst=1`, location.href).href;
+  if (embeddedSettings) { tellSettingsParent({ type:'tvza-settings-gehe', url:ziel }); return; }
+  closeSettings();
+  if (!window.tvzaNavigate?.(ziel)) location.href = ziel;
+});
+
 function closeSettings() {
   settingsModal.classList.remove('visible');
   tellSettingsParent({ type:'tvza-settings-close' });
@@ -717,6 +745,7 @@ function focusSettingsSection(section) {
 }
 function openSettings(section = '') {
   renderModuleToggles();
+  renderGruppenEinst();
   loadBereichSettings();
   renderShareModuleOptions();
   renderMyShares();

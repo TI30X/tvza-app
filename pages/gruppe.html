@@ -13,10 +13,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=26" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=27" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=10" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -181,6 +181,13 @@
         <div class="form-group">
           <label class="form-label" for="fOrt" data-i18n="grp.ort">Ort</label>
           <input class="form-input" id="fOrt" type="text" maxlength="80" list="ortVorschlaege" placeholder="z.B. Malbun" data-i18n-attr="placeholder:grp.ortPh" />
+        </div>
+
+        <!-- In welchem Kalender der Gruppe (v.35.60.0) — nur, wenn die
+             Leitung welche angelegt hat. Ohne steht er unter seiner Art. -->
+        <div class="form-group" id="grpKalender" hidden>
+          <label class="form-label" for="fKalender" data-i18n="kal.kalender">Kalender</label>
+          <select class="form-select" id="fKalender"></select>
         </div>
 
         <div class="form-group">
@@ -593,6 +600,43 @@
       </div>
       <p class="empty-hint" id="einladungText" hidden></p>
 
+    </section>
+
+    <!-- Die Einstellungen der Gruppe (v.35.60.0). Michel: "das sollten
+         gruppenspezifische Einstellungen sein, in den Einstellungen
+         vergraben — nicht so öffentlich, man kommt sehr schnell
+         durcheinander". Bis dahin standen Assistent, Farbe und Löschen
+         offen unter der Kaderliste. Jetzt eine eigene Ansicht, erreichbar
+         über eine leise Zeile und aus den Einstellungen der App
+         (?einst=1). Nur für die Leitung. -->
+    <p class="grp-weitere" id="grpEinstZeile" hidden>
+      <button class="grp-weitere__link" id="btnGruppeEinst" type="button" data-i18n="grp.einst">Einstellungen der Gruppe</button>
+    </p>
+
+    <section class="section" id="secGruppeEinst" hidden>
+      <button class="backlink" id="btnGruppeEinstZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+      <h2 class="grp-einst__titel" id="grpEinstTitel">Einstellungen der Gruppe</h2>
+      <!-- Die Farbe der Gruppe (v.35.59.0): in der Leiste, im Kalender,
+           in der Pille und oben auf dieser Seite. Die Regel kannte das
+           Feld seit jeher, nur gab es keinen Ort, es zu setzen. -->
+      <div class="einladung" id="gruppeFarbeKarte">
+        <p class="einladung__titel" data-i18n="grp.farbe">Farbe der Gruppe</p>
+        <p class="einladung__meta" data-i18n="grp.farbeText">So erkennst du die Gruppe in der Leiste, im Kalender und beim Assistenten.</p>
+        <div class="farbwahl" id="gruppeFarbe" role="radiogroup" aria-label="Farbe der Gruppe" data-i18n-attr="aria-label:grp.farbe"></div>
+      </div>
+
+      <!-- Die Kalender der Gruppe (v.35.60.0). Die Arten der Termine
+           stehen im Kalender schon getrennt; hier kommen weitere dazu. -->
+      <div class="einladung" id="gruppeKalenderKarte">
+        <p class="einladung__titel" data-i18n="grp.kalender">Kalender der Gruppe</p>
+        <p class="einladung__meta" data-i18n="grp.kalenderText">Trainings, Lager und Rennen stehen im Kalender schon getrennt. Brauchst du mehr — z.B. einen Rennplan —, leg hier einen Kalender an und ordne Termine ihm zu.</p>
+        <div class="grp-kalender" id="gruppeKalenderListe"></div>
+        <div class="grp-kalender-neu">
+          <input class="form-input" id="gruppeKalenderName" type="text" maxlength="40" autocomplete="off" placeholder="z.B. Rennplan" data-i18n-attr="placeholder:grp.kalenderPh" aria-label="Name des Kalenders" />
+          <button class="b b--secondary" id="btnGruppeKalender" type="button" data-i18n="kal.anlegen">Anlegen</button>
+        </div>
+        <p class="empty-hint" id="gruppeKalenderFehler" hidden></p>
+      </div>
       <!-- Der eigene Assistent der Gruppe (v.35.53.0): ein Name, und was
            er beachten soll. Alle in der Gruppe sehen ihn in der Pille. -->
       <div class="einladung assistent-einst" id="assistentEinst" hidden>
@@ -608,14 +652,6 @@
         </div>
         <button class="b b--secondary b--block" id="btnAssistent" type="button" data-i18n="ki.speichern">Assistent speichern</button>
         <p class="empty-hint" id="assistentStand" hidden></p>
-      </div>
-      <!-- Die Farbe der Gruppe (v.35.59.0): in der Leiste, im Kalender,
-           in der Pille und oben auf dieser Seite. Die Regel kannte das
-           Feld seit jeher, nur gab es keinen Ort, es zu setzen. -->
-      <div class="einladung" id="gruppeFarbeKarte">
-        <p class="einladung__titel" data-i18n="grp.farbe">Farbe der Gruppe</p>
-        <p class="einladung__meta" data-i18n="grp.farbeText">So erkennst du die Gruppe in der Leiste, im Kalender und beim Assistenten.</p>
-        <div class="farbwahl" id="gruppeFarbe" role="radiogroup" aria-label="Farbe der Gruppe" data-i18n-attr="aria-label:grp.farbe"></div>
       </div>
       <button class="b b--secondary b--block" id="btnAbo" type="button" hidden data-i18n="grp.abo">Kalender-Abo erzeugen</button>
       <p class="empty-hint" id="aboText" hidden></p>
@@ -638,6 +674,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=29"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=30"></script>
 </body>
 </html>
