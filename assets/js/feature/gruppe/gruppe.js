@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError, imKreis }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=23';
+import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=24';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -34,6 +34,7 @@ import {
   waehleAktive, aktiveGruppeSetzen, wort, fuehrt, leitet, eigeneKarte,
   terminAendern, programmSetzen, beobachteGepackt, gepacktSetzen,
   gastTokenSetzen, ladeGaeste, gastEntfernen, reisenDerGruppeUebernehmen,
+  gruppeAendern, gruppeLoeschen,
 } from '../../groups.js';
 import {
   seiteLesen, programmMitSeite, neuerPunkt, punktSetzen, punkteHtml, jetztFuer,
@@ -48,7 +49,7 @@ import { frage, eingabe, meldung, mehrere } from '../../dialog.js';
 import { einladungsLink, einladungsText, codeZeigen, gemerktEinloesen } from '../../einladung.js';
 import { gespraechspartner, anMehrere } from '../../chat-senden.js';
 import { assistentSauber, gruppeFrei } from '../../ki.js';
-import { gruppeWaehlen, gruppenStil, kuerzel } from '../../gruppenwahl.js';
+import { gruppeWaehlen, gruppenStil, gruppenFarbe, FARBEN, kuerzel } from '../../gruppenwahl.js';
 import {
   kontaktSauber, pruefeKontakt, verteiler, ohneAdresse, mailtoAdresse, istEmail, ELTERN_MAX,
 } from '../../kontakte.js';
@@ -145,7 +146,9 @@ function initialen(name) {
    aus kit.css. Eine eigene Zeilenform waere die neunte im Repo. */
 function mitgliedZeile(m, art) {
   const name = m.name || m.uid;
-  const rolle = wort(art, m.rolle);
+  /* Die Funktion steht seit v.35.59.0 als Überschrift über der Liste;
+     unter dem Namen nur noch, wer die Gruppe führt (Haupttrainer). */
+  const rolle = fuehrt(m.rolle) ? wort(art, m.rolle) : '';
   const suffix = m.uid === user.uid ? ' (du)' : '';
 
   /* Jede Zeile führt ins Profil — ein Kader, in dem niemand weiss, wer
@@ -156,10 +159,23 @@ function mitgliedZeile(m, art) {
       <span class="row__icon">${escHtml(initialen(name))}</span>
       <span class="row__body">
         <span class="row__title">${escHtml(name + suffix)}</span>
-        <span class="row__sub">${escHtml(rolle)}</span>
+        ${rolle ? `<span class="row__sub">${escHtml(rolle)}</span>` : ''}
       </span>
       <span class="row__end"></span>
     </button>`;
+}
+
+/* Die Liste nach Funktion (v.35.59.0). Michel: "könntest du nach den
+   verschiedenen Funktionen sortieren, das wäre viel nützlicher, als
+   einfach die Namen aufzulisten und unten dran hinzuschreiben, zu
+   welcher sie gehören". Erst die Leitung (Kopf und Trainer), dann die
+   Athleten — je mit Überschrift und Zahl. */
+function mitgliederNachFunktion(liste, art) {
+  const teil = (was, leute) => (leute.length ? `
+    <p class="grp-funktion"><span>${escHtml(wort(art, was))}</span><span>${leute.length}</span></p>
+    ${leute.map(m => mitgliedZeile(m, art)).join('')}` : '');
+  return teil('leitungen', liste.filter(m => leitet(m.rolle)))
+    + teil('mitgliederPl', liste.filter(m => !leitet(m.rolle)));
 }
 
 async function zeichneMitglieder() {
@@ -172,7 +188,7 @@ async function zeichneMitglieder() {
     if (offen && !abfahrtenBearbeiten) zeichneAbfahrten();
 
     $('mitgliederTitel').textContent = wort(aktiv.art, 'mitglieder');
-    liste.innerHTML = mitglieder.map(m => mitgliedZeile(m, aktiv.art)).join('');
+    liste.innerHTML = mitgliederNachFunktion(mitglieder, aktiv.art);
 
     const zahl = mitglieder.length;
     const meta = $('mitgliederZahl');
@@ -794,6 +810,9 @@ function zeichne() {
   if (knopf) knopf.hidden = !darfFuehren;
   const verteilerKnopf = $('btnVerteiler');
   if (verteilerKnopf) verteilerKnopf.hidden = !darfFuehren;
+  const loeschen = $('grpLoeschen');
+  if (loeschen) loeschen.hidden = !hat || !fuehrt(aktiv.meineRolle);
+  seiteFaerben();
 
   /* Ohne Worker gibt es keine Adresse, die man abonnieren könnte —
      eine statische Seite kann kein text/calendar ausliefern. */
@@ -812,6 +831,87 @@ function zeichne() {
   zeichneWoche();
   zeichnePlaene();
   zeichneAssistent();
+  zeichneFarbwahl();
+}
+
+/* ── Die Farbe der Gruppe (v.35.59.0) ──────────────────────────────
+   Michel: "es sieht auch gar nicht anders aus, vielleicht muss man
+   Farben unterscheiden können". Die Farbe gab es (teamFarben: Leiste,
+   Kalender, Pille), gewählt hat sie der Zufall der Reihenfolge. Jetzt
+   wählt die Leitung aus den Kalenderfarben, und die Seite trägt sie
+   oben als Band. Ein Logo braucht Speicher für Bilder — später. */
+function seiteFaerben() {
+  const wurzel = document.documentElement;
+  if (aktiv) wurzel.style.setProperty('--gruppe-farbe', gruppenFarbe(gruppen, aktiv.id));
+  else wurzel.style.removeProperty('--gruppe-farbe');
+}
+
+function zeichneFarbwahl() {
+  const feld = $('gruppeFarbe');
+  if (!feld || !aktiv) return;
+  const jetzt = gruppenFarbe(gruppen, aktiv.id);
+  feld.innerHTML = FARBEN.map(f => `
+    <button class="farbwahl__feld" type="button" role="radio" data-farbe="${escHtml(f.value)}"
+            aria-checked="${f.value === jetzt}" aria-label="${escHtml(f.label)}" title="${escHtml(f.label)}"
+            style="--tint:${escHtml(f.value)}"></button>`).join('');
+}
+
+async function farbeWaehlen(farbe) {
+  if (!aktiv || !FARBEN.some(f => f.value === farbe)) return;
+  const vorher = aktiv.farbe;
+  aktiv = { ...aktiv, farbe };
+  gruppen = gruppen.map(g => (g.id === aktiv.id ? aktiv : g));
+  zeichneFarbwahl();
+  seiteFaerben();
+  gruppeGeaendert(aktiv.id, { farbe });
+  try {
+    await gruppeAendern(aktiv.id, { farbe });
+  } catch (e) {
+    reportClientError('gruppe/farbe', e);
+    aktiv = { ...aktiv, farbe: vorher };
+    gruppen = gruppen.map(g => (g.id === aktiv.id ? aktiv : g));
+    zeichneFarbwahl();
+    seiteFaerben();
+    gruppeGeaendert(aktiv.id, { farbe: vorher });
+    await meldung({ titel: t('grp.farbe', 'Farbe der Gruppe'), text: t('grp.f.farbe', 'Die Farbe liess sich nicht speichern.') });
+  }
+}
+
+/* Die Leiste und die Pille leben im obersten Dokument (die Gruppe steht
+   oft im Rahmen des Routers). Sie hören auf die Mitgliedschaften, und die
+   ändern sich bei einer neuen Farbe nicht — also Bescheid sagen. */
+function gruppeGeaendert(id, patch) {
+  try {
+    const oben = window.top || window;
+    oben.dispatchEvent(new oben.CustomEvent('firn-gruppe-geaendert', { detail: { id, patch } }));
+  } catch { /* ohne Leiste nichts zu tun */ }
+}
+
+/* ── Die Gruppe löschen (v.35.59.0) ────────────────────────────────
+   Nur der Kopf; gefragt wird mit dem Namen, und was verloren geht. */
+async function gruppeLoeschenFragen() {
+  const weg = aktiv;
+  if (!weg || !fuehrt(weg.meineRolle)) return;
+  const ja = await frage({
+    titel: t('grp.loeschenFrage', '«{name}» löschen?', { name: weg.name }),
+    text: t('grp.loeschenText', 'Alle verlieren die Gruppe mit ihren Terminen und Plänen. Das lässt sich nicht rückgängig machen.'),
+    ja: t('grp.loeschen', 'Gruppe löschen'),
+    nein: t('common.abbrechen', 'Abbrechen'),
+    gefahr: true,
+  });
+  if (!ja) return;
+  const knopf = $('btnGruppeLoeschen');
+  knopf.disabled = true;
+  try {
+    await gruppeLoeschen(weg.id, user.uid);
+    const naechste = gruppen.find(g => g.id !== weg.id);
+    aktiveGruppeSetzen(naechste?.id || '');
+  } catch (e) {
+    reportClientError('gruppe/loeschen', e);
+    await meldung({ titel: t('grp.loeschen', 'Gruppe löschen'), text: t('grp.f.loeschen', 'Die Gruppe liess sich nicht löschen.') });
+  } finally {
+    knopf.disabled = false;
+  }
 }
 
 /* ── Der Assistent der Gruppe (v.35.53.0) ──────────────────────────
@@ -2857,6 +2957,11 @@ async function einladungZurueckziehen() {
   $('btnEinladungKopieren')?.addEventListener('click', einladungKopieren);
   $('btnEinladungWeg')?.addEventListener('click', einladungZurueckziehen);
   $('btnAssistent')?.addEventListener('click', assistentSpeichern);
+  $('gruppeFarbe')?.addEventListener('click', event => {
+    const feld = event.target.closest('[data-farbe]');
+    if (feld) farbeWaehlen(feld.dataset.farbe);
+  });
+  $('btnGruppeLoeschen')?.addEventListener('click', gruppeLoeschenFragen);
   $('btnAbo')?.addEventListener('click', aboErzeugen);
   $('btnTermin')?.addEventListener('click', formOeffnen);
   $('btnAbbrechen')?.addEventListener('click', formSchliessen);

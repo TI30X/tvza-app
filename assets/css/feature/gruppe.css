@@ -119,3 +119,66 @@
 }
 .einladung__knoepfe .b { flex: 1 1 auto; }
 .einladung__weg { justify-self: start; }
+
+/* ── Die Farbe der Gruppe (v.35.59.0) ────────────────────────────────
+   Oben auf der Seite ein Band in der Farbe der Gruppe — wer zwischen
+   Kader und Familie wechselt, sieht es, bevor er einen Namen liest. */
+.main { border-top: 4px solid var(--gruppe-farbe, transparent); }
+.farbwahl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+/* Der Ring um die gewählte Farbe ist ein outline, kein Schatten — das
+   Kit hält Schatten den gezogenen Karten vor. */
+.farbwahl__feld {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 3px solid var(--surface);
+  border-radius: var(--r-pill);
+  background: var(--tint);
+  outline: 1px solid var(--border);
+  cursor: pointer;
+}
+.farbwahl__feld[aria-checked="true"] { outline: 2px solid var(--ink); }
+.farbwahl__feld:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ── Die Liste nach Funktion (v.35.59.0) ─────────────────────────────
+   Überschrift je Funktion (Trainer, Athleten) mit der Zahl rechts. */
+.grp-funktion {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--s3) 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.grp-funktion:first-child { margin-top: 0; }
+
+/* Der Verteiler in der Kopfzeile der Liste, statt als breiter Knopf
+   unter dem letzten Namen. */
+.grp-mail {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s1) var(--s2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+.grp-mail:hover { border-color: var(--ink-soft); }
+
+/* Gruppe löschen — leise, am Ende, rot erst beim Zeigen. */
+.grp-loeschen { margin: var(--s5) 0 0; text-align: center; }
+.grp-loeschen__knopf:hover { color: var(--danger); }

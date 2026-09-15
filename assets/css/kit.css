@@ -3762,6 +3762,7 @@ body.settings-layer-open .ki-pille { display: none; }
 .ki-eingabe {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  grid-auto-flow: column;
   gap: var(--s2);
   align-items: end;
   padding: var(--s2) var(--s3) var(--s1) var(--s4);
@@ -3794,6 +3795,31 @@ body.settings-layer-open .ki-pille { display: none; }
   cursor: pointer;
 }
 .ki-blatt.is-arbeitet .ki-senden { opacity: .5; cursor: progress; }
+/* Diktieren (v.35.59.0): neben dem Senden, pulsiert, solange es zuhört. */
+.ki-eingabe:has(.ki-mikro) { grid-template-columns: minmax(0, 1fr) auto auto; }
+.ki-mikro {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.ki-mikro:hover { color: var(--ink); border-color: var(--ink-soft); }
+.ki-mikro.is-hoert {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+  animation: kiHoert 1.2s ease-in-out infinite;
+}
+@keyframes kiHoert {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--danger) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .ki-mikro.is-hoert { animation: none; } }
 .ki-stufe {
   display: flex;
   align-items: center;

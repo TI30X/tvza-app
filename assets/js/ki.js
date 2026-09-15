@@ -24,7 +24,7 @@ export const NAME_MAX = 30;
 export const ANWEISUNG_MAX = 600;
 const TAGE_ZURUECK = 7;
 const TAGE_VOR = 60;
-const HOECHSTENS = { termine: 80, eigene: 40, erinnerungen: 30 };
+const HOECHSTENS = { termine: 80, eigene: 40, erinnerungen: 30, trainings: 60 };
 
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const plusTage = (tag, n) => { const d = new Date(`${tag}T12:00:00`); d.setDate(d.getDate() + n); return iso(d); };
@@ -110,7 +110,7 @@ export function assistentWaehlen(liste = [], { seite = '', aktiveGid = '', gewae
  */
 export function kontextBauen({
   jetzt = new Date(), sprache = 'de-CH', seite = '', aktiveGid = '', wer = ICH,
-  gruppen = [], termine = [], eigene = [], erinnerungen = [],
+  gruppen = [], termine = [], eigene = [], erinnerungen = [], trainings = [],
   leitet = rolle => rolle === 'head' || rolle === 'staff',
 } = {}) {
   /* Der Assistent einer Gruppe sieht nur sie — keine anderen Gruppen,
@@ -161,7 +161,29 @@ export function kontextBauen({
       .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`))
       .slice(0, HOECHSTENS.erinnerungen)
       .map(r => ({ id: `r:${r.id}`, titel: kurz(r.title, 120), datum: r.date, ...(hhmm(r.time) ? { zeit: r.time } : {}) })),
+    /* Die Einheiten der Trainingspläne (v.35.59.0, planEinheiten in
+       wochenplan.js). Nur lesen: verschieben kann man sie nicht, sie
+       stehen in der Excel. fuer: 'alle', 'du', oder — die Leitung sieht
+       die Pläne einzelner Athleten — wie viele; Namen gehen nie mit. */
+    trainings: trainingsZusammen(trainings.filter(e => gruppenIds.has(e.gid) && imFenster(e.datum)))
+      .slice(0, HOECHSTENS.trainings),
   });
+}
+
+function trainingsZusammen(liste) {
+  const je = new Map();
+  for (const e of liste) {
+    const schluessel = [e.datum, e.gid, e.slot, e.titel].join('|');
+    const da = je.get(schluessel);
+    if (da) { da.n += 1; da.alle ||= e.fuer === 'alle'; da.du ||= e.fuer === 'du'; continue; }
+    je.set(schluessel, { e, n: 1, alle: e.fuer === 'alle', du: e.fuer === 'du' });
+  }
+  return [...je.values()].map(({ e, n, alle, du }) => ({
+    gruppe: e.gid, datum: e.datum, titel: kurz(e.titel, 120),
+    ...(e.slot ? { teil: kurz(e.slot, 40) } : {}),
+    ...(e.zeit ? { zeit: kurz(e.zeit, 30) } : {}),
+    fuer: alle ? 'alle' : du ? 'du' : (n > 1 ? `${n} Athleten` : 'ein Athlet'),
+  }));
 }
 
 /* Der Worker nimmt höchstens GRENZEN.kontext Zeichen (worker/ki.js). Mit
@@ -171,8 +193,8 @@ export function kontextBauen({
    weitesten Entfernte, und immer die längste Liste zuerst. */
 export const KONTEXT_MAX = 12000;
 export function kontextKuerzen(k, max = KONTEXT_MAX) {
-  const listen = ['termine', 'eigene', 'erinnerungen'];
-  while (JSON.stringify(k).length > max) {
+  const listen = ['termine', 'eigene', 'erinnerungen', 'trainings'].filter(l => Array.isArray(k[l]));
+  while (JSON.stringify(k).length > max && listen.length) {
     const laengste = listen.reduce((a, b) => (k[b].length > k[a].length ? b : a));
     if (!k[laengste].length) break;
     k[laengste] = k[laengste].slice(0, -1);

@@ -410,6 +410,8 @@
 }
 .kal-eintrag__wann strong { color: var(--ink); font-size: 13px; font-weight: 800; }
 .kal-eintrag__wann strong.is-ueberfaellig { color: var(--danger); font-size: 11px; }
+/* Eine Einheit aus dem Plan (v.35.59.0) sagt "Vormittag" statt einer Uhrzeit. */
+.kal-eintrag--training .kal-eintrag__wann span { font-size: 11px; }
 .kal-eintrag__body { flex: 1; min-width: 0; }
 .kal-eintrag__titel {
   display: block;

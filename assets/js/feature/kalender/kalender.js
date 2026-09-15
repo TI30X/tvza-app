@@ -45,8 +45,9 @@ import {
    und stehen bis dahin als Quelle mit ihren Reisen daneben. */
 import {
   beobachteMeineGruppen, beobachteTermine, aktiveGruppeSetzen, aktiveGruppeId, VORGABE_BEREICHE, leitet, wort,
-  eineReiseUebernehmen,
+  eineReiseUebernehmen, ladePlaene,
 } from '../../groups.js';
+import { planEinheiten, einheitZiel } from '../../wochenplan.js';
 import { gruppenOptionen } from '../../gruppenwahl.js';
 import { teamTerminText, teamFarben } from '../../kalender-teams.js';
 import { familieUebernehmen, sollUebernehmen, vereinigeGruppen } from '../../uebernahme.js';
@@ -59,7 +60,7 @@ import {
 /* Die Hülle: Leiste, Router, Konto, Namenskarte. Früher ein zweites
    <script type="module"> in der Seite — die Seiten-Invariante erlaubt
    eins. */
-import '../../nav.js?v=22';
+import '../../nav.js?v=23';
 
 const tt = (key, deutsch, vars) => (window.TVZAI18n ? window.TVZAI18n.tOr(key, deutsch, vars)
   : String(deutsch).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz)));
@@ -109,6 +110,7 @@ let visibleGroupIds = new Set(), showPersonal = true;
    beitritt, sieht dessen Termine sofort, statt sie erst suchen und
    einschalten zu muessen. */
 let teams = [], teamTermine = new Map(), teamAbos = new Map(), versteckteTeams = new Set();
+let teamTrainings = new Map();   // gid -> Einheiten der Pläne (v.35.59.0)
 /* familien: die alten Kalendergruppen, in denen man steht. groups ist
    die Vereinigung: alle Gruppen, dazu jede Familie, die (noch) keine
    Gruppe ist. Beide Quellen kommen getrennt an; erst wenn beide da
@@ -264,6 +266,7 @@ function watchTeams() {
       teamAbos.get(gid)();
       teamAbos.delete(gid);
       teamTermine.delete(gid);
+      teamTrainings.delete(gid);
     }
     for (const gid of ids) {
       if (teamAbos.has(gid)) continue;
@@ -272,9 +275,45 @@ function watchTeams() {
         renderCurrentView();
         offenesProgrammNeu();
       }));
+      trainingsLaden(liste.find(item => item.id === gid));
     }
     vereinige();
   });
+}
+
+/* Die Einheiten der Trainingspläne (v.35.59.0). Michel: "wenn ich eine
+   Excel hochlade … steht am Dienstag Sprungprogramm", aber im Kalender
+   stand es nicht. Hier stehen die Pläne für alle und die eigenen — die
+   Einzelpläne der anderen Athleten sieht die Leitung in der Gruppe, im
+   eigenen Kalender wären es zwanzigmal dieselben Einheiten. Gelesen
+   einmal beim Öffnen; eine neue Excel kommt mit dem nächsten Laden. */
+async function trainingsLaden(gruppe) {
+  if (!gruppe) return;
+  try {
+    const plaene = await ladePlaene(gruppe.id, user.uid, false);
+    const quellen = plaene.map(plan => {
+      let programm = null;
+      try { programm = JSON.parse(plan.json); } catch { /* kaputter Plan: weglassen */ }
+      return programm ? { gid:gruppe.id, gruppe:gruppe.name || '', plan:{ ...plan, json:undefined }, programm } : null;
+    }).filter(Boolean);
+    teamTrainings.set(gruppe.id, planEinheiten(quellen, isoTag()));
+    renderCurrentView();
+  } catch (error) {
+    reportClientError('kalender-trainings', error);
+  }
+}
+
+/* Eine Einheit öffnet ihren Player — am geplanten Tag, "Zurück" führt
+   in den Kalender. Ohne Blatt ("evtl. Spiel") gibt es nichts zu üben:
+   dann eine Karte. Der Player liegt ausserhalb des Routers, darum oben. */
+async function zeigeTraining(eintrag) {
+  const x = eintrag.ref;
+  if (!x.unit || !x.planId) {
+    await meldung({ titel:eintrag.titel, text:[zeitraum({ von:eintrag.von, bis:eintrag.bis }), x.slot, x.gruppe].filter(Boolean).join(' · ') });
+    return;
+  }
+  const ziel = new URL(einheitZiel(x.gid, x.planId, x, x.datum, 'kalender'), location.href).href;
+  (window.top || window).location.href = ziel;
 }
 async function zeigeTeamTermin(eintrag) {
   const hin = await frage({
@@ -708,7 +747,7 @@ function eintraegeJetzt() {
     erinnerungen:reminders,
     reisen:sichtbareReisen(),
     teams:groups.filter(item => !versteckteTeams.has(item.id))
-      .map(gruppe => ({ gruppe, termine:teamTermine.get(gruppe.id) || [] })),
+      .map(gruppe => ({ gruppe, termine:teamTermine.get(gruppe.id) || [], trainings:teamTrainings.get(gruppe.id) || [] })),
     persoenlich:showPersonal,
     farbePersoenlich:personalCalendarColor(),
     farbeVon:groupColor,
@@ -832,6 +871,7 @@ function oeffne(eintrag) {
     if (eintrag.art === 'team') zeigeTeamTermin(eintrag); else zeigeReise(eintrag);
     return;
   }
+  if (eintrag.art === 'training') { zeigeTraining(eintrag); return; }
   if (eintrag.art === 'erinnerung') { openReminderForm(eintrag.ref); return; }
   openDayForm(eintrag.ref);
 }

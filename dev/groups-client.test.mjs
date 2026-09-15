@@ -88,7 +88,11 @@ test('eine Mitgliedschaft ohne lesbare Gruppe kippt nicht die ganze Liste', asyn
   // ohne lesbare Gruppe. Das ist ein Zwischenzustand, kein Fehler.
   assert.match(body, /try \{/);
   assert.match(body, /catch \{ return null; \}/);
-  assert.match(body, /\.filter\(Boolean\)/);
+  // Seit v.35.59.0 fällt auch eine gelöschte Gruppe still heraus — sie
+  // zählt aber nicht als "nicht lesbar" (gruppen-strom.js fragt dann
+  // nicht immer wieder nach).
+  assert.match(body, /\.filter\(g => g && g !== GELOESCHT\)/);
+  assert.match(body, /unvollstaendig.*gruppen\.includes\(null\)/);
 });
 
 test('kein zweiter Kopf, auch nicht über die Oberfläche', async () => {

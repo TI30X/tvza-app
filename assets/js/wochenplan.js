@@ -162,6 +162,7 @@ export function einheitZiel(gid, planId, eintrag, datum, zurueck = '') {
 export const RUECKWEGE = Object.freeze({
   gruppe: './gruppe.html',
   training: './training.html',
+  kalender: './planner.html',
 });
 
 /** Wohin "Zurueck" im Player fuehrt — ein Unbekannter faellt auf die Gruppe. */
@@ -326,6 +327,38 @@ export function startWoche({ heute, quellen = [], termine = [] }) {
   if (inWoche(jetzt)) return jetzt;
   const planWochen = [...new Set(quellen.flatMap(q => planTageMitDatum(q.programm, heute).map(t => montagVon(t.datum))))].sort();
   return planWochen.find(m => m > jetzt) || planWochen[planWochen.length - 1] || jetzt;
+}
+
+/**
+ * Alle Einheiten der Pläne als Liste mit Datum (v.35.59.0) — für den
+ * Kalender und den Assistenten. Michel: "wenn ich eine Excel hochlade …
+ * steht am Dienstag, 8. September Sprungprogramm — der Assistent hat
+ * keine Ahnung von diesem Sprungprogramm". Der Kalender zeigte die Pläne
+ * nie, und die Pille schickte nur Termine mit.
+ *
+ * Dieselbe Regel wie in der Woche (agendaTage): deckt derselbe Mensch
+ * denselben Tag mit zwei Plänen ab, gewinnt der neuere.
+ *
+ * @param {Array<{gid:string, plan:object, programm:object, gruppe?:string}>} quellen
+ * @returns [{ datum, titel, zeit, slot, unit, gid, gruppe, planId, fuer }]
+ */
+export function planEinheiten(quellen = [], heute = '') {
+  const beste = new Map();
+  for (const q of quellen) {
+    for (const tag of planTageMitDatum(q.programm, heute)) {
+      const wer = `${q.gid}|${q.plan?.fuer || ''}|${tag.datum}`;
+      const bisher = beste.get(wer);
+      if (!bisher || zeitVon(q.plan) > zeitVon(bisher.q.plan)) beste.set(wer, { q, tag });
+    }
+  }
+  return [...beste.values()]
+    .flatMap(({ q, tag }) => tag.eintraege.map(e => ({
+      datum: tag.datum, titel: e.titel, zeit: e.zeit, slot: e.slot, slotKey: e.slotKey, unit: e.unit,
+      gid: q.gid, gruppe: q.gruppe || '', planId: q.plan?.id || '', fuer: q.plan?.fuer || '',
+    })))
+    /* Nur nach Datum — innerhalb des Tages bleibt die Folge des Plans
+       (Vormittag vor Nachmittag; das Alphabet sähe das umgekehrt). */
+    .sort((a, b) => a.datum.localeCompare(b.datum));
 }
 
 /**

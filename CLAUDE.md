@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.58.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.59.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-71 Testdateien, **761 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+74 Testdateien, **776 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -724,6 +724,19 @@ cool, wenn Gruppen ihren Assistenten benennen und einen eigenen haben".
   Assistenten steht im Wechsel mit ihrem Namen („Familie van Zanten"), nicht
   als zweites „Assistent". Auch den Namen setzen darf die Leitung dann.
 - **Deep Thinking** heisst die höhere Stufe (Michel), vorher „Gründlich".
+- **Die Trainings aus der Excel** (v.35.59.0). Michel: „am Dienstag,
+  8. September steht Sprungprogramm — der Assistent hat keine Ahnung davon
+  … müsste in den Kalender". `planEinheiten()` in `wochenplan.js` macht aus
+  den Plänen eine Liste mit Datum (der neuere Plan gewinnt, wie in der
+  Woche). Die Pille schickt sie als `trainings` mit (`kontextBauen`):
+  der persönliche Assistent die Pläne für alle und die eigenen, der der
+  Gruppe für die Leitung alle — Einzelpläne zusammengefasst („3 Athleten"),
+  nie mit Namen. Der Worker braucht dafür nichts Neues (er reicht den
+  Kontext durch).
+- **Diktieren** (v.35.59.0): ein Mikrofon neben Senden, die
+  Spracherkennung des Browsers (`webkitSpeechRecognition`) — kein Dienst,
+  kein Schlüssel; ohne sie (Firefox) kein Knopf. Der Text landet im Feld
+  und wird nicht von allein geschickt.
 - **Attrappe:** `dev/attrappe/ki.mjs` beantwortet `/__ki-basis/ki` aus
   Mustern (Erinnerung, Training planen, verschieben) — ohne Gemini. BSV ist
   dort freigeschaltet („Coach Maxi"); Lea sieht nur ihn, Michel beide.
@@ -745,6 +758,40 @@ Haarlinien, eine Spalte; das Erscheinungsbild drei Knöpfe (`#themeWahl`,
 gewählte Schiene die Schrift des Hauptknopfs (Weiss auf hellem Blau war
 unlesbar — betraf auch die Gruppe). `dev/einstellungen.test.mjs`.
 
+**22. Eine Gruppe verwalten** (v.35.59.0). Michels Rundgang nach dem
+Anlegen einer Gruppe:
+
+- **Die Leiste kannte die neue Gruppe nicht**, bis man neu lud. Die
+  Mitgliedschaft meldet Firestore sofort, noch bevor der Server den Stapel
+  bestätigt; in dem Moment lässt die Regel die Gruppe nicht lesen, und sie
+  fiel still aus der Liste. Die Bestätigung ändert nur die Metadaten — die
+  kamen ohne `includeMetadataChanges` nie an. Jetzt
+  `gruppen-strom.js`: eine nicht lesbare Gruppe macht die Liste
+  „unvollständig", die nächste Meldung (auch nur der Metadaten) oder ein
+  Versuch nach der Uhr lädt nach; eine gelöschte Gruppe zählt nicht als
+  unlesbar (`zuGruppen`). In der Attrappe gibt es keine ausstehenden
+  Schreibvorgänge — dort sah man den Fehler nie; `dev/gruppen-strom.test.mjs`.
+- **Farbe:** die Leitung wählt sie aus den Kalenderfarben (`groups.farbe`,
+  die Regel kannte das Feld immer). Die Seite trägt sie oben als Band
+  (`--gruppe-farbe`), Leiste und Pille ziehen über `firn-gruppe-geaendert`
+  mit (die Mitgliedschaften ändern sich dabei nicht). Ein Logo braucht
+  Speicher für Bilder — später.
+- **Löschen** nur der Kopf, nach einer Frage mit dem Namen
+  (`gruppeLoeschen`): die Gruppe, dann Kontaktkarten, offene Einladungen
+  und die anderen Mitglieder, zuletzt die eigene Mitgliedschaft — die Regel
+  lässt den Kopf erst gehen, wenn die Gruppe weg ist. Termine und Pläne
+  bleiben in Firestore, lesbar für niemanden mehr.
+- **Die Liste nach Funktion:** „Trainer" und „Athleten" (je Art eigene
+  Wörter, `leitungen`/`mitgliederPl` in `WORTE`) mit Zahl; unter dem
+  Namen steht die Funktion nur noch beim Kopf. „E-Mail an alle" steht in
+  der Kopfzeile der Liste statt als breiter Knopf darunter.
+- **Im Kalender** stehen die Einheiten der Pläne (`ausTraining`, Art
+  `training`): ohne Uhrzeit mit „Vormittag"/„Nachm." statt „ganztägig",
+  ein Tipp öffnet den Player am geplanten Tag, „Zurück" führt in den
+  Kalender (`RUECKWEGE.kalender`). Nur die Pläne für alle und die eigenen.
+
+Tests: `gruppe-verwalten`, `gruppen-strom`, `trainings-assistent`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -757,7 +804,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1031 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1046 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -878,11 +925,15 @@ Zwei Dinge, die leicht übersehen werden:
   `users` und `kreis`) **Regeln VOR dem Code**: ohne sie scheitert das
   Anlegen eines Links im Admin und das Einlösen. Ausgerollt am 15.09.2026,
   vor dem Push.
+  v.35.59.0 (der Kopf geht zuletzt aus einer gelöschten Gruppe) erweitert
+  nur. Ohne die Regel scheitert beim Löschen nur der letzte Schritt — die
+  eigene Mitgliedschaft bleibt und zeigt auf nichts (`zuGruppen` lässt sie
+  weg). Regeln vor oder mit dem Code.
 
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.58.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.59.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

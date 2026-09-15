@@ -111,4 +111,7 @@ KEYS = {
 'ki.gespeichert': ('{name} ist jetzt der Assistent eurer Gruppe.', '{name} is now your group’s assistant.', '{name} est maintenant l’assistant de votre groupe.', '{name} è ora l’assistente del vostro gruppo.', '{name} jest teraz asystentem waszej grupy.', '{name} is nu de assistent van jullie groep.', '{name} es ahora el asistente de vuestro grupo.'),
 'ki.standard': ('Der Assistent heisst wieder «Assistent».', 'The assistant is called “Assistant” again.', 'L’assistant s’appelle à nouveau « Assistant ».', 'L’assistente si chiama di nuovo «Assistente».', 'Asystent znów nazywa się „Asystent”.', 'De assistent heet weer ‘Assistent’.', 'El asistente vuelve a llamarse «Asistente».'),
 'ki.f.speichern': ('Der Assistent liess sich nicht speichern.', 'The assistant could not be saved.', 'Impossible d’enregistrer l’assistant.', 'Non è stato possibile salvare l’assistente.', 'Nie udało się zapisać asystenta.', 'De assistent kon niet worden opgeslagen.', 'No se pudo guardar el asistente.'),
+# v.35.59.0: Diktieren
+'ki.diktieren': ('Diktieren', 'Dictate', 'Dicter', 'Detta', 'Dyktuj', 'Dicteren', 'Dictar'),
+'ki.hoertZu': ('Hört zu …', 'Listening …', 'J’écoute …', 'In ascolto …', 'Słucham …', 'Luistert …', 'Escuchando …'),
 }

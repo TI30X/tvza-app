@@ -158,6 +158,43 @@ export function ausErinnerung(erinnerung, farbe, quelle) {
   };
 }
 
+/* Eine Einheit aus dem Trainingsplan (v.35.59.0, planEinheiten in
+   wochenplan.js). Michel: das Sprungprogramm vom Dienstag stand in der
+   Gruppe, aber nicht im Kalender. Eine Uhrzeit hat sie nur, wenn der Plan
+   eine nennt ("9-11 Uhr" → 09:00–11:00); sonst sagt der Teil des Tages
+   (Vormittag, Nachmittag), wann. */
+export function ausTraining(einheit, farbe) {
+  if (!istIsoTag(einheit?.datum) || !String(einheit.titel || '').trim()) return null;
+  const [zeit, bisZeit] = uhrzeitenAus(einheit.zeit);
+  return {
+    id: `training:${einheit.gid}:${einheit.planId}:${einheit.datum}:${einheit.slotKey || einheit.slot || ''}:${einheit.titel}`,
+    art: 'training',
+    von: einheit.datum,
+    bis: einheit.datum,
+    zeit,
+    bisZeit,
+    titel: String(einheit.titel).trim(),
+    ort: '',
+    quelle: einheit.gruppe || '',
+    farbe,
+    typ: String(einheit.slot || ''),
+    abgesagt: false,
+    erledigt: false,
+    stops: [],
+    ref: einheit,
+  };
+}
+
+/** "9-11 Uhr", "9:30 – 11 Uhr", "18.00" → ['09:00', '11:00']; sonst leer. */
+export function uhrzeitenAus(text) {
+  const zahlen = [...String(text || '').matchAll(/(\d{1,2})(?:[:.](\d{2}))?/g)]
+    .map(m => ({ h: Number(m[1]), m: Number(m[2] || 0) }))
+    .filter(z => z.h < 24 && z.m < 60)
+    .map(z => `${String(z.h).padStart(2, '0')}:${String(z.m).padStart(2, '0')}`);
+  if (!zahlen.length) return ['', ''];
+  return [zahlen[0], zahlen[1] && zahlen[1] > zahlen[0] ? zahlen[1] : ''];
+}
+
 /** Ganztägig: ohne Uhrzeit, oder über mehrere Tage. */
 export const ganztaegig = e => !e.zeit || e.bis > e.von;
 
@@ -195,8 +232,9 @@ export function sammeln({
     for (const r of erinnerungen) raus.push(ausErinnerung(r, farbePersoenlich, persoenlichName));
   }
   for (const reise of reisen) raus.push(ausReise(reise, farbeVon(reise.familyId), nameVon(reise.familyId)));
-  for (const { gruppe, termine } of teams) {
+  for (const { gruppe, termine, trainings } of teams) {
     for (const termin of termine || []) raus.push(ausTeamTermin(termin, gruppe, farbeVon(gruppe.id)));
+    for (const einheit of trainings || []) raus.push(ausTraining(einheit, farbeVon(gruppe.id)));
   }
   return raus.filter(Boolean).sort((a, b) => a.von.localeCompare(b.von) || vergleiche(a, b));
 }

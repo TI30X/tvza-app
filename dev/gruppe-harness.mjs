@@ -118,6 +118,8 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const einladungZuruecknehmen = ${merke('einladungZuruecknehmen')};
     export const kontakte = async () => globalThis.__bekannte || [];
     export const assistentSetzen = ${merke('assistentSetzen')};
+    export const gruppeAendern = ${merke('gruppeAendern')};
+    export const gruppeLoeschen = ${merke('gruppeLoeschen')};
     export const beitreten = ${merke('beitreten')};
     export const ergebnisSpeichern = ${merke('ergebnisSpeichern')};
     export const planVeroeffentlichen = ${merke('planVeroeffentlichen')};

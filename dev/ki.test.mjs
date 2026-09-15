@@ -530,3 +530,15 @@ test('scheitert die ganze Reihe mit 404, fragt der Worker Google und nimmt das G
   assert.equal((await antwort.json()).text, 'da bin ich');
   assert.ok(urls.some(u => /\?pageSize=/.test(u)), 'die Liste wurde geholt');
 });
+
+/* Diktieren (v.35.59.0). Michel: "vielleicht können wir noch eine
+   Diktierfunktion für die Assistenten einfügen". */
+test('diktieren mit der Spracherkennung des Browsers — der Text wird nicht von allein geschickt', async () => {
+  const p = await read('assets/js/ki-pille.js');
+  assert.match(p, /globalThis\.SpeechRecognition \|\| globalThis\.webkitSpeechRecognition/);
+  assert.match(p, /\$\{Erkennung\(\) \? `<button class="ki-mikro"/, 'ohne Erkennung (Firefox) kein Knopf');
+  const koerper = p.slice(p.indexOf('function diktieren()'), p.indexOf('let pille = null;'));
+  assert.match(koerper, /diktat\.onresult = event => \{[\s\S]*feld\.value = /);
+  assert.doesNotMatch(koerper, /senden\(/, 'man sieht und korrigiert, was verstanden wurde');
+  assert.match(p, /function schliessen\(\) \{\s*if \(!blatt\) return;\s*diktat\?\.stop\?\.\(\);/, 'zu heisst: nicht mehr zuhören');
+});

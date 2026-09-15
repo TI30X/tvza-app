@@ -7,7 +7,7 @@
    Wettlauf. */
 
 import { db, requireAuth, getFinnhubKey, getProfile, reportClientError } from '../../firebase-config.js';
-import { weatherIcon } from '../../shell.js?v=23';
+import { weatherIcon } from '../../shell.js?v=24';
 import { chooseHint, markShown, dismissHint } from '../../hints.js';
 import {
   buildBriefing, renderBriefing, tagesfenster, ABEND_AB, VORSCHAU_TAGE,

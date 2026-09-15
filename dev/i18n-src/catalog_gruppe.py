@@ -374,4 +374,18 @@ KEYS = {
 'grp.adressen.few': ('{n} Adressen', '{n} addresses', '{n} adresses', '{n} indirizzi', '{n} adresy', '{n} adressen', '{n} direcciones'),
 'grp.adressen.many': ('{n} Adressen', '{n} addresses', '{n} adresses', '{n} indirizzi', '{n} adresów', '{n} adressen', '{n} direcciones'),
 'grp.adressen.other': ('{n} Adressen', '{n} addresses', '{n} adresses', '{n} indirizzi', '{n} adresów', '{n} adressen', '{n} direcciones'),
+# v.35.59.0: die Liste nach Funktion, die Farbe, Gruppe löschen
+'grp.kader.leitungen': ('Trainer', 'Coaches', 'Entraîneurs', 'Allenatori', 'Trenerzy', 'Trainers', 'Entrenadores'),
+'grp.kader.mitgliederPl': ('Athleten', 'Athletes', 'Athlètes', 'Atleti', 'Zawodnicy', 'Atleten', 'Atletas'),
+'grp.org.leitungen': ('Leitung', 'Management', 'Direction', 'Direzione', 'Kierownictwo', 'Leiding', 'Dirección'),
+'grp.org.mitgliederPl': ('Mitglieder', 'Members', 'Membres', 'Membri', 'Członkowie', 'Leden', 'Miembros'),
+'grp.familie.leitungen': ('Verwaltung', 'Admins', 'Administration', 'Amministrazione', 'Administracja', 'Beheer', 'Administración'),
+'grp.familie.mitgliederPl': ('Mitglieder', 'Members', 'Membres', 'Membri', 'Członkowie', 'Leden', 'Miembros'),
+'grp.farbe': ('Farbe der Gruppe', 'Group colour', 'Couleur du groupe', 'Colore del gruppo', 'Kolor grupy', 'Groepskleur', 'Color del grupo'),
+'grp.farbeText': ('So erkennst du die Gruppe in der Leiste, im Kalender und beim Assistenten.', 'This is how you recognise the group in the sidebar, the calendar and the assistant.', 'C’est ainsi que tu reconnais le groupe dans la barre, le calendrier et l’assistant.', 'Così riconosci il gruppo nella barra, nel calendario e nell’assistente.', 'Po tym rozpoznasz grupę w pasku, kalendarzu i u asystenta.', 'Zo herken je de groep in de zijbalk, de agenda en bij de assistent.', 'Así reconoces el grupo en la barra, el calendario y el asistente.'),
+'grp.f.farbe': ('Die Farbe liess sich nicht speichern.', 'The colour could not be saved.', 'Impossible d’enregistrer la couleur.', 'Non è stato possibile salvare il colore.', 'Nie udało się zapisać koloru.', 'De kleur kon niet worden opgeslagen.', 'No se pudo guardar el color.'),
+'grp.loeschen': ('Gruppe löschen', 'Delete group', 'Supprimer le groupe', 'Elimina gruppo', 'Usuń grupę', 'Groep verwijderen', 'Eliminar grupo'),
+'grp.loeschenFrage': ('«{name}» löschen?', 'Delete “{name}”?', 'Supprimer « {name} » ?', 'Eliminare «{name}»?', 'Usunąć „{name}”?', '‘{name}’ verwijderen?', '¿Eliminar «{name}»?'),
+'grp.loeschenText': ('Alle verlieren die Gruppe mit ihren Terminen und Plänen. Das lässt sich nicht rückgängig machen.', 'Everyone loses the group with its events and plans. This cannot be undone.', 'Tout le monde perd le groupe avec ses rendez-vous et ses plans. C’est irréversible.', 'Tutti perdono il gruppo con i suoi appuntamenti e piani. Non si può annullare.', 'Wszyscy stracą grupę wraz z terminami i planami. Tego nie da się cofnąć.', 'Iedereen verliest de groep met de afspraken en plannen. Dit kan niet ongedaan worden gemaakt.', 'Todos pierden el grupo con sus citas y planes. No se puede deshacer.'),
+'grp.f.loeschen': ('Die Gruppe liess sich nicht löschen.', 'The group could not be deleted.', 'Impossible de supprimer le groupe.', 'Non è stato possibile eliminare il gruppo.', 'Nie udało się usunąć grupy.', 'De groep kon niet worden verwijderd.', 'No se pudo eliminar el grupo.'),
 }

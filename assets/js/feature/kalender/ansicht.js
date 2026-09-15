@@ -57,13 +57,16 @@ function meta(e, x) {
   const teile = [];
   if (x?.rolle === 'ueberfaellig') teile.push(t('kal.seit', 'seit {tag}', { tag: zeitraumText(e.von, e.von) }));
   if (e.bis > e.von) teile.push(zeitraumText(e.von, e.bis));
-  if (e.typ) teile.push(e.typ);
+  if (e.typ && !(e.art === 'training' && !e.zeit)) teile.push(e.typ);
   if (e.art === 'erinnerung') teile.push(t('kal.erinnerung', 'Erinnerung'));
   if (e.quelle) teile.push(e.quelle);
   if (e.ort) teile.push(e.ort);
   if (x?.rolle === 'programm' && x.stops?.length) teile.unshift(t('kal.programmTag', 'Programm · Tag {n}', { n: x.tagNr }));
   return teile.join(' · ');
 }
+
+/* Die Spalte ist 50 Pixel breit: "Nachmittag" passt nicht, "Nachm." schon. */
+export const teilKurz = teil => (String(teil).length > 9 ? `${String(teil).slice(0, 5)}.` : String(teil));
 
 /* Die linke Spalte eines Eintrags in der Liste: wann. */
 function wann(e, x) {
@@ -74,6 +77,9 @@ function wann(e, x) {
       return `<strong>${esc(t('kal.tagVon', 'Tag {n}/{m}', { n: x.tagNr, m: x.tage }))}</strong>`;
     }
   }
+  /* Eine Einheit aus dem Plan ohne Uhrzeit hat ihren Teil des Tages
+     (v.35.59.0) — 'Vormittag' sagt mehr als 'ganztägig'. */
+  if (!e.zeit && e.art === 'training' && e.typ) return `<span title="${esc(e.typ)}">${esc(teilKurz(e.typ))}</span>`;
   if (!e.zeit) return `<span>${esc(t('kal.ganztags', 'ganztägig'))}</span>`;
   return `<strong>${esc(e.zeit)}</strong>${e.bisZeit && e.bisZeit !== e.zeit ? `<span>${esc(e.bisZeit)}</span>` : ''}`;
 }

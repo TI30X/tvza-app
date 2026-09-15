@@ -32,6 +32,7 @@ import {
   assistenten, assistentWaehlen, kontextBauen, aktionPruefen, aktionZeile, fragen, fehlerText,
 } from './ki.js';
 import { gruppenStil, kuerzel } from './gruppenwahl.js';
+import { planEinheiten } from './wochenplan.js';
 import {
   collection, doc, getDocs, addDoc, updateDoc, query, where, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -51,6 +52,48 @@ const VORRAT_MS = 5 * 60 * 1000;
 const FUNKE = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>';
 const SENDEN = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
 const ZU = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+const MIKRO = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+
+/* ── Diktieren (v.35.59.0) ───────────────────────────────────────────
+   Michel: "vielleicht können wir noch eine Diktierfunktion für die
+   Assistenten einfügen". Die Spracherkennung des Browsers (Chrome,
+   Edge, Safari) — kein eigener Dienst, kein Schlüssel. Wo es sie nicht
+   gibt (Firefox), fehlt der Knopf; die Tastatur des Handys hat ihr
+   eigenes Mikrofon. Der Text landet im Feld und wird NICHT von allein
+   geschickt: man sieht, was verstanden wurde, und korrigiert es. */
+export const Erkennung = () => globalThis.SpeechRecognition || globalThis.webkitSpeechRecognition || null;
+let diktat = null;
+
+function diktieren() {
+  const knopf = blatt.querySelector('.ki-mikro');
+  const feld = blatt.querySelector('.ki-feld');
+  if (diktat) { diktat.stop(); return; }
+  const E = Erkennung();
+  if (!E) return;
+  const vorher = feld.value.trim();
+  diktat = new E();
+  diktat.lang = window.TVZAI18n?.locale || document.documentElement.lang || 'de-CH';
+  diktat.interimResults = true;
+  diktat.continuous = false;
+  diktat.onresult = event => {
+    const gehoert = [...event.results].map(r => r[0]?.transcript || '').join('');
+    feld.value = [vorher, gehoert.trim()].filter(Boolean).join(' ');
+    feld.dispatchEvent(new Event('input'));
+  };
+  const ende = () => {
+    diktat = null;
+    knopf.classList.remove('is-hoert');
+    knopf.setAttribute('aria-pressed', 'false');
+    feld.placeholder = t('ki.feldPh', '{name} fragen …', { name: aktuell?.name || '' });
+    feld.focus();
+  };
+  diktat.onend = ende;
+  diktat.onerror = ende;
+  knopf.classList.add('is-hoert');
+  knopf.setAttribute('aria-pressed', 'true');
+  feld.placeholder = t('ki.hoertZu', 'Hört zu …');
+  try { diktat.start(); } catch { ende(); }
+}
 
 let pille = null;
 let blatt = null;
@@ -191,6 +234,7 @@ function blattBauen() {
     <div class="ki-vorschlaege"></div>
     <form class="ki-eingabe">
       <textarea class="ki-feld" rows="1" maxlength="1000" autocomplete="off"></textarea>
+      ${Erkennung() ? `<button class="ki-mikro" type="button" aria-pressed="false" aria-label="${esc(t('ki.diktieren', 'Diktieren'))}" title="${esc(t('ki.diktieren', 'Diktieren'))}">${MIKRO}</button>` : ''}
       <button class="ki-senden" type="submit" aria-label="${esc(t('ki.senden', 'Senden'))}">${SENDEN}</button>
     </form>
     <label class="ki-stufe">
@@ -201,6 +245,7 @@ function blattBauen() {
   document.body.appendChild(blatt);
 
   blatt.querySelector('.ki-blatt__zu').addEventListener('click', schliessen);
+  blatt.querySelector('.ki-mikro')?.addEventListener('click', diktieren);
   blatt.addEventListener('keydown', e => { if (e.key === 'Escape') schliessen(); });
   const feld = blatt.querySelector('.ki-feld');
   blatt.querySelector('.ki-eingabe').addEventListener('submit', e => { e.preventDefault(); senden(feld.value); });
@@ -250,6 +295,7 @@ async function gruppenAuffrischen() {
 
 function schliessen() {
   if (!blatt) return;
+  diktat?.stop?.();
   blatt.hidden = true;
   document.body.classList.remove('ki-offen');
   pille?.setAttribute('aria-expanded', 'false');
@@ -316,21 +362,46 @@ async function kontextLaden(a) {
   const groups = await import('./groups.js');
   const alle = await groups.meineGruppen(uid).catch(() => gruppenJetzt());
   const gruppen = a.persoenlich ? alle : alle.filter(g => g.id === a.wer);
-  const [jeGruppe, eigene, erinnerungen] = await Promise.all([
+  const [jeGruppe, eigene, erinnerungen, quellen] = await Promise.all([
     Promise.all(gruppen.map(g => groups.ladeTermine(g.id)
       .then(liste => liste.map(e => ({ ...e, gid: g.id }))).catch(() => []))),
     a.persoenlich ? getDocs(query(collection(db, 'calendarDays'), where('ownerUid', '==', uid)))
       .then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []) : [],
     a.persoenlich ? getDocs(collection(db, 'users', uid, 'reminders'))
       .then(s => s.docs.map(d => ({ id: d.id, ...d.data() }))).catch(() => []) : [],
+    trainingsQuellen(groups, gruppen, uid, !a.persoenlich),
   ]);
+  const jetzt = new Date();
+  const heute = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, '0')}-${String(jetzt.getDate()).padStart(2, '0')}`;
+  const trainings = planEinheiten(quellen, heute).map(e => ({
+    ...e, fuer: e.fuer === groups.PLAN_FUER_ALLE || !e.fuer ? 'alle' : e.fuer === uid ? 'du' : 'athlet',
+  }));
   const kontext = kontextBauen({
     jetzt: new Date(), sprache: document.documentElement.lang || 'de-CH', seite: seiteJetzt(),
     aktiveGid: aktiveGid(alle), wer: a.wer, gruppen, termine: jeGruppe.flat(), eigene, erinnerungen,
-    leitet: groups.leitet,
+    trainings, leitet: groups.leitet,
   });
   vorraete.set(a.wer, { am: Date.now(), kontext });
   return kontext;
+}
+
+/* Die Trainingspläne (v.35.59.0): der persönliche Assistent kennt die
+   Pläne für alle und die eigenen, der der Gruppe für die Leitung alle —
+   wer den Kader leitet, fragt "was trainieren wir am Dienstag", und die
+   Excel ist meist pro Athlet. Dieselbe Abfrage wie die Woche
+   (ladePlaene), die Regel entscheidet. */
+async function trainingsQuellen(groups, gruppen, uid, alsGruppe) {
+  const je = await Promise.all(gruppen.map(async g => {
+    const alsLeitung = alsGruppe && groups.leitet(g.meineRolle);
+    let plaene = [];
+    try { plaene = await groups.ladePlaene(g.id, uid, alsLeitung); } catch { return []; }
+    return plaene.map(plan => {
+      let programm = null;
+      try { programm = JSON.parse(plan.json); } catch { /* kaputter Plan: weglassen */ }
+      return programm ? { gid: g.id, gruppe: g.name || '', plan: { ...plan, json: undefined }, programm } : null;
+    }).filter(Boolean);
+  }));
+  return je.flat();
 }
 
 /* ── Fragen ────────────────────────────────────────────────────────── */
@@ -339,6 +410,7 @@ async function senden(roh) {
   const frage = String(roh || '').trim();
   const a = aktuell;
   if (!frage || arbeitet || !a) return;
+  diktat?.stop?.();
   const feld = blatt.querySelector('.ki-feld');
   feld.value = '';
   feld.style.height = 'auto';

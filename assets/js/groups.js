@@ -42,6 +42,7 @@ import { neuerCode, codeSauber, ablaufAb, abgelaufen } from './einladung.js';
 import { reiseUebernehmen } from './reise-uebernahme.js';
 import { nameVon, kreisMitglieder } from './personen.js';
 import { bekannteAus } from './bekannte.js';
+import { mitgliedschaftenFolgen } from './gruppen-strom.js';
 
 /* Die Gruppenseite lädt nav.js nicht, schreibt ihre Namenskarte also
    selbst — über diesen Weg, damit sie bei groups.js bleibt. */
@@ -76,18 +77,25 @@ const WORTE = {
     staff:    { key: 'grp.kader.staff',    de: 'Trainer' },
     mitglied: { key: 'grp.kader.mitglied', de: 'Athlet' },
     mitglieder: { key: 'grp.kader.mitglieder', de: 'Kader' },
+    /* Die Überschriften der Liste, nach Funktion (v.35.59.0). */
+    leitungen: { key: 'grp.kader.leitungen', de: 'Trainer' },
+    mitgliederPl: { key: 'grp.kader.mitgliederPl', de: 'Athleten' },
   },
   organisation: {
     head:     { key: 'grp.org.head',     de: 'Leitung' },
     staff:    { key: 'grp.org.staff',    de: 'Trainer' },
     mitglied: { key: 'grp.org.mitglied', de: 'Mitglied' },
     mitglieder: { key: 'grp.org.mitglieder', de: 'Mitglieder' },
+    leitungen: { key: 'grp.org.leitungen', de: 'Leitung' },
+    mitgliederPl: { key: 'grp.org.mitgliederPl', de: 'Mitglieder' },
   },
   familie: {
     head:     { key: 'grp.familie.head',     de: 'Verwaltet die Gruppe' },
     staff:    { key: 'grp.familie.staff',    de: 'Verwaltung' },
     mitglied: { key: 'grp.familie.mitglied', de: 'Mitglied' },
     mitglieder: { key: 'grp.familie.mitglieder', de: 'Mitglieder' },
+    leitungen: { key: 'grp.familie.leitungen', de: 'Verwaltung' },
+    mitgliederPl: { key: 'grp.familie.mitgliederPl', de: 'Mitglieder' },
   },
 };
 
@@ -175,15 +183,21 @@ function eigeneMitgliedschaften(uid) {
 /* Eine Mitgliedschaft ohne lesbare Gruppe ist kein Fehler, sondern der
    normale Zwischenzustand, wenn jemand gerade entfernt wurde. Sie wird
    still übersprungen statt die ganze Liste scheitern zu lassen. */
+const GELOESCHT = Symbol('gelöscht');
 async function zuGruppen(mitgliedschaften) {
   const gruppen = await Promise.all(mitgliedschaften.map(async m => {
     try {
       const g = await ladeGruppe(m.gid);
-      return g ? { ...g, meineRolle: m.rolle } : null;
+      return g ? { ...g, meineRolle: m.rolle } : GELOESCHT;
     } catch { return null; }
   }));
-  return gruppen.filter(Boolean).sort((a, b) =>
+  const liste = gruppen.filter(g => g && g !== GELOESCHT).sort((a, b) =>
     String(a.name || '').localeCompare(String(b.name || ''), 'de'));
+  /* Unvollständig ist die Liste nur, wenn eine Gruppe sich nicht LESEN
+     liess (gleich nach dem Anlegen, siehe gruppen-strom.js) — eine
+     gelöschte fehlt zu Recht und wird nicht immer wieder nachgefragt. */
+  Object.defineProperty(liste, 'unvollstaendig', { value: gruppen.includes(null) });
+  return liste;
 }
 
 export async function meineGruppen(uid) {
@@ -193,12 +207,12 @@ export async function meineGruppen(uid) {
   })));
 }
 
+/* Mit den Metadaten: eine eben angelegte Gruppe lässt sich erst lesen,
+   wenn der Server den Stapel bestätigt hat — und diese Bestätigung kommt
+   nur als Änderung der Metadaten (gruppen-strom.js, v.35.59.0). */
 export function beobachteMeineGruppen(uid, cb) {
-  return onSnapshot(eigeneMitgliedschaften(uid), async snap => {
-    cb(await zuGruppen(snap.docs.map(d => ({
-      gid: d.ref.parent.parent.id, rolle: d.data().rolle || '',
-    }))));
-  }, () => cb([]));
+  return onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true },
+    mitgliedschaftenFolgen(zuGruppen, cb), () => cb([]));
 }
 
 /* ── Schreiben ─────────────────────────────────────────────────────*/
@@ -234,6 +248,39 @@ export async function gruppeAnlegen(uid, { name, art = 'familie', bereiche } = {
 
   await stapel.commit();
   return ref.id;
+}
+
+/* Eine Gruppe löschen (v.35.59.0) — nur der Kopf. Michel: "man kann
+   Gruppen nicht löschen, wenn man sie erstellt hat". Die Regel liess es
+   immer zu (allow delete: headsGroup), nur gab es keinen Knopf.
+
+   Die Reihenfolge ist die der Regeln: zuerst die Gruppe (headsGroup
+   liest sie), dann die Kontaktkarten, die offenen Einladungen und die
+   anderen Mitglieder (leadsGroup liest nur die EIGENE Mitgliedschaft,
+   die dafür noch stehen muss), zuletzt die eigene Mitgliedschaft — die
+   Regel lässt den Kopf nur gehen, wenn es die Gruppe nicht mehr gibt.
+   Termine und Pläne bleiben in Firestore, aber ohne Mitglieder liest sie
+   niemand mehr (inGroup). */
+export async function gruppeLoeschen(gid, uid) {
+  const [mitglieder, kontakte, einladungen] = await Promise.all([
+    getDocs(collection(db, 'groups', gid, 'members')),
+    getDocs(collection(db, 'groups', gid, 'kontakte')).catch(() => ({ docs: [] })),
+    getDocs(query(collection(db, 'groupInvites'), where('gid', '==', gid))).catch(() => ({ docs: [] })),
+  ]);
+  await deleteDoc(gruppeRef(gid));
+  const rest = [
+    ...kontakte.docs.map(d => d.ref),
+    ...einladungen.docs.map(d => d.ref),
+    ...mitglieder.docs.filter(d => d.id !== uid).map(d => d.ref),
+  ];
+  for (let i = 0; i < rest.length; i += 400) {
+    const stapel = writeBatch(db);
+    rest.slice(i, i + 400).forEach(ref => stapel.delete(ref));
+    await stapel.commit();
+  }
+  /* Mit Regeln vor v.35.59.0 bleibt die eigene Mitgliedschaft stehen —
+     sie zeigt auf nichts und fällt aus jeder Liste (zuGruppen). */
+  try { await deleteDoc(mitgliedRef(gid, uid)); } catch { /* siehe oben */ }
 }
 
 export function gruppeAendern(gid, patch) {

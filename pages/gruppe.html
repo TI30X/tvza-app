@@ -13,10 +13,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=25" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=26" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
-  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=8" />
+  <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=9" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=26" defer></script>
@@ -485,16 +485,21 @@
     </section>
 
     <section class="section" id="secMitglieder" hidden>
+      <!-- Der Verteiler (eine Mail an alle, nur an die Eltern oder ohne
+           sie) steht seit v.35.59.0 in der Kopfzeile der Liste, wo man ihn
+           sucht — nicht als breiter Knopf unter dem letzten Namen. Nur
+           fuer die Leitung. -->
       <div class="marke marke--reihe">
         <span id="mitgliederTitel">Mitglieder</span>
         <span id="mitgliederZahl" hidden></span>
+        <button class="grp-mail" id="btnVerteiler" type="button" hidden>
+          <svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <span data-i18n="grp.verteiler">E-Mail an alle</span>
+        </button>
       </div>
       <div class="rows" id="listMitglieder">
         <div class="spinner" data-fx-rows="3" data-i18n="common.laden">Lade…</div>
       </div>
-      <!-- Der Verteiler: eine Mail an alle, nur an die Eltern oder ohne
-           sie. Nur fuer die Leitung. -->
-      <button class="b b--secondary b--block" id="btnVerteiler" type="button" hidden data-i18n="grp.verteiler">E-Mail an alle</button>
     </section>
 
     <!-- Die Kontaktkarte bearbeiten. Ein Formular auf der Seite, wie beim
@@ -604,8 +609,20 @@
         <button class="b b--secondary b--block" id="btnAssistent" type="button" data-i18n="ki.speichern">Assistent speichern</button>
         <p class="empty-hint" id="assistentStand" hidden></p>
       </div>
+      <!-- Die Farbe der Gruppe (v.35.59.0): in der Leiste, im Kalender,
+           in der Pille und oben auf dieser Seite. Die Regel kannte das
+           Feld seit jeher, nur gab es keinen Ort, es zu setzen. -->
+      <div class="einladung" id="gruppeFarbeKarte">
+        <p class="einladung__titel" data-i18n="grp.farbe">Farbe der Gruppe</p>
+        <p class="einladung__meta" data-i18n="grp.farbeText">So erkennst du die Gruppe in der Leiste, im Kalender und beim Assistenten.</p>
+        <div class="farbwahl" id="gruppeFarbe" role="radiogroup" aria-label="Farbe der Gruppe" data-i18n-attr="aria-label:grp.farbe"></div>
+      </div>
       <button class="b b--secondary b--block" id="btnAbo" type="button" hidden data-i18n="grp.abo">Kalender-Abo erzeugen</button>
       <p class="empty-hint" id="aboText" hidden></p>
+      <!-- Loeschen darf nur der Kopf (v.35.59.0) — leise, am Ende. -->
+      <p class="grp-loeschen" id="grpLoeschen" hidden>
+        <button class="grp-weitere__link grp-loeschen__knopf" id="btnGruppeLoeschen" type="button" data-i18n="grp.loeschen">Gruppe löschen</button>
+      </p>
     </section>
 
     <!-- Eine weitere Gruppe — leise und am Ende: Athleten brauchen das
@@ -621,6 +638,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=28"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=29"></script>
 </body>
 </html>

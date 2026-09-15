@@ -66,7 +66,10 @@ export function kiAttrappe(koerper = {}) {
     ] };
   }
   const bis = plus(heute, 7);
-  const woche = [...(k.termine || []), ...(k.eigene || [])].filter(x => x.von >= heute && x.von <= bis);
+  const woche = [...(k.termine || []), ...(k.eigene || []),
+    ...(k.trainings || []).map(x => ({ von: x.datum, zeit: '', titel: `${x.titel}${x.teil ? ` (${x.teil})` : ''}` }))]
+    .filter(x => x.von >= heute && x.von <= bis)
+    .sort((a, b) => a.von.localeCompare(b.von));
   return { ...rahmen, aktionen: [], text: woche.length
     ? `Diese Woche steht an:\n${woche.map(x => `• ${x.von}${x.zeit ? ` ${x.zeit}` : ''} — ${x.titel}`).join('\n')}`
     : 'Diese Woche steht nichts an.' };

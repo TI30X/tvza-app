@@ -1192,6 +1192,15 @@ service cloud.firestore {
                     || (
                       leadsGroup(gid)
                       && resource.data.get('rolle', '') != 'head'
+                    )
+                    // Der Kopf geht zuletzt, wenn er die Gruppe geloescht hat
+                    // (v.35.59.0, gruppeLoeschen in groups.js). Solange es sie
+                    // gibt, bleibt er — eine Gruppe ohne Kopf verwaltet
+                    // niemand mehr.
+                    || (
+                      request.auth.uid == uid
+                      && resource.data.get('rolle', '') == 'head'
+                      && !exists(/databases/$(database)/documents/groups/$(gid))
                     );
     }
 

@@ -19,6 +19,8 @@ import { teamFarben } from './kalender-teams.js';
 import { CALENDAR_COLORS, calendarColorInk } from './calendar-view.js';
 
 const PALETTE = CALENDAR_COLORS.map(farbe => farbe.value);
+/** Die Farben, aus denen eine Gruppe waehlt (v.35.59.0) — die des Kalenders. */
+export const FARBEN = CALENDAR_COLORS;
 
 const t = (key, deutsch, vars) => globalThis.window?.TVZAI18n?.tOr(key, deutsch, vars)
   ?? String(deutsch).replace(/\{(\w+)\}/g, (ganz, name) => (vars?.[name] ?? ganz));
@@ -30,6 +32,11 @@ export function kuerzel(name) {
   if (!woerter.length) return '·';
   if (woerter.length === 1) return woerter[0].slice(0, 2).toUpperCase();
   return (woerter[0][0] + woerter[1][0]).toUpperCase();
+}
+
+/** Die Farbe einer Gruppe als Wert ('#2f6fed') — dieselbe wie überall. */
+export function gruppenFarbe(gruppen, id) {
+  return teamFarben(gruppen, PALETTE).get(id) || PALETTE[0];
 }
 
 /** Die Farbe einer Gruppe samt lesbarer Schrift darauf, als CSS-Variablen. */

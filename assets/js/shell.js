@@ -402,6 +402,16 @@ function gruppeInDerLeiste(nav) {
   let zeichne = () => {};
   /* Einmal angebunden, nicht bei jeder Anmeldung ein weiteres Mal. */
   window.addEventListener('firn-gruppe', () => zeichne());
+  /* Eine neue Farbe (v.35.59.0) ändert keine Mitgliedschaft — die
+     Gruppenseite sagt sie hier an, damit Leiste und Pille mitziehen. */
+  window.addEventListener('firn-gruppe-geaendert', event => {
+    const { id, patch } = event.detail || {};
+    if (!id || !patch) return;
+    gruppen = gruppen.map(g => (g.id === id ? { ...g, ...patch } : g));
+    window.__firnGruppen = gruppen;
+    window.dispatchEvent(new CustomEvent('firn-gruppen'));
+    zeichne();
+  });
   auth.onAuthStateChanged(async user => {
     abo?.(); abo = null;
     if (!user) return;
