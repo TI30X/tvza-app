@@ -928,7 +928,8 @@ Zwei Dinge, die leicht übersehen werden:
   v.35.59.0 (der Kopf geht zuletzt aus einer gelöschten Gruppe) erweitert
   nur. Ohne die Regel scheitert beim Löschen nur der letzte Schritt — die
   eigene Mitgliedschaft bleibt und zeigt auf nichts (`zuGruppen` lässt sie
-  weg). Regeln vor oder mit dem Code.
+  weg). Regeln vor oder mit dem Code. Ausgerollt am 15.09.2026, vor dem
+  Push.
 
 ## Gewohnheiten
 
