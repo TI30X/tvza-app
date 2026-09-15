@@ -86,6 +86,15 @@ function wireContentBridge() {
     return true;
   };
   window.tvzaNavigate = requestRoute;
+  /* Eine Seite nimmt Einmal-Anweisungen aus ihrer Adresse (?anlegen=1,
+     ?neu=, ?termin=), sobald sie sie gelesen hat — die Adresszeile oben
+     gehört aber dem Router; er erfährt es hier (v.35.57.1). */
+  window.tvzaAdresseErsetzen = raw => {
+    const target = appUrl(raw);
+    if (!target) return false;
+    window.parent.postMessage({ type:'tvza-adresse', href:target.href }, location.origin);
+    return true;
+  };
   window.tvzaOpenSettings = section => {
     window.parent.postMessage(
       { type:'tvza-open-settings', section:section || '' },
@@ -404,8 +413,8 @@ export function mountAppRouter(nav) {
      changes the address bar from /index.html to /pages/foo.html. */
   nav.querySelectorAll('a[href]').forEach(link => { link.href = link.href; });
 
-  const initialUrl = new URL(location.href);
-  const initialKey = routeKey(initialUrl);
+  let initialUrl = new URL(location.href);
+  let initialKey = routeKey(initialUrl);
   const istBasis = target => routeKey(target) === initialKey ||
     (!target.search && !target.hash && pfadVon(target) === pfadVon(initialUrl));
   let currentUrl = new URL(initialUrl.href);
@@ -691,6 +700,32 @@ export function mountAppRouter(nav) {
   };
   window.tvzaNavigate = requestRoute;
 
+  /* Eine Seite hat Einmal-Anweisungen aus ihrer Adresse genommen
+     (?anlegen=1 aus "+ Neue Gruppe", ?neu=, ?termin=). Michel: "beim
+     Neuladen spickt das plötzlich raus" — die Adresszeile trug sie weiter,
+     und jedes Neuladen öffnete das Formular wieder. Der Router merkt sich
+     die saubere Adresse: für die Seite oben (auch als initialUrl, sonst
+     setzte der Tab sie beim Zurückkommen wieder hinein) und für einen
+     Rahmen (sein Eintrag; ist er der gezeigte, auch die Adresszeile). */
+  const adresseSetzen = (eintrag, ziel) => {
+    if (!eintrag) {
+      initialUrl = new URL(ziel.href);
+      initialKey = routeKey(ziel);
+      if (currentFrame) return;
+    } else {
+      Object.assign(eintrag, zielVon(ziel), { url: new URL(ziel.href) });
+      if (eintrag !== currentFrame) return;
+    }
+    currentUrl = new URL(ziel.href);
+    history.replaceState(history.state, '', routeKey(ziel));
+  };
+  window.tvzaAdresseErsetzen = raw => {
+    const ziel = appUrl(raw);
+    if (!ziel || pfadVon(ziel) !== pfadVon(initialUrl)) return false;
+    adresseSetzen(null, ziel);
+    return true;
+  };
+
   /* Capture before the legacy full-page fade handler. This includes
      dashboard cards and the weather chip, not only sidebar links. */
   document.addEventListener('click', event => {
@@ -712,6 +747,12 @@ export function mountAppRouter(nav) {
   addEventListener('message', event => {
     if (event.origin !== location.origin) return;
     const typ = event.data?.type;
+    if (typ === 'tvza-adresse') {
+      const eintrag = [...rahmen].find(r => r.iframe.contentWindow === event.source);
+      const ziel = appUrl(event.data.href);
+      if (eintrag && ziel && pfadVon(ziel) === eintrag.pfad) adresseSetzen(eintrag, ziel);
+      return;
+    }
     if (typ === 'tvza-titel' || typ === 'tvza-titel-wahl') {
       const eintrag = [...rahmen].find(r => r.iframe.contentWindow === event.source);
       if (!eintrag) return;

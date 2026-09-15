@@ -574,3 +574,17 @@ test('das n im Wortzeichen ist auf Navy sichtbar', async () => {
   assert.match(css, /\.firn > b \{[^}]*color: var\(--firn-n\);/);
   assert.doesNotMatch(css, /\.firn--hell > b/);
 });
+
+/* v.35.57.1 — Michel: "beim Neuladen spickt das plötzlich raus" (das
+   Formular "Neue Gruppe" nach "+ Neue Gruppe" und einem Neuladen). */
+test('Einmal-Anweisungen verschwinden aus der Adresse, sobald die Gruppe sie gelesen hat', async () => {
+  const [gruppe, router] = await Promise.all([read('assets/js/feature/gruppe/gruppe.js'), read('assets/js/router.js')]);
+  assert.match(gruppe, /const EINMAL = \['anlegen', 'neu', 'termin', 'g'\];/);
+  assert.match(gruppe, /mountShell\(\{[\s\S]{0,120}\}\);[\s\S]{0,200}adresseAufraeumen\(\);/, 'erst nach mountShell — dann steht Router bzw. Brücke');
+  assert.match(gruppe, /window\.tvzaAdresseErsetzen\?\.\(url\.href\);/);
+  // Im Rahmen meldet die Brücke es nach oben, oben merkt es sich der Router
+  // auch als Basis — sonst setzte der Tab es beim Zurückkommen wieder hinein.
+  assert.match(router, /window\.parent\.postMessage\(\{ type:'tvza-adresse', href:target\.href \}/);
+  assert.match(router, /initialUrl = new URL\(ziel\.href\);\s*initialKey = routeKey\(ziel\);/);
+  assert.match(router, /if \(typ === 'tvza-adresse'\) \{/);
+});

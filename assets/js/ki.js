@@ -120,7 +120,7 @@ export function kontextBauen({
   const imFenster = (a, e) => istIsoTag(a) && (e || a) >= von && a <= bis;
   const gruppenIds = new Set(gruppen.map(g => g.id));
 
-  return {
+  return kontextKuerzen({
     wer,
     heute,
     wochentag: jetzt.toLocaleDateString(sprache, { weekday: 'long' }),
@@ -155,7 +155,23 @@ export function kontextBauen({
       .sort((a, b) => `${a.date}${a.time || ''}`.localeCompare(`${b.date}${b.time || ''}`))
       .slice(0, HOECHSTENS.erinnerungen)
       .map(r => ({ id: `r:${r.id}`, titel: kurz(r.title, 120), datum: r.date, ...(hhmm(r.time) ? { zeit: r.time } : {}) })),
-  };
+  });
+}
+
+/* Der Worker nimmt höchstens GRENZEN.kontext Zeichen (worker/ki.js). Mit
+   echten Daten — ein Kader mit Trainings jeden Tag, dazu die Familie —
+   waren es mehr, und jede Frage scheiterte mit 'Das hat nicht geklappt'
+   (v.35.57.1, Michels erster Versuch). Gekürzt wird hinten, also das am
+   weitesten Entfernte, und immer die längste Liste zuerst. */
+export const KONTEXT_MAX = 12000;
+export function kontextKuerzen(k, max = KONTEXT_MAX) {
+  const listen = ['termine', 'eigene', 'erinnerungen'];
+  while (JSON.stringify(k).length > max) {
+    const laengste = listen.reduce((a, b) => (k[b].length > k[a].length ? b : a));
+    if (!k[laengste].length) break;
+    k[laengste] = k[laengste].slice(0, -1);
+  }
+  return k;
 }
 
 /* ── Vorschläge prüfen ─────────────────────────────────────────────── */

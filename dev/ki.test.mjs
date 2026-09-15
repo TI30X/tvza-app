@@ -72,7 +72,8 @@ test('der Worker glaubt nur einem Firebase-Token dieses Projekts, und nur einem 
 
 test('tief als Standard, höher dreimal am Tag, und eine Grenze für alle', () => {
   const u = umgebung({});
-  assert.equal(u.modellNormal, 'gemini-2.5-flash-lite');
+  assert.equal(u.modellNormal, 'gemini-flash-lite-latest');
+  assert.equal(u.modellHoch, 'gemini-flash-latest', 'Deep Thinking: das Günstigste, das nachdenkt — nie Pro');
   assert.equal(u.hochProTag, 3);
   assert.deepEqual(stufeWaehlen({ stand: {}, hochGewuenscht: false, u }), { erlaubt: true, hoch: false, hochAufgebraucht: false });
   assert.equal(stufeWaehlen({ stand: { h: 2 }, hochGewuenscht: true, u }).hoch, true);
@@ -128,14 +129,14 @@ test('POST /ki: prüft, zählt, fragt Gemini mit dem Schlüssel aus dem Secret �
   assert.deepEqual(daten.aktionen.map(a => a.name), ['erinnerung_eintragen'], 'nur bekannte Werkzeuge');
   assert.equal(daten.stufe, 'normal');
   assert.doesNotMatch(roh, /geheim-aus-dem-secret/);
-  assert.match(gesehen[0].url, /gemini-2\.5-flash-lite:generateContent$/);
+  assert.match(gesehen[0].url, /gemini-flash-lite-latest:generateContent$/);
   assert.equal(gesehen[0].init.headers['x-goog-api-key'], 'geheim-aus-dem-secret', 'der Schlüssel geht nur an Google');
   assert.doesNotMatch(gesehen[0].url, /key=/, 'nicht in der Adresse (Logs)');
   assert.deepEqual(JSON.parse(speicher.m.get('ki:timo:2026-09-15')), { n: 1, h: 0 });
 
   // Die höhere Stufe: voll bei Google → die tiefe antwortet, nichts Höheres gezählt.
   const voll = [];
-  const holenVoll = async (url, init) => { voll.push(url); return /pro/.test(url)
+  const holenVoll = async (url, init) => { voll.push(url); return /gemini-flash-latest:/.test(url)
     ? new Response('{}', { status: 429 }) : holen(url, init); };
   const zweite = await (await kiAnfrage(anfrage({ frage: 'Plan', hoch: true }, { authorization: `Bearer ${tok}` }),
     env, { ...hilfe, holen: holenVoll })).json();
@@ -161,7 +162,7 @@ test('der Worker schickt Gemini nur den Kontext der Person — und die Anweisung
   assert.equal(a.frage, 'Hallo');
   assert.deepEqual(a.verlauf, [{ rolle: 'nutzer', text: 'vorher' }], 'keine eingeschmuggelte Systemrolle');
   assert.throws(() => anfrageLesen({ frage: 'x'.repeat(1001) }), /zu lang/);
-  assert.throws(() => anfrageLesen({ frage: 'x', kontext: { riesig: 'x'.repeat(20000) } }), /zu gross/);
+  assert.throws(() => anfrageLesen({ frage: 'x', kontext: { riesig: 'x'.repeat(30000) } }), /zu gross/);
   const system = systemAnweisung({ assistent: a.assistent, kontext: a.kontext });
   assert.match(system, /Du bist Coach Maxi/);
   assert.match(system, /NUR die Daten im Kontext/);
@@ -184,7 +185,7 @@ test('der Worker schickt Gemini nur den Kontext der Person — und die Anweisung
   assert.equal(antwortLesen(antwort, 'g1').aktionen.length, 1);
   assert.equal(antwortLesen({}).aktionen.length, 0);
   assert.equal(WERKZEUGE.length, 4);
-  assert.equal(STANDARD.modellHoch, 'gemini-2.5-pro');
+  assert.equal(STANDARD.modellHoch, 'gemini-flash-latest');
 });
 
 test('der Schlüssel steht nirgends im Repo, und die Website spricht nie selbst mit Gemini', async () => {
@@ -455,4 +456,57 @@ test('der Admin schaltet frei — die Leitung einer Gruppe nie selbst', async ()
   assert.match(css, /\.ki-pille\.is-gruppe,/);
   assert.match(pille, /pille\.hidden = !a;/, 'ohne Freischaltung keine Pille');
   assert.doesNotMatch(pille, /zahl|bezahl|Abo|Preis|kostenlos/i, 'warum, steht nirgends');
+});
+
+/* v.35.57.1 — Michels erster echter Versuch: "Das hat nicht geklappt". */
+test('der Kontext bleibt unter der Grenze des Workers, gekürzt wird das Fernste', async () => {
+  const { kontextKuerzen, KONTEXT_MAX } = await import('../assets/js/ki.js');
+  const { GRENZEN } = await import('../worker/ki.js');
+  assert.ok(KONTEXT_MAX < GRENZEN.kontext, 'der Browser kürzt unter die Grenze des Workers');
+  const viel = n => Array.from({ length: n }, (_, i) => ({ id: `g:g1:e${i}`, titel: 'Training '.repeat(8), von: `2026-10-${String(1 + (i % 28)).padStart(2, '0')}` }));
+  const k = kontextKuerzen({ wer: 'ich', termine: viel(200), eigene: viel(40), erinnerungen: [] });
+  assert.ok(JSON.stringify(k).length <= KONTEXT_MAX);
+  assert.equal(k.termine[0].id, 'g:g1:e0', 'das Nächste bleibt');
+});
+
+test('ein zurückgezogenes Modell (404) lässt die Frage nicht scheitern', async () => {
+  const { modellReihe } = await import('../worker/ki.js');
+  assert.deepEqual(modellReihe('gemini-2.5-flash-lite', false),
+    ['gemini-2.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-flash-latest']);
+  assert.deepEqual(modellReihe('gemini-flash-latest', true), ['gemini-flash-latest', 'gemini-flash-lite-latest']);
+
+  // Kennt Google keines mehr, sucht der Worker das Günstigste aus, das Text kann.
+  const { modellAussuchen } = await import('../worker/ki.js');
+  const liste = ['gemini-3-pro', 'gemini-3-flash', 'gemini-3-flash-lite', 'gemini-3-flash-lite-preview-09',
+    'gemini-3-flash-image', 'text-embedding-9'].map(n => ({ name: `models/${n}`, supportedGenerationMethods: ['generateContent'] }));
+  assert.equal(modellAussuchen(liste, false), 'gemini-3-flash-lite');
+  assert.equal(modellAussuchen(liste, true), 'gemini-3-flash', 'hoch: Flash, nie Pro');
+  assert.equal(modellAussuchen([{ name: 'models/gemini-3-pro', supportedGenerationMethods: ['generateContent'] }], false), '',
+    'nur Pro im Angebot: lieber gar nichts als das Teure');
+  const worker = await read('worker/ki.js');
+  assert.match(worker, /if \(antwort\.status !== 404\) break;/, 'nur bei "gibt es nicht" weiter, sonst ist das die Antwort');
+  assert.match(worker, /console\.error\('\[ki\] gemini', modell, antwort\.status, text\);/, 'ins Log, was Google sagt');
+  assert.doesNotMatch(worker, /console\.[a-z]+\([^)]*GEMINI_API_KEY/, 'nie der Schlüssel ins Log');
+});
+
+test('scheitert die ganze Reihe mit 404, fragt der Worker Google und nimmt das Gefundene', async () => {
+  const { paar, jwk } = await schluesselPaar();
+  const env = { FIREBASE_PROJECT_ID: PROJEKT, GEMINI_API_KEY: 'k', KI: kv() };
+  const urls = [];
+  const holen = async url => {
+    urls.push(url);
+    if (/\?pageSize=/.test(url)) {
+      return new Response(JSON.stringify({ models: [{ name: 'models/gemini-9-flash-lite', supportedGenerationMethods: ['generateContent'] }] }), { status: 200 });
+    }
+    if (/gemini-9-flash-lite:generateContent/.test(url)) {
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'da bin ich' }] } }] }), { status: 200 });
+    }
+    return new Response('{"error":{"message":"not found"}}', { status: 404 });
+  };
+  const tok = await token(paar, gueltig());
+  const antwort = await kiAnfrage(anfrage({ frage: 'hallo' }, { authorization: `Bearer ${tok}` }), env,
+    { holen, jetzt: JETZT, schluessel: [jwk] });
+  assert.equal(antwort.status, 200);
+  assert.equal((await antwort.json()).text, 'da bin ich');
+  assert.ok(urls.some(u => /\?pageSize=/.test(u)), 'die Liste wurde geholt');
 });

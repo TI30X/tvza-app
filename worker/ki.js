@@ -33,18 +33,24 @@ import { leseDokument } from './firestore.js';
 
 export const STANDARD = Object.freeze({
   /* Die tiefe Stufe: schnell, günstig, reicht für "trag mir morgen um
-     18 Uhr Wachs kaufen ein". */
-  modellNormal: 'gemini-2.5-flash-lite',
-  /* Die höhere: denkt nach — für "plan mir die Trainings der nächsten
-     zwei Wochen um das Rennen herum". */
-  modellHoch: 'gemini-2.5-pro',
+     18 Uhr Wachs kaufen ein". Die "-latest"-Namen lässt Google auf das
+     jeweils aktuelle Modell zeigen — mit festen Namen (gemini-2.5-flash-lite)
+     scheiterte am 15.09.2026 jede Frage mit 404: Google hatte das Modell
+     zurückgezogen (im Log des Workers gesehen). */
+  modellNormal: 'gemini-flash-lite-latest',
+  /* Die höhere (Deep Thinking): denkt nach — für "plan mir die Trainings
+     der nächsten zwei Wochen um das Rennen herum". Flash statt Pro:
+     Michel will die günstigste Stufe, die trotzdem nachdenkt. */
+  modellHoch: 'gemini-flash-latest',
   hochProTag: 3,
   proTag: 40,
   alleProTag: 600,
 });
 
 export const GRENZEN = Object.freeze({
-  frage: 1000, verlauf: 8, verlaufText: 1500, kontext: 16000, anweisung: 600, name: 30,
+  /* kontext: der Browser kürzt auf 12 000 (ki.js, KONTEXT_MAX); hier Luft
+     darüber, damit eine etwas längere Gruppe nicht an der Grenze scheitert. */
+  frage: 1000, verlauf: 8, verlaufText: 1500, kontext: 24000, anweisung: 600, name: 30,
 });
 
 const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -299,6 +305,79 @@ const alsJson = (daten, status, kopf) => new Response(JSON.stringify(daten), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...kopf },
 });
 
+/* Ein Modell kann Google zurückziehen — dann antwortet es mit 404, und
+   jede Frage scheiterte. Darum eine Reihe: das eingestellte, dann die
+   "-latest"-Namen, die Google auf das jeweils aktuelle Modell zeigen lässt. */
+export function modellReihe(modell, hoch) {
+  const reihe = hoch
+    ? [modell, 'gemini-flash-latest', 'gemini-flash-lite-latest']
+    : [modell, 'gemini-flash-lite-latest', 'gemini-flash-latest'];
+  return [...new Set(reihe.filter(Boolean))];
+}
+
+/* Kennt Google keines der Modelle der Reihe mehr, fragt der Worker nach,
+   welche es gibt, und nimmt das passendste, das Text erzeugt — für die
+   tiefe Stufe zuerst ein "flash-lite", dann ein "flash"; für die hohe
+   zuerst ein "pro". Gemerkt je Worker-Instanz, damit nicht jede Frage
+   die Liste holt. */
+let gefunden = { normal: '', hoch: '' };
+export function modellAussuchen(modelle = [], hoch = false) {
+  const text = modelle
+    .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+    .map(m => String(m.name || '').replace(/^models\//, ''))
+    .filter(n => /^gemini-/.test(n) && !/(image|tts|audio|live|embedding|vision|exp)/.test(n));
+  /* Immer das Günstigste, das passt (Michel: "but the least expensive"):
+     tief Flash-Lite, hoch Flash — Pro nie von selbst. Vorschauen nur,
+     wenn es sonst nichts gibt. */
+  const muster = hoch ? [/-flash(?!-lite)/, /-flash-lite/] : [/-flash-lite/, /-flash(?!-lite)/];
+  const stabil = text.filter(n => !/preview/.test(n));
+  const auswahl = stabil.length ? stabil : text;
+  for (const m of muster) {
+    const treffer = auswahl.filter(n => m.test(n)).sort().reverse();
+    if (treffer.length) return treffer[0];
+  }
+  return '';
+}
+
+async function modellFinden(hoch, schluessel, holen) {
+  const art = hoch ? 'hoch' : 'normal';
+  if (gefunden[art]) return gefunden[art];
+  try {
+    const antwort = await holen(`${GEMINI}?pageSize=200`, { headers: { 'x-goog-api-key': schluessel } });
+    if (!antwort.ok) { console.error('[ki] modelle', antwort.status); return ''; }
+    const { models = [] } = await antwort.json();
+    gefunden[art] = modellAussuchen(models, hoch);
+    console.error('[ki] modell gefunden', art, gefunden[art] || '(keins)');
+    return gefunden[art];
+  } catch (fehler) {
+    console.error('[ki] modelle', fehler?.message || fehler);
+    return '';
+  }
+}
+
+/* Fragt die Modelle der Reihe nach, bis eines antwortet. Weiter geht es
+   nur bei "gibt es nicht" (404); alles andere — voll, Schlüssel falsch —
+   ist die Antwort. Ins Log geht, was Google sagt, nie der Schlüssel. */
+async function geminiMitReihe(reihe, koerper, schluessel, holen, hoch = false) {
+  let antwort = null;
+  const versuche = [...reihe];
+  for (let i = 0; i < versuche.length; i += 1) {
+    const modell = versuche[i];
+    antwort = await gemini(modell, koerper, schluessel, holen);
+    if (antwort.ok) return { antwort, modell };
+    let text = '';
+    try { text = (await antwort.clone().text()).slice(0, 300); } catch { /* egal */ }
+    console.error('[ki] gemini', modell, antwort.status, text);
+    if (antwort.status !== 404) break;
+    /* Die ganze Reihe gibt es nicht: Google fragen, was es gibt. */
+    if (i === versuche.length - 1) {
+      const neu = await modellFinden(hoch, schluessel, holen);
+      if (neu && !versuche.includes(neu)) versuche.push(neu);
+    }
+  }
+  return { antwort, modell: null };
+}
+
 async function gemini(modell, koerper, schluessel, holen) {
   return holen(`${GEMINI}/${encodeURIComponent(modell)}:generateContent`, {
     method: 'POST',
@@ -329,7 +408,8 @@ export async function kiAnfrage(request, env, { holen = fetch, jetzt = Date.now(
     const roh = await request.text();
     if (roh.length > GRENZEN.kontext + 20000) throw new Error('zu gross');
     anfrage = anfrageLesen(JSON.parse(roh));
-  } catch {
+  } catch (fehler) {
+    console.error('[ki] anfrage', fehler?.message || fehler);
     return alsJson({ fehler: 'anfrage' }, 400, kopf);
   }
 
@@ -358,16 +438,17 @@ export async function kiAnfrage(request, env, { holen = fetch, jetzt = Date.now(
   if (!wahl.erlaubt) return alsJson({ fehler: 'kontingent', grund: wahl.grund }, 429, kopf);
 
   let hoch = wahl.hoch;
-  let antwort = await gemini(hoch ? u.modellHoch : u.modellNormal, geminiKoerper({ ...anfrage, hoch }), env.GEMINI_API_KEY, holen);
+  let { antwort } = await geminiMitReihe(modellReihe(hoch ? u.modellHoch : u.modellNormal, hoch),
+    geminiKoerper({ ...anfrage, hoch }), env.GEMINI_API_KEY, holen, hoch);
   /* Ist die höhere Stufe gerade voll oder nicht verfügbar, antwortet die
      tiefe — und die höhere wird nicht gezählt. */
   if (hoch && !antwort.ok) {
     hoch = false;
-    antwort = await gemini(u.modellNormal, geminiKoerper({ ...anfrage, hoch }), env.GEMINI_API_KEY, holen);
+    ({ antwort } = await geminiMitReihe(modellReihe(u.modellNormal, false),
+      geminiKoerper({ ...anfrage, hoch }), env.GEMINI_API_KEY, holen, false));
   }
   if (!antwort.ok) {
-    console.error('[ki] gemini', antwort.status);
-    return alsJson({ fehler: antwort.status === 429 ? 'gemini-voll' : 'gemini' }, 502, kopf);
+    return alsJson({ fehler: antwort.status === 429 ? 'gemini-voll' : 'gemini', status: antwort.status }, 502, kopf);
   }
   const ergebnis = antwortLesen(await antwort.json(), anfrage.wer);
 

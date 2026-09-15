@@ -4,7 +4,7 @@
    Fortschritt mit Firestore ab (matura-sync.js). Die Leiste kommt aus
    nav.js — bis v.35.33.0 ein zweites Modul-Tag in der Seite. */
 
-import '../../nav.js?v=20';
+import '../../nav.js?v=21';
 import { requireAuth } from '../../firebase-config.js';
 import { connectMaturaProgress } from '../../matura-sync.js';
 import { starteUebersicht } from './uebersicht-ansicht.js';

@@ -4,7 +4,7 @@
    fremden Dienst haengt (open-meteo) und ohne Anmeldung auskommt.
    Faellt es aus, faellt nur es aus. */
 
-import { weatherIcon } from '../../shell.js?v=21';
+import { weatherIcon } from '../../shell.js?v=22';
 (() => {
   const chip = document.getElementById('wxChip');
   if (!chip) return;

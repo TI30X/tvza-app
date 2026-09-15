@@ -32,7 +32,7 @@
 
 import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
-import { mountShell, setShellMeta } from '../../shell.js?v=21';
+import { mountShell, setShellMeta } from '../../shell.js?v=22';
 import {
   PUNKT, gelenkwinkel, seitenunterschied, hueftversatz, befund,
 } from '../../pose.js';

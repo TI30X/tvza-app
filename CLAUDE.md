@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.57.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.57.1**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-70 Testdateien, **753 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+70 Testdateien, **757 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -605,6 +605,15 @@ als ganze neue Seite. Jetzt:
 Tests: `navigation.test.mjs` („verlassene Seiten bleiben stehen …"),
 `calendar-groups`.
 
+**Einmal-Anweisungen gehören nicht in die Adresszeile** (v.35.57.1).
+Michel: „beim Neuladen spickt das plötzlich raus" — nach „+ Neue Gruppe"
+stand `?anlegen=1` weiter oben, und jedes Neuladen öffnete das Formular
+wieder. Die Gruppenseite nimmt `anlegen`, `neu`, `termin`, `g` heraus,
+sobald sie sie gelesen hat (`adresseAufraeumen`, nach `mountShell`), und
+meldet die saubere Adresse dem Router (`tvzaAdresseErsetzen`, im Rahmen
+als `tvza-adresse`); der merkt sie sich auch als Basis, sonst setzte der
+Tab sie beim Zurückkommen wieder hinein.
+
 **19. Eine Einladung ist ein kurzer Link, der abläuft** (v.35.53.0).
 Michel: „ein Link zum Anmelden direkt mit Code, aber gekürzt … wenn jemand
 einfach einen Code erhält, fragt er sich WTF … über den Firn-Chat
@@ -654,9 +663,17 @@ cool, wenn Gruppen ihren Assistenten benennen und einen eigenen haben".
   Firebase-ID-Token selbst (RS256 gegen die JWKS von Google, `aud`/`iss`
   = Projekt, kein anonymes Konto), zählt in KV (`KI`) je Person und Tag
   (`KI_PRO_TAG` 40, davon `KI_HOCH_PRO_TAG` 3 auf der höheren Stufe) und
-  für alle (`KI_ALLE_PRO_TAG`). Modelle: `gemini-2.5-flash-lite` tief,
-  `gemini-2.5-pro` hoch — ist die hohe voll, antwortet die tiefe und wird
-  gezählt. Er **liest und schreibt keine Daten**: den Kontext schickt der
+  für alle (`KI_ALLE_PRO_TAG`). Modelle: `gemini-flash-lite-latest` tief,
+  `gemini-flash-latest` für Deep Thinking (Michel: „the least expensive"
+  — nie Pro). **Nur "-latest"-Namen:** am 15.09.2026 scheiterte jede
+  Frage mit „Das hat nicht geklappt", das Log des Workers (`npx.cmd
+  wrangler tail`) zeigte `gemini 404` — Google hatte
+  `gemini-2.5-flash-lite` zurückgezogen. Bei 404 geht der Worker die
+  Reihe weiter (`modellReihe`) und fragt zuletzt Google, welche Modelle
+  es gibt (`modellAussuchen`: das günstigste, das Text kann, keine
+  Vorschau, nie Pro). Ist die hohe voll, antwortet die tiefe und wird
+  gezählt. Der Browser kürzt den Kontext auf `KONTEXT_MAX` (12 000
+  Zeichen, das Fernste zuerst), der Worker nimmt bis 24 000. Er **liest und schreibt keine Daten**: den Kontext schickt der
   Browser, und aus `functionCall`s werden nur Vorschläge.
 - **`assets/js/ki.js` (rein):** `kontextBauen` — nur die eigenen Gruppen,
   deren Termine, eigene Termine und offene Erinnerungen, eine Woche zurück
@@ -841,7 +858,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.57.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.57.1: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

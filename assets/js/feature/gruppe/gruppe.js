@@ -18,7 +18,7 @@
 
 import { requireAuth, getProfile, escHtml, wireOfflineBanner, reportClientError, imKreis }
   from '../../firebase-config.js';
-import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=21';
+import { mountShell, setShellTitle, setShellTitleWahl } from '../../shell.js?v=22';
 import {
   beobachteMeineGruppen, ladeMitglieder, gruppeAnlegen,
   beobachteTermine, terminAnlegen, terminLoeschen,
@@ -96,6 +96,23 @@ let terminAusAdresse = adresse.get('termin') || '';
 let neuAusAdresse = /^\d{4}-\d{2}-\d{2}$/.test(adresse.get('neu') || '') ? adresse.get('neu') : '';
 /* ?anlegen=1: "+ Neue Gruppe" in der Leiste am Laptop (v.35.49.0). */
 let anlegenAusAdresse = adresse.get('anlegen') === '1';
+
+/* Die Einmal-Anweisungen oben sind gelesen — raus aus der Adresse
+   (v.35.57.1). Michel: "beim Neuladen spickt das plötzlich raus": nach
+   "+ Neue Gruppe" stand ?anlegen=1 weiter in der Adresszeile, und jedes
+   Neuladen öffnete das Formular "Neue Gruppe" wieder über der Woche.
+   Dasselbe mit ?neu= (Formular) und ?termin= (Termin ging wieder auf). Im
+   Rahmen gehört die Adresszeile dem Router — er erfährt es über
+   tvzaAdresseErsetzen. */
+const EINMAL = ['anlegen', 'neu', 'termin', 'g'];
+function adresseAufraeumen() {
+  const url = new URL(location.href);
+  if (!EINMAL.some(p => url.searchParams.has(p))) return;
+  for (const p of EINMAL) url.searchParams.delete(p);
+  try { history.replaceState(history.state, '', url.pathname + url.search + url.hash); } catch { /* egal */ }
+  url.searchParams.delete('tvzaFrame');
+  window.tvzaAdresseErsetzen?.(url.href);
+}
 
 /* ── Darstellung ───────────────────────────────────────────────────*/
 
@@ -2826,6 +2843,9 @@ async function einladungZurueckziehen() {
     title: t('nav.gruppe', 'Gruppe'),
     profile,
   });
+  /* Nach mountShell: erst dann steht der Router (oben) bzw. die Brücke
+     (im Rahmen), der die saubere Adresse gemeldet wird. */
+  adresseAufraeumen();
 
   $('btnNeu')?.addEventListener('click', neueGruppe);
   $('btnEinladen')?.addEventListener('click', einladen);
