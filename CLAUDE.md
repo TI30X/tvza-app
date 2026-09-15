@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.63.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.63.1**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-79 Testdateien, **802 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+80 Testdateien, **803 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -925,7 +925,12 @@ Dokument: `Array.isArray`, nie `instanceof Array`.
 
 **Admin** ist, wer im eigenen Profil `isTimo: true` hat — setzen kann das
 nur ein Admin (Admin → Benutzer → „Admin") oder die Firebase-Konsole,
-nie die Person selbst (Regel beim Anlegen und am eigenen Profil).
+nie die Person selbst (Regel beim Anlegen und am eigenen Profil). Eine
+Regel, mit der sich ein Konto über den Hash seiner Adresse selbst zum Admin
+macht, wurde verworfen: sie weicht genau diesen Schutz auf. **Der Weg
+dorthin** steht im Kontomenü („Admin", nur mit `isTimo`, v.35.63.1) — Start
+nimmt den Admin aus der Bereichsliste, und bis dahin führte für ein
+Admin-Konto kein Link mehr zu `pages/admin.html`. `dev/admin-weg.test.mjs`.
 
 ## Ausrollen
 
@@ -1080,7 +1085,7 @@ Zwei Dinge, die leicht übersehen werden:
 ## Gewohnheiten
 
 - Deutsch für Kommentare und Commit-Messages. Form:
-  `v.35.63.0: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
+  `v.35.63.1: <deutsche Zusammenfassung>`, darunter ein Absatz, der das
   **Warum** erklärt — besonders bei Fehlern, die still waren.
 - Geheimnisse nie ins Repo: `mailer/.env`, `**/*service-account*.json`,
   `worker/.wrangler/`, `firestore.rules.live`, `*.zip` sind ignoriert.

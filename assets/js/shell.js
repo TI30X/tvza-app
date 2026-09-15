@@ -542,6 +542,9 @@ export function kontoKnopf(ort) {
       </div>
       <button class="acct__item" data-act="settings" type="button" role="menuitem">
         ${icon('gear', 17)}<span data-i18n="acct.einstellungen">Einstellungen</span></button>
+      <!-- Admin (v.35.63.1): nur für ein Admin-Konto sichtbar (setzeKonto). -->
+      <button class="acct__item" data-act="admin" data-konto-admin type="button" role="menuitem"${konto.admin ? '' : ' hidden'}>
+        ${icon('admin', 17)}<span>Admin</span></button>
       <button class="acct__item acct__item--danger" data-act="logout" type="button" role="menuitem">
         ${icon('abmelden', 17)}<span data-i18n="acct.abmelden">Abmelden</span></button>
     </div>`;
@@ -563,6 +566,15 @@ export function kontoKnopf(ort) {
     if (!act) return;
     zu();
     if (act === 'settings') window.tvzaOpenSettings?.();
+    /* Die Admin-Seite (v.35.63.1). Michel: "wo soll der Bereich Admin
+       auftauchen? bei mir ist er nirgends" — seit Start den Admin aus der
+       Bereichsliste nimmt (key !== 'admin'), führte kein Link mehr zu
+       pages/admin.html, auch nicht für ein Admin-Konto. Jetzt steht er im
+       Konto, wo auch die Einstellungen stehen. */
+    if (act === 'admin') {
+      const ziel = new URL(base() + 'pages/admin.html', location.href).href;
+      if (!window.tvzaNavigate?.(ziel)) location.href = ziel;
+    }
     if (act === 'logout' && await frage({
       titel: label('acct.abmeldenFrage', 'Abmelden?'),
       ja: label('acct.abmelden', 'Abmelden'),
@@ -592,7 +604,9 @@ export function setzeKonto(profile, mail) {
   const name = String(profile?.displayName || profile?.name || '').trim()
     || (() => { try { return localStorage.getItem('tvza-name') || ''; } catch { return ''; } })();
   const adresse = mail || auth?.currentUser?.email || konto.mail || '';
-  konto = { name, mail: adresse, kuerzel: initialsOf({ displayName: name || adresse }) };
+  const admin = profile ? profile.isTimo === true : !!konto.admin;
+  konto = { name, mail: adresse, kuerzel: initialsOf({ displayName: name || adresse }), admin };
+  document.querySelectorAll('[data-konto-admin]').forEach(el => { el.hidden = !admin; });
   document.querySelectorAll('[data-konto-name]').forEach(el => { el.textContent = konto.name; });
   document.querySelectorAll('[data-konto-mail]').forEach(el => { el.textContent = konto.mail; });
   document.querySelectorAll('[data-konto-kuerzel]').forEach(el => { el.textContent = konto.kuerzel; });
