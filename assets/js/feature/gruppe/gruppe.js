@@ -1123,6 +1123,9 @@ const STATUS = {
   offen: () => t('grp.fs.offen', 'Nichts synchronisiert'),
   unbekannt: () => t('grp.fs.unbekannt', 'Unbekannt'),
   laedt: () => t('grp.fs.laedt', 'Lädt …'),
+  /* Eine Einheit ohne abhakbare Übung (Videoliste, Zonentabelle, eine
+     Zelle ohne Blatt) steht im Plan, hat aber nichts zu melden. */
+  imPlan: () => t('grp.fs.imPlan', 'Steht im Plan'),
 };
 
 function zeichneFortschritt() {
@@ -1154,7 +1157,10 @@ function zeichneFortschritt() {
     const p = jePerson.get(z.uid) || null;
     const stand = p ? uhrzeit(p.updatedAt) : '';
     const einheiten = z.einheiten.map(e => {
-      const status = fortschrittFehlt ? 'unbekannt' : !geladen ? 'laedt' : einheitStatus(e.items, p || {}, e.unit);
+      const status = !e.items.length ? 'imPlan'
+        : fortschrittFehlt ? 'unbekannt'
+        : !geladen ? 'laedt'
+        : einheitStatus(e.items, p || {}, e.unit);
       const f = fortschritt(e.items, p || {}, e.unit);
       const s = satzFortschritt(e.items, p || {}, e.unit);
       const zahlen = geladen && !fortschrittFehlt && status !== 'offen'
@@ -1165,15 +1171,17 @@ function zeichneFortschritt() {
       const notizen = Object.entries(p?.units?.[e.unit]?.items || {})
         .filter(([, roh]) => String(roh?.note || '').trim())
         .map(([key, roh]) => `${e.items.find(i => i.key === key)?.name || key}: ${String(roh.note).trim()}`);
+      const inhalt = `
+        <span class="fs-einheit__titel">${escHtml(e.titel)}${e.zeit ? ` · ${escHtml(e.zeit)}` : ''}</span>
+        <span class="fs-status" data-status="${status}">${escHtml(STATUS[status]())}</span>
+        ${zahlen ? `<span class="fs-einheit__zahlen">${escHtml(zahlen)}</span>` : ''}
+        ${notizen.map(n => `<span class="fs-einheit__notiz">„${escHtml(n)}“</span>`).join('')}`;
+      /* Ohne Blatt gibt es nichts zu öffnen — dann ist es eine Zeile
+         und kein Link, der ins Leere führt. */
+      if (!e.unit) return `<div class="fs-einheit fs-einheit--ohne">${inhalt}</div>`;
       const ziel = einheitZiel(aktiv.id, e.planId, { unit: e.unit }, fortschrittTag, 'gruppe')
         + (e.fuer === PLAN_FUER_ALLE && z.uid !== user.uid ? `&a=${encodeURIComponent(z.uid)}` : '');
-      return `
-        <a class="fs-einheit" href="${escHtml(ziel)}">
-          <span class="fs-einheit__titel">${escHtml(e.titel)}</span>
-          <span class="fs-status" data-status="${status}">${escHtml(STATUS[status]())}</span>
-          ${zahlen ? `<span class="fs-einheit__zahlen">${escHtml(zahlen)}</span>` : ''}
-          ${notizen.map(n => `<span class="fs-einheit__notiz">„${escHtml(n)}“</span>`).join('')}
-        </a>`;
+      return `<a class="fs-einheit" href="${escHtml(ziel)}">${inhalt}</a>`;
     }).join('');
     return `
       <div class="fs-person">
@@ -1184,6 +1192,18 @@ function zeichneFortschritt() {
         ${einheiten}
       </div>`;
   }).join('');
+
+  /* Wer an diesem Tag nichts im Plan hat, steht trotzdem da — als eine
+     Zeile, nicht als leere Karte. Sonst weiss die Leitung nicht, ob
+     jemand fehlt oder ob für ihn nichts geplant war. */
+  const mitZeile = new Set(zeilen.map(z => z.uid));
+  const ohne = mitglieder
+    .filter(m => m?.uid && !mitZeile.has(m.uid) && !leitet(m.rolle))
+    .map(m => m.name || t('grp.einAthlet', 'ein Athlet'));
+  if (ohne.length) {
+    liste.insertAdjacentHTML('beforeend',
+      `<p class="fs-ohne">${escHtml(t('grp.fs.ohnePlan', 'Ohne Einheit an diesem Tag: {namen}', { namen: ohne.join(', ') }))}</p>`);
+  }
 }
 
 /* ── Die Einstellungen der Gruppe (v.35.60.0) ──────────────────────

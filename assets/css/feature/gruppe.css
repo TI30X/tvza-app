@@ -334,6 +334,12 @@
 .fs-status[data-status="fertig"] { background: color-mix(in oklab, var(--success, var(--accent)) 16%, var(--surface)); color: var(--ink); }
 .fs-status[data-status="begonnen"] { background: var(--accent-bg); color: var(--accent); }
 .fs-status[data-status="unbekannt"] { background: transparent; border: 1px dashed var(--border); }
+/* Im Plan, aber nichts zum Abhaken (v.35.70.4): leiser als "begonnen",
+   und die Zeile ist kein Link — es gibt nichts zu öffnen. */
+.fs-status[data-status="imPlan"] { background: transparent; border: 1px solid var(--border); }
+.fs-einheit--ohne { cursor: default; }
+.fs-einheit--ohne:hover { border-color: var(--border); }
+.fs-ohne { margin: var(--s3) 0 0; color: var(--ink-soft); font-size: 13px; }
 
 /* ── Die Farben der Arten (v.35.68.0) ───────────────────────────────── */
 .art-farben { display: grid; gap: var(--s2); margin-top: var(--s2); }

@@ -217,6 +217,71 @@ test('die Leitung sieht je Tag und Athlet, was begonnen und abgeschlossen ist �
   } finally { zwei.zurueck(); delete globalThis.__protokolleFehler; }
 });
 
+test('die Leitung sieht ALLES, was an dem Tag im Plan steht — auch ohne Blatt und ohne Übungen', async () => {
+  /* Michel: "das eingetragene Programm ist gar nicht zu sehen, das
+     heisst wenn er es nicht erledigt hat ist einfach nicht da. Ich
+     möchte alles sehen können."
+
+     In der echten Excel des Kaders (KW 31) steht am Montag zwischen
+     Sprungprogramm und Kraft Oberkörper eine Zelle "Koordination" —
+     ohne eigenes Blatt, also ohne abhakbare Übung. Bis v.35.70.3 fiel
+     sie aus der Ansicht der Leitung heraus (zwei Filter in
+     fortschrittZeilen), während der Athlet sie in seiner Woche sah.
+     Der Tag sah für die Leitung anders aus als für den Athleten. */
+  const grid = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
+  const { parseProgram } = await import('../assets/js/training-parser.js');
+  const programm = parseProgram(grid);
+
+  const { doc, zurueck } = await starteGruppe({
+    ...KADER,
+    heute: '2026-08-03',
+    plaene: [{ id: 'p1', titel: 'KW 31', fuer: 'alle', json: JSON.stringify(programm) }],
+    protokolle: [],
+  });
+  try {
+    klick(doc.getElementById('btnFortschritt'));
+    await warte(() => !doc.getElementById('secFortschritt').hidden
+      && /Koordination/.test(doc.getElementById('listFortschritt').textContent));
+    const liste = doc.getElementById('listFortschritt');
+    const text = liste.textContent;
+
+    assert.match(text, /Koordination/, 'der Eintrag ohne Blatt fehlt wieder');
+    assert.match(text, /Sprungprogramm/);
+    assert.match(text, /Kraft Oberkörper/);
+
+    /* Ohne Blatt gibt es nichts zu öffnen: eine Zeile, kein Link. */
+    const ohne = [...liste.querySelectorAll('.fs-einheit--ohne')]
+      .find(el => /Koordination/.test(el.textContent));
+    assert.ok(ohne, 'der Eintrag ohne Blatt ist ein Link, der ins Leere führt');
+    assert.equal(ohne.tagName, 'DIV');
+    assert.match(ohne.textContent, /Steht im Plan/,
+      '"Nichts synchronisiert" wäre falsch — da ist nichts zum Abhaken');
+
+  } finally { zurueck(); }
+});
+
+test('wer an einem Tag nichts im Plan hat, steht trotzdem da', async () => {
+  const grid = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
+  const { parseProgram } = await import('../assets/js/training-parser.js');
+  const programm = parseProgram(grid);
+  /* Ein Plan nur für Lea — Max hat an dem Tag nichts. */
+  const { doc, zurueck } = await starteGruppe({
+    ...KADER,
+    heute: '2026-08-03',
+    plaene: [{ id: 'p1', titel: 'Nur Lea', fuer: 'lea', json: JSON.stringify(programm) }],
+  });
+  try {
+    klick(doc.getElementById('btnFortschritt'));
+    await warte(() => !doc.getElementById('secFortschritt').hidden
+      && /Lea/.test(doc.getElementById('listFortschritt').textContent));
+    const text = doc.getElementById('listFortschritt').textContent;
+    assert.match(text, /Ohne Einheit an diesem Tag: Max/,
+      'Max fehlt kommentarlos — die Leitung weiss dann nicht, ob nichts geplant war');
+    assert.doesNotMatch(text, /Ohne Einheit an diesem Tag: [^]*Timothy/,
+      'die Leitung selbst steht nicht als Athlet ohne Plan da');
+  } finally { zurueck(); }
+});
+
 test('eine Vorlage wird auf eine Woche gelegt — als Kopie, die Vorlage bleibt', async () => {
   const grid = JSON.parse(await readFile(join(root, 'dev/fixtures/kw31-grid.json'), 'utf8'));
   const { parseProgram } = await import('../assets/js/training-parser.js');

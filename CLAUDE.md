@@ -105,7 +105,7 @@ E-Mail-Adresse, keine Anschrift. `fuss.betrieben` bleibt im Katalog,
 wird aber nirgends mehr gesetzt; `dev/marke.test.mjs` lässt „höchstens
 einmal" weiterhin zu und verbietet den Namen ausserhalb.
 
-Version: **v.35.70.3**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.70.4**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -133,7 +133,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-87 Testdateien, **860 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+87 Testdateien, **862 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -1004,6 +1004,16 @@ echten Daten); was überschrieben wurde, ist weg.
   trainiert". Ein Tipp öffnet die Einheit des Athleten als Ansicht — bei
   einem Plan für alle mit `&a=<uid>` (einheit.js), sonst sähe die Leitung
   ihr eigenes Protokoll.
+  **Und es steht ALLES da, was im Plan steht** (v.35.70.4). Michel: „das
+  eingetragene Programm ist gar nicht zu sehen … Ich möchte alles sehen
+  können." Zwei Filter in `fortschrittZeilen` nahmen vorher weg, was sich
+  nicht abhaken lässt: Einträge ohne eigenes Blatt — in der echten KW 31
+  sind das „Koordination" am Montag und „evtl. Spiel" am Donnerstag — und
+  Einheiten ohne abhakbare Übung (eine Videoliste, eine Zonentabelle).
+  Der Athlet sah sie in seiner Woche, die Leitung nicht. Jetzt stehen sie
+  als Zeile mit „Steht im Plan" da, ohne Link, weil es nichts zu öffnen
+  gibt; und wer an dem Tag gar nichts hat, steht am Ende unter „Ohne
+  Einheit an diesem Tag: …".
 - **Für wen:** „Mehrere Personen …" zeigt Häkchen im Formular (eine,
   mehrere, „Alle auswählen" = alle, die jetzt da sind, je ein eigener Plan).
   „Alle in der Gruppe" ist der eine Plan für alle — auch für Künftige. Vor

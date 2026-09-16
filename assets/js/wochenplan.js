@@ -439,17 +439,29 @@ export function fortschrittZeilen({ quellen = [], mitglieder = [], datum = '', l
     const bisher = beste.get(fuer);
     if (!bisher || zeitVon(q.plan) > zeitVon(bisher.q.plan)) beste.set(fuer, { q, tag });
   }
+  /* Alles, was an diesem Tag im Plan steht — nicht nur, was sich
+     abhaken lässt (v.35.70.4). Michel: "das eingetragene Programm ist
+     gar nicht zu sehen, das heisst wenn er es nicht erledigt hat ist
+     einfach nicht da. Ich möchte alles sehen können."
+
+     Bis dahin fielen zwei Sorten Einträge heraus: die ohne eigenes
+     Blatt (eine Zelle, die nur etwas benennt — "Skiteppich Glarus")
+     und die ohne abhakbare Übung (Mobi als Liste von Videos, Ausdauer
+     als Zonentabelle). Für die Leitung sah der Tag damit leer aus,
+     obwohl der Athlet in seiner Woche etwas stehen hatte. */
   const einheitenVon = eintrag => {
     if (!eintrag) return [];
     const { q, tag } = eintrag;
     const raus = [];
     for (const e of tag.eintraege) {
-      if (!e.unit || raus.some(x => x.unit === e.unit)) continue;
-      const items = uebungen(q.programm, e.unit);
-      if (!items.length) continue;
+      const unit = e.unit || '';
+      const titel = (unit && q.programm?.units?.[unit]?.title) || e.titel || '';
+      if (!unit && !titel) continue;
+      const schluessel = unit || `titel:${titel}`;
+      if (raus.some(x => (x.unit || `titel:${x.titel}`) === schluessel)) continue;
       raus.push({
-        planId: q.plan?.id || '', fuer: q.plan?.fuer || 'alle', unit: e.unit,
-        titel: q.programm?.units?.[e.unit]?.title || e.titel, items, zeit: e.zeit || '',
+        planId: q.plan?.id || '', fuer: q.plan?.fuer || 'alle', unit,
+        titel, items: unit ? uebungen(q.programm, unit) : [], zeit: e.zeit || '',
       });
     }
     return raus;

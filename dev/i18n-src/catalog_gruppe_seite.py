@@ -177,6 +177,18 @@ KEYS = {
 'grp.fs.begonnen': ('Begonnen', 'Started', 'Commencé', 'Iniziato', 'Rozpoczęte', 'Begonnen', 'Empezado'),
 'grp.fs.offen': ('Nichts synchronisiert', 'Nothing synced', 'Rien de synchronisé', 'Nulla sincronizzato', 'Nic nie zsynchronizowano', 'Niets gesynchroniseerd', 'Nada sincronizado'),
 'grp.fs.unbekannt': ('Unbekannt', 'Unknown', 'Inconnu', 'Sconosciuto', 'Nieznane', 'Onbekend', 'Desconocido'),
+# Was im Plan steht, aber nichts zum Abhaken hat (v.35.70.4): eine
+# Videoliste, eine Zonentabelle, eine Zelle ohne eigenes Blatt. Vorher
+# fiel so ein Eintrag aus der Ansicht der Leitung ganz heraus.
+'grp.fs.imPlan': ('Steht im Plan', 'In the plan', 'Au programme', 'In programma',
+                  'Jest w planie', 'Staat in het plan', 'En el plan'),
+'grp.fs.ohnePlan': ('Ohne Einheit an diesem Tag: {namen}',
+                    'Nothing scheduled on this day: {namen}',
+                    "Rien de prévu ce jour-là : {namen}",
+                    'Senza seduta in questo giorno: {namen}',
+                    'Bez jednostki tego dnia: {namen}',
+                    'Geen training op deze dag: {namen}',
+                    'Sin sesión este día: {namen}'),
 'grp.fs.laedt': ('Lädt …', 'Loading …', 'Chargement …', 'Caricamento …', 'Ładowanie …', 'Laden …', 'Cargando …'),
 'grp.fs.fehler': ('Die Einträge liessen sich nicht laden. Was hier fehlt, ist unbekannt — nicht untrainiert.', 'The entries could not be loaded. What is missing here is unknown — not untrained.', 'Les saisies n’ont pas pu être chargées. Ce qui manque est inconnu — pas « non entraîné ».', 'Le voci non sono state caricate. Ciò che manca è sconosciuto — non «non allenato».', 'Nie udało się wczytać wpisów. To, czego brakuje, jest nieznane — nie „nietrenowane”.', 'De invoer kon niet worden geladen. Wat hier ontbreekt, is onbekend — niet ‘niet getraind’.', 'No se pudieron cargar las entradas. Lo que falta es desconocido, no «sin entrenar».'),
 'grp.fs.keinPlan': ('An diesem Tag steht für niemanden eine Einheit im Plan.', 'Nobody has a session planned on this day.', 'Aucune séance n’est prévue ce jour-là.', 'In questo giorno nessuno ha una sessione in programma.', 'Tego dnia nikt nie ma zaplanowanej jednostki.', 'Op deze dag staat voor niemand een sessie gepland.', 'Este día nadie tiene una sesión en el plan.'),
