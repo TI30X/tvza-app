@@ -1077,9 +1077,9 @@ den Plänen kamen nicht vor.
   steht erst, wenn der Server es hat; offline „Noch nicht gesendet …";
   scheitert jemand, steht es da. „Zum Chat mit …" öffnet die Unterhaltung
   (`messages.html?to=` bzw. `?gruppe=`). Attrappe: „Schreib Lea: …".
-  **Braucht den Worker** (Deklaration in `worker/ki.js`) — vorbereitet,
-  nicht ausgerollt; bis dahin kennt Gemini das Werkzeug nicht, sonst ändert
-  sich nichts.
+  **Braucht den Worker** (Deklaration in `worker/ki.js`) — ausgerollt am
+  16.09.2026; ohne ihn kennt Gemini das Werkzeug nicht, sonst ändert sich
+  nichts.
 - **Suche** (`bekannte.js`): „Mueller" findet „Müller", mehrere Wörter in
   beliebiger Folge; Gruppen beim Namen (zu zweit: ihr Chat; im Gruppenchat:
   alle ihre Leute anhaken). Die Adresse findet weiter über `emailKarten`,
@@ -1297,7 +1297,11 @@ Zwei Dinge, die leicht übersehen werden:
   16.09.2026, zusammen mit v.35.68.0 und unmittelbar vor dem Push.
   v.35.67.0 braucht keine neue Regel (Nachrichten wie im Chat), aber den
   **Worker** (`nachricht_senden` in `worker/ki.js`): `npx.cmd wrangler
-  deploy` im Ordner `worker`. **Vorbereitet, noch nicht ausgerollt.**
+  deploy` im Ordner `worker`. Ausgerollt am 16.09.2026, nach dem Code —
+  bis dahin kannte Gemini das Werkzeug nicht, die Karte im Browser gab es
+  schon. `wrangler deploy` fasst die Secrets nicht an: der
+  Gemini-Schlüssel steht danach unverändert, `/health` meldet weiter
+  `ki=bereit` (und `konto=FEHLT`, der Service-Account fehlt weiter).
   v.35.68.0 (`users/{uid}/einstellungen/gruppen`, `artFarben` an
   `groups` samt `artFarbenGueltig`) erweitert nur — ohne sie bleibt die
   Reihenfolge im Gerät (mit Hinweis) und die Farbe einer Art lässt sich

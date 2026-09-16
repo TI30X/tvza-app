@@ -241,7 +241,7 @@ export async function meineGruppen(uid) {
    Im Gerät sofort (localStorage), für alle Geräte unter
    users/{uid}/einstellungen/gruppen. Die gemeinsame Liste (unten) ordnet
    danach — Leiste, Wähler, Kalender, Chat, Pille und Start sehen dieselbe
-   Folge. Ohne Regel (noch nicht ausgerollt) bleibt sie im Gerät. */
+   Folge. Ohne Regel bleibt sie im Gerät; ausgerollt am 16.09.2026. */
 const FOLGE_SPEICHER = 'firn.gruppenFolge';
 function folgeAusGeraet() {
   try { return folgeSauber(JSON.parse(localStorage.getItem(FOLGE_SPEICHER) || '[]')); } catch { return []; }
