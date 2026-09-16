@@ -121,19 +121,6 @@
 }
 .wk-berg__tor    { fill: var(--surface); }
 
-/* ── Wofuer es taugt ───────────────────────────────────────────────*/
-
-.wk-pillen { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.wk-pille {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-pill);
-  padding: var(--s2) var(--s4);
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--ink-soft);
-}
-
 /* ── Karten ────────────────────────────────────────────────────────
    Vier, keine zwoelf. Jede traegt ein Plaettchen in der Farbe, die
    die App fuer diese Sache ohnehin schon benutzt — dadurch ist die
@@ -171,8 +158,8 @@
 
 .wk-plaettchen--plan   { background: var(--brand-navy-deep); }
 .wk-plaettchen--termin { background: var(--t-lager, #2E7D5B); }
-.wk-plaettchen--video  { background: var(--firn-glut); }
-.wk-plaettchen--punkte { background: var(--t-rennen, #B4453C); }
+.wk-plaettchen--chat   { background: var(--firn-glut); }
+.wk-plaettchen--ki     { background: var(--t-rennen, #B4453C); }
 
 /* ── Abschnitte ────────────────────────────────────────────────────*/
 
@@ -240,20 +227,6 @@
   color: var(--ink);
 }
 .wk-beta > p { margin: 0; max-width: 42em; line-height: 1.6; color: var(--ink-soft); }
-.wk-beta ul { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s3); }
-.wk-beta li {
-  line-height: 1.55; color: var(--ink-soft);
-  padding-left: var(--s5); position: relative;
-}
-.wk-beta li::before {
-  content: "";
-  position: absolute;
-  left: 0; top: 0.55em;
-  width: var(--s2); height: var(--s2);
-  border-radius: var(--r-pill);
-  background: var(--firn-glut);
-}
-.wk-beta li strong { color: var(--ink); font-weight: 700; }
 
 /* ── Fuss ──────────────────────────────────────────────────────────*/
 
@@ -289,3 +262,69 @@
 }
 /* Die Nutzungsbedingungen, leise im Fuss (v.35.53.0). */
 .wk-fuss__link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ══ v.35.70.0 ═══════════════════════════════════════════════════════
+   Die Seite erklaert jetzt, was Firn ist und was nach der Registrierung
+   kommt. Dazu drei Bausteine: der Satz unter den Knoepfen, die Schritte
+   und die Fragen. */
+
+/* Der leise Satz unter den beiden Knoepfen: dass ein Code NICHT noetig
+   ist, ist die haeufigste Frage vor dem ersten Klick. */
+.wk-hero__hinweis {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+/* Die Gruppenarten tragen kein Plaettchen — sonst stuenden auf einer
+   Seite acht farbige Quadrate, und keines hiesse mehr etwas. */
+.wk-karten--schlicht { grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+
+/* ── So beginnt ihr ────────────────────────────────────────────────
+   Drei Schritte, nummeriert vom Browser (counter) statt von Hand:
+   eine 1 im Markup waere ein Text ohne Schluessel. */
+.wk-schritte {
+  counter-reset: schritt;
+  list-style: none;
+  display: grid;
+  gap: var(--s4);
+  margin: 0;
+  padding: 0;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+.wk-schritte li {
+  counter-increment: schritt;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding-top: var(--s5);
+  border-top: 2px solid color-mix(in oklab, var(--firn-glut) 45%, var(--border));
+  position: relative;
+}
+.wk-schritte li::before {
+  content: counter(schritt);
+  position: absolute;
+  top: calc(-1 * var(--s4));
+  left: 0;
+  width: var(--s6);
+  height: var(--s6);
+  border-radius: var(--r-pill);
+  background: var(--brand-navy-deep);
+  color: var(--surface);
+  display: grid;
+  place-items: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.wk-schritte h3 { margin: 0; font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
+.wk-schritte p  { margin: 0; font-size: 0.9375rem; line-height: 1.55; color: var(--ink-soft); }
+
+/* ── Haeufige Fragen ───────────────────────────────────────────────
+   Keine Klapp-Elemente: vier Fragen liest man schneller, als man sie
+   aufklappt. */
+.wk-faq { display: grid; gap: var(--s5); grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
+.wk-faq__eintrag { display: flex; flex-direction: column; gap: var(--s2); }
+.wk-faq h3 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--ink); }
+.wk-faq p  { margin: 0; font-size: 0.9375rem; line-height: 1.55; color: var(--ink-soft); }
+
+/* Drei Wege im Fuss: Bedingungen, Datenschutz, Betreiber. */
+.wk-fuss__links { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); }

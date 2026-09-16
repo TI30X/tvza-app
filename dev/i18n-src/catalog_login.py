@@ -29,14 +29,14 @@ KEYS = {
                 'Accedi — Firn', 'Logowanie — Firn', 'Inloggen — Firn',
                 'Iniciar sesión — Firn'),
 
-'login.subAn': ('Willkommen zurück! Melde dich an.',
+'login.subAn': ('Melde dich an, um deine Gruppen, Termine und Trainingspläne zu öffnen.',
                 'Welcome back. Sign in.',
                 'Bon retour. Connecte-toi.',
                 'Bentornato. Accedi.',
                 'Witaj z powrotem. Zaloguj się.',
                 'Welkom terug. Log in.',
                 'Bienvenido de nuevo. Inicia sesión.'),
-'login.subNeu': ('Erstelle dein Konto. Ein Einladungscode ist optional.',
+'login.subNeu': ('Erstelle dein persönliches Konto. Danach kannst du eine eigene Gruppe gründen oder einer bestehenden Gruppe beitreten.',
                  'Create your account. An invitation code is optional.',
                  "Crée ton compte. Un code d'invitation est facultatif.",
                  'Crea il tuo account. Un codice di invito è facoltativo.',
@@ -46,14 +46,14 @@ KEYS = {
 
 'login.name': ('Dein Name', 'Your name', 'Ton nom', 'Il tuo nome',
                'Twoje imię', 'Je naam', 'Tu nombre'),
-'login.namePh': ('z.B. Timo', 'e.g. Timo', 'p. ex. Timo', 'es. Timo',
+'login.namePh': ('Max Mustermann', 'Alex Taylor', 'Alex Martin', 'Mario Rossi',
                  'np. Timo', 'bijv. Timo', 'p. ej. Timo'),
 
 'login.code': ('Einladungscode', 'Invitation code',
                "Code d'invitation", 'Codice di invito',
                'Kod zaproszenia', 'Uitnodigingscode',
                'Código de invitación'),
-'login.codePh': ('Nur für eine direkte Gruppeneinladung',
+'login.codePh': ('Einladungscode eingeben',
                  'Only for a direct group invitation',
                  "Uniquement pour une invitation directe à un groupe",
                  'Solo per un invito diretto a un gruppo',
@@ -70,7 +70,7 @@ KEYS = {
 
 'login.mail': ('E-Mail', 'Email', 'E-mail', 'E-mail',
                'E-mail', 'E-mail', 'Correo electrónico'),
-'login.mailPh': ('deine@email.com', 'you@email.com', 'toi@email.com',
+'login.mailPh': ('max.mustermann@example.com', 'alex.taylor@example.com', 'alex.martin@example.com',
                  'tu@email.com', 'ty@email.com', 'jij@email.com',
                  'tu@email.com'),
 
@@ -197,4 +197,104 @@ KEYS = {
                             'Najpierw potwierdź swój adres e-mail. Wysłaliśmy ci kolejny link potwierdzający.',
                             'Bevestig eerst je e-mailadres. We hebben je opnieuw een bevestigingslink gestuurd.',
                             'Confirma primero tu dirección de correo. Te hemos enviado otro enlace de confirmación.'),
+# ── Was v.35.70.0 dazugebracht hat ────────────────────────────────
+# Michel: "Anmeldung und Formulare sollten kurze, hilfreiche
+# Begleittexte erhalten." Dazu die tatsaechlichen Passwortregeln unter
+# dem Feld und ein Weg fuer ein vergessenes Passwort.
+#
+# Der Produktname steht auch hier nicht IM Satz, sondern als Variable
+# ({marke}) — sonst muesste eine Umbenennung durch sieben Sprachen.
+'login.titelAn': ('Willkommen zurück', 'Welcome back', 'Bon retour',
+                  'Bentornato', 'Witaj ponownie', 'Welkom terug',
+                  'Bienvenido de nuevo'),
+'login.titelNeu': ('Willkommen bei {marke}', 'Welcome to {marke}',
+                   'Bienvenue sur {marke}', 'Benvenuto su {marke}',
+                   'Witamy w {marke}', 'Welkom bij {marke}',
+                   'Te damos la bienvenida a {marke}'),
+
+'login.nameHinweis': ('Unter diesem Namen erkennen dich andere in deinen Gruppen und Chats.',
+                      'This is the name others see in your groups and chats.',
+                      "C'est sous ce nom que les autres te reconnaissent dans tes groupes et tes discussions.",
+                      'Con questo nome ti riconoscono gli altri nei gruppi e nelle chat.',
+                      'Pod tym imieniem rozpoznają cię inni w grupach i czatach.',
+                      'Onder deze naam herkennen anderen je in je groepen en chats.',
+                      'Con este nombre te reconocen los demás en tus grupos y chats.'),
+
+'login.mailHinweis': ('Verwende eine E-Mail-Adresse, auf die du Zugriff hast.',
+                      'Use an email address you can actually get into.',
+                      "Utilise une adresse e-mail à laquelle tu as accès.",
+                      'Usa un indirizzo e-mail a cui hai accesso.',
+                      'Użyj adresu e-mail, do którego masz dostęp.',
+                      'Gebruik een e-mailadres waar je bij kunt.',
+                      'Usa una dirección de correo a la que tengas acceso.'),
+
+# Die tatsaechliche Anforderung, nicht eine gewuenschte: Firebase Auth
+# nimmt ab sechs Zeichen an.
+'login.passHinweis': ('Mindestens 6 Zeichen. Nimm ein langes Passwort, das du nicht schon bei einem anderen Dienst benutzt.',
+                      'At least 6 characters. Use a long password you do not already use somewhere else.',
+                      "Au moins 6 caractères. Choisis un mot de passe long que tu n'utilises pas ailleurs.",
+                      'Almeno 6 caratteri. Usa una password lunga che non usi già altrove.',
+                      'Co najmniej 6 znaków. Weź długie hasło, którego nie używasz gdzie indziej.',
+                      'Minstens 6 tekens. Neem een lang wachtwoord dat je niet al ergens anders gebruikt.',
+                      'Al menos 6 caracteres. Usa una contraseña larga que no uses ya en otro sitio.'),
+
+'login.passPhAn': ('Dein Passwort', 'Your password', 'Ton mot de passe',
+                   'La tua password', 'Twoje hasło', 'Je wachtwoord',
+                   'Tu contraseña'),
+'login.passPhNeu': ('Passwort erstellen', 'Create a password', 'Créer un mot de passe',
+                    'Crea una password', 'Utwórz hasło', 'Wachtwoord aanmaken',
+                    'Crear una contraseña'),
+
+'login.codeOptional': ('Einladungscode — optional', 'Invitation code — optional',
+                       "Code d'invitation — facultatif", 'Codice di invito — facoltativo',
+                       'Kod zaproszenia — opcjonalnie', 'Uitnodigingscode — optioneel',
+                       'Código de invitación — opcional'),
+
+# Zustimmung und Hinweis sind ZWEI Dinge (Michel): angehakt wird nur,
+# was man akzeptiert; die Datenschutzerklaerung wird gelesen, nicht
+# abgehakt.
+'login.nutzungCheck': ('Ich akzeptiere die <a href="nutzung.html">Nutzungsbedingungen</a>.',
+                       'I accept the <a href="nutzung.html">terms of use</a>.',
+                       "J'accepte les <a href=\"nutzung.html\">conditions d'utilisation</a>.",
+                       "Accetto le <a href=\"nutzung.html\">condizioni d'uso</a>.",
+                       'Akceptuję <a href="nutzung.html">warunki korzystania</a>.',
+                       'Ik accepteer de <a href="nutzung.html">gebruiksvoorwaarden</a>.',
+                       'Acepto las <a href="nutzung.html">condiciones de uso</a>.'),
+
+'login.datenschutzHinweis': ('Wie Personendaten bearbeitet werden, steht in der <a href="datenschutz.html">Datenschutzerklärung</a>.',
+                             'How personal data is handled is set out in the <a href="datenschutz.html">privacy notice</a>.',
+                             'Le traitement des données personnelles est décrit dans la <a href="datenschutz.html">déclaration de confidentialité</a>.',
+                             "Come vengono trattati i dati personali è spiegato nell'<a href=\"datenschutz.html\">informativa sulla privacy</a>.",
+                             'Sposób przetwarzania danych osobowych opisuje <a href="datenschutz.html">informacja o ochronie danych</a>.',
+                             'Hoe persoonsgegevens worden verwerkt, staat in de <a href="datenschutz.html">privacyverklaring</a>.',
+                             'Cómo se tratan los datos personales se explica en la <a href="datenschutz.html">política de privacidad</a>.'),
+
+'login.fehler.nutzung': ('Bitte akzeptiere zuerst die Nutzungsbedingungen.',
+                         'Please accept the terms of use first.',
+                         "Merci d'accepter d'abord les conditions d'utilisation.",
+                         "Accetta prima le condizioni d'uso.",
+                         'Najpierw zaakceptuj warunki korzystania.',
+                         'Accepteer eerst de gebruiksvoorwaarden.',
+                         'Acepta primero las condiciones de uso.'),
+
+# Passwort vergessen. Die Bestaetigung sagt NICHT, ob es das Konto
+# gibt — dieselbe Zurueckhaltung wie bei der Anmeldung.
+'login.passVergessen': ('Passwort vergessen?', 'Forgotten your password?',
+                        'Mot de passe oublié ?', 'Password dimenticata?',
+                        'Nie pamiętasz hasła?', 'Wachtwoord vergeten?',
+                        '¿Has olvidado la contraseña?'),
+'login.resetMailFehlt': ('Bitte trage zuerst deine E-Mail-Adresse ein.',
+                         'Please enter your email address first.',
+                         "Saisis d'abord ton adresse e-mail.",
+                         'Inserisci prima il tuo indirizzo e-mail.',
+                         'Najpierw wpisz swój adres e-mail.',
+                         'Vul eerst je e-mailadres in.',
+                         'Introduce primero tu dirección de correo.'),
+'login.resetGesendet': ('Gibt es ein Konto mit dieser Adresse, ist ein Link zum Zurücksetzen unterwegs. Schau auch im Spam-Ordner nach.',
+                        'If there is an account with this address, a reset link is on its way. Check your spam folder too.',
+                        "S'il existe un compte avec cette adresse, un lien de réinitialisation est en route. Regarde aussi dans les spams.",
+                        'Se esiste un account con questo indirizzo, il link per reimpostare è in arrivo. Controlla anche lo spam.',
+                        'Jeśli istnieje konto z tym adresem, link do zresetowania jest w drodze. Sprawdź też spam.',
+                        'Bestaat er een account met dit adres, dan is er een herstellink onderweg. Kijk ook in je spam.',
+                        'Si existe una cuenta con esa dirección, el enlace para restablecerla va en camino. Mira también en spam.'),
 }

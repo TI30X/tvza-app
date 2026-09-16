@@ -13,13 +13,13 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=34" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=35" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
   <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=13" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=26" defer></script>
+  <script src="../assets/js/ui-fx.js?v=27" defer></script>
   <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
        Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md. -->
@@ -43,13 +43,13 @@
       <div class="grp-leer__zeichen" aria-hidden="true">
         <svg class="ic" viewBox="0 0 24 24" width="30" height="30"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c3 .3 5.5 2.7 5.5 5.8"/></svg>
       </div>
-      <h2 class="grp-leer__titel" data-i18n="grp.leerTitel">Noch in keiner Gruppe</h2>
-      <p class="grp-leer__text" id="leerText" data-i18n="grp.leerText">Eine Gruppe ist der Ort, an dem ihr Termine, Pläne und Nachrichten teilt — als Familie oder als Kader.</p>
+      <h2 class="grp-leer__titel" data-i18n="grp.leerTitel">Gemeinsam beginnt es hier</h2>
+      <p class="grp-leer__text" id="leerText" data-i18n="grp.leerText">Eine Gruppe verbindet die Menschen, mit denen du Termine, Pläne und Nachrichten teilen möchtest. Erstelle eine eigene Gruppe oder tritt über eine Einladung bei.</p>
       <div class="grp-leer__wege">
         <button class="grp-leer__weg grp-leer__weg--haupt" id="btnNeu" type="button">
           <span class="grp-leer__icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="20" height="20"><path d="M12 5v14M5 12h14"/></svg></span>
           <span class="grp-leer__wort" data-i18n="grp.neu">Gruppe erstellen</span>
-          <span class="grp-leer__sub" data-i18n="grp.neuSub">Für deinen Kader, Verein oder deine Familie.</span>
+          <span class="grp-leer__sub" data-i18n="grp.neuSub">Für dein Team, deinen Verein oder deine Familie.</span>
         </button>
         <button class="grp-leer__weg" id="btnBeitreten" type="button">
           <span class="grp-leer__icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg></span>
@@ -67,36 +67,54 @@
       <form class="form-card" id="formGruppeNeu" novalidate>
         <button class="backlink" id="btnGruppeNeuZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
         <div class="form-title" data-i18n="grp.neuTitel">Neue Gruppe</div>
+        <p class="form-hint" data-i18n="grp.neuText">Gib deiner Gruppe einen Namen und wähle den passenden Gruppentyp. Damit stehen die richtigen Bezeichnungen und Bereiche bereit. Anschliessend kannst du weitere Personen einladen.</p>
 
         <div class="form-group">
           <div class="form-label" id="neuArtLabel" data-i18n="grp.artFrage">Was für eine Gruppe?</div>
           <div class="wahlkarten wahlkarten--drei" id="neuArt" role="radiogroup" aria-labelledby="neuArtLabel">
             <button class="wahlkarte" type="button" role="radio" aria-checked="true" data-art="kader">
               <span class="wahlkarte__bild" data-bereich="t-rennen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V3"/><path d="M6 4h12l-3.5 4L18 12H6"/></svg></span>
-              <span class="wahlkarte__titel" data-i18n="grp.art.kader.titel">Rennkader</span>
-              <span class="wahlkarte__text" data-i18n="grp.art.kader.text">Haupttrainer, Trainer, Athleten. Wochenplan, Rennen, FIS-Punkte.</span>
+              <span class="wahlkarte__titel" data-i18n="grp.art.kader.titel">Sportteam</span>
+              <span class="wahlkarte__text" data-i18n="grp.art.kader.text">Für Trainerinnen, Trainer und Athleten: Wochenplan, Trainings und Wettkämpfe. Im alpinen Skirennsport dazu Disziplinen und FIS-Punkte.</span>
             </button>
             <button class="wahlkarte" type="button" role="radio" aria-checked="false" data-art="organisation">
               <span class="wahlkarte__bild" data-bereich="t-training"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg></span>
-              <span class="wahlkarte__titel" data-i18n="grp.art.organisation.titel">Verein oder Gym</span>
-              <span class="wahlkarte__text" data-i18n="grp.art.organisation.text">Leitung, Trainer, Mitglieder. Kurse, Workshops, Wettkämpfe.</span>
+              <span class="wahlkarte__titel" data-i18n="grp.art.organisation.titel">Verein oder Trainingsgruppe</span>
+              <span class="wahlkarte__text" data-i18n="grp.art.organisation.text">Leitung, Trainer, Mitglieder. Für gemeinsame Aktivitäten, Kurse und regelmässige Treffen.</span>
             </button>
             <button class="wahlkarte" type="button" role="radio" aria-checked="false" data-art="familie">
               <span class="wahlkarte__bild" data-bereich="kalender"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M12 17.5s-3.2-1.9-3.2-4a1.8 1.8 0 0 1 3.2-1.1 1.8 1.8 0 0 1 3.2 1.1c0 2.1-3.2 4-3.2 4z"/></svg></span>
-              <span class="wahlkarte__titel" data-i18n="grp.art.familie.titel">Familie oder Freunde</span>
-              <span class="wahlkarte__text" data-i18n="grp.art.familie.text">Termine, Reisen und Nachrichten für euch.</span>
+              <span class="wahlkarte__titel" data-i18n="grp.art.familie.titel">Familie oder Freundeskreis</span>
+              <span class="wahlkarte__text" data-i18n="grp.art.familie.text">Für gemeinsame Termine, Ausflüge, Reisen und Absprachen.</span>
             </button>
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="neuName" data-i18n="grp.nameLabel">Name</label>
-          <input class="form-input" id="neuName" type="text" maxlength="60" autocomplete="off" placeholder="z.B. BSV Perspektivkader" data-i18n-attr="placeholder:grp.namePh" />
+          <input class="form-input" id="neuName" type="text" maxlength="60" autocomplete="off" placeholder="z.B. Lauftreff am Mittwoch" data-i18n-attr="placeholder:grp.namePh" />
+          <p class="form-hint" data-i18n="grp.nameHinweis">Wähle einen Namen, an dem eure Mitglieder die Gruppe wiedererkennen.</p>
         </div>
 
+        <p class="form-hint" data-i18n="grp.neuLeitung">Du übernimmst zunächst die Gruppenleitung und verwaltest Einladungen und Rollen.</p>
         <p class="empty-hint" id="neuFehler" hidden></p>
         <button class="b b--primary b--block" id="btnGruppeAnlegen" type="submit" data-i18n="grp.neu">Gruppe erstellen</button>
       </form>
+    </section>
+
+    <!-- Gleich nach dem Anlegen (v.35.70.0). Vorher stand die frisch
+         angelegte Gruppe einfach da — leer, ohne Termin, ohne andere
+         Leute —, und der nächste Schritt war Ratesache. -->
+    <section class="section" id="secBereit" hidden>
+      <div class="form-card">
+        <div class="form-title" data-i18n="grp.bereitTitel">Deine Gruppe ist bereit</div>
+        <p class="form-hint" data-i18n="grp.bereitText">Lade die ersten Mitglieder ein oder legt euren nächsten Termin an.</p>
+        <div class="rows">
+          <button class="b b--primary b--block" id="bereitEinladen" type="button" data-i18n="grp.einladen">Leute einladen</button>
+          <button class="b b--secondary b--block" id="bereitTermin" type="button" data-i18n="grp.terminNeu">Termin hinzufügen</button>
+          <button class="b b--secondary b--block" id="bereitZur" type="button" data-i18n="kal.zurGruppe">Zur Gruppe</button>
+        </div>
+      </div>
     </section>
 
     <!-- Die Woche: Termine und Plan in EINEM Kalender, senkrecht wie bei
@@ -172,7 +190,7 @@
 
         <div class="form-group">
           <label class="form-label" for="fTitel" data-i18n="grp.titel">Titel</label>
-          <input class="form-input" id="fTitel" type="text" maxlength="120" list="titelVorschlaege" placeholder="z.B. Kraft Beine" data-i18n-attr="placeholder:grp.titelPh" />
+          <input class="form-input" id="fTitel" type="text" maxlength="120" list="titelVorschlaege" placeholder="z.B. Gemeinsames Training" data-i18n-attr="placeholder:grp.titelPh" />
         </div>
 
         <!-- Von und daneben entweder Bis (Lager) oder Uhrzeit (alles
@@ -211,7 +229,7 @@
 
         <div class="form-group">
           <label class="form-label" for="fOrt" data-i18n="grp.ort">Ort</label>
-          <input class="form-input" id="fOrt" type="text" maxlength="80" list="ortVorschlaege" placeholder="z.B. Malbun" data-i18n-attr="placeholder:grp.ortPh" />
+          <input class="form-input" id="fOrt" type="text" maxlength="80" list="ortVorschlaege" placeholder="z.B. Sporthalle oder Haupteingang" data-i18n-attr="placeholder:grp.ortPh" />
         </div>
 
         <!-- In welchem Kalender der Gruppe (v.35.60.0) — nur, wenn die
@@ -682,10 +700,10 @@
            stehen im Kalender schon getrennt; hier kommen weitere dazu. -->
       <div class="einladung" id="gruppeKalenderKarte">
         <p class="einladung__titel" data-i18n="grp.kalender">Kalender der Gruppe</p>
-        <p class="einladung__meta" data-i18n="grp.kalenderText">Trainings, Lager und Rennen stehen im Kalender schon getrennt. Brauchst du mehr — z.B. einen Rennplan —, leg hier einen Kalender an und ordne Termine ihm zu.</p>
+        <p class="einladung__meta" data-i18n="grp.kalenderText">Trainings, Lager und Rennen stehen im Kalender schon getrennt. Brauchst du mehr — etwa einen Kalender für Ausflüge —, leg hier einen an und ordne Termine ihm zu.</p>
         <div class="grp-kalender" id="gruppeKalenderListe"></div>
         <div class="grp-kalender-neu">
-          <input class="form-input" id="gruppeKalenderName" type="text" maxlength="40" autocomplete="off" placeholder="z.B. Rennplan" data-i18n-attr="placeholder:grp.kalenderPh" aria-label="Name des Kalenders" />
+          <input class="form-input" id="gruppeKalenderName" type="text" maxlength="40" autocomplete="off" placeholder="z.B. Ausflüge" data-i18n-attr="placeholder:grp.kalenderPh" aria-label="Name des Kalenders" />
           <button class="b b--secondary" id="btnGruppeKalender" type="button" data-i18n="kal.anlegen">Anlegen</button>
         </div>
         <p class="empty-hint" id="gruppeKalenderFehler" hidden></p>
@@ -697,11 +715,11 @@
         <p class="einladung__meta" data-i18n="ki.gruppeText">Gebt eurem Assistenten einen Namen und sagt ihm, worauf er achten soll. Alle in der Gruppe sehen ihn unten in der Pille.</p>
         <div class="form-group">
           <label class="form-label" for="assistentName" data-i18n="ki.nameLabel">Name</label>
-          <input class="form-input" id="assistentName" type="text" maxlength="30" autocomplete="off" placeholder="z.B. Coach Maxi" data-i18n-attr="placeholder:ki.namePh" />
+          <input class="form-input" id="assistentName" type="text" maxlength="30" autocomplete="off" placeholder="z.B. Gruppenassistent" data-i18n-attr="placeholder:ki.namePh" />
         </div>
         <div class="form-group">
           <label class="form-label" for="assistentAnweisung" data-i18n="ki.anweisungLabel">Worauf er achten soll</label>
-          <textarea class="form-input" id="assistentAnweisung" rows="3" maxlength="600" placeholder="z.B. Trainings sind meistens in Malbun, Lager dauern eine Woche." data-i18n-attr="placeholder:ki.anweisungPh"></textarea>
+          <textarea class="form-input" id="assistentAnweisung" rows="3" maxlength="600" placeholder="z.B. Unsere Treffen finden meist am Mittwochabend statt." data-i18n-attr="placeholder:ki.anweisungPh"></textarea>
         </div>
         <button class="b b--secondary b--block" id="btnAssistent" type="button" data-i18n="ki.speichern">Assistent speichern</button>
         <p class="empty-hint" id="assistentStand" hidden></p>
@@ -727,6 +745,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=37"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=38"></script>
 </body>
 </html>

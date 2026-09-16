@@ -93,18 +93,31 @@ KEYS = {
                  'Firn — un projet de TVZA', 'Firn — un progetto di TVZA',
                  'Firn — projekt TVZA', 'Firn — een project van TVZA',
                  'Firn — un proyecto de TVZA'),
-'fuss.was': ('Training, Termine und Videoanalyse für Kader und Vereine',
-             'Training, dates and video analysis for squads and clubs',
-             "L'entraînement, les dates et l'analyse vidéo pour équipes et clubs",
-             'Allenamento, date e analisi video per squadre e club',
-             'Trening, terminy i analiza wideo dla kadr i klubów',
-             'Training, data en video-analyse voor selecties en clubs',
-             'Entrenamiento, fechas y análisis de vídeo para equipos y clubes'),
+# Ein Satz fuer alle Gruppen (v.35.70.0). Vorher stand hier "fuer Kader
+# und Vereine" samt Videoanalyse — das las sich wie Software fuer einen
+# einzigen Sport.
+'fuss.was': ('Termine, Trainingspläne und Nachrichten für Gruppen',
+             'Dates, training plans and messages for groups',
+             "Dates, plans d'entraînement et messages pour les groupes",
+             'Date, programmi di allenamento e messaggi per i gruppi',
+             'Terminy, plany treningowe i wiadomości dla grup',
+             'Data, trainingsplannen en berichten voor groepen',
+             'Fechas, planes de entrenamiento y mensajes para grupos'),
 # Der Name des Betreibers steht einmal je Seite, in der Fusszeile, und
 # nie nackt unter dem Zeichen — dort las er sich wie ein Teil des Logos.
 'fuss.betrieben': ('betrieben von {wer}', 'run by {wer}', 'géré par {wer}',
                    'gestito da {wer}', 'prowadzi: {wer}', 'beheerd door {wer}',
                    'gestionado por {wer}'),
+# Die drei Wege im Fuss (v.35.70.0). Bedingungen, Datenschutz und der
+# Betreiber sind drei Seiten und nicht eine: wer wissen will, wer
+# dahintersteht, sucht nicht in den Bedingungen.
+'fuss.datenschutz': ('Datenschutz', 'Privacy', 'Protection des données',
+                     'Protezione dei dati', 'Ochrona danych', 'Privacy',
+                     'Protección de datos'),
+'fuss.betreiber': ('Betreiber & Kontakt', 'Operator & contact',
+                   'Exploitant et contact', 'Gestore e contatti',
+                   'Operator i kontakt', 'Beheerder & contact',
+                   'Responsable y contacto'),
 # Die Leiste am Laptop laesst sich auf die Symbole einklappen.
 'nav.einklappen': ('Leiste einklappen', 'Collapse the sidebar',
                   'Réduire la barre latérale', 'Riduci la barra laterale',

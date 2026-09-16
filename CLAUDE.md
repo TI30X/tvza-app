@@ -85,11 +85,14 @@ Anmeldung, aber nicht als ein Produkt.
   (mit der Marke „TVZA"), darunter die Firn-Bereiche mit dem Zeichen
   „Firn". `dev/kreis.test.mjs`.
 
-**Nutzungsbedingungen** (v.35.53.0): `nutzung.html`, deutsch und verbindlich,
-verlinkt beim Registrieren und im Fuss von Willkommen. Kein Preis und kein
-Wort darüber, wer was bezahlt (Michel: „muss nirgends stehen"),
-`dev/nutzung.test.mjs`. Offen und bei Michel: Kontaktadresse und das
-anwendbare Recht (jetzt „am Sitz des Betreibers").
+**Nutzungsbedingungen, Datenschutz, Betreiber** (v.35.53.0, neu gefasst in
+v.35.70.0): drei Seiten — `nutzung.html`, `datenschutz.html`,
+`betreiber.html` —, deutsch und verbindlich, im Fuss jeder Seite und im Fuss
+der Startseite verlinkt. Kein Preis (Michel: „muss nirgends stehen"); dass
+Kosten eine ausdrückliche Vereinbarung voraussetzen, steht dagegen sehr wohl
+da. Es gilt schweizerisches Recht. Offen und bei Michel: Anschrift und
+Kontaktadresse auf `betreiber.html` (siehe 32). `dev/nutzung.test.mjs`,
+`dev/rechtstexte.test.mjs`.
 
 Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
 Michel baut und hostet. Timos Name steht je Seite **einmal**, als
@@ -97,7 +100,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.69.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.70.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +128,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-85 Testdateien, **845 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+87 Testdateien, **858 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -1140,6 +1143,76 @@ unten klebt, allein nach der Unterkante des Routers.
 
 `dev/tastatur.test.mjs`.
 
+**32. Was Firn ist, steht jetzt da — und wer dahintersteht** (v.35.70.0).
+Michel, nach einem Rundgang durch Willkommen, Anmeldung, Gruppenerstellung
+und die Bedingungen: „Es fehlt vor allem eine verständliche Erklärung: Was
+ist Firn, für wen ist es gedacht und was mache ich nach der Registrierung?"
+Dazu vier Aussagen, die nicht stimmten.
+
+- **Die Willkommen-Seite** sagt in einem Satz, was Firn ist („Termine,
+  Trainingspläne und Nachrichten an einem Ort"), zeigt vier Funktionen, drei
+  Gruppenarten, drei Schritte („So beginnt ihr") und vier häufige Fragen.
+  Weg sind: die Videoanalyse und die FIS-Punkte (beides gibt es, aber
+  deswegen meldet sich niemand an, und beides liess Firn wie Software für
+  einen einzigen Sport aussehen), „kein Konto beim Anbieter" (für Firn
+  braucht es genau eines), „Was in der Beta entsteht, bleibt" (ein
+  Versprechen über Datenbestand und künftige Tarife, das niemand halten
+  kann) und der Abo-Kasten. Geblieben ist: kein Preis, solange es keinen
+  gibt. `dev/willkommen.test.mjs` hält die Zusagen — die zum Video gilt
+  jetzt bedingt, statt einen Satz wörtlich einzufrieren (Falle 9).
+- **Die Anmeldung** hat eine Überschrift („Willkommen zurück" / „Willkommen
+  bei {marke}"), unter jedem Feld einen Satz, der sagt, wozu es da ist, die
+  **tatsächliche** Passwortregel (sechs Zeichen — dieselbe Zahl wie in der
+  Fehlermeldung, ein Test vergleicht sie), „Einladungscode — optional" und
+  **„Passwort vergessen?"**: `sendPasswordResetEmail` aus dem SDK, Firebase
+  verschickt die Mail selbst (kein Server, kein Tarifwechsel). Die
+  Bestätigung sagt NICHT, ob es das Konto gibt. Die Zustimmung zu den
+  Bedingungen ist ein **Häkchen**, ohne das kein Konto entsteht; die
+  Datenschutzerklärung steht daneben als Hinweis, nicht als Einwilligung
+  (Michel: „nicht als pauschale Einwilligung … zusammenfassen").
+- **Die Gruppenerstellung** erklärt, was die Wahl bewirkt, und nennt die
+  Arten nach dem, was sie sind: **Sportteam**, **Verein oder
+  Trainingsgruppe**, **Familie oder Freundeskreis**. Michel: „«Rennkader»
+  lediglich in «Sportteam» umzubenennen reicht nicht, wenn danach
+  ausschliesslich Skirennen und FIS-Punkte angeboten werden" — darum sagt
+  die Karte, dass Disziplinen und FIS-Punkte zum **alpinen Skirennsport**
+  gehören (`kenntDisziplinen` hängt weiter an `kader`; ein neutraler
+  vierter Typ wäre eine eigene Runde). Nach dem Anlegen steht da, was der
+  nächste Schritt ist (`#secBereit`: einladen, Termin, zur Gruppe) —
+  vorher stand die frische Gruppe leer da.
+- **Die Beispiele gehören niemandem mehr:** „z.B. Timo" →
+  „Max Mustermann", „deine@email.com" → „max.mustermann@example.com"
+  (RFC 2606), „BSV Perspektivkader" → „Lauftreff am Mittwoch", „Malbun" →
+  „Sporthalle oder Haupteingang", „Coach Maxi" → „Gruppenassistent",
+  „zu wenig Schnee" → „zu wenige Anmeldungen". Ein Test hält jeden
+  Platzhalter frei von diesem Kreis. Echte Daten, bestehende Gruppen und
+  die Testdaten der Attrappe bleiben, wie sie sind.
+- **Drei Rechtstexte statt einem.** `nutzung.html` ist Michels Entwurf,
+  Fassung 2: Betreiber, Testphase, Konto, Gruppen, eigene Inhalte,
+  zulässige Nutzung, Training und Gesundheit, KI-Assistent, Datenschutz,
+  Verfügbarkeit, Beendigung, Haftung, Änderungen, Recht. Die Haftung
+  schliesst Vorsatz und grobe Fahrlässigkeit **nicht** mehr aus (Art. 100
+  OR: ein solcher Ausschluss wäre nichtig). `datenschutz.html` ist neu und
+  am Code nachgeprüft, nicht abgeschrieben: welche Daten wo liegen
+  (Firestore in **europe-west6, Zürich** — abgefragt, nicht geraten), wer
+  was sieht, welche Dienste mitarbeiten (Firebase, Cloudflare, Gemini,
+  GitHub Pages, Google Fonts), was an den Assistenten geht **und was
+  nicht**, was auf dem Gerät bleibt, dass es keine geplanten Sicherungen
+  gibt. Der Satz „Wir geben sie nicht weiter" ist weg — er stand neben der
+  Bearbeitung durch Firebase und Gemini und stimmte nicht.
+  `betreiber.html` nennt den Betreiber; **Anschrift und Kontaktadresse
+  fehlen und sind als Lücke markiert**. Erfunden wird nichts (Michel: „Max
+  Mustermann ist hier kein zulässiger Ersatz für die tatsächliche
+  Identität"); ein Test hält Lücke und Hinweis zusammen — wer die Angaben
+  einträgt, nimmt den Hinweis mit weg.
+- **Gefunden im Rundgang:** die Attrappe kannte `sendPasswordResetEmail`
+  nicht, und ein fehlender Export beendet das ganze Modul, bevor es läuft
+  (Falle 14). `dev/attrappe-vollstaendig.test.mjs` vergleicht jetzt jeden
+  Namen, den die App aus dem Firebase-SDK holt, mit dem, was die Attrappe
+  anbietet — gegengeprüft, indem der Export einmal entfernt wurde.
+
+`dev/rechtstexte.test.mjs`, `dev/attrappe-vollstaendig.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -1152,7 +1225,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1216 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1255 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel
@@ -1211,6 +1284,15 @@ Zwei Dinge, die leicht übersehen werden:
   Ohne Service-Account prüft der Worker die Freischaltung nicht selbst
   (Falle 20). Auf Windows: PowerShell kennt kein `&&` und blockiert
   `npx.ps1` — `npx.cmd wrangler …` im Ordner `worker`.
+- **Anschrift und Kontaktadresse des Betreibers fehlen** (v.35.70.0).
+  `betreiber.html` trägt an zwei Stellen `[noch einzutragen]` und darüber
+  den Hinweis, dass die Angaben vor der öffentlichen Freigabe ergänzt
+  werden. Bis dahin führt der Weg über den Chat in Firn. Michel muss
+  liefern: vollständiger Name (steht: Timothy van Zanten), Strasse, PLZ,
+  Ort, Land und eine Kontaktadresse, an die Auskunfts-, Berichtigungs- und
+  Löschungsbegehren sowie Sicherheitsmeldungen gehen. Wer sie einträgt,
+  entfernt den Hinweis `.nb__entwurf` — `dev/rechtstexte.test.mjs` hält
+  beides zusammen.
 - **Kein Server.** Das blockiert vier Dinge auf einmal: Einladungsmails
   (`mailer/` schreibt in die `mail`-Sammlung, niemand leert sie), das
   Kalender-Abo (`worker/` ist fertig, nirgends ausgerollt), das Abo/Bezahlen
@@ -1302,6 +1384,9 @@ Zwei Dinge, die leicht übersehen werden:
   schon. `wrangler deploy` fasst die Secrets nicht an: der
   Gemini-Schlüssel steht danach unverändert, `/health` meldet weiter
   `ki=bereit` (und `konto=FEHLT`, der Service-Account fehlt weiter).
+  v.35.70.0 braucht keine neue Regel: Texte, Formulare und drei neue
+  Seiten, kein neues Feld und keine neue Sammlung. Das Zurücksetzen des
+  Passworts verschickt Firebase Auth selbst.
   v.35.68.0 (`users/{uid}/einstellungen/gruppen`, `artFarben` an
   `groups` samt `artFarbenGueltig`) erweitert nur — ohne sie bleibt die
   Reihenfolge im Gerät (mit Hinweis) und die Farbe einer Art lässt sich

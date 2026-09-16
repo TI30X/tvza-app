@@ -1045,6 +1045,20 @@ html.settings-embed #settingsModal .modal { max-height: 100dvh; }
   color: rgba(255,255,255,0.78);
   font-size: var(--text-sm);
 }
+/* Bedingungen, Datenschutz, Betreiber (v.35.70.0): drei Wege in einer
+   Zeile, nicht drei Bloecke untereinander. */
+.tvz-footer-copy .tvz-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1) var(--s4);
+  margin-top: var(--s2);
+}
+.tvz-footer-copy .tvz-footer-links a {
+  color: rgba(255,255,255,0.84);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-size: var(--text-sm);
+}
 .tvz-footer-copy p {
   margin-top: var(--s3);
   padding: var(--s3) var(--s3);

@@ -38,3 +38,20 @@
   margin: 0 0 var(--s3);
   padding-left: var(--s5);
 }
+
+/* Links im Rechtstext: sichtbar, aber nicht lauter als der Satz. */
+.nb__abschnitt a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Was noch fehlt, steht oben und nicht im Kleingedruckten (v.35.70.0).
+   Der Kasten gehört zu den Lücken: sind sie gefüllt, geht er weg —
+   dev/rechtstexte.test.mjs hält die beiden zusammen. */
+.nb__entwurf {
+  margin: var(--s5) 0 0;
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+  color: var(--ink);
+  line-height: 1.6;
+}

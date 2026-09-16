@@ -65,3 +65,8 @@ export async function signOut() {
 export const sendEmailVerification = async () => {};
 export const reload = async () => {};
 export const deleteUser = async () => { await signOut(); };
+/* Passwort vergessen (v.35.70.0). In der Attrappe wird nichts
+   verschickt — wichtig ist, dass der Export ueberhaupt da ist: fehlt
+   er, bricht der Import in login.html, und mit ihm das ganze Modul
+   (Falle 14). Genau so gefunden, im Rundgang. */
+export const sendPasswordResetEmail = async () => {};

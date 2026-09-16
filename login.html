@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="assets/js/theme.js"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=34" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=35" />
   <link rel="stylesheet" href="assets/css/legacy.css?v=1" />
   <title data-i18n="login.titel">Anmelden — Firn</title>
   <style>
@@ -55,11 +55,28 @@
       margin-bottom: var(--s1);
       text-wrap: balance;
     }
+    .login-titel {
+      text-align: center;
+      font-size: var(--text-xl);
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0 0 var(--s2);
+      text-wrap: balance;
+    }
     .login-sub {
       text-align: center;
       font-size: var(--text-sm);
       color: var(--ink-soft);
       margin-bottom: var(--s5);
+    }
+    /* Zustimmung und Datenschutzhinweis sind zwei Dinge: angehakt wird
+       nur, was man akzeptiert (Michel). */
+    .login-zustimmung { margin: 0 0 var(--s4); display: grid; gap: var(--s2); }
+    .login-zustimmung a { color: var(--accent); font-weight: 600; }
+    .login-vergessen { margin: var(--s2) 0 0; text-align: right; }
+    .login-vergessen a {
+      color: var(--accent); font-weight: 600; font-size: var(--text-sm);
+      cursor: pointer;
     }
     .login-error {
       background: var(--accent-bg);
@@ -82,14 +99,15 @@
     .switch-mode a:hover { color: var(--accent-hover); }
   </style>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
-  <script src="assets/js/ui-fx.js?v=26" defer></script>
+  <script src="assets/js/ui-fx.js?v=27" defer></script>
 </head>
 <body>
   <span id="themeToggle" title="Theme wechseln" style="position:fixed;top:14px;right:14px;cursor:pointer;color:var(--ink-soft);font-size:20px;line-height:1;padding:8px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;z-index:10" data-i18n-attr="title:pg.theme">◐</span>
   <div class="login-wrap">
     <div class="login-card">
       <div class="login-logo"><span class="firn">Fir<b>n</b></span></div>
-      <p class="login-sub" id="subTitle" data-i18n="login.subAn">Willkommen zurück! Melde dich an.</p>
+      <h1 class="login-titel" id="loginTitel" data-i18n="login.titelAn">Willkommen zurück</h1>
+      <p class="login-sub" id="subTitle" data-i18n="login.subAn">Melde dich an, um deine Gruppen, Termine und Trainingspläne zu öffnen.</p>
 
       <p class="login-einladung" id="einladungHinweis" hidden data-i18n="login.eingeladen">Du bist eingeladen. Erstelle ein Konto oder melde dich an — danach bist du drin.</p>
 
@@ -99,28 +117,38 @@
         <!-- Name (only for registration) -->
         <div class="form-group" id="nameGroup" style="display:none">
           <label class="form-label" for="fName" data-i18n="login.name">Dein Name</label>
-          <input class="form-input" id="fName" name="name" type="text" placeholder="z.B. Timo" data-i18n-attr="placeholder:login.namePh" autocomplete="name" />
+          <input class="form-input" id="fName" name="name" type="text" placeholder="Max Mustermann" data-i18n-attr="placeholder:login.namePh" autocomplete="name" />
+          <p class="form-hint" data-i18n="login.nameHinweis">Unter diesem Namen erkennen dich andere in deinen Gruppen und Chats.</p>
         </div>
 
         <div class="form-group" id="inviteGroup" style="display:none">
-          <label class="form-label" for="fInvite" data-i18n="login.code">Einladungscode</label>
+          <label class="form-label" for="fInvite" data-i18n="login.codeOptional">Einladungscode — optional</label>
           <input class="form-input" id="fInvite" name="invite" type="text"
-                 placeholder="Nur für eine direkte Gruppeneinladung" data-i18n-attr="placeholder:login.codePh"
+                 placeholder="Einladungscode eingeben" data-i18n-attr="placeholder:login.codePh"
                  autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" />
           <p class="form-hint" data-i18n="login.codeHinweis">Ohne Code erhältst du ein persönliches Konto. Ein Code nimmt dich direkt in eine Gruppe auf.</p>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="fEmail" data-i18n="login.mail">E-Mail</label>
-          <input class="form-input" id="fEmail" name="email" type="email" placeholder="deine@email.com" data-i18n-attr="placeholder:login.mailPh" autocomplete="username" inputmode="email" autocapitalize="none" />
+          <input class="form-input" id="fEmail" name="email" type="email" placeholder="max.mustermann@example.com" data-i18n-attr="placeholder:login.mailPh" autocomplete="username" inputmode="email" autocapitalize="none" />
+          <p class="form-hint" id="mailHinweis" hidden data-i18n="login.mailHinweis">Verwende eine E-Mail-Adresse, auf die du Zugriff hast.</p>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="fPass" data-i18n="login.pass">Passwort</label>
-          <input class="form-input" id="fPass" name="password" type="password" placeholder="mind. 6 Zeichen" data-i18n-attr="placeholder:login.passPh" autocomplete="current-password" autocapitalize="none" />
+          <input class="form-input" id="fPass" name="password" type="password" placeholder="Dein Passwort" autocomplete="current-password" autocapitalize="none" />
+          <p class="form-hint" id="passHinweis" hidden data-i18n="login.passHinweis">Mindestens 6 Zeichen. Nimm ein langes Passwort, das du nicht schon bei einem anderen Dienst benutzt.</p>
+          <p class="login-vergessen" id="vergessenZeile"><a id="btnVergessen" role="button" tabindex="0" data-i18n="login.passVergessen">Passwort vergessen?</a></p>
         </div>
 
-        <p class="form-hint login-nutzung" id="nutzungHinweis" hidden data-i18n-html="login.nutzung">Mit dem Registrieren stimmst du den <a href="nutzung.html">Nutzungsbedingungen</a> zu.</p>
+        <div class="login-zustimmung" id="nutzungHinweis" hidden>
+          <label class="check-zeile" for="fNutzung">
+            <input type="checkbox" id="fNutzung" />
+            <span data-i18n-html="login.nutzungCheck">Ich akzeptiere die <a href="nutzung.html">Nutzungsbedingungen</a>.</span>
+          </label>
+          <p class="form-hint" data-i18n-html="login.datenschutzHinweis">Wie Personendaten bearbeitet werden, steht in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+        </div>
         <button class="btn btn-primary btn-block" id="submitBtn" type="submit" style="padding:12px" data-i18n="login.anmelden">Anmelden</button>
       </form>
 
@@ -140,7 +168,8 @@
     } from './assets/js/email-verification-policy.js';
     import {
       signInWithEmailAndPassword, createUserWithEmailAndPassword,
-      deleteUser, signOut, sendEmailVerification, reload as reloadUser
+      deleteUser, signOut, sendEmailVerification, reload as reloadUser,
+      sendPasswordResetEmail
     } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import {
       doc, getDoc, serverTimestamp, writeBatch, arrayUnion
@@ -195,12 +224,27 @@
       $('nameGroup').style.display = mode === 'register' ? '' : 'none';
       $('inviteGroup').style.display = mode === 'register' && !gruppenEinladung ? '' : 'none';
       $('einladungHinweis').hidden = !gruppenEinladung;
-      /* Wer ein Konto anlegt, sieht, wozu er Ja sagt (v.35.53.0). */
+      /* Wer ein Konto anlegt, sieht, wozu er Ja sagt (v.35.53.0), und
+         hakt es seit v.35.70.0 selbst an. */
       $('nutzungHinweis').hidden = mode !== 'register';
+      /* Die Begleittexte gehören zum Anlegen, nicht zum Anmelden: wer
+         sich zum hundertsten Mal anmeldet, braucht keine Erklärung,
+         was ein Passwort ist. */
+      $('mailHinweis').hidden = mode !== 'register';
+      $('passHinweis').hidden = mode !== 'register';
+      $('vergessenZeile').hidden = mode === 'register';
+      $('fPass').placeholder = mode === 'register'
+        ? t('login.passPhNeu', 'Passwort erstellen')
+        : t('login.passPhAn', 'Dein Passwort');
+      /* Der Produktname steht als Variable im Katalog und nicht im
+         Satz — sonst zöge eine Umbenennung durch sieben Sprachen. */
+      $('loginTitel').textContent = mode === 'register'
+        ? t('login.titelNeu', 'Willkommen bei {marke}').replace('{marke}', 'Firn')
+        : t('login.titelAn', 'Willkommen zurück');
       $('subTitle').textContent = mode === 'register'
         ? (gruppenEinladung ? t('login.subNeuKurz', 'Erstelle dein Konto.')
-          : t('login.subNeu', 'Erstelle dein Konto. Ein Einladungscode ist optional.'))
-        : t('login.subAn', 'Willkommen zurück! Melde dich an.');
+          : t('login.subNeu', 'Erstelle dein persönliches Konto. Danach kannst du eine eigene Gruppe gründen oder einer bestehenden Gruppe beitreten.'))
+        : t('login.subAn', 'Melde dich an, um deine Gruppen, Termine und Trainingspläne zu öffnen.');
       $('submitBtn').textContent = mode === 'register'
         ? t('login.registrieren', 'Registrieren') : t('login.anmelden', 'Anmelden');
       $('switchLabel').textContent = mode === 'register'
@@ -226,6 +270,49 @@
 
     $('switchLink').addEventListener('click', () => {
       setMode(mode === 'login' ? 'register' : 'login');
+    });
+
+    /* ── Passwort vergessen (v.35.70.0) ────────────────────────────
+       Bis dahin gab es keinen Weg zurück: wer sein Passwort vergass,
+       kam an sein Konto nicht mehr heran. Firebase verschickt die Mail
+       selbst — das braucht keinen Server und keinen Tarifwechsel.
+
+       Die Antwort ist IMMER dieselbe, auch wenn es die Adresse nicht
+       gibt. Ein "dieses Konto kennen wir nicht" verriete Fremden, wer
+       ein Konto hat — dieselbe Zurückhaltung wie bei der Anmeldung. */
+    let resetLaeuft = false;
+    async function passwortZuruecksetzen() {
+      if (resetLaeuft) return;
+      const email = $('fEmail').value.trim();
+      if (!email) {
+        showErr(t('login.resetMailFehlt', 'Bitte trage zuerst deine E-Mail-Adresse ein.'));
+        $('fEmail').focus();
+        return;
+      }
+      resetLaeuft = true;
+      try {
+        await sendPasswordResetEmail(auth, email, {
+          url: new URL('login.html', location.href).href
+        });
+      } catch (err) {
+        if (err?.code === 'auth/network-request-failed') {
+          showErr(translateError(err.code, 'login'));
+          resetLaeuft = false;
+          return;
+        }
+        /* Alles andere (unbekannte Adresse, zu viele Versuche) bleibt
+           unsichtbar: die Meldung unten sagt nicht, ob es das Konto
+           gibt. */
+      }
+      resetLaeuft = false;
+      showErr(t('login.resetGesendet', 'Gibt es ein Konto mit dieser Adresse, ist ein Link zum Zurücksetzen unterwegs. Schau auch im Spam-Ordner nach.'));
+    }
+    $('btnVergessen').addEventListener('click', passwortZuruecksetzen);
+    $('btnVergessen').addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        passwortZuruecksetzen();
+      }
     });
 
     const inviteParam = params.get('invite')?.trim() || '';
@@ -278,6 +365,13 @@
 
       if (!email || !pass) { showErr(t('login.fehler.leer', 'Bitte E-Mail und Passwort eingeben.')); return; }
       if (mode === 'register' && !name) { showErr(t('login.fehler.name', 'Bitte deinen Namen eingeben.')); return; }
+      /* Die Zustimmung ist eine Handlung, kein Kleingedrucktes: ohne
+         Häkchen entsteht kein Konto. */
+      if (mode === 'register' && !$('fNutzung').checked) {
+        showErr(t('login.fehler.nutzung', 'Bitte akzeptiere zuerst die Nutzungsbedingungen.'));
+        $('fNutzung').focus();
+        return;
+      }
       if (mode === 'login' && loginLockRemaining(localStorage) > 0) {
         showErr(translateError('login-locked', mode));
         return;

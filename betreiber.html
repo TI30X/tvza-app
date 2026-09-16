@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B1B2A" />
+  <meta name="description" content="Wer Firn betreibt und wie man ihn erreicht." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="assets/icons/firn.svg" />
+  <link rel="apple-touch-icon" href="assets/icons/firn-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/js/i18n.js?v=1"></script>
+  <link rel="stylesheet" href="assets/css/kit.css?v=35" />
+  <link rel="stylesheet" href="assets/css/feature/willkommen.css?v=5" />
+  <link rel="stylesheet" href="assets/css/feature/nutzung.css?v=2" />
+  <title data-i18n="bt.titel">Betreiber &amp; Kontakt — Firn</title>
+  <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
+       Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md.
+
+       Diese Seite ist absichtlich unvollständig (v.35.70.0). Anschrift
+       und Kontaktadresse kennt nur Michel; erfunden werden sie nicht —
+       "Max Mustermann ist hier kein zulässiger Ersatz für die
+       tatsächliche Identität" (Michel).
+
+       Solange irgendwo "[noch einzutragen]" steht, MUSS der Kasten mit
+       dem Hinweis oben stehen. dev/rechtstexte.test.mjs hält das fest:
+       wer die Angaben einträgt, nimmt den Kasten mit weg, und wer den
+       Kasten wegnimmt, ohne die Angaben einzutragen, bekommt einen
+       roten Test. -->
+</head>
+<body class="app">
+
+  <div class="wk">
+
+    <header class="wk-kopf">
+      <a class="nb-marke" href="willkommen.html"><span class="firn">Fir<b>n</b></span></a>
+      <a class="b b--secondary" href="login.html" data-i18n="wk.anmelden">Anmelden</a>
+    </header>
+
+    <main class="nb">
+      <h1 class="nb__titel" data-i18n="bt.ueberschrift">Betreiber &amp; Kontakt</h1>
+      <p class="nb__stand">Stand: 16. September 2026</p>
+
+      <p class="nb__entwurf">Diese Angaben sind noch nicht vollständig. Anschrift
+        und Kontaktadresse werden ergänzt, bevor Firn öffentlich angeboten wird.
+        Bis dahin erreichst du den Betreiber über den Chat in Firn oder über die
+        Leitung deiner Gruppe.</p>
+
+      <section class="nb__abschnitt">
+        <h2>Betreiber</h2>
+        <p>Timothy van Zanten<br />
+          [noch einzutragen: Strasse, PLZ, Ort, Land]<br />
+          [noch einzutragen: Kontaktadresse]</p>
+        <p>Firn wird als privates Projekt betrieben, nicht von einer Gesellschaft.
+          Der technische Betrieb liegt bei Michel van Zanten.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>Wofür dieser Kontakt gilt</h2>
+        <ul>
+          <li>Fragen zur Nutzung und Rückmeldungen zu Fehlern.</li>
+          <li>Auskunft, Berichtigung und Löschung von Personendaten
+            (<a href="datenschutz.html">Datenschutzerklärung</a>).</li>
+          <li>Meldungen zu Sicherheitslücken. Greife bei einer Meldung nicht auf
+            fremde Inhalte zu und verändere keine Daten anderer Personen.</li>
+          <li>Hinweise auf rechtswidrige Inhalte in einer Gruppe.</li>
+        </ul>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>Zu den Inhalten</h2>
+        <p>Termine, Nachrichten, Pläne und Dateien in einer Gruppe stammen von
+          ihren Mitgliedern. Verantwortlich für sie sind die Personen, die sie
+          hineinstellen, und die Leitung der Gruppe; die Regeln dazu stehen in den
+          <a href="nutzung.html">Nutzungsbedingungen</a>.</p>
+      </section>
+    </main>
+
+    <footer class="wk-fuss">
+      <span><span class="firn">Fir<b>n</b></span> <span data-i18n="wk.fuss">— ein Projekt von TVZA</span></span>
+      <span data-i18n="fuss.betrieben" data-i18n-vars='{"wer":"Timothy van Zanten"}'>betrieben von Timothy van Zanten</span>
+      <span class="wk-fuss__links">
+        <a class="wk-fuss__link" href="nutzung.html" data-i18n="nb.ueberschrift">Nutzungsbedingungen</a>
+        <a class="wk-fuss__link" href="datenschutz.html" data-i18n="fuss.datenschutz">Datenschutz</a>
+      </span>
+    </footer>
+
+  </div>
+
+</body>
+</html>

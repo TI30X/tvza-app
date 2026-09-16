@@ -1005,11 +1005,15 @@ function zeichne() {
   /* Stehen die Einstellungen der Gruppe offen, bleibt das Übrige zu —
      auch wenn eine neue Meldung die Seite neu zeichnet. */
   if (!darfFuehren && $('secFortschritt')?.hidden === false) fortschrittSchliessen();
-  const inEinst = hat && ($('secGruppeEinst')?.hidden === false || $('secFortschritt')?.hidden === false);
+  const bereit = hat && $('secBereit')?.hidden === false;
+  if (!hat) zeige('secBereit', false);
+  const inEinst = bereit
+    || (hat && ($('secGruppeEinst')?.hidden === false || $('secFortschritt')?.hidden === false));
   if (!hat) zeige('secGruppeEinst', false);
   if (inEinst && $('secFortschritt')?.hidden === false) fortschrittHoeren();
 
   zeige('secLeer', !hat);
+  zeige('secBereit', bereit);
   zeige('secWoche', hat && !inEinst);
   zeige('secMitglieder', hat && !inEinst);
   zeige('secAktionen', darfFuehren && !inEinst);
@@ -1499,7 +1503,7 @@ async function assistentSpeichern() {
    fuer die Art. Hier standen zwei prompt() — der Name, dann eine
    ZIFFER fuer die Art, weil drei Antworten fuer confirm() zu viele
    sind. Die Art entscheidet ueber Wortwahl und Rollennamen, nicht ueber
-   den Ablauf; darum steht der Rennkader vorn, aber nichts ist falsch. */
+   den Ablauf; darum steht das Sportteam vorn, aber nichts ist falsch. */
 let neueArt = 'kader';
 
 function setzeNeueArt(art) {
@@ -1519,6 +1523,11 @@ function neueGruppe() {
   zeige('secGruppeNeu', true);
   window.scrollTo(0, 0);
   $('neuName').focus();
+}
+
+function bereitSchliessen() {
+  zeige('secBereit', false);
+  zeichne();
 }
 
 function neueGruppeSchliessen() {
@@ -1545,6 +1554,10 @@ async function gruppeErstellen(event) {
     zeige('secGruppeNeu', false);
     /* Kein reload: beobachteMeineGruppen meldet die neue Gruppe von
        selbst, und der Umschalter steht dann schon richtig. */
+    /* Der nächste Schritt (v.35.70.0): einladen, einen Termin anlegen
+       oder in die Gruppe. Die Karte bleibt stehen, bis sie jemand
+       verlässt — auch wenn eine Meldung die Seite neu zeichnet. */
+    zeige('secBereit', true);
   } catch (e) {
     reportClientError('gruppe/anlegen', e);
     fehler.textContent = t('grp.f.gruppe', 'Die Gruppe konnte nicht erstellt werden.');
@@ -3477,6 +3490,9 @@ async function einladungZurueckziehen() {
 
   $('btnNeu')?.addEventListener('click', neueGruppe);
   $('btnEinladen')?.addEventListener('click', einladen);
+  $('bereitEinladen')?.addEventListener('click', () => { bereitSchliessen(); einladen(); });
+  $('bereitTermin')?.addEventListener('click', () => { bereitSchliessen(); formOeffnen(); });
+  $('bereitZur')?.addEventListener('click', bereitSchliessen);
   $('btnEinladungTeilen')?.addEventListener('click', einladungTeilen);
   $('btnEinladungChat')?.addEventListener('click', einladungImChat);
   $('btnEinladungKopieren')?.addEventListener('click', einladungKopieren);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0B1B2A" />
-  <meta name="description" content="Firn ist die Trainingsplattform für Kader, Vereine und Gyms: Pläne, Termine, Videoanalyse und FIS-Punkte an einem Ort." />
+  <meta name="description" content="Firn bringt Termine, Trainingspläne und Nachrichten an einen Ort — für Sportgruppen, Vereine, Familien und Freundeskreise." />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="assets/icons/firn.svg" />
   <link rel="apple-touch-icon" href="assets/icons/firn-192.png" />
@@ -13,12 +13,17 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="assets/js/theme.js"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=34" />
-  <link rel="stylesheet" href="assets/css/feature/willkommen.css?v=4" />
-  <title data-i18n="wk.titel">Firn — Training für Kader und Vereine</title>
+  <link rel="stylesheet" href="assets/css/kit.css?v=35" />
+  <link rel="stylesheet" href="assets/css/feature/willkommen.css?v=5" />
+  <title data-i18n="wk.titel">Firn — Termine, Pläne und Nachrichten für Gruppen</title>
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
        Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md.
-       Die Farben des Bildes stehen als Klassen in willkommen.css. -->
+       Die Farben des Bildes stehen als Klassen in willkommen.css.
+
+       v.35.70.0: die Seite erklärt jetzt, was Firn ist, für wen es ist
+       und was nach der Registrierung kommt (Michel). Sie nennt nur
+       Funktionen, die es gibt, und verspricht nichts über künftige
+       Tarife oder den Bestand der Daten. -->
 </head>
 <body class="app">
 
@@ -31,19 +36,24 @@
 
     <section class="wk-hero">
       <div class="wk-hero__text">
-        <h1 data-i18n-html="wk.hero.titel">Führe dein Kader an <em>einem</em> Ort.</h1>
+        <h1 data-i18n-html="wk.hero.titel">Gemeinsam planen. Den <em>Überblick</em> behalten.</h1>
         <p data-i18n="wk.hero.text">
-          Pläne, Termine, Videoanalyse und Rennergebnisse — statt in vier
-          Gruppenchats, zwei Tabellen und einem Ordner mit PDFs.
+          Firn bringt Termine, Trainingspläne und Nachrichten an einen Ort.
+          Für Sportgruppen, Vereine, Familien und Freundeskreise — damit alle
+          wissen, was ansteht und wo sie die wichtigen Informationen finden.
         </p>
         <div class="wk-knoepfe">
           <a class="b b--primary" href="login.html?neu=1" data-i18n="wk.kontoErstellen">Konto erstellen</a>
-          <a class="b b--secondary" href="#beta" data-i18n="wk.wasKostet">Was das kostet</a>
+          <a class="b b--secondary" href="login.html" data-i18n="wk.anmelden">Anmelden</a>
         </div>
+        <p class="wk-hero__hinweis" data-i18n="wk.hero.code">
+          Ein Einladungscode ist optional. Du kannst eine eigene Gruppe
+          erstellen oder einer bestehenden Gruppe beitreten.
+        </p>
       </div>
 
       <svg class="wk-berg" viewBox="0 0 400 280" role="img" aria-labelledby="wkBildTitel">
-        <title id="wkBildTitel" data-i18n="wk.bild">Ein Hang mit einer Slalomspur</title>
+        <title id="wkBildTitel" data-i18n="wk.bild">Ein verschneiter Berg mit einer Spur</title>
         <defs>
           <linearGradient id="wkGlut" x1="0" y1="0" x2="0" y2="1">
             <stop class="wk-berg__glut-b" offset="0" />
@@ -70,103 +80,162 @@
     </section>
 
     <section class="wk-block">
-      <h2 data-i18n="wk.fuer.titel">Nicht nur für Rennkader</h2>
-      <p data-i18n="wk.fuer.text">
-        Dieselbe Gruppe funktioniert als Kader, als Verein, als Gym oder als
-        Familie. Was sich ändert, sind die Wörter: wo der Kader einen
-        Haupttrainer und Athleten hat, hat das Gym eine Leitung und
-        Mitglieder, und aus dem Trainingslager wird ein Workshop. Der Aufbau
-        bleibt derselbe.
-      </p>
-      <div class="wk-pillen">
-        <span class="wk-pille" data-i18n="wk.pille.kader">Rennkader</span>
-        <span class="wk-pille" data-i18n="wk.pille.verein">Skiclub</span>
-        <span class="wk-pille" data-i18n="wk.pille.gym">Gym</span>
-        <span class="wk-pille" data-i18n="wk.pille.familie">Familie</span>
+      <h2 data-i18n="wk.was.titel">Was ihr mit Firn organisieren könnt</h2>
+
+      <div class="wk-karten">
+        <article class="wk-karte">
+          <span class="wk-plaettchen wk-plaettchen--termin" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+          </span>
+          <h3 data-i18n="wk.k1.titel">Gemeinsame Termine</h3>
+          <p data-i18n="wk.k1.text">
+            Plant Trainings, Treffen, Ausflüge und andere Aktivitäten in einem
+            gemeinsamen Kalender. Ergänzt Treffpunkte, wichtige Hinweise und
+            Unterlagen direkt beim Termin.
+          </p>
+        </article>
+
+        <article class="wk-karte">
+          <span class="wk-plaettchen wk-plaettchen--plan" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13" /></svg>
+          </span>
+          <h3 data-i18n="wk.k2.titel">Trainingspläne und Fortschritt</h3>
+          <p data-i18n="wk.k2.text">
+            Teilt Trainingspläne mit eurer Gruppe oder einzelnen Athletinnen und
+            Athleten. Haltet absolvierte Übungen, Wiederholungen, Gewichte und
+            Notizen beim jeweiligen Training fest.
+          </p>
+        </article>
+
+        <article class="wk-karte">
+          <span class="wk-plaettchen wk-plaettchen--chat" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-8 8H4l2.2-3.1A8 8 0 1 1 21 12z" /></svg>
+          </span>
+          <h3 data-i18n="wk.k3.titel">Nachrichten an einem Ort</h3>
+          <p data-i18n="wk.k3.text">
+            Besprecht Organisatorisches im Gruppenchat oder schreibt einzelnen
+            Personen direkt. So bleibt die Unterhaltung mit den Menschen
+            verbunden, mit denen ihr etwas plant.
+          </p>
+        </article>
+
+        <article class="wk-karte">
+          <span class="wk-plaettchen wk-plaettchen--ki" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M18 16.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" /></svg>
+          </span>
+          <h3 data-i18n="wk.k4.titel">Unterstützung durch den Assistenten</h3>
+          <p data-i18n="wk.k4.text">
+            Wo freigeschaltet, hilft euch der KI-Assistent, Informationen zu
+            finden und Vorschläge für eure Planung zu entwickeln. Prüft seine
+            Antworten: Auch ein Assistent kann sich irren.
+          </p>
+        </article>
       </div>
     </section>
 
-    <section class="wk-karten">
-      <article class="wk-karte">
-        <span class="wk-plaettchen wk-plaettchen--plan" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13" /></svg>
-        </span>
-        <h3 data-i18n="wk.k1.titel">Pläne, die ankommen</h3>
-        <p data-i18n="wk.k1.text">
-          Ein Programm für die ganze Gruppe oder eines für einen einzelnen
-          Athleten. Mehrere Trainer arbeiten nebeneinander, ohne sich
-          gegenseitig zu überschreiben.
-        </p>
-      </article>
+    <section class="wk-block">
+      <h2 data-i18n="wk.gruppen.titel">Eine App für unterschiedliche Gruppen</h2>
 
-      <article class="wk-karte">
-        <span class="wk-plaettchen wk-plaettchen--termin" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
-        </span>
-        <h3 data-i18n="wk.k2.titel">Termine mit Ausschreibung</h3>
-        <p data-i18n="wk.k2.text">
-          Trainings, Trainingslager und Rennen. Die Ausschreibung hängt als
-          PDF am Termin und lässt sich nachträglich ersetzen. Fällt etwas
-          aus, wird es abgesagt und nicht gelöscht — sonst steht am Samstag
-          jemand am Lift.
-        </p>
-      </article>
+      <div class="wk-karten wk-karten--schlicht">
+        <article class="wk-karte">
+          <h3 data-i18n="wk.g1.titel">Sport und Training</h3>
+          <p data-i18n="wk.g1.text">
+            Organisiert gemeinsame Einheiten, verteilt Trainingspläne und
+            behaltet Termine und Fortschritte im Blick.
+          </p>
+        </article>
+        <article class="wk-karte">
+          <h3 data-i18n="wk.g2.titel">Vereine und Teams</h3>
+          <p data-i18n="wk.g2.text">
+            Koordiniert Aktivitäten, teilt Informationen und bringt eure
+            Mitglieder auf denselben Stand.
+          </p>
+        </article>
+        <article class="wk-karte">
+          <h3 data-i18n="wk.g3.titel">Familie und Freunde</h3>
+          <p data-i18n="wk.g3.text">
+            Plant gemeinsame Unternehmungen, stimmt Termine ab und haltet
+            Absprachen zusammen.
+          </p>
+        </article>
+      </div>
+    </section>
 
-      <article class="wk-karte">
-        <span class="wk-plaettchen wk-plaettchen--video" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2.2" /><path d="M12 7v6m0 0l-4 6m4-6l4 6M7 9.5l10 0" /></svg>
-        </span>
-        <h3 data-i18n="wk.k3.titel">Videoanalyse im Browser</h3>
-        <p data-i18n="wk.k3.text">
-          Skelett über die Fahrt, Gelenkwinkel, Schwungwechsel. Die
-          Auswertung läuft im Browser — das Video wird zur Analyse an
-          keinen Server geschickt.
-        </p>
-      </article>
+    <section class="wk-block">
+      <h2 data-i18n="wk.start.titel">So beginnt ihr</h2>
+      <ol class="wk-schritte">
+        <li>
+          <h3 data-i18n="wk.s1.titel">Konto erstellen</h3>
+          <p data-i18n="wk.s1.text">Registriere dich mit deinem Namen und deiner E-Mail-Adresse.</p>
+        </li>
+        <li>
+          <h3 data-i18n="wk.s2.titel">Gruppe erstellen oder beitreten</h3>
+          <p data-i18n="wk.s2.text">Starte eine eigene Gruppe oder verwende eine Einladung, die du erhalten hast.</p>
+        </li>
+        <li>
+          <h3 data-i18n="wk.s3.titel">Gemeinsam loslegen</h3>
+          <p data-i18n="wk.s3.text">Lade weitere Personen ein und ergänzt eure ersten Termine, Pläne oder Nachrichten.</p>
+        </li>
+      </ol>
+    </section>
 
-      <article class="wk-karte">
-        <span class="wk-plaettchen wk-plaettchen--punkte" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7" /></svg>
-        </span>
-        <h3 data-i18n="wk.k4.titel">FIS-Punkte, ausgerechnet</h3>
-        <p data-i18n="wk.k4.text">
-          Rennzeiten im Profil des Athleten, daraus der Punktestand nach der
-          FIS-Formel. Ohne Penalty wird nichts geraten, sondern nichts
-          angezeigt.
-        </p>
-      </article>
+    <section class="wk-block">
+      <h2 data-i18n="wk.faq.titel">Häufige Fragen</h2>
+      <div class="wk-faq">
+        <div class="wk-faq__eintrag">
+          <h3 data-i18n="wk.f1.frage">Brauche ich eine Einladung?</h3>
+          <p data-i18n="wk.f1.antwort">
+            Nein. Du kannst zunächst ein persönliches Konto erstellen und später
+            einer Gruppe beitreten oder selbst eine Gruppe gründen.
+          </p>
+        </div>
+        <div class="wk-faq__eintrag">
+          <h3 data-i18n="wk.f2.frage">Kann ich mehrere Gruppen nutzen?</h3>
+          <p data-i18n="wk.f2.antwort">
+            Ja. Du kannst beispielsweise eine Sportgruppe und einen Freundeskreis
+            mit demselben Konto organisieren.
+          </p>
+        </div>
+        <div class="wk-faq__eintrag">
+          <h3 data-i18n="wk.f3.frage">Muss ich eine App herunterladen?</h3>
+          <p data-i18n="wk.f3.antwort">
+            Firn funktioniert im Browser auf Smartphone, Tablet und Computer. Auf
+            unterstützten Geräten kannst du die Web-App auch zum Startbildschirm
+            hinzufügen.
+          </p>
+        </div>
+        <div class="wk-faq__eintrag">
+          <h3 data-i18n="wk.f4.frage">Welche Funktionen stehen mir zur Verfügung?</h3>
+          <p data-i18n="wk.f4.antwort">
+            Das hängt von deiner Gruppe, deiner Rolle und den freigeschalteten
+            Funktionen ab. Die Gruppenleitung verwaltet gemeinsame Einstellungen
+            und Berechtigungen.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wk-beta">
+      <h2 data-i18n="wk.beta.titel">Firn wird weiterentwickelt</h2>
+      <p data-i18n="wk.beta.text">
+        Firn befindet sich in der Testphase. Wir verbessern Funktionen und
+        Bedienung laufend. Dabei können Fehler, Unterbrechungen oder Änderungen
+        auftreten. Bewahre wichtige Unterlagen deshalb zusätzlich ausserhalb von
+        Firn auf.
+      </p>
+      <p data-i18n="wk.beta.preis">
+        Falls später kostenpflichtige Angebote hinzukommen, informieren wir
+        vorher über Preis und Umfang. Kosten entstehen erst, wenn du ein
+        entsprechendes Angebot ausdrücklich annimmst.
+      </p>
     </section>
 
     <section class="wk-dunkel">
-      <h2 data-i18n="wk.nichts.titel">Was dein Kader nicht tun muss</h2>
-      <p data-i18n="wk.nichts.text">
-        Athleten brauchen keine Einrichtung. Sie bekommen einen Code, treten
-        bei und sehen ihren Plan. Kein Abo, kein Konto beim Anbieter, keine
-        App aus einem Store.
+      <h2 data-i18n="wk.schluss.titel">Bereit für eure erste Gruppe?</h2>
+      <p data-i18n="wk.schluss.text">
+        Erstelle dein Konto und bring eure nächsten Termine und Absprachen
+        zusammen.
       </p>
-    </section>
-
-    <section class="wk-beta" id="beta">
-      <h2 data-i18n="wk.beta.titel">Firn ist in geschlossener Beta</h2>
-      <p data-i18n="wk.beta.text">
-        Es gibt noch keinen Preis, weil es noch nichts zu kaufen gibt. Wer
-        jetzt dabei sein will, erstellt ein Konto und bekommt den Zugang von
-        Hand freigeschaltet.
-      </p>
-      <ul>
-        <li>
-          <strong data-i18n="wk.beta.p1t">Der Kader zahlt, nicht der Athlet.</strong>
-          <span data-i18n="wk.beta.p1">Ein Abo je Gruppe, die Mitglieder kommen kostenlos dazu.</span>
-        </li>
-        <li>
-          <strong data-i18n="wk.beta.p2t">Was in der Beta entsteht, bleibt.</strong>
-          <span data-i18n="wk.beta.p2">Deine Gruppe, deine Pläne und deine Termine wandern nicht in einen anderen Tarif.</span>
-        </li>
-        <li>
-          <strong data-i18n="wk.beta.p3t">Kein Preis auf dieser Seite, bis er stimmt.</strong>
-          <span data-i18n="wk.beta.p3">Eine Zahl, die später eine andere ist, hilft niemandem.</span>
-        </li>
-      </ul>
       <div class="wk-knoepfe">
         <a class="b b--primary" href="login.html?neu=1" data-i18n="wk.kontoErstellen">Konto erstellen</a>
       </div>
@@ -175,7 +244,11 @@
     <footer class="wk-fuss">
       <span><span class="firn">Fir<b>n</b></span> <span data-i18n="wk.fuss">— ein Projekt von TVZA</span></span>
       <span data-i18n="fuss.betrieben" data-i18n-vars='{"wer":"Timothy van Zanten"}'>betrieben von Timothy van Zanten</span>
-      <a class="wk-fuss__link" href="nutzung.html" data-i18n="nb.ueberschrift">Nutzungsbedingungen</a>
+      <span class="wk-fuss__links">
+        <a class="wk-fuss__link" href="nutzung.html" data-i18n="nb.ueberschrift">Nutzungsbedingungen</a>
+        <a class="wk-fuss__link" href="datenschutz.html" data-i18n="fuss.datenschutz">Datenschutz</a>
+        <a class="wk-fuss__link" href="betreiber.html" data-i18n="fuss.betreiber">Betreiber &amp; Kontakt</a>
+      </span>
     </footer>
 
   </div>

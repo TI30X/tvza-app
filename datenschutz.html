@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B1B2A" />
+  <meta name="description" content="Wie Firn Personendaten bearbeitet: welche Daten, wer sie sieht, welche Dienste mitarbeiten." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="assets/icons/firn.svg" />
+  <link rel="apple-touch-icon" href="assets/icons/firn-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/js/i18n.js?v=1"></script>
+  <link rel="stylesheet" href="assets/css/kit.css?v=35" />
+  <link rel="stylesheet" href="assets/css/feature/willkommen.css?v=5" />
+  <link rel="stylesheet" href="assets/css/feature/nutzung.css?v=2" />
+  <title data-i18n="ds.titel">Datenschutzerklärung — Firn</title>
+  <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
+       Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md.
+
+       Deutsch und nicht übersetzt, wie die Nutzungsbedingungen.
+
+       Jeder Satz hier ist am Code nachgeprüft (v.35.70.0) und nicht
+       aus einer Vorlage abgeschrieben:
+       - die Sammlungen und wer sie lesen darf: firestore.rules,
+       - was an Gemini geht: kontextBauen() in assets/js/ki.js,
+       - was der Worker speichert: worker/ki.js (nur Zähler in KV),
+       - der Ort der Datenbank: europe-west6 (Zürich), abgefragt mit
+         `firebase firestore:databases:get "(default)"` am 16.09.2026;
+         dieselbe Abfrage zeigt: keine geplanten Sicherungen, frühere
+         Fassungen eine Stunde.
+       Wer eine dieser Stellen ändert, ändert diese Seite mit. -->
+</head>
+<body class="app">
+
+  <div class="wk">
+
+    <header class="wk-kopf">
+      <a class="nb-marke" href="willkommen.html"><span class="firn">Fir<b>n</b></span></a>
+      <a class="b b--secondary" href="login.html" data-i18n="wk.anmelden">Anmelden</a>
+    </header>
+
+    <main class="nb">
+      <h1 class="nb__titel" data-i18n="ds.ueberschrift">Datenschutzerklärung</h1>
+      <p class="nb__stand">Stand: 16. September 2026</p>
+      <p class="nb__sprache" data-i18n="ds.sprache">Diese Erklärung gilt in der deutschen Fassung.</p>
+
+      <section class="nb__abschnitt">
+        <h2>1. Wer verantwortlich ist</h2>
+        <p>Verantwortlich für die Bearbeitung der Personendaten ist der Betreiber
+          von Firn. Name, Anschrift und Kontaktweg stehen unter
+          <a href="betreiber.html">Betreiber &amp; Kontakt</a>. An diese Adresse
+          gehen auch Fragen zum Datenschutz, Auskunftsbegehren und
+          Löschungswünsche.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>2. Welche Daten bearbeitet werden</h2>
+        <ul>
+          <li><strong>Konto:</strong> Anzeigename, E-Mail-Adresse, Zeitpunkt der
+            Erstellung, freigeschaltete Bereiche und — falls verwendet — der
+            Einladungscode. Das Passwort selbst wird nicht gespeichert, sondern
+            als Prüfwert bei Google Firebase Authentication.</li>
+          <li><strong>Namenskarte:</strong> damit andere in deiner Gruppe deinen
+            Namen sehen, ohne dein Profil lesen zu können, liegt dein Name
+            zusätzlich als eigener Eintrag. Wer deine E-Mail-Adresse kennt und
+            eintippt, findet darüber dein Konto; gespeichert ist dafür nur ein
+            Prüfwert (Hash) der Adresse, nicht die Adresse selbst.</li>
+          <li><strong>Gruppen:</strong> Mitgliedschaft, Rolle, Reihenfolge und
+            Einstellungen deiner Gruppen.</li>
+          <li><strong>Termine:</strong> Titel, Zeit, Ort, Art, Bemerkungen,
+            Programm, Abfahrten, Packliste, Zu- und Absagen sowie Unterlagen,
+            die jemand an einen Termin hängt.</li>
+          <li><strong>Training:</strong> veröffentlichte Pläne und dein Protokoll
+            dazu — Übungen, Sätze, Wiederholungen, Gewichte, Dauer, Strecke,
+            erledigt ja/nein und Notizen. Notizen „für die Leitung" sieht die
+            Leitung deiner Gruppe; Notizen „nur für mich" sieht ausschliesslich
+            dein eigenes Konto.</li>
+          <li><strong>Nachrichten:</strong> Inhalt, Zeitpunkt, Absender und
+            Empfänger in Einzel- und Gruppenchats sowie im Chat einer Gruppe.
+            Nachrichten sind auf dem Weg verschlüsselt (TLS), aber nicht
+            Ende-zu-Ende: der Betreiber könnte sie technisch einsehen.</li>
+          <li><strong>Kontaktkarten:</strong> was eine Gruppe für den Notfall
+            braucht — Adresse, Telefonnummern, Angaben zu Eltern, eine
+            Bemerkung. Sie sehen nur die Leitung der Gruppe und die Person
+            selbst.</li>
+          <li><strong>Technische Daten:</strong> beim Aufruf der Seite fallen beim
+            Hoster Verbindungsdaten an (IP-Adresse, Zeitpunkt, abgerufene
+            Datei, Browser). Firn selbst legt keine eigenen Zugriffsprotokolle
+            an und zählt keine Besuche.</li>
+        </ul>
+        <p>Es gibt in Firn keine Werbung, keine Weitergabe von Daten zu
+          Werbezwecken, kein Profiling und keine automatisierte Entscheidung mit
+          Rechtsfolge.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>3. Wer was sieht</h2>
+        <ul>
+          <li>Dein Profil liest niemand ausser dir selbst und dem Administrator.
+            Andere sehen deinen Namen, wenn ihr in derselben Gruppe seid oder
+            einander schreibt — nicht deine E-Mail-Adresse.</li>
+          <li>Termine, Pläne und Chats einer Gruppe sehen ihre Mitglieder. Gäste
+            sehen genau den einen Termin, zu dem sie eingeladen sind.</li>
+          <li>Dein Trainingsprotokoll sieht ausser dir die Leitung deiner Gruppe.</li>
+          <li>Diese Grenzen stehen nicht nur in der Oberfläche, sondern als Regeln
+            auf dem Server: ein Zugriff, den die Regel nicht erlaubt, scheitert
+            auch dann, wenn jemand die App umgeht.</li>
+        </ul>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>4. Dienste, die mitarbeiten</h2>
+        <ul>
+          <li><strong>Google Firebase</strong> (Google Ireland Limited / Google
+            LLC) — Authentifizierung und Datenbank. Die Datenbank steht in der
+            Region <strong>europe-west6 (Zürich, Schweiz)</strong>. Die
+            Anmeldung (Authentication) läuft über die weltweite Infrastruktur
+            von Google; dabei ist eine Bearbeitung ausserhalb der Schweiz, auch
+            in den USA, möglich.</li>
+          <li><strong>Cloudflare</strong> — betreibt den kleinen Dienst, über den
+            der KI-Assistent läuft. Er prüft die Anmeldung und zählt, wie oft
+            jemand fragt (gespeichert wird dafür nur ein Zähler je Konto und Tag,
+            48 Stunden lang). Die Frage selbst wird dort nicht gespeichert.</li>
+          <li><strong>Google Gemini</strong> — beantwortet die Fragen an den
+            Assistenten. Siehe Abschnitt 5.</li>
+          <li><strong>GitHub Pages</strong> (GitHub, Inc.) — liefert die Seite
+            aus und sieht dabei die Verbindungsdaten.</li>
+          <li><strong>Google Fonts</strong> und <strong>gstatic.com</strong> —
+            Schrift und Firebase-Bibliothek werden beim Laden von Google
+            abgerufen; Google erfährt dabei die IP-Adresse deines Geräts.</li>
+          <li><strong>jsDelivr / SheetJS</strong> — nur beim Einlesen einer
+            Excel-Datei durch die Leitung.</li>
+          <li>In den persönlichen Bereichen ausserhalb von Firn (Ski-Tracker,
+            Wetter, Food, Watchlist) werden weitere Quellen abgefragt — etwa
+            Open-Meteo, Open Food Facts, Finnhub, CoinGecko, Yahoo Finance.
+            Sie erfahren die Anfrage und die IP-Adresse, keine Kontodaten.</li>
+        </ul>
+        <p>Die Videoanalyse läuft vollständig im Browser: das Video verlässt dein
+          Gerät nicht und wird nirgends gespeichert. Geladen wird dafür nur das
+          Erkennungsmodell von Google.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>5. Der KI-Assistent</h2>
+        <p>Der Assistent arbeitet nur, wenn er für dich oder deine Gruppe
+          freigeschaltet ist. Fragst du ihn etwas, gehen deine Frage und ein
+          Ausschnitt deines Kalenders an Google Gemini: Titel, Daten, Zeiten und
+          Orte deiner eigenen Termine und der Termine deiner Gruppen, offene
+          Erinnerungen und die geplanten Trainingseinheiten. <strong>Nicht</strong>
+          mitgeschickt werden Namen anderer Personen, Kontaktkarten, Zu- und
+          Absagen, Chats und deine Trainingswerte.</p>
+        <p>Google kann Anfragen an die kostenlose Stufe seiner Schnittstelle zur
+          Verbesserung seiner Dienste verwenden. Schreib dem Assistenten deshalb
+          nichts, das niemand sonst lesen soll.</p>
+        <p>Der Assistent schreibt nichts von sich aus: Ein Termin wird erst
+          eingetragen und eine Nachricht erst gesendet, wenn du die Karte
+          bestätigst. Gesendet wird mit deinen Rechten und in deinem Namen.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>6. Was auf deinem Gerät bleibt</h2>
+        <p>Firn setzt keine Werbe- oder Analyse-Cookies. Im Speicher deines
+          Browsers liegen: eine Kopie der Daten, die du zuletzt gesehen hast
+          (damit die App offline funktioniert), die aktive Gruppe, die
+          Reihenfolge deiner Gruppen, Sprache und Erscheinungsbild, ein gemerkter
+          Einladungscode und Trainingseinträge, die noch nicht übertragen werden
+          konnten.</p>
+        <p>Diese Daten bleiben auf dem Gerät. Du wirst sie los, indem du dich
+          abmeldest und die Websitedaten im Browser löschst.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>7. Aufbewahrung und Löschung</h2>
+        <ul>
+          <li>Kontodaten bleiben, solange das Konto besteht. Auf Verlangen wird das
+            Konto gelöscht — schreib dazu an den Kontaktweg unter
+            <a href="betreiber.html">Betreiber &amp; Kontakt</a>.</li>
+          <li>Inhalte, die du in eine Gruppe gestellt hast — Termine, Nachrichten,
+            Pläne —, gehören zum Verlauf dieser Gruppe und verschwinden nicht
+            automatisch mit deinem Konto. Was du gelöscht haben möchtest, sag im
+            Löschungsbegehren dazu.</li>
+          <li>Löscht die Leitung eine Gruppe, verlieren alle den Zugriff auf ihre
+            Inhalte.</li>
+          <li>Es laufen keine geplanten Sicherungskopien. Google hält aus
+            technischen Gründen kurzzeitig frühere Fassungen der Datenbank
+            (zurzeit eine Stunde).</li>
+        </ul>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>8. Deine Rechte</h2>
+        <p>Du kannst Auskunft über deine Personendaten verlangen, sie berichtigen
+          oder löschen lassen und ihre Herausgabe in einem gängigen Format
+          verlangen. Wende dich dafür an den Kontaktweg unter
+          <a href="betreiber.html">Betreiber &amp; Kontakt</a>. Du kannst dich
+          auch beim Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten
+          (EDÖB) melden.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>9. Änderungen</h2>
+        <p>Ändert sich, wie Daten bearbeitet werden, wird diese Erklärung
+          angepasst; das Datum oben sagt, wann zuletzt. Wesentliche Änderungen
+          werden in der App mitgeteilt.</p>
+      </section>
+    </main>
+
+    <footer class="wk-fuss">
+      <span><span class="firn">Fir<b>n</b></span> <span data-i18n="wk.fuss">— ein Projekt von TVZA</span></span>
+      <span data-i18n="fuss.betrieben" data-i18n-vars='{"wer":"Timothy van Zanten"}'>betrieben von Timothy van Zanten</span>
+      <span class="wk-fuss__links">
+        <a class="wk-fuss__link" href="nutzung.html" data-i18n="nb.ueberschrift">Nutzungsbedingungen</a>
+        <a class="wk-fuss__link" href="betreiber.html" data-i18n="fuss.betreiber">Betreiber &amp; Kontakt</a>
+      </span>
+    </footer>
+
+  </div>
+
+</body>
+</html>

@@ -64,13 +64,24 @@ test('sie verspricht nur, was die App heute kann', async () => {
   assert.doesNotMatch(html, /abonnier/i,
     'die Seite verspricht ein Kalender-Abo — dafuer laeuft kein Worker');
 
-  /* Und der Satz zum Video muss der dauerhaft wahre bleiben: die
-     AUSWERTUNG laeuft im Browser. Das Video selbst wird sehr wohl
-     gespeichert. */
-  assert.match(html, /Auswertung läuft im Browser/,
-    'der Satz zur Videoanalyse fehlt oder behauptet mehr als er darf');
+  /* Spricht die Seite von Video, dann richtig: die AUSWERTUNG laeuft
+     im Browser. Seit v.35.70.0 steht die Videoanalyse nicht mehr auf
+     der Seite — sie ist echt, aber niemand meldet sich deswegen an.
+     Die Zusage gilt darum bedingt: wer sie zurueckholt, holt den Satz
+     mit zurueck. */
+  if (/[Vv]ideoanalyse/.test(html)) {
+    assert.match(html, /Auswertung läuft im Browser/,
+      'die Seite nennt die Videoanalyse, ohne zu sagen, wo sie laeuft');
+  }
   assert.doesNotMatch(html, /nicht hochgeladen/,
-    'die Seite behauptet, das Video werde nicht hochgeladen — das stimmt nicht');
+    'die Seite behauptet, etwas werde nicht hochgeladen — dafuer braucht es einen Beleg');
+
+  /* Michel, zur geraeteuebergreifenden Synchronisation: "wuerde ich
+     erst bewerben, wenn die von dir gemeldeten Fehler behoben sind."
+     Sie funktioniert im Attrappen-Modus und in den Tests; gegen das
+     echte Firestore ist sie nie durchgeklickt worden. */
+  assert.doesNotMatch(html, /auf allen (deinen )?Geräten|geräteübergreifend|automatisch synchronisiert/i,
+    'die Seite verspricht Synchronisation, die hier niemand nachgeprueft hat');
 });
 
 test('kein Preis, solange es keinen gibt', async () => {
@@ -79,7 +90,25 @@ test('kein Preis, solange es keinen gibt', async () => {
   const preise = html.match(/(CHF|EUR|€|\$)\s*\d/g) || [];
   assert.deepEqual(preise, [],
     'eine Zahl auf der Seite, die es noch nicht gibt — der Abo-Teil ist Beta');
-  assert.match(html, /Beta/, 'die Seite sagt nicht, dass Firn Beta ist');
+  assert.match(html, /Beta|Testphase/, 'die Seite sagt nicht, dass Firn noch in der Testphase ist');
+
+  /* Und sie verspricht nichts ueber kuenftige Tarife oder darueber,
+     dass Daten "bleiben" — Fassung 1 tat beides ("Was in der Beta
+     entsteht, bleibt"), und halten kann es niemand. */
+  assert.doesNotMatch(html, /entsteht, bleibt|nicht in einen anderen Tarif/,
+    'die Seite verspricht wieder etwas ueber Datenbestand und Tarife');
+  assert.doesNotMatch(html, /kein Konto beim Anbieter/,
+    'fuer Firn braucht es genau ein Konto beim Anbieter');
+});
+
+test('der Fuss fuehrt zu Bedingungen, Datenschutz und Betreiber', async () => {
+  /* Michel: "Ich wuerde im Footer drei getrennte Seiten verlinken."
+     Wer wissen will, wer dahintersteht, soll das nicht in den
+     Bedingungen suchen muessen. */
+  const html = await lies('willkommen.html');
+  for (const ziel of ['nutzung.html', 'datenschutz.html', 'betreiber.html']) {
+    assert.ok(html.includes(`href="${ziel}"`), `der Fuss fuehrt nicht zu ${ziel}`);
+  }
 });
 
 test('sie steht im Vorrat des Service Workers', async () => {
@@ -102,7 +131,7 @@ test('jeder sichtbare Text der Seite haengt an einem Schluessel', async () => {
   /* Textknoten ausserhalb von Kommentaren, die nicht in einem Element
      mit data-i18n stecken. Grob, aber es faengt genau den Fall:
      jemand ergaenzt einen Satz und vergisst den Schluessel. */
-  const ohneKommentare = html.replace(/<!--[sS]*?-->/g, '');
+  const ohneKommentare = html.replace(/<!--[\s\S]*?-->/g, '');
   const koerper = ohneKommentare.slice(ohneKommentare.indexOf('<body'));
 
   const offen = [];

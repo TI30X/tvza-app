@@ -46,9 +46,11 @@ test('die Karten: Rolle und Art, die aktive markiert, die Farbe wie im Kalender'
   assert.deepEqual(karten.map(k => [k.wert, k.aktiv]), [['g1', false], ['g2', true]]);
   assert.equal(karten[0].titel, 'BSV Kader');
   /* Ohne Katalog (deutsch, keine eigene Wahl) muss die Art trotzdem
-     dastehen — die erste Fassung hatte '' als Rueckfall. */
-  assert.equal(karten[0].text, 'Athlet · Rennkader');
-  assert.equal(karten[1].text, 'Leitung · Verein oder Gym');
+     dastehen — die erste Fassung hatte '' als Rueckfall. Die Woerter
+     selbst sind seit v.35.70.0 andere: "Rennkader" liess Firn wie
+     Software fuer einen einzigen Sport aussehen (Michel). */
+  assert.equal(karten[0].text, 'Athlet · Sportteam');
+  assert.equal(karten[1].text, 'Leitung · Verein oder Trainingsgruppe');
 
   /* EIN Team, EINE Farbe: das Plaettchen hier und die Quelle im Kalender. */
   const farben = teamFarben(ZWEI, CALENDAR_COLORS.map(c => c.value));

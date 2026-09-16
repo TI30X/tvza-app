@@ -10,7 +10,7 @@
    Der Cache-Name trägt die App-Version aus assets/js/ui-fx.js, damit
    beide Zahlen nur noch gemeinsam wandern können. */
 
-const CACHE = 'tvza-v.35.69.0';
+const CACHE = 'tvza-v.35.70.0';
 // Shell revision 30: today is the first visible agenda row, even near the list end.
 const FIREBASE_SDK = [
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
@@ -24,9 +24,11 @@ const SHELL = [
   './login.html',
   './willkommen.html',
   './nutzung.html',
-  './assets/css/kit.css?v=34',
-  './assets/css/feature/willkommen.css?v=4',
-  './assets/css/feature/nutzung.css?v=1',
+  './datenschutz.html',
+  './betreiber.html',
+  './assets/css/kit.css?v=35',
+  './assets/css/feature/willkommen.css?v=5',
+  './assets/css/feature/nutzung.css?v=2',
   './assets/css/legacy.css?v=1',
   './assets/css/feature/calendar.css?v=20',
   './assets/css/feature/matura.css?v=5',
@@ -58,7 +60,7 @@ const SHELL = [
   './assets/i18n/pl.json',
   './assets/i18n/nl.json',
   './assets/i18n/es.json',
-  './assets/js/ui-fx.js?v=26',
+  './assets/js/ui-fx.js?v=27',
   './assets/js/welcome.js',
   './manifest.json',
   './assets/js/firebase-config.js',
@@ -117,7 +119,7 @@ const SHELL = [
   './assets/js/formatierung.js',
   './assets/js/chat-modell.js',
   './assets/js/chat-stand.js',
-  './assets/js/feature/gruppe/gruppe.js?v=37',
+  './assets/js/feature/gruppe/gruppe.js?v=38',
   './assets/css/feature/gruppe.css?v=13',
   './assets/js/feature/ski/ski.js?v=1',
   './pages/gruppe.html',

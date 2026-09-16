@@ -13,17 +13,31 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="assets/js/theme.js"></script>
   <script src="assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="assets/css/kit.css?v=34" />
-  <link rel="stylesheet" href="assets/css/feature/willkommen.css?v=4" />
-  <link rel="stylesheet" href="assets/css/feature/nutzung.css?v=1" />
+  <link rel="stylesheet" href="assets/css/kit.css?v=35" />
+  <link rel="stylesheet" href="assets/css/feature/willkommen.css?v=5" />
+  <link rel="stylesheet" href="assets/css/feature/nutzung.css?v=2" />
   <title data-i18n="nb.titel">Nutzungsbedingungen — Firn</title>
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
        Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md.
 
        Der Text der Bedingungen ist deutsch und wird nicht übersetzt: er
        ist die verbindliche Fassung (wie die Vorgaben der Schule in der
-       Maturaarbeit). Übersetzt ist nur der Rahmen. Keine Preise und kein
-       Wort darüber, wer was bezahlt (Michel: "muss nirgends stehen"). -->
+       Maturaarbeit). Übersetzt ist nur der Rahmen.
+
+       Fassung 2 (v.35.70.0) nach Michels Entwurf. Was sich gegenüber
+       Fassung 1 geändert hat und warum:
+
+       - Betreiber und Kontakt stehen jetzt auf einer eigenen Seite
+         (betreiber.html). Wer wissen will, wer dahintersteht, sucht das
+         nicht in den Bedingungen.
+       - Der Datenschutz ist eine eigene Erklärung (datenschutz.html)
+         und nicht ein Absatz hier. "Wir geben sie nicht weiter" war
+         daneben auch falsch: Firebase und Gemini bearbeiten Daten im
+         Auftrag, und das steht dort jetzt so.
+       - Die Haftung schliesst Vorsatz und grobe Fahrlässigkeit nicht
+         mehr aus (Art. 100 OR: ein solcher Ausschluss wäre nichtig).
+       - Kostenpflichtiges wird angekündigt und ausdrücklich angenommen.
+         Eine ZAHL steht weiterhin nirgends — es gibt keine. -->
 </head>
 <body class="app">
 
@@ -36,135 +50,195 @@
 
     <main class="nb">
       <h1 class="nb__titel" data-i18n="nb.ueberschrift">Nutzungsbedingungen</h1>
-      <p class="nb__stand">Stand: 14. September 2026</p>
+      <p class="nb__stand">Stand: 16. September 2026 · Fassung 2</p>
       <p class="nb__sprache" data-i18n="nb.sprache">Diese Bedingungen gelten in der deutschen Fassung.</p>
 
       <section class="nb__abschnitt">
-        <h2>1. Worum es geht</h2>
-        <p>Firn ist eine App für Gruppen — Kader, Vereine, Gyms, Familien und
-          Freunde. Man plant darin Termine und Reisen, teilt Trainingspläne,
-          trainiert mit ihnen und schreibt einander. Firn wird betrieben von
-          Timothy van Zanten; technisch betreut wird es von Michel van Zanten.
-          „Wir" meint in diesen Bedingungen die beiden.</p>
-        <p>Wer ein Konto anlegt oder Firn benutzt, stimmt diesen Bedingungen zu.</p>
+        <h2>1. Betreiber und Geltungsbereich</h2>
+        <p>Firn wird betrieben von Timothy van Zanten; technisch betreut wird es
+          von Michel van Zanten. Wer verantwortlich ist und wie man ihn erreicht,
+          steht unter <a href="betreiber.html">Betreiber &amp; Kontakt</a>.</p>
+        <p>Diese Bedingungen regeln die Nutzung der Firn-Website und der Web-App.
+          Mit der Zustimmung bei der Registrierung akzeptierst du sie. Du kannst
+          sie jederzeit auf dieser Seite nachlesen.</p>
       </section>
 
       <section class="nb__abschnitt">
-        <h2>2. Dein Konto</h2>
+        <h2>2. Angebot und Testphase</h2>
+        <p>Firn unterstützt die Organisation von Gruppen: Kalender und Termine,
+          Nachrichten, Trainingspläne und weitere freigeschaltete Funktionen.</p>
+        <p>Die Anwendung befindet sich in der Testphase. Funktionen können
+          eingeschränkt sein, sich ändern oder zeitweise ausfallen. Ein bestimmter
+          Funktionsumfang und ein unterbrechungsfreier Betrieb werden für die
+          Testphase nicht zugesichert.</p>
+        <p>Kostenpflichtige Leistungen setzen eine gesonderte, ausdrückliche
+          Vereinbarung über Preis und Leistungsumfang voraus. Die Registrierung
+          allein begründet keine Zahlungspflicht.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>3. Dein Konto</h2>
         <ul>
-          <li>Ein Konto gehört einer Person. Gib deinen richtigen Namen an — deine
-            Gruppe soll wissen, wer du bist.</li>
-          <li>Halte dein Passwort geheim. Was mit deinem Konto geschieht, geschieht
-            in deinem Namen.</li>
-          <li>Wer jünger als 16 ist, braucht das Einverständnis der Eltern oder
-            Erziehungsberechtigten.</li>
-          <li>Du kannst Firn jederzeit verlassen. Auf deinen Wunsch löschen wir dein
-            Konto und die Daten, die nur dir gehören.</li>
+          <li>Verwende eine gültige E-Mail-Adresse und einen Namen, unter dem dich
+            deine Gruppe erkennen kann. Gib dich nicht als eine andere Person aus.</li>
+          <li>Schütze deine Zugangsdaten und teile dein Passwort nicht. Melde dich
+            über den Kontaktweg, wenn du einen unberechtigten Zugriff vermutest.</li>
+          <li>Wenn du minderjährig bist, nutze Firn mit Zustimmung deiner
+            gesetzlichen Vertretung. Die Gruppenleitung beachtet bei der Aufnahme
+            und Betreuung Minderjähriger die geltenden Vorgaben.</li>
+          <li>Du kannst Firn jederzeit verlassen und die Löschung deines Kontos
+            verlangen. Was dabei mit gemeinsamen Inhalten geschieht, steht in
+            Abschnitt 11 und in der Datenschutzerklärung.</li>
         </ul>
       </section>
 
       <section class="nb__abschnitt">
-        <h2>3. Gruppen und Einladungen</h2>
+        <h2>4. Gruppen und Berechtigungen</h2>
         <ul>
-          <li>Wer eine Gruppe anlegt oder leitet, ist für sie verantwortlich: wer
-            hineinkommt, welche Termine und Pläne darin stehen, wer wieder geht.</li>
-          <li>Einladungslinks schickst du nur an Leute, die in die Gruppe gehören.
-            Ein Link läuft nach einigen Tagen ab und kann jederzeit zurückgezogen
-            werden; wer schon beigetreten ist, bleibt, bis die Leitung ihn
-            entfernt oder er selbst geht.</li>
-          <li>Kontaktangaben — gerade die von Minderjährigen und ihren Eltern —
-            sehen nur die Leitung der Gruppe und die Person selbst. Wer sie
-            bekommt, benutzt sie nur für die Gruppe.</li>
+          <li>Die Gruppenleitung verwaltet Mitgliedschaften, Rollen und gemeinsame
+            Inhalte im Rahmen der verfügbaren Funktionen.</li>
+          <li>Was du sehen und bearbeiten kannst, richtet sich nach deiner Rolle
+            und den jeweiligen Freigaben. Einladungen und Gastlinks gibst du nur
+            an die dafür vorgesehenen Personen weiter; ein Einladungslink läuft
+            nach einigen Tagen ab und kann zurückgezogen werden.</li>
+          <li>Personendaten anderer Mitglieder — gerade Kontaktangaben von
+            Minderjährigen und ihren Eltern — verwendest du nur für den Zweck der
+            Gruppe. Werbung, Adresssammlungen und eine Weitergabe an Dritte sind
+            nicht erlaubt.</li>
         </ul>
       </section>
 
       <section class="nb__abschnitt">
-        <h2>4. Was du hineinstellst</h2>
+        <h2>5. Eigene Inhalte</h2>
         <ul>
-          <li>Termine, Nachrichten, Pläne, Fotos und Videos bleiben deine. Du
-            erlaubst uns, sie zu speichern und denen zu zeigen, für die du sie
-            bestimmt hast — mehr nicht.</li>
-          <li>Stelle nur hinein, was du teilen darfst. Fotos und Videos anderer,
-            besonders von Kindern und Jugendlichen, nur mit deren Einverständnis
-            beziehungsweise dem ihrer Eltern.</li>
-          <li>Nichts Rechtswidriges, nichts Beleidigendes, keine Belästigung,
-            keine Werbung, die niemand bestellt hat.</li>
-        </ul>
-        <p>Verstösst ein Inhalt dagegen, darf die Leitung der Gruppe ihn
-          entfernen, und wir dürfen Inhalte oder Konten sperren.</p>
-      </section>
-
-      <section class="nb__abschnitt">
-        <h2>5. Was nicht geht</h2>
-        <ul>
-          <li>Fremde Konten benutzen oder sich als jemand anderes ausgeben.</li>
-          <li>Versuchen, Schutzmechanismen zu umgehen, Daten anderer auszulesen
-            oder Firn mit automatisierten Abfragen zu belasten.</li>
-          <li>Firn für etwas anderes benutzen als für das Leben einer Gruppe —
-            etwa um Adressen zu sammeln oder weiterzugeben.</li>
+          <li>Die Rechte an deinen Inhalten bleiben bei dir beziehungsweise bei den
+            jeweiligen Rechteinhabern.</li>
+          <li>Du räumst dem Betreiber die für den Betrieb nötigen, nicht
+            ausschliesslichen Rechte ein, deine Inhalte zu speichern, technisch zu
+            verarbeiten und entsprechend deinen Freigaben bereitzustellen. Ein
+            Recht, deine Inhalte für Werbung zu verwenden, entsteht daraus nicht.</li>
+          <li>Stelle nur Inhalte hinein, zu deren Nutzung du berechtigt bist.
+            Beachte Urheberrechte, Persönlichkeitsrechte und die nötigen
+            Einwilligungen bei Bildern oder Videos anderer Personen, besonders
+            von Kindern und Jugendlichen.</li>
         </ul>
       </section>
 
       <section class="nb__abschnitt">
-        <h2>6. Training und Gesundheit</h2>
-        <p>Firn zeigt die Pläne, die deine Trainerinnen und Trainer
-          veröffentlichen, und hilft beim Trainieren — mit Gewichten vom
-          letzten Mal, Pausen und Uhren. Das sind Hilfen, keine Anweisungen und
-          keine ärztliche Beratung. Du trainierst auf eigene Verantwortung; bei
-          Schmerzen oder Zweifeln hör auf und frag jemanden, der sich auskennt.</p>
-      </section>
-
-      <section class="nb__abschnitt">
-        <h2>7. Deine Daten</h2>
+        <h2>6. Zulässige Nutzung</h2>
+        <p>Nicht erlaubt sind insbesondere:</p>
         <ul>
-          <li>Die Daten liegen bei Google Firebase. Wir geben sie nicht weiter und
-            verkaufen sie nicht.</li>
-          <li>Dein Profil sieht nur du. Andere sehen deinen Namen, wenn ihr in
-            derselben Gruppe seid oder euch schreibt.</li>
-          <li>Termine einer Gruppe sehen ihre Mitglieder; Gäste nur den einen
-            Termin, zu dem sie eingeladen sind.</li>
-          <li>Fragst du den Assistenten, geht deine Frage zusammen mit Titeln,
-            Daten und Orten deiner Termine an Google Gemini — keine Namen
-            anderer Menschen und keine Kontakte. Google kann solche Anfragen
-            zur Verbesserung seiner Dienste verwenden; schreib darum nichts
-            hinein, das niemand lesen soll. Eingetragen wird erst, wenn du
-            einen Vorschlag bestätigst.</li>
+          <li>rechtswidrige Inhalte, Drohungen, Belästigungen und diskriminierende
+            Äusserungen;</li>
+          <li>Identitätsmissbrauch und unberechtigter Zugriff auf fremde Konten
+            oder Daten;</li>
+          <li>unerwünschte Massenwerbung;</li>
+          <li>das Verbreiten schädlicher Dateien;</li>
+          <li>das Umgehen von Zugriffsbeschränkungen oder eine missbräuchliche
+            Belastung des Dienstes.</li>
         </ul>
+        <p>Vermutete Sicherheitslücken meldest du über den Kontaktweg unter
+          <a href="betreiber.html">Betreiber &amp; Kontakt</a>. Greife dabei nicht
+          auf fremde Inhalte zu und verändere keine Daten anderer Personen.</p>
       </section>
 
       <section class="nb__abschnitt">
-        <h2>8. Verfügbarkeit und Änderungen</h2>
-        <p>Wir halten Firn so gut am Laufen, wie wir können, aber ohne Gewähr,
-          dass es jederzeit erreichbar ist oder dass nie etwas verloren geht.
-          Was dir wichtig ist, sicherst du zusätzlich — Termine lassen sich zum
-          Beispiel als Kalenderdatei mitnehmen.</p>
-        <p>Firn verändert sich: Funktionen kommen dazu, andere fallen weg.
-          Kostenpflichtige Funktionen kündigen wir vorher klar an; bezahlt wird
-          nur, was du ausdrücklich bestellst.</p>
-        <p>Ändern sich diese Bedingungen wesentlich, sagen wir es in der App,
-          bevor sie gelten.</p>
+        <h2>7. Training und Gesundheit</h2>
+        <p>Firn stellt Werkzeuge zur Trainingsorganisation und zur Dokumentation
+          bereit. Trainingspläne und Hinweise stammen von Gruppenleitungen,
+          anderen Nutzern oder unterstützenden Funktionen.</p>
+        <p>Firn ersetzt keine medizinische Beratung und keine fachkundige
+          Trainingsbetreuung; ein Betreuungsverhältnis mit dem Betreiber entsteht
+          nicht. Prüfe, ob ein Training zu deinen Voraussetzungen passt, unterbrich
+          es bei Schmerzen oder Beschwerden und hole fachlichen Rat ein.</p>
       </section>
 
       <section class="nb__abschnitt">
-        <h2>9. Haftung</h2>
-        <p>Wir haften für Schäden, die wir vorsätzlich oder grobfahrlässig
-          verursachen. Im Übrigen haften wir nicht, soweit das Gesetz es
-          zulässt — insbesondere nicht für Inhalte, die andere Mitglieder
-          hineinstellen, und nicht für Folgen eines Trainings.</p>
+        <h2>8. KI-Assistent</h2>
+        <p>Soweit freigeschaltet, unterstützt ein KI-Assistent bei Fragen und bei
+          der Vorbereitung von Aktionen. Seine Antworten können fehlerhaft,
+          unvollständig oder unpassend sein.</p>
+        <p>Prüfe vorgeschlagene Termine, Empfänger, Nachrichten und
+          Trainingsangaben, bevor du sie übernimmst. Was Firn zur Bestätigung
+          vorlegt, wird erst nach dieser Bestätigung ausgeführt.</p>
+        <p>Welche Eingaben und Kontextdaten dabei an einen externen Anbieter
+          gehen, steht in der <a href="datenschutz.html">Datenschutzerklärung</a>.
+          Gib nur Informationen ein, die du für diesen Zweck verwenden darfst.</p>
       </section>
 
       <section class="nb__abschnitt">
-        <h2>10. Schluss</h2>
-        <p>Es gilt das Recht am Sitz des Betreibers. Ist eine Bestimmung
-          unwirksam, bleiben die übrigen gültig.</p>
-        <p>Fragen, Wünsche, eine Löschung: an die Leitung deiner Gruppe oder an
-          Timothy van Zanten, am einfachsten über den Chat in Firn.</p>
+        <h2>9. Datenschutz</h2>
+        <p>Wie Personendaten bearbeitet werden — von wem, wozu, mit welchen
+          Dienstleistern, wie lange und mit welchen Rechten —, steht in der
+          <a href="datenschutz.html">Datenschutzerklärung</a>. Diese
+          Nutzungsbedingungen ersetzen sie nicht.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>10. Verfügbarkeit und Sicherung</h2>
+        <p>Wartung, technische Störungen oder Ausfälle externer Dienste können die
+          Nutzung beeinträchtigen. Gerade in der Testphase können Speicher- und
+          Synchronisationsfehler auftreten.</p>
+        <p>Bewahre wichtige Unterlagen zusätzlich ausserhalb von Firn auf — Termine
+          lassen sich zum Beispiel als Kalenderdatei mitnehmen. Gesetzliche
+          Pflichten des Betreibers werden durch diesen Hinweis nicht eingeschränkt.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>11. Beendigung und Sperrung</h2>
+        <p>Du kannst die Nutzung jederzeit beenden und die Löschung deines Kontos
+          über den Kontaktweg verlangen. Wie dabei mit Personendaten, gemeinsamen
+          Gruppeninhalten und Sicherungskopien umgegangen wird, richtet sich nach
+          der Datenschutzerklärung und dem Gesetz. Eine Kontolöschung führt nicht
+          zwingend dazu, dass alle zuvor geteilten Gruppeninhalte verschwinden.</p>
+        <p>Bei erheblichen oder wiederholten Verstössen gegen diese Bedingungen
+          oder bei konkreten Sicherheitsrisiken können Inhalte entfernt und
+          Zugänge eingeschränkt oder gesperrt werden. Soweit möglich und
+          angemessen, wird der Grund mitgeteilt und Gelegenheit zur Stellungnahme
+          gegeben.</p>
+        <p>Bei einer geplanten Einstellung des Dienstes wird nach Möglichkeit
+          rechtzeitig informiert, damit wichtige Inhalte gesichert werden können.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>12. Haftung</h2>
+        <p>Der Betreiber haftet nach den gesetzlichen Vorschriften für vorsätzlich
+          oder grobfahrlässig verursachte Schäden. Unberührt bleiben die Haftung
+          für Personenschäden und andere gesetzlich nicht ausschliessbare
+          Haftungsfälle.</p>
+        <p>Im Übrigen wird die Haftung für leicht fahrlässig verursachte Schäden
+          im gesetzlich zulässigen Umfang ausgeschlossen.</p>
+        <p>Für die fachliche Richtigkeit von Inhalten, die andere Nutzer
+          bereitstellen — etwa Trainingspläne —, wird keine allgemeine Gewähr
+          übernommen. Zwingende eigene Pflichten des Betreibers bleiben bestehen.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>13. Änderungen der Bedingungen</h2>
+        <p>Wesentliche Änderungen werden mitgeteilt, bevor sie in Kraft treten; die
+          Mitteilung nennt die Änderung und den Geltungsbeginn. Soweit eine erneute
+          Zustimmung nötig ist, wird sie eingeholt. Eine Zahlungspflicht entsteht
+          nicht allein durch eine Änderung dieser Bedingungen.</p>
+      </section>
+
+      <section class="nb__abschnitt">
+        <h2>14. Anwendbares Recht</h2>
+        <p>Es gilt schweizerisches Recht. Zwingende Schutzbestimmungen, die
+          unabhängig von dieser Rechtswahl anwendbar sind, bleiben vorbehalten.
+          Für Streitigkeiten gelten die gesetzlichen Zuständigkeits- und
+          Gerichtsstandsregeln.</p>
+        <p>Ist eine Bestimmung unwirksam, bleiben die übrigen im gesetzlich
+          zulässigen Umfang bestehen.</p>
       </section>
     </main>
 
     <footer class="wk-fuss">
       <span><span class="firn">Fir<b>n</b></span> <span data-i18n="wk.fuss">— ein Projekt von TVZA</span></span>
       <span data-i18n="fuss.betrieben" data-i18n-vars='{"wer":"Timothy van Zanten"}'>betrieben von Timothy van Zanten</span>
+      <span class="wk-fuss__links">
+        <a class="wk-fuss__link" href="datenschutz.html" data-i18n="fuss.datenschutz">Datenschutz</a>
+        <a class="wk-fuss__link" href="betreiber.html" data-i18n="fuss.betreiber">Betreiber &amp; Kontakt</a>
+      </span>
     </footer>
 
   </div>

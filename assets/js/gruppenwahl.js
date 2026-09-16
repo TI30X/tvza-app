@@ -50,10 +50,10 @@ export function gruppenStil(gruppen) {
 
 /* Die Art einer Gruppe, deutsch als Rueckfall. Ohne eigene Sprachwahl
    laedt i18n.js keinen Katalog — mit '' als Rueckfall stand dann nur
-   "Athlet" da, ohne "Rennkader". In der ersten Probe genau so gesehen. */
-const ART = { kader: 'Rennkader', organisation: 'Verein oder Gym', familie: 'Familie oder Freunde' };
+   "Athlet" da, ohne die Art. In der ersten Probe genau so gesehen. */
+const ART = { kader: 'Sportteam', organisation: 'Verein oder Trainingsgruppe', familie: 'Familie oder Freundeskreis' };
 
-/** Die Karten: Name, "Athlet · Rennkader", Plaettchen in der Teamfarbe. */
+/** Die Karten: Name, "Athlet · Sportteam", Plaettchen in der Teamfarbe. */
 export function gruppenOptionen(gruppen, aktivId, rolleWort = () => '') {
   const stil = gruppenStil(gruppen);
   return (gruppen || []).map(g => ({
