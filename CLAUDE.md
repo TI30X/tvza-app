@@ -94,8 +94,10 @@ da. Es gilt schweizerisches Recht. Offen und bei Michel: Anschrift und
 Kontaktadresse auf `betreiber.html` (siehe 32). `dev/nutzung.test.mjs`,
 `dev/rechtstexte.test.mjs`.
 
-Die Fusszeilen sagen „Firn — ein Projekt von TVZA". Timo ist der Nutzer,
-Michel baut und hostet. Timos Name steht je Seite **einmal**, als
+Die Fusszeilen sagen „Firn — ein Projekt von TVZA". **Betreiber und
+technischer Betrieb sind Timothy van Zanten** — nach aussen steht nur
+dieser eine Name (korrigiert in v.35.70.1; nutzung.html nannte für den
+technischen Betrieb fälschlich einen zweiten). Timos Name steht je Seite **einmal**, als
 „betrieben von Timothy van Zanten" (`fuss.betrieben`) in der Fusszeile —
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
@@ -1200,7 +1202,9 @@ Dazu vier Aussagen, die nicht stimmten.
   nicht**, was auf dem Gerät bleibt, dass es keine geplanten Sicherungen
   gibt. Der Satz „Wir geben sie nicht weiter" ist weg — er stand neben der
   Bearbeitung durch Firebase und Gemini und stimmte nicht.
-  `betreiber.html` nennt den Betreiber; **Anschrift und Kontaktadresse
+  `betreiber.html` nennt den Betreiber (Betrieb und technischer Betrieb:
+  Timothy van Zanten — ein zweiter Name gehört nicht auf diese Seiten);
+  **Anschrift und Kontaktadresse
   fehlen und sind als Lücke markiert**. Erfunden wird nichts (Michel: „Max
   Mustermann ist hier kein zulässiger Ersatz für die tatsächliche
   Identität"); ein Test hält Lücke und Hinweis zusammen — wer die Angaben
