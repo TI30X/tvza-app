@@ -303,7 +303,12 @@ async function gruppenAuffrischen() {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     const groups = await import('./groups.js');
-    window.__firnGruppen = await groups.meineGruppen(uid);
+    const frisch = await groups.meineGruppen(uid);
+    /* Eine unvollständige Liste darf die gute nicht ersetzen (v.35.70.5):
+       sonst kürzt ein Auffrischen ohne Netz die Leiste. */
+    if (!frisch.unvollstaendig || !Array.isArray(window.__firnGruppen) || !window.__firnGruppen.length) {
+      window.__firnGruppen = frisch;
+    }
     beschriften();
   } catch { /* dann bleibt es, wie es war */ }
 }

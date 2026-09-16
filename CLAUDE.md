@@ -105,7 +105,7 @@ E-Mail-Adresse, keine Anschrift. `fuss.betrieben` bleibt im Katalog,
 wird aber nirgends mehr gesetzt; `dev/marke.test.mjs` lässt „höchstens
 einmal" weiterhin zu und verbietet den Namen ausserhalb.
 
-Version: **v.35.70.4**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.70.5**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -133,7 +133,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-87 Testdateien, **862 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+87 Testdateien, **863 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -1246,6 +1246,44 @@ die Karte des Assistenten) — darum sah man es dort nicht.
 Die Deklarationen stehen jetzt vor dem Zuhörer. Ein `?.` davor hätte den
 Fehler nur unsichtbar gemacht. `dev/chat-gruppen.test.mjs` hält beides:
 die Reihenfolge und die Zusage, dass `abonnieren()` sofort meldet.
+
+**34. Jedes Gerät zeigte eine andere halbe Gruppenliste** (v.35.70.5).
+Michel: „auf dem PC habe ich 3 Gruppen und nur eine ist auf dem Handy,
+und auf dem Handy habe ich 2 und auf dem PC ist nur eine davon." Der Code
+ist auf beiden Geräten derselbe — verschieden ist nur, was das Gerät im
+Moment des Startens lesen konnte. Drei Stellen liessen daraus einen
+Dauerzustand werden:
+
+- **Der Strom gab auf.** `mitgliedschaftenFolgen` versuchte es nach einer
+  unvollständigen Liste dreimal (1,5 / 3 / 4,5 Sekunden) und danach nie
+  wieder. Wer in diesen vier Sekunden kein Netz hatte, behielt die halbe
+  Liste für die ganze Sitzung — auf jedem Gerät eine andere. Jetzt geht es
+  nach den schnellen Versuchen langsam weiter (`SPAETER_MS`, 30 s), und
+  `folgen.nochmal()` lässt sich von aussen anstossen.
+- **Niemand fragte nach, wenn es wieder ginge.** Die Quelle hört jetzt auf
+  `online`, `focus` und `visibilitychange` — genau die Ereignisse, die ein
+  Handy auslöst, wenn man die App wieder öffnet. Sie fragt nur, wenn etwas
+  fehlt, und höchstens alle 20 Sekunden; dabei wird auch die Abfrage der
+  Mitgliedschaften noch einmal beim Server gestellt (die kann selbst aus
+  dem Speicher gekommen sein).
+- **„Gibt es nicht" galt zu schnell als gelöscht.** `ladeGruppe` fragte den
+  Server nur nach, wenn die Antwort ausdrücklich aus dem Speicher kam;
+  sagte sie gar nichts über ihre Herkunft, zählte die Gruppe als gelöscht
+  — und eine gelöschte wird nie wieder nachgefragt. Jetzt gilt gelöscht
+  nur, was der Server sagt (`fromCache !== false` fragt nach).
+
+Dazu zwei Dinge fürs nächste Mal: der Grund eines fehlgeschlagenen Lesens
+verschwindet nicht mehr im `catch`, sondern steht unter
+`window.__firnGruppenFehler` und geht einmal je Gruppe an
+`reportClientError`; und die Pille ersetzt eine gute Liste nicht mehr
+durch eine unvollständige, wenn sie beim Öffnen auffrischt.
+
+Die Attrappe kann den Fall jetzt nachstellen: `window.__attrappeOffline`
+lässt jedes Lesen scheitern, `window.__attrappeStumm = ['groups/g2']` nur
+dieses eine Dokument — damit sieht man die kurze Liste und, sobald der
+Filter weg ist, die vollständige.
+
+`dev/gruppen-strom.test.mjs`.
 
 ## Ausrollen
 

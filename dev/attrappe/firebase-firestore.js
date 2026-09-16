@@ -262,11 +262,24 @@ function darfListen(q) {
   if (basis.type === 'collection' && basis.path === 'kreis' && !istAdmin() && !speicher['kreis/' + ich()]) throw abgelehnt();
 }
 
-export async function getDoc(ref) { await bereit; lesen(); darfLesen(ref); return new DocumentSnapshot(ref, speicher[ref.path]); }
+/* Offline (v.35.70.5): window.__attrappeOffline lässt jedes Lesen
+   scheitern — wie ein Handy ohne Netz. window.__attrappeStumm = ['g2']
+   lässt nur diese Dokumente scheitern; damit lässt sich der Fall
+   nachstellen, den Michel gemeldet hat: auf jedem Gerät fehlt eine
+   ANDERE Gruppe, weil jedes Gerät etwas anderes lesen konnte. */
+function netzPruefen(pfad = '') {
+  if (globalThis.__attrappeOffline) throw fehler('unavailable', 'Failed to get document because the client is offline.');
+  const stumm = globalThis.__attrappeStumm;
+  if (Array.isArray(stumm) && stumm.some(teil => pfad.includes(teil))) {
+    throw fehler('unavailable', 'Failed to get document because the client is offline.');
+  }
+}
+
+export async function getDoc(ref) { await bereit; lesen(); netzPruefen(ref.path); darfLesen(ref); return new DocumentSnapshot(ref, speicher[ref.path]); }
 export const getDocFromServer = getDoc;
 export const getDocFromCache = getDoc;
 export const getDocsFromServer = (...a) => getDocs(...a);
-export async function getDocs(q) { await bereit; lesen(); darfListen(q); return querySnap(treffer(q)); }
+export async function getDocs(q) { await bereit; lesen(); netzPruefen(); darfListen(q); return querySnap(treffer(q)); }
 
 /* ── Schreiben ─────────────────────────────────────────────────────*/
 

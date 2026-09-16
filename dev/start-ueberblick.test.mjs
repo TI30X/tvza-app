@@ -105,7 +105,10 @@ test('Start zeigt den Überblick für jedes Konto — ohne Gruppe mit den zwei W
 
 test('"gibt es nicht" aus dem Speicher des Geräts macht eine Gruppe nicht zur gelöschten', async () => {
   const g = await read('assets/js/groups.js');
-  assert.match(g, /if \(!snap\.exists\(\) && snap\.metadata\?\.fromCache\) \{\s*try \{ snap = await getDocFromServer\(gruppeRef\(gid\)\); \}\s*catch \{ return undefined; \}/);
+  /* Seit v.35.70.5 strenger: nachgefragt wird auch dann, wenn die
+     Antwort gar nicht sagt, woher sie kommt (metadata fehlt). Gelöscht
+     ist eine Gruppe nur, wenn der Server es sagt. */
+  assert.match(g, /if \(!snap\.exists\(\) && snap\.metadata\?\.fromCache !== false\) \{\s*try \{ snap = await getDocFromServer\(gruppeRef\(gid\)\); \}\s*catch \{ return undefined; \}/);
   assert.match(g, /if \(g === undefined\) return null;\s*return g \? \{ \.\.\.g, meineRolle: m\.rolle \} : GELOESCHT;/);
 });
 

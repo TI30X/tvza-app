@@ -33,7 +33,7 @@
    members greift für Sammelgruppen-Abfragen NICHT.
    ══════════════════════════════════════════════════════════════════ */
 
-import { db } from './firebase-config.js';
+import { db, reportClientError } from './firebase-config.js';
 import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
   getDocFromCache, getDocFromServer, getDocsFromServer,
@@ -157,7 +157,13 @@ export async function ladeGruppe(gid) {
   catch (fehler) {
     try { snap = await getDocFromCache(gruppeRef(gid)); } catch { throw fehler; }
   }
-  if (!snap.exists() && snap.metadata?.fromCache) {
+  /* Gelöscht ist eine Gruppe nur, wenn es der SERVER sagt (v.35.70.5).
+     Vorher genügte dafür ein "gibt es nicht" mit fromCache === false —
+     und wenn eine Antwort gar nicht sagt, woher sie kommt, galt sie
+     ebenfalls als Auskunft des Servers. Jetzt wird in beiden Fällen
+     nachgefragt; bleibt auch das ohne Antwort, ist die Gruppe unbekannt
+     (undefined) und die Liste unvollständig — nicht kürzer. */
+  if (!snap.exists() && snap.metadata?.fromCache !== false) {
     try { snap = await getDocFromServer(gruppeRef(gid)); }
     catch { return undefined; }
   }
@@ -212,6 +218,20 @@ function eigeneMitgliedschaften(uid) {
    normale Zwischenzustand, wenn jemand gerade entfernt wurde. Sie wird
    still übersprungen statt die ganze Liste scheitern zu lassen. */
 const GELOESCHT = Symbol('gelöscht');
+
+/* Welche Gruppe sich warum nicht lesen liess — je Gruppe einmal, damit
+   ein dauerhaft fehlender Eintrag nicht das Log flutet. Sichtbar unter
+   window.__firnGruppenFehler, gemeldet über reportClientError. */
+const fehlerGemeldet = new Set();
+function gruppeFehlte(gid, fehler) {
+  try {
+    const liste = (globalThis.window.__firnGruppenFehler ||= []);
+    liste.push({ gid, code: fehler?.code || '', text: String(fehler?.message || fehler), zeit: Date.now() });
+  } catch { /* kein Fenster: dann eben nur der Bericht */ }
+  if (fehlerGemeldet.has(gid)) return;
+  fehlerGemeldet.add(gid);
+  reportClientError('gruppen/lesen', fehler);
+}
 async function zuGruppen(mitgliedschaften) {
   const gruppen = await Promise.all(mitgliedschaften.map(async m => {
     try {
@@ -219,7 +239,12 @@ async function zuGruppen(mitgliedschaften) {
       /* undefined: unbekannt — die Liste ist unvollständig und fragt nach. */
       if (g === undefined) return null;
       return g ? { ...g, meineRolle: m.rolle } : GELOESCHT;
-    } catch { return null; }
+    } catch (e) {
+      /* Der Grund darf nicht verschwinden: ohne ihn sieht man nur, dass
+         eine Gruppe fehlt, und rät (v.35.70.5). */
+      gruppeFehlte(m.gid, e);
+      return null;
+    }
   }));
   const liste = gruppen.filter(g => g && g !== GELOESCHT).sort((a, b) =>
     String(a.name || '').localeCompare(String(b.name || ''), 'de'));
@@ -311,6 +336,25 @@ function gruppenQuelle(uid) {
   onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true }, folgen,
     () => { if (!letzte) melden([]); });
   getDocsFromServer(eigeneMitgliedschaften(uid)).then(folgen, () => {});
+
+  /* Fehlt etwas, wird nachgefragt, sobald es wieder gehen könnte: das
+     Netz ist zurück, die App kommt aus dem Hintergrund, das Fenster
+     bekommt den Fokus (v.35.70.5). Ist die Liste vollständig, tut das
+     hier nichts — und öfter als alle 20 Sekunden fragt es nie. */
+  let zuletztGefragt = 0;
+  const nachfragen = () => {
+    if (letzte && !letzte.unvollstaendig) return;
+    const jetzt = Date.now();
+    if (jetzt - zuletztGefragt < 20000) return;
+    zuletztGefragt = jetzt;
+    folgen.nochmal();
+    /* Auch die Mitgliedschaften selbst können aus dem Speicher gekommen
+       sein — dann fehlt die Gruppe schon in der Abfrage. */
+    getDocsFromServer(eigeneMitgliedschaften(uid)).then(folgen, () => {});
+  };
+  window.addEventListener('online', nachfragen);
+  window.addEventListener('focus', nachfragen);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) nachfragen(); });
   /* Die Reihenfolge: von einem anderen Gerät (Server), aus einer anderen
      Seite dieses Geräts (storage) oder von hier (firn-gruppen-folge). */
   const neuOrdnen = () => { folgeJetzt = folgeAusGeraet(); if (roh) melden(roh); };

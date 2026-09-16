@@ -89,7 +89,10 @@ test('eine Mitgliedschaft ohne lesbare Gruppe kippt nicht die ganze Liste', asyn
   // Wer gerade entfernt wurde, hat kurzzeitig ein Mitgliedsdokument
   // ohne lesbare Gruppe. Das ist ein Zwischenzustand, kein Fehler.
   assert.match(body, /try \{/);
-  assert.match(body, /catch \{ return null; \}/);
+  /* Der Grund wird seit v.35.70.5 festgehalten, statt im catch zu
+     verschwinden: ohne ihn sieht man nur, dass eine Gruppe fehlt. Was
+     der Zweig TUT, ist dasselbe — null heisst "unbekannt". */
+  assert.match(body, /catch \(e\) \{[\s\S]*gruppeFehlte\(m\.gid, e\);[\s\S]*return null;\s*\}/);
   // Seit v.35.59.0 fällt auch eine gelöschte Gruppe still heraus — sie
   // zählt aber nicht als "nicht lesbar" (gruppen-strom.js fragt dann
   // nicht immer wieder nach).

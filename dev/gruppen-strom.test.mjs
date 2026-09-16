@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { root } from './gruppe-harness.mjs';
-import { mitgliedschaftenFolgen, VERSUCHE } from '../assets/js/gruppen-strom.js';
+import { mitgliedschaftenFolgen, VERSUCHE, NOCHMAL_MS, SPAETER_MS } from '../assets/js/gruppen-strom.js';
 
 const snap = (...gids) => ({
   docs: gids.map(gid => ({ ref: { parent: { parent: { id: gid } } }, data: () => ({ rolle: 'head' }) })),
@@ -72,14 +72,53 @@ test('kommt keine Meldung mehr, versucht es der Strom noch ein paar Mal nach der
   assert.equal(timer.length, 0, 'vollständig: kein weiterer Versuch');
 });
 
-test('eine Gruppe, die es nie mehr gibt, wird nicht endlos nachgefragt', async () => {
-  const { laden } = lader(new Set());
+test('was fehlt, wird weiter gefragt — erst schnell, dann selten (v.35.70.5)', async () => {
+  /* Michel: "auf dem PC habe ich 3 Gruppen und nur eine ist auf dem
+     Handy … und auf dem Handy 2, davon eine auf dem PC." Bis v.35.70.4
+     hörte der Strom nach VERSUCHE Anläufen auf — rund vier Sekunden
+     nach dem Start. Wer in diesem Moment kein Netz hatte, behielt die
+     halbe Liste für die ganze Sitzung, auf jedem Gerät eine andere.
+     Aufgeben gibt es nicht mehr; nur der Abstand wächst. */
+  const lesbar = new Set();
+  const { laden } = lader(lesbar);
+  const abstaende = [];
   const timer = [];
-  const folgen = mitgliedschaftenFolgen(laden, () => {}, { warten: fn => timer.push(fn) });
-  await folgen(snap('weg'));
-  let n = 0;
-  while (timer.length && n < 10) { await timer.shift()(); n += 1; }
-  assert.equal(n, VERSUCHE, 'höchstens so viele Versuche');
+  const folgen = mitgliedschaftenFolgen(laden, () => {},
+    { warten: (fn, ms) => { abstaende.push(ms); timer.push(fn); } });
+
+  await folgen(snap('fehlt'));
+  for (let i = 0; i < 6 && timer.length; i += 1) await timer.shift()();
+
+  assert.ok(abstaende.length > VERSUCHE, 'nach den schnellen Versuchen ist Schluss — das war der Fehler');
+  assert.deepEqual(abstaende.slice(0, VERSUCHE), [NOCHMAL_MS, NOCHMAL_MS * 2, NOCHMAL_MS * 3],
+    'die ersten Versuche kommen schnell');
+  assert.ok(abstaende.slice(VERSUCHE).every(ms => ms === SPAETER_MS),
+    'danach selten, aber weiter');
+
+  /* Sobald die Gruppe lesbar ist, hört es auf. */
+  lesbar.add('fehlt');
+  const offen = timer.length;
+  await timer.shift()();
+  assert.equal(timer.length, offen - 1, 'vollständig: kein neuer Versuch');
+});
+
+test('von aussen anstossen: das Netz ist zurück, die App ist wieder da', async () => {
+  /* Ohne das wartet ein Handy, das beim Start kein Netz hatte, bis zu
+     SPAETER_MS — und zeigt so lange die halbe Liste. */
+  const lesbar = new Set();
+  const { laden } = lader(lesbar);
+  const gemeldet = [];
+  const folgen = mitgliedschaftenFolgen(laden, g => gemeldet.push(g.map(x => x.id)), { warten: () => {} });
+
+  await folgen(snap('a', 'b'));
+  assert.deepEqual(gemeldet.at(-1), [], 'nichts lesbar');
+
+  lesbar.add('a'); lesbar.add('b');
+  assert.equal(folgen.nochmal(), true, 'ein Anstoss von aussen wird angenommen');
+  await new Promise(r => setTimeout(r, 0));
+  assert.deepEqual(gemeldet.at(-1), ['a', 'b'], 'nach dem Anstoss ist die Liste vollständig');
+
+  assert.equal(folgen.nochmal(), false, 'ist nichts offen, kostet der Anstoss keinen Lesezugriff');
 });
 
 test('groups.js hört mit den Metadaten und nimmt den Strom', async () => {
@@ -93,6 +132,17 @@ test('groups.js hört mit den Metadaten und nimmt den Strom', async () => {
   // (mehrere Rahmen, ein gemeinsamer Speicher) hielt am Laptop eine Gruppe
   // zurück, die das Handy zeigte.
   assert.match(q, /getDocsFromServer\(eigeneMitgliedschaften\(uid\)\)\.then\(folgen, \(\) => \{\}\);/);
+  /* v.35.70.5: fehlt etwas, wird nachgefragt, sobald es wieder gehen
+     könnte — sonst bleibt die halbe Liste die ganze Sitzung stehen. */
+  for (const ereignis of ["'online'", "'focus'", "'visibilitychange'"]) {
+    assert.ok(q.includes(ereignis), `kein Weg zurück ins Netz: ${ereignis} fehlt`);
+  }
+  assert.match(q, /folgen\.nochmal\(\);/, 'der Anstoss von aussen wird nicht benutzt');
+  assert.match(q, /if \(jetzt - zuletztGefragt < 20000\) return;/, 'ohne Bremse fragt jeder Fokus neu');
+  /* "Gibt es nicht" gilt nur vom Server: eine Antwort ohne Herkunft
+     (metadata fehlt) ist keine Auskunft. */
+  assert.match(q, /if \(!snap\.exists\(\) && snap\.metadata\?\.fromCache !== false\)/,
+    'eine Gruppe gilt wieder als gelöscht, ohne dass der Server es sagt');
   assert.match(q, /try \{ snap = await getDoc\(gruppeRef\(gid\)\); \}\s*catch \(fehler\) \{\s*try \{ snap = await getDocFromCache\(gruppeRef\(gid\)\); \}/);
   // Keine lesbare Gruppe ist nicht "keine Gruppe".
   const seite = await readFile(join(root, 'assets/js/feature/gruppe/gruppe.js'), 'utf8');
