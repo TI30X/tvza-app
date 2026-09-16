@@ -102,7 +102,7 @@ technischen Betrieb fälschlich einen zweiten). Timos Name steht je Seite **einm
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.70.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.70.2**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -130,7 +130,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-87 Testdateien, **858 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+87 Testdateien, **860 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -1216,6 +1216,23 @@ Dazu vier Aussagen, die nicht stimmten.
   anbietet — gegengeprüft, indem der Export einmal entfernt wurde.
 
 `dev/rechtstexte.test.mjs`, `dev/attrappe-vollstaendig.test.mjs`.
+
+**33. Ein synchroner Zuhörer beendete den Chat** (v.35.70.2). Michel:
+„die chats sind nicht mehr zum öffnen, ich kann nicht auf die chats
+klicken und sehen wer was schreibt." Belegt: `abonnieren()` in
+groups.js meldet einem neuen Abonnenten den bekannten Stand **synchron**
+(`if (letzte) cb(letzte)`, seit v.35.63.0). In messages.html lief der
+Zuhörer damit mitten im Modulrumpf — und griff auf `aktiv` zu, das erst
+fünfzig Zeilen später deklariert war. Der ReferenceError flog aus dem
+synchronen Aufruf heraus und beendete **das ganze Modul** (Falle 14):
+die Liste der Unterhaltungen stand da, weil sie vorher gezeichnet wurde,
+aber kein einziger Klick war mehr verdrahtet. Im Attrappen-Modus meldete
+der Stub asynchron; dort fiel nur der Chat aus der Adresse aus (?gruppe=,
+die Karte des Assistenten) — darum sah man es dort nicht.
+
+Die Deklarationen stehen jetzt vor dem Zuhörer. Ein `?.` davor hätte den
+Fehler nur unsichtbar gemacht. `dev/chat-gruppen.test.mjs` hält beides:
+die Reihenfolge und die Zusage, dass `abonnieren()` sofort meldet.
 
 ## Ausrollen
 

@@ -100,3 +100,41 @@ test('was der Assistent in eine Gruppe einträgt oder verschiebt, geht als Karte
   // Scheitert der Chat, ist der Termin trotzdem eingetragen.
   assert.match(p, /async function imChatAnkuendigen\([\s\S]*?\} catch \(fehler\) \{\s*reportClientError\('ki-chat', fehler\);/);
 });
+
+/* ── Der Zustand vor dem Zuhörer (v.35.70.2) ───────────────────────
+   Michel: "die chats sind nicht mehr zum öffnen, ich kann nicht auf die
+   chats klicken und sehen wer was schreibt."
+
+   Belegt: die gemeinsame Gruppenliste meldet einem neuen Abonnenten den
+   bekannten Stand SYNCHRON (abonnieren() in groups.js). Der Zuhörer in
+   messages.html lief damit mitten im Modulrumpf — und griff dort auf
+   `aktiv` zu, das erst fünfzig Zeilen später deklariert wurde. Der
+   ReferenceError flog aus dem synchronen Aufruf heraus und beendete das
+   ganze Modul: die Liste stand da, aber KEIN Klick war mehr verdrahtet
+   (Falle 14). Im Attrappen-Modus meldete der Stub asynchron — dort fiel
+   nur der Chat aus der Adresse aus. */
+test('in messages.html steht der Zustand des Threads vor dem Zuhörer', async () => {
+  const html = await read('pages/messages.html');
+
+  const zuhoerer = html.indexOf('beobachteUnterhaltungen(me,');
+  assert.ok(zuhoerer > 0, 'der Zuhörer für die Unterhaltungen fehlt');
+
+  /* Nur die Namen, die eine Deklaration eröffnen — activeName und
+     msgUnsub hängen mit Komma an activeOther. */
+  for (const name of ['aktiv', 'activeOther', 'convUnsub']) {
+    const deklaration = html.indexOf(`let ${name}`);
+    assert.ok(deklaration > 0, `${name} wird nirgends deklariert`);
+    assert.ok(deklaration < zuhoerer,
+      `let ${name} steht NACH dem Zuhörer — der erste Aufruf kommt synchron und wirft`);
+  }
+});
+
+test('die gemeinsame Gruppenliste meldet sofort — darum ist die Reihenfolge wichtig', async () => {
+  /* Diese Zusage ist die Hälfte des Fehlers oben. Wer sie ändert (etwa
+     auf ein setTimeout), macht die Reihenfolge unkritisch — aber bis
+     dahin gilt sie, und der Test hält sie fest. */
+  const groups = await read('assets/js/groups.js');
+  const flach = groups.replace(/\s+/g, ' ');
+  assert.ok(flach.includes('abonnieren(cb) { hoerer.add(cb); if (letzte) cb(letzte);'),
+    'abonnieren() meldet den bekannten Stand nicht mehr synchron');
+});

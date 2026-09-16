@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <title>Nachrichten — Firn</title>
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
-  <script src="../assets/js/ui-fx.js?v=28" defer></script>
+  <script src="../assets/js/ui-fx.js?v=29" defer></script>
 
   <style>
     body.dm { --accent:#6b46c1; --accent-hover:#5a3aa6; --accent-bg:rgba(107,70,193,.14); }
@@ -273,6 +273,24 @@
        Zu zweit, Gruppenchats (dms, art 'runde') und der Chat jeder Gruppe
        (groups/{gid}/chat) in EINER Liste — chat-stand.js liest, was die
        Leiste und Start ebenso brauchen, chat-modell.js ordnet. */
+    /* ── Der Zustand des Threads steht VOR dem Zuhörer ───────────────
+       Er stand bis v.35.70.2 fünfzig Zeilen weiter unten, und der
+       Zuhörer unten greift darauf zu. Das ging gut, solange sein erster
+       Aufruf später kam als das Ende des Moduls — seit v.35.63.0 kommt
+       er aber SOFORT: die gemeinsame Gruppenliste der obersten Seite
+       meldet einem neuen Abonnenten den bekannten Stand synchron
+       (abonnieren() in groups.js, "if (letzte) cb(letzte)"). Damit lief
+       "if (aktiv)" in die temporale Totzone, warf, und alles danach im
+       Zuhörer fiel aus — bei JEDEM Zeichnen der Liste. Sichtbar war:
+       der Chat aus der Adresse (?gruppe=, die Karte des Assistenten)
+       öffnete nicht, und der Stumm-Zustand fehlte.
+
+       Eine Deklaration gehört vor ihren ersten Gebrauch; ein "?." davor
+       hätte den Fehler nur unsichtbar gemacht. */
+    let aktiv = null;                 // { art, id, name, andere?, leute? }
+    let activeOther = null, activeName = '', msgUnsub = null;
+    let convUnsub = null, typingHideTimer = null;
+
     let convs = [];          // die Unterhaltungen zu zweit (für die Personenwahl)
     let alleDms = [];        // dazu die Gruppenchats
     let eintraege = [];      // die Liste, wie sie gezeichnet wird
@@ -334,9 +352,6 @@
     });
 
     /* ════ Thread (live) ════ */
-    let aktiv = null;                 // { art, id, name, andere?, leute? }
-    let activeOther = null, activeName = '', msgUnsub = null;
-    let convUnsub = null, typingHideTimer = null;
     // Reine Boolean-Flag statt Zeitstempel-Vergleich: ein Vergleich von serverTimestamp()
     // gegen das lokale Date.now() ist anfällig für Uhrzeit-Drift zwischen den Geräten.
     //
