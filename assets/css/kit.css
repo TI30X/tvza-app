@@ -4036,3 +4036,19 @@ body.settings-layer-open .ki-pille { display: none; }
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: .92em;
 }
+
+/* Die Auskunft "Warum fehlt eine Gruppe?" (v.35.70.6): Text zum Lesen und
+   Verschicken, auch auf einem Handy ohne Konsole. */
+.gruppen-diagnose {
+  margin: var(--s2) 0 0;
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-row);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}

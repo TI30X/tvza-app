@@ -207,6 +207,13 @@ KEYS = {
 # v.35.68.0 — Reihenfolge der Gruppen, Farben der Arten
 'grp.artFarbenText': ('Eigene Farben für Trainings, Lager oder Rennen im Kalender — sonst gilt die Farbe der Gruppe.', 'Own colours for trainings, camps or races in the calendar — otherwise the group colour applies.', 'Couleurs propres pour entraînements, camps ou courses dans le calendrier — sinon la couleur du groupe s’applique.', 'Colori propri per allenamenti, campi o gare nel calendario — altrimenti vale il colore del gruppo.', 'Własne kolory treningów, obozów lub zawodów w kalendarzu — inaczej obowiązuje kolor grupy.', 'Eigen kleuren voor trainingen, kampen of wedstrijden in de agenda — anders geldt de kleur van de groep.', 'Colores propios para entrenamientos, campamentos o carreras en el calendario; si no, vale el color del grupo.'),
 'grp.wieGruppe': ('Wie die Gruppe', 'Same as the group', 'Comme le groupe', 'Come il gruppo', 'Jak grupa', 'Zoals de groep', 'Como el grupo'),
+# Warum fehlt eine Gruppe? (v.35.70.6) — die einzige Stelle, an der man
+# auf einem Handy ohne Konsole sieht, was das Gerät kennt und was der
+# Server kennt.
+'set.warumFehlt': ('Warum fehlt eine Gruppe?', 'Why is a group missing?',
+                   'Pourquoi un groupe manque-t-il ?', 'Perché manca un gruppo?',
+                   'Dlaczego brakuje grupy?', 'Waarom ontbreekt een groep?',
+                   '¿Por qué falta un grupo?'),
 'set.gruppenFolge': ('Ziehen oder mit den Pfeilen ordnen — so stehen sie überall, auch auf deinen anderen Geräten.', 'Drag or use the arrows to reorder — they appear in this order everywhere, on your other devices too.', 'Fais glisser ou utilise les flèches pour ordonner — l’ordre vaut partout, aussi sur tes autres appareils.', 'Trascina o usa le frecce per ordinare — l’ordine vale ovunque, anche sugli altri dispositivi.', 'Przeciągnij lub użyj strzałek — kolejność obowiązuje wszędzie, także na innych urządzeniach.', 'Sleep of gebruik de pijlen om te ordenen — zo staan ze overal, ook op je andere apparaten.', 'Arrastra o usa las flechas para ordenar: el orden vale en todas partes, también en tus otros dispositivos.'),
 'set.ziehen': ('{name} ziehen', 'Drag {name}', 'Faire glisser {name}', 'Trascina {name}', 'Przeciągnij: {name}', '{name} slepen', 'Arrastrar {name}'),
 'set.ziehenTitel': ('Ziehen, um die Reihenfolge zu ändern', 'Drag to change the order', 'Faire glisser pour changer l’ordre', 'Trascina per cambiare l’ordine', 'Przeciągnij, aby zmienić kolejność', 'Sleep om de volgorde te wijzigen', 'Arrastra para cambiar el orden'),

@@ -105,7 +105,7 @@ E-Mail-Adresse, keine Anschrift. `fuss.betrieben` bleibt im Katalog,
 wird aber nirgends mehr gesetzt; `dev/marke.test.mjs` lässt „höchstens
 einmal" weiterhin zu und verbietet den Namen ausserhalb.
 
-Version: **v.35.70.5**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.70.6**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -779,6 +779,20 @@ Anlegen einer Gruppe:
   Versuch nach der Uhr lädt nach; eine gelöschte Gruppe zählt nicht als
   unlesbar (`zuGruppen`). In der Attrappe gibt es keine ausstehenden
   Schreibvorgänge — dort sah man den Fehler nie; `dev/gruppen-strom.test.mjs`.
+
+**Und wenn es doch nicht das Timing war** (v.35.70.6): Michels Bilder
+zeigten zwei Listen, die sich in EINER Gruppe überschneiden — am Laptop
+drei Testgruppen, am Handy „Babelek van Zanten" und eine davon. So etwas
+kann kein Timing sein; dann haben die Geräte verschiedene Daten.
+Einstellungen → „Deine Gruppen" → **„Warum fehlt eine Gruppe?"**
+(`gruppenDiagnose` in groups.js) stellt drei Dinge nebeneinander, die
+sonst niemand auseinanderhält: was der SERVER an Mitgliedschaften kennt,
+was dieses GERÄT kennt (und ob ein Eintrag nur eine noch nicht gesendete
+Schreibung ist, `hasPendingWrites`), und ob die Gruppe selbst auf dem
+Server und im Speicher liegt. Dazu die eigene Kennung — zwei Konten mit
+demselben Namen sehen in der App gleich aus. Die Auskunft steht als Text
+da, markierbar, damit sie von einem Handy ohne Konsole verschickt werden
+kann; sie nennt nur eigene Daten.
 - **Farbe:** die Leitung wählt sie aus den Kalenderfarben (`groups.farbe`,
   die Regel kannte das Feld immer). Die Seite trägt sie oben als Band
   (`--gruppe-farbe`; seit v.35.68.0 statt des Bands ein Punkt am Namen im
@@ -1297,7 +1311,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1255 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1258 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel

@@ -255,6 +255,54 @@ async function zuGruppen(mitgliedschaften) {
   return liste;
 }
 
+/* ── Warum fehlt eine Gruppe? (v.35.70.6) ──────────────────────────
+   Michel, mit zwei Bildern: am Laptop "TEST, Test 2, TEST GRUPPE 1",
+   am Handy "Babelek van Zanten, Test" — dasselbe Konto, und die Listen
+   überschneiden sich in EINER Gruppe. So etwas kann kein Timing sein:
+   die beiden Geräte haben verschiedene Daten.
+
+   Diese Auskunft vergleicht darum drei Dinge, die sonst niemand
+   auseinanderhalten kann:
+     - was der SERVER an Mitgliedschaften kennt,
+     - was dieses GERÄT an Mitgliedschaften kennt (und ob ein Eintrag
+       nur eine noch nicht gesendete Schreibung ist: hasPendingWrites),
+     - ob die Gruppe selbst auf dem Server und im Speicher liegt.
+   Damit steht da, ob eine Gruppe nur lokal existiert (nie beim Server
+   angekommen), ob das Konto ein anderes ist (uid) oder ob das Lesen
+   scheitert (Code). */
+export async function gruppenDiagnose(uid) {
+  const raus = { uid, server: [], geraet: [], gruppen: [], fehler: [] };
+  try {
+    const s = await getDocsFromServer(eigeneMitgliedschaften(uid));
+    raus.server = s.docs.map(d => ({ gid: d.ref.parent.parent.id, rolle: d.data().rolle || '' }));
+  } catch (e) { raus.fehler.push(`Mitgliedschaften beim Server: ${e?.code || e?.message || e}`); }
+  try {
+    const g = await getDocs(eigeneMitgliedschaften(uid));
+    raus.geraet = g.docs.map(d => ({
+      gid: d.ref.parent.parent.id,
+      ausstehend: !!d.metadata?.hasPendingWrites,
+      ausSpeicher: !!d.metadata?.fromCache,
+    }));
+  } catch (e) { raus.fehler.push(`Mitgliedschaften im Gerät: ${e?.code || e?.message || e}`); }
+
+  const gids = [...new Set([...raus.server.map(m => m.gid), ...raus.geraet.map(m => m.gid)])];
+  for (const gid of gids) {
+    const eintrag = { gid, name: '', server: '', geraet: '' };
+    try {
+      const s = await getDocFromServer(gruppeRef(gid));
+      eintrag.server = s.exists() ? 'ja' : 'nein';
+      if (s.exists()) eintrag.name = s.data().name || '';
+    } catch (e) { eintrag.server = e?.code || 'Fehler'; }
+    try {
+      const k = await getDocFromCache(gruppeRef(gid));
+      eintrag.geraet = k.exists() ? 'ja' : 'nein';
+      if (!eintrag.name && k.exists()) eintrag.name = k.data().name || '';
+    } catch { eintrag.geraet = 'nicht im Speicher'; }
+    raus.gruppen.push(eintrag);
+  }
+  return raus;
+}
+
 export async function meineGruppen(uid) {
   const snap = await getDocs(eigeneMitgliedschaften(uid));
   return geordnet(await zuGruppen(snap.docs.map(d => ({

@@ -36,7 +36,7 @@ import { ICONS, icon } from '../../shell.js?v=29';
 import { initialsOf } from '../../nav.js?v=30';
 import { frage, meldung } from '../../dialog.js';
 import { gemerktEinloesen, einladungsLink, kreisEinladungsText, codeZeigen } from '../../einladung.js';
-import { meineGruppen, leitet, kontakte, gruppenFolgeSetzen } from '../../groups.js';
+import { meineGruppen, leitet, kontakte, gruppenFolgeSetzen, gruppenDiagnose } from '../../groups.js';
 import { verschieben, anStelle, nachFolge } from '../../gruppen-folge.js';
 import { beobachteUnterhaltungen } from '../../chat-stand.js';
 import { ungelesenGesamt } from '../../chat-modell.js';
@@ -742,11 +742,51 @@ function zeichneGruppenEinst(fokus = '') {
   }).join('');
   if (fokus) liste.querySelector(fokus)?.focus();
 }
+/* Die Auskunft steht als Text da — auf dem Handy markierbar und zum
+   Verschicken. Sie nennt keine fremden Daten: die eigene Kennung, die
+   eigenen Mitgliedschaften, die Namen der eigenen Gruppen. */
+async function gruppenDiagnoseZeigen() {
+  const feld = document.getElementById('gruppenDiagnose');
+  if (!feld || !user) return;
+  feld.hidden = false;
+  feld.textContent = t('common.laden', 'Lade…');
+  try {
+    const d = await gruppenDiagnose(user.uid);
+    const zeilen = [
+      `Konto: ${d.uid}`,
+      `Mitgliedschaften beim Server: ${d.server.length}`,
+      `Mitgliedschaften auf diesem Gerät: ${d.geraet.length}`,
+      '',
+      ...d.gruppen.map(g => {
+        const imGeraet = d.geraet.find(m => m.gid === g.gid);
+        const beimServer = d.server.some(m => m.gid === g.gid);
+        const merkmale = [
+          beimServer ? 'Mitglied beim Server' : 'NUR auf diesem Gerät',
+          imGeraet?.ausstehend ? 'noch nicht gesendet' : '',
+          `Gruppe beim Server: ${g.server}`,
+          `im Speicher: ${g.geraet}`,
+        ].filter(Boolean);
+        return `${g.name || '(ohne Namen)'} [${g.gid}]\n  ${merkmale.join(' · ')}`;
+      }),
+      ...(d.fehler.length ? ['', ...d.fehler] : []),
+    ];
+    feld.textContent = zeilen.join('\n');
+  } catch (error) {
+    reportClientError('settings-gruppen-diagnose', error);
+    feld.textContent = String(error?.code || error?.message || error);
+  }
+}
+
 async function renderGruppenEinst() {
   if (!user) return;
   try { gruppenEinst = await meineGruppen(user.uid); }
   catch (error) { reportClientError('settings-gruppen', error); gruppenEinst = []; }
   zeichneGruppenEinst();
+  const knopf = document.getElementById('btnGruppenDiagnose');
+  if (knopf && !knopf.dataset.bereit) {
+    knopf.dataset.bereit = '1';
+    knopf.addEventListener('click', gruppenDiagnoseZeigen);
+  }
 }
 async function folgeSpeichern(folge, fokus = '') {
   gruppenEinst = nachFolge(gruppenEinst, folge);
