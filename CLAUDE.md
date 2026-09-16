@@ -1293,16 +1293,16 @@ Zwei Dinge, die leicht übersehen werden:
   bisher, private Notizen unter `trainingLogs`).
   v.35.65.0 (`groups/{gid}/vorlagen`) erweitert nur — ohne die Regel
   bleibt „Oder aus einer Vorlage" verborgen und „Als Vorlage speichern"
-  meldet, dass es nicht ging; der Plan geht trotzdem hinaus. **Vorbereitet,
-  noch nicht ausgerollt.**
+  meldet, dass es nicht ging; der Plan geht trotzdem hinaus. Ausgerollt am
+  16.09.2026, zusammen mit v.35.68.0 und unmittelbar vor dem Push.
   v.35.67.0 braucht keine neue Regel (Nachrichten wie im Chat), aber den
   **Worker** (`nachricht_senden` in `worker/ki.js`): `npx.cmd wrangler
   deploy` im Ordner `worker`. **Vorbereitet, noch nicht ausgerollt.**
   v.35.68.0 (`users/{uid}/einstellungen/gruppen`, `artFarben` an
   `groups` samt `artFarbenGueltig`) erweitert nur — ohne sie bleibt die
   Reihenfolge im Gerät (mit Hinweis) und die Farbe einer Art lässt sich
-  nicht speichern (Meldung), sonst geht alles. Mit `--dry-run`
-  kompiliert. **Vorbereitet, noch nicht ausgerollt.**
+  nicht speichern (Meldung), sonst geht alles. Ausgerollt am 16.09.2026,
+  unmittelbar vor dem Push (Regeln erweitern nur, der alte Code vertraegt sie).
 
 ## Gewohnheiten
 
