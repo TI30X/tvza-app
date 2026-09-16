@@ -124,4 +124,5 @@
 }
 .rueckgaengig .linkknopf { color: inherit; }
 body.has-nav .rueckgaengig { bottom: calc(var(--nav-hoehe) + var(--s3) + env(safe-area-inset-bottom, 0px)); }
+body.kb-open .rueckgaengig { bottom: calc(var(--tastatur, 0px) + var(--s3)); }
 @media (min-width: 900px) { body.has-nav .rueckgaengig { bottom: var(--s5); } }

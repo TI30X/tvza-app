@@ -39,11 +39,17 @@ test('die Auswahl: eigene Gruppen und wer schon schreibt, dazu die Adresse — z
 });
 
 test('die Tastatur deckt das Eingabefeld nicht mehr zu', async () => {
-  const [nav, router, kit] = await Promise.all([read('assets/js/nav.js'), read('assets/js/router.js'), read('assets/css/kit.css')]);
+  /* Seit v.35.69.0 misst jede Seite selbst (tastatur.js) — bis dahin stand
+     der Beobachter in nav.js, das Gruppe, Training, Einheit und Video nicht
+     laden. Die Zusagen sind dieselben geblieben. */
+  const [tastatur, router, kit] = await Promise.all([
+    read('assets/js/tastatur.js'), read('assets/js/router.js'), read('assets/css/kit.css'),
+  ]);
   // Der Rahmen sagt es nach oben, und oben zählt der Fokus im Rahmen.
-  assert.match(nav, /window\.parent\.document\.body\.classList\.toggle\('kb-open', offen\);/);
-  assert.match(nav, /el\.tagName === 'IFRAME' && \(\(\) => \{ try \{ return writable\(el\.contentDocument\?\.activeElement\); \}/);
-  // Die Unterkante ist die Tastatur, wo sie die Seite nur überdeckt (iPhone).
+  assert.match(tastatur, /win\.parent\.document\.body\.classList\.toggle\('kb-open', offen\);/);
+  assert.match(tastatur, /if \(el\.tagName === 'IFRAME'\) \{\s*try \{ return schreibfeld\(el\.contentDocument\?\.activeElement\); \}/);
+  // Die Überdeckung ist, was vom Layout unter dem sichtbaren Ausschnitt liegt.
+  assert.match(tastatur, /Math\.max\(0, Math\.round\(win\.innerHeight - vv\.height - vv\.offsetTop\)\)/);
   assert.match(router, /return Math\.max\(0, Math\.round\(innerHeight - vv\.height - vv\.offsetTop\)\);/);
   assert.match(router, /\? Math\.max\(tastatur\(\), nav\.getBoundingClientRect\(\)\.height \|\| 0\)/);
   assert.match(router, /window\.visualViewport\?\.addEventListener\('resize', syncShellBounds/);

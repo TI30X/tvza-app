@@ -27,6 +27,9 @@ import { WORKER_BASIS } from './worker-config.js';
 // Notifications belong to the shared shell, not to individual Bereich pages.
 // The module skips content frames, so routed pages mount exactly one bell.
 import './notifications.js';
+/* Die Tastatur am Handy (v.35.69.0): misst jede Seite, die eine Hülle
+   baut — auch die ohne nav.js (Gruppe, Training, Einheit, Video). */
+import { tastaturBeobachten } from './tastatur.js';
 
 /* ── Icons (§4.5) ──────────────────────────────────────────────────
    One set, Feather-like. The Bereich glyphs are the ones already in
@@ -371,6 +374,7 @@ export function mountRail({ profile = null } = {}) {
   gruppeInDerLeiste(nav);
   pilleLaden();
   offenesNachtragen();
+  tastaturBeobachten();
   return nav;
 }
 

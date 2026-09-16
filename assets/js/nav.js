@@ -23,12 +23,16 @@
 import { auth, db, MODULES, getProfile } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { collection, doc, query, where, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=28';
+import { ICONS, icon, areaModuleKeys, TABS, mountRail, kontoKnopf, setzeKonto } from './shell.js?v=29';
 import { mountAppRouter } from './router.js?v=19';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 import { eigeneKarte, kartenNachtragen } from './personen.js';
 import { beobachteUnterhaltungen } from './chat-stand.js';
 import { ungelesenGesamt } from './chat-modell.js';
+/* Die Tastatur misst jede Seite selbst (v.35.69.0, tastatur.js) — bis
+   dahin stand der Beobachter hier, und Gruppe, Training, Einheit und
+   Video laden nav.js nicht. */
+import { tastaturBeobachten } from './tastatur.js';
 
 const BEREICH_OF = {
   ski: 'ski', food: 'food', watch: 'watch', weather: 'weather',
@@ -53,7 +57,7 @@ const relabel = root => window.TVZAI18n?.applyTo(root);
    Dateien eine Leiste bauen und sie sonst auseinanderlaufen. Hier nur
    weitergereicht, damit index.html sie wie bisher
    von nav.js beziehen können. */
-export { ownsTab } from './shell.js?v=28';
+export { ownsTab } from './shell.js?v=29';
 
 /* Pages live either at the root or in /pages/. */
 const base = () => (location.pathname.includes('/pages/') ? '../' : './');
@@ -170,48 +174,6 @@ function mountAccountMenu(user, profile) {
   relabel(wrap);
 }
 
-/* ══ Bildschirmtastatur ═════════════════════════════════════════════
-   Die Tastatur verkleinert am Handy nur den sichtbaren Ausschnitt, nicht
-   das Layout. Eine unten fest verankerte Leiste wird darum mit
-   hochgeschoben und legt sich über das Eingabefeld. Die visualViewport-
-   API meldet, wie viel Höhe die Tastatur wegnimmt; solange sie offen
-   ist, tritt die Navigation zur Seite — beim Schreiben braucht sie
-   ohnehin niemand. Fehlt die API, bleibt alles wie bisher. */
-function watchKeyboard() {
-  /* Nicht über die Viewporthöhe messen: mit
-     interactive-widget=resizes-content schrumpft das Layout mit, die
-     gemessene Überlappung ist dann null und die Tastatur bliebe
-     unerkannt. Der verlässliche Hinweis ist der Fokus in einem
-     Schreibfeld — den gibt es genau dann, wenn die Tastatur offen ist. */
-  const writable = el => !!el && (
-    el.tagName === 'TEXTAREA' ||
-    el.isContentEditable ||
-    (el.tagName === 'INPUT' &&
-      !/^(button|submit|reset|checkbox|radio|file|range|color|image)$/i.test(el.type || 'text')) ||
-    /* Der Fokus liegt in einem Rahmen des Routers (Chat, Kalender): für die
-       Seite oben ist dann der Rahmen das aktive Element (v.35.62.0). */
-    (el.tagName === 'IFRAME' && (() => { try { return writable(el.contentDocument?.activeElement); } catch { return false; } })())
-  );
-  /* Michel: "auf dem Handy verschwindet die Textbox, wenn man die Tastatur
-     ausfährt". Im Rahmen weiss nur der Rahmen, dass getippt wird — die
-     Seite oben liess darum ihre Leiste stehen und den Rahmen darüber
-     enden, die Tastatur deckte das Eingabefeld zu. Jetzt sagt der Rahmen
-     es nach oben (v.35.62.0); dort rechnet der Router die Unterkante mit
-     der Tastatur (visualViewport). */
-  const sync = () => {
-    const offen = writable(document.activeElement);
-    document.body.classList.toggle('kb-open', offen);
-    if (window.parent !== window) {
-      try { window.parent.document.body.classList.toggle('kb-open', offen); } catch { /* fremdes Dokument */ }
-    }
-  };
-  document.addEventListener('focusin', sync);
-  // Kurz warten: beim Wechsel zwischen zwei Feldern liegt der Fokus
-  // einen Moment nirgends, das darf die Leiste nicht aufblitzen lassen.
-  document.addEventListener('focusout', () => setTimeout(sync, 80));
-  sync();
-}
-
 /** Unread count: a dot on the phone, a number in the laptop rail. */
 export function setUnread(n) {
   n = Number(n) || 0;
@@ -253,7 +215,7 @@ if (!SKIP.includes(file)) {
       if (profile.isTimo === true) kartenNachtragen().catch(() => {});
     }
     watchUnread(user);
-    watchKeyboard();
+    tastaturBeobachten();
     /* Hier stand zweimal refreshAreaNavigation(profile) — eine
        Funktion, die v.35.19.0 geloescht hatte. Der Aufruf ins Leere war
        syntaktisch gueltig und warf erst zur Laufzeit, bei JEDEM Laden

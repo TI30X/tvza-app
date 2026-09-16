@@ -97,7 +97,7 @@ Michel baut und hostet. Timos Name steht je Seite **einmal**, als
 nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
 (`dev/marke.test.mjs`).
 
-Version: **v.35.68.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.69.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -125,7 +125,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-84 Testdateien, **842 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+85 Testdateien, **845 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -1116,6 +1116,29 @@ den Plänen kamen nicht vor.
   erkennt man am Namen im Kopf und an der Auswahl in der Leiste.
 
 `dev/gruppen-folge-farben.test.mjs`.
+
+**31. Die Tastatur misst jede Seite selbst** (v.35.69.0, `tastatur.js`).
+Michel, mit einem Bild aus Samsung Internet: „auf dem Handy verschwindet die
+Textbox, wenn man die Tastatur ausfährt“ — obwohl v.35.62.0 genau das gelöst
+hatte. Belegt: `watchKeyboard` stand in `nav.js`, und Gruppe, Training,
+Einheit und Video laden nav.js nicht; dort gab es kein `kb-open`, und der
+Router rechnete die Tastatur nie mit. Ausserdem richtete sich alles, was
+unten klebt, allein nach der Unterkante des Routers.
+
+- `tastaturBeobachten()` läuft in JEDER Seite mit Hülle (`mountRail`) und
+  in nav.js; sie setzt `--tastatur` (die Überdeckung, 0 wo der Browser die
+  Seite selbst verkleinert), `--vv-hoehe` und `kb-open` — auch im
+  Elterndokument, wenn die Seite in einem Rahmen läuft. Gemessen wird nur,
+  solange der Fokus in einem Schreibfeld steht (`schreibfeld`), und nicht
+  beim Zoomen (`vv.scale`).
+- Darüber liegen jetzt: das Blatt des Assistenten (`bottom: max(…,
+  var(--tastatur))`), der Dialog von unten (`margin-bottom`), der Chat-Thread
+  (`body.dm-thread.kb-open .app` = sichtbarer Ausschnitt) und die
+  Rückgangig-Leiste im Player. `.ki-verlauf` scrollt für sich
+  (`overscroll-behavior: contain`), damit nicht zwei Flächen gleichzeitig
+  scrollen. Nach dem Schliessen der Tastatur steht alles wieder, wo es war.
+
+`dev/tastatur.test.mjs`.
 
 ## Ausrollen
 
