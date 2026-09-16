@@ -97,12 +97,15 @@ Kontaktadresse auf `betreiber.html` (siehe 32). `dev/nutzung.test.mjs`,
 Die Fusszeilen sagen „Firn — ein Projekt von TVZA". **Betreiber und
 technischer Betrieb sind Timothy van Zanten** — nach aussen steht nur
 dieser eine Name (korrigiert in v.35.70.1; nutzung.html nannte für den
-technischen Betrieb fälschlich einen zweiten). Timos Name steht je Seite **einmal**, als
-„betrieben von Timothy van Zanten" (`fuss.betrieben`) in der Fusszeile —
-nie nackt unter dem Zeichen, wo er sich wie ein Teil des Logos las
-(`dev/marke.test.mjs`).
+technischen Betrieb fälschlich einen zweiten). **Er steht aber nicht mehr
+unter jeder Seite** (v.35.70.3, so entschieden: „sollte nicht prominent
+sein"): der Fuss führt zu „Betreiber & Kontakt", und dort — und in den
+Bedingungen — steht, wer verantwortlich ist. Kontakt ist eine
+E-Mail-Adresse, keine Anschrift. `fuss.betrieben` bleibt im Katalog,
+wird aber nirgends mehr gesetzt; `dev/marke.test.mjs` lässt „höchstens
+einmal" weiterhin zu und verbietet den Namen ausserhalb.
 
-Version: **v.35.70.2**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.70.3**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -1305,15 +1308,16 @@ Zwei Dinge, die leicht übersehen werden:
   Ohne Service-Account prüft der Worker die Freischaltung nicht selbst
   (Falle 20). Auf Windows: PowerShell kennt kein `&&` und blockiert
   `npx.ps1` — `npx.cmd wrangler …` im Ordner `worker`.
-- **Anschrift und Kontaktadresse des Betreibers fehlen** (v.35.70.0).
-  `betreiber.html` trägt an zwei Stellen `[noch einzutragen]` und darüber
-  den Hinweis, dass die Angaben vor der öffentlichen Freigabe ergänzt
-  werden. Bis dahin führt der Weg über den Chat in Firn. Michel muss
-  liefern: vollständiger Name (steht: Timothy van Zanten), Strasse, PLZ,
-  Ort, Land und eine Kontaktadresse, an die Auskunfts-, Berichtigungs- und
-  Löschungsbegehren sowie Sicherheitsmeldungen gehen. Wer sie einträgt,
-  entfernt den Hinweis `.nb__entwurf` — `dev/rechtstexte.test.mjs` hält
-  beides zusammen.
+- **Der Kontakt ist eine E-Mail-Adresse, keine Anschrift** (v.35.70.3, so
+  entschieden). Auf `betreiber.html` steht
+  `zanten.timo@gmail.com`; dorthin gehen Auskunfts-, Berichtigungs- und
+  Löschungsbegehren, Sicherheitsmeldungen und Hinweise auf rechtswidrige
+  Inhalte. Eine Postanschrift steht nirgends. Ob das genügt, hängt am
+  Angebot: für ein privates, unentgeltliches Projekt ist es vertretbar,
+  für ein entgeltliches Angebot verlangt die Informationspflicht mehr —
+  bevor Firn Geld kostet, gehört das noch einmal geprüft. Bleibt je eine
+  Lücke offen, muss der Kasten `.nb__entwurf` wieder darüberstehen;
+  `dev/rechtstexte.test.mjs` hält Lücke und Kasten zusammen.
 - **Kein Server.** Das blockiert vier Dinge auf einmal: Einladungsmails
   (`mailer/` schreibt in die `mail`-Sammlung, niemand leert sie), das
   Kalender-Abo (`worker/` ist fertig, nirgends ausgerollt), das Abo/Bezahlen

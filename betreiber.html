@@ -20,16 +20,14 @@
   <!-- Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
        Hex-Farbe ausser theme-color: die Seiten-Invariante aus CLAUDE.md.
 
-       Diese Seite ist absichtlich unvollständig (v.35.70.0). Anschrift
-       und Kontaktadresse werden nachgetragen; erfunden werden sie
-       nicht — ein Beispielname wäre kein zulässiger Ersatz für die
-       tatsächliche Identität.
+       Kontakt ist eine E-Mail-Adresse, keine Anschrift (v.35.70.3,
+       so entschieden). Der Name des Verantwortlichen steht hier, weil
+       jemand wissen muss, mit wem er es zu tun hat — aber nur hier und
+       in den Bedingungen, nicht im Fuss jeder Seite.
 
-       Solange irgendwo "[noch einzutragen]" steht, MUSS der Kasten mit
-       dem Hinweis oben stehen. dev/rechtstexte.test.mjs hält das fest:
-       wer die Angaben einträgt, nimmt den Kasten mit weg, und wer den
-       Kasten wegnimmt, ohne die Angaben einzutragen, bekommt einen
-       roten Test. -->
+       Bliebe eine Lücke offen, müsste der Kasten .nb__entwurf wieder
+       darüber stehen; dev/rechtstexte.test.mjs hält Lücke und Kasten
+       zusammen. -->
 </head>
 <body class="app">
 
@@ -44,18 +42,12 @@
       <h1 class="nb__titel" data-i18n="bt.ueberschrift">Betreiber &amp; Kontakt</h1>
       <p class="nb__stand">Stand: 16. September 2026</p>
 
-      <p class="nb__entwurf">Diese Angaben sind noch nicht vollständig. Anschrift
-        und Kontaktadresse werden ergänzt, bevor Firn öffentlich angeboten wird.
-        Bis dahin erreichst du den Betreiber über den Chat in Firn oder über die
-        Leitung deiner Gruppe.</p>
-
       <section class="nb__abschnitt">
-        <h2>Betreiber</h2>
-        <p>Timothy van Zanten<br />
-          [noch einzutragen: Strasse, PLZ, Ort, Land]<br />
-          [noch einzutragen: Kontaktadresse]</p>
-        <p>Firn wird als privates Projekt betrieben, nicht von einer Gesellschaft.
-          Betrieb und technischer Betrieb liegen bei derselben Person.</p>
+        <h2>Kontakt</h2>
+        <p>Schreib an <a href="mailto:zanten.timo@gmail.com">zanten.timo@gmail.com</a>.
+          Diese Adresse ist der Weg für alles, was unten steht.</p>
+        <p>Firn ist ein privates Projekt, keine Gesellschaft. Verantwortlich für
+          den Betrieb ist Timothy van Zanten.</p>
       </section>
 
       <section class="nb__abschnitt">
@@ -64,6 +56,7 @@
           <li>Fragen zur Nutzung und Rückmeldungen zu Fehlern.</li>
           <li>Auskunft, Berichtigung und Löschung von Personendaten
             (<a href="datenschutz.html">Datenschutzerklärung</a>).</li>
+          <li>Löschung deines Kontos.</li>
           <li>Meldungen zu Sicherheitslücken. Greife bei einer Meldung nicht auf
             fremde Inhalte zu und verändere keine Daten anderer Personen.</li>
           <li>Hinweise auf rechtswidrige Inhalte in einer Gruppe.</li>
@@ -81,7 +74,6 @@
 
     <footer class="wk-fuss">
       <span><span class="firn">Fir<b>n</b></span> <span data-i18n="wk.fuss">— ein Projekt von TVZA</span></span>
-      <span data-i18n="fuss.betrieben" data-i18n-vars='{"wer":"Timothy van Zanten"}'>betrieben von Timothy van Zanten</span>
       <span class="wk-fuss__links">
         <a class="wk-fuss__link" href="nutzung.html" data-i18n="nb.ueberschrift">Nutzungsbedingungen</a>
         <a class="wk-fuss__link" href="datenschutz.html" data-i18n="fuss.datenschutz">Datenschutz</a>
