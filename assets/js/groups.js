@@ -383,7 +383,17 @@ function gruppenQuelle(uid) {
   const folgen = mitgliedschaftenFolgen(zuGruppen, melden);
   onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true }, folgen,
     () => { if (!letzte) melden([]); });
-  getDocsFromServer(eigeneMitgliedschaften(uid)).then(folgen, () => {});
+  /* Ob der Server überhaupt antwortet, weiss sonst niemand: eine
+     Abfrage, die aus dem Speicher beantwortet wird, sieht für die Seite
+     aus wie eine gelungene (v.35.70.7). */
+  const serverMelden = da => {
+    try { obersteSeite().dispatchEvent(new CustomEvent(da ? 'firn-server-da' : 'firn-server-fern')); } catch { /* fremdes Dokument */ }
+    if (window !== obersteSeite()) {
+      try { window.dispatchEvent(new CustomEvent(da ? 'firn-server-da' : 'firn-server-fern')); } catch { /* egal */ }
+    }
+  };
+  getDocsFromServer(eigeneMitgliedschaften(uid))
+    .then(s => { serverMelden(true); return folgen(s); }, () => serverMelden(false));
 
   /* Fehlt etwas, wird nachgefragt, sobald es wieder gehen könnte: das
      Netz ist zurück, die App kommt aus dem Hintergrund, das Fenster
@@ -398,7 +408,8 @@ function gruppenQuelle(uid) {
     folgen.nochmal();
     /* Auch die Mitgliedschaften selbst können aus dem Speicher gekommen
        sein — dann fehlt die Gruppe schon in der Abfrage. */
-    getDocsFromServer(eigeneMitgliedschaften(uid)).then(folgen, () => {});
+    getDocsFromServer(eigeneMitgliedschaften(uid))
+      .then(s => { serverMelden(true); return folgen(s); }, () => serverMelden(false));
   };
   window.addEventListener('online', nachfragen);
   window.addEventListener('focus', nachfragen);

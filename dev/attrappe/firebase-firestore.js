@@ -370,3 +370,9 @@ export function onSnapshot(q, a, b, c) {
 }
 
 kanal?.addEventListener('message', () => { lesen(); melden(); });
+
+/* Den Speicher des Geräts wegwerfen (v.35.70.7). In der Attrappe gibt es
+   keinen Firestore-Speicher — der Export muss aber da sein, sonst bricht
+   der Import und mit ihm das ganze Modul (Falle 14). */
+export async function terminate() {}
+export async function clearIndexedDbPersistence() {}

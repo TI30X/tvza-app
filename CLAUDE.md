@@ -105,7 +105,7 @@ E-Mail-Adresse, keine Anschrift. `fuss.betrieben` bleibt im Katalog,
 wird aber nirgends mehr gesetzt; `dev/marke.test.mjs` lässt „höchstens
 einmal" weiterhin zu und verbietet den Namen ausserhalb.
 
-Version: **v.35.70.6**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.70.7**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -1299,6 +1299,28 @@ Filter weg ist, die vollständige.
 
 `dev/gruppen-strom.test.mjs`.
 
+**35. Ein Gerät, das nur noch aus seinem Speicher liest** (v.35.70.7).
+Michel: am Handy fehlten die neuen Gruppen, dafür stand „Babelek van
+Zanten" da — und der Weg in den Admin fehlte auch. Admin hängt an
+`isTimo` im eigenen Profil; fehlt er, liest das Gerät auch das Profil
+nicht frisch. Zwei Symptome, eine Ursache: das Handy antwortete aus
+seinem eigenen, alten Firestore-Speicher und kam nicht an den Server —
+und die App sagte nichts, weil der Banner nur `navigator.onLine` kannte.
+
+- **Der Banner sagt es jetzt.** `gruppenQuelle` meldet nach jeder
+  Abfrage beim Server `firn-server-da` oder `firn-server-fern`;
+  `wireOfflineBanner` zeigt dann „Dieses Gerät erreicht die Daten gerade
+  nicht — du siehst, was zuletzt gespeichert wurde." (`app.nurSpeicher`).
+- **Der Ausweg:** Einstellungen → „Deine Gruppen" → **„Daten dieses
+  Geräts neu laden"** (`geraetespeicherLeeren` in firebase-config.js:
+  `terminate` + `clearIndexedDbPersistence`, dann neu laden). Vorher eine
+  Frage mit `gefahr` — nicht gesendete Änderungen wären weg (das
+  Trainingsprotokoll liegt zusätzlich in `protokoll-sicherung.js`). Ist
+  Firn in einem zweiten Fenster offen, scheitert das Löschen mit
+  `failed-precondition`, und die Meldung sagt, was zu tun ist.
+- Die Attrappe kennt `terminate` und `clearIndexedDbPersistence` (leer);
+  `attrappe-vollstaendig.test.mjs` hätte sonst Alarm geschlagen.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -1311,7 +1333,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1258 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1265 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel

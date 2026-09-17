@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="assets/css/feature/start.css?v=1" />
   <title data-i18n="home.seitentitel">Firn</title>
   <link rel="stylesheet" href="assets/css/ui-fx.css?v=15" />
-  <script src="assets/js/ui-fx.js?v=32" defer></script>
+  <script src="assets/js/ui-fx.js?v=33" defer></script>
 </head>
 <body>
   <script src="assets/js/welcome.js?v=6"></script>
@@ -395,6 +395,10 @@
              und was der Server kennt. -->
         <button class="linkknopf" id="btnGruppenDiagnose" type="button" data-i18n="set.warumFehlt">Warum fehlt eine Gruppe?</button>
         <pre class="nur-vorlesen gruppen-diagnose" id="gruppenDiagnose" hidden></pre>
+        <!-- Der Ausweg, wenn ein Gerät in seinem eigenen Speicher
+             feststeckt (v.35.70.7): wegwerfen und neu laden. -->
+        <button class="linkknopf" id="btnSpeicherLeeren" type="button" data-i18n="set.speicherLeeren">Daten dieses Geräts neu laden</button>
+        <p class="form-hint" data-i18n="set.speicherLeerenHinweis">Wirft den Zwischenspeicher weg und holt alles neu vom Server. Hilft, wenn ein Gerät alte Gruppen oder alte Angaben zeigt.</p>
       </section>
 
       <section class="settings-section settings-section--modules">
@@ -548,7 +552,7 @@
     </div>
   </div>
 
-  <script type="module" src="./assets/js/feature/start/start.js?v=32"></script>
+  <script type="module" src="./assets/js/feature/start/start.js?v=33"></script>
 
   <!-- Live weather mini-chip in the header (region's current weather; tap → Wetter-Tile) -->
   <script type="module" src="./assets/js/feature/start/wetter-chip.js?v=20"></script>

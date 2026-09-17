@@ -131,7 +131,11 @@ test('groups.js hört mit den Metadaten und nimmt den Strom', async () => {
   // v.35.62.0: und einmal direkt beim Server — ein veralteter Speicher
   // (mehrere Rahmen, ein gemeinsamer Speicher) hielt am Laptop eine Gruppe
   // zurück, die das Handy zeigte.
-  assert.match(q, /getDocsFromServer\(eigeneMitgliedschaften\(uid\)\)\.then\(folgen, \(\) => \{\}\);/);
+  /* Seit v.35.70.7 meldet dieselbe Abfrage auch, ob der Server antwortet
+     (firn-server-da / firn-server-fern) — der Banner sagt sonst "online",
+     während alles aus dem Speicher kommt. */
+  assert.match(q, /getDocsFromServer\(eigeneMitgliedschaften\(uid\)\)\s*\.then\(s => \{ serverMelden\(true\); return folgen\(s\); \}, \(\) => serverMelden\(false\)\);/);
+  assert.ok(q.includes("'firn-server-fern'") && q.includes("'firn-server-da'"), 'niemand erfährt, dass der Server nicht antwortet');
   /* v.35.70.5: fehlt etwas, wird nachgefragt, sobald es wieder gehen
      könnte — sonst bleibt die halbe Liste die ganze Sitzung stehen. */
   for (const ereignis of ["'online'", "'focus'", "'visibilitychange'"]) {

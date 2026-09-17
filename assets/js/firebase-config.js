@@ -115,13 +115,54 @@ export function requireAuth(loginPath = 'login.html') {
 }
 
 // Wire up the standard offline banner (element with id="offlineBanner")
+/* "Offline" ist nicht dasselbe wie "der Server antwortet nicht"
+   (v.35.70.7). Michel: auf dem Handy fehlten Gruppen UND der Zugang zum
+   Admin — beides Lesevorgänge, beide beantwortet aus dem Speicher des
+   Geräts. navigator.onLine sagte dabei die ganze Zeit "online", denn das
+   Handy hatte ja Netz; nur Firestore kam nicht durch. Ein Gerät, das
+   gespeicherte Daten für die Wahrheit hält und es niemandem sagt, ist
+   schlimmer als eines, das offline ist: man sieht eine alte Welt und
+   merkt es nicht.
+
+   groups.js meldet darum, ob die Abfrage beim Server durchkam
+   (firn-server-fern / firn-server-da). */
+let serverFern = false;
 export function wireOfflineBanner() {
   const banner = document.getElementById('offlineBanner');
   if (!banner) return;
-  const update = () => banner.classList.toggle('visible', !navigator.onLine);
+  const text = banner.querySelector('[data-i18n]') || banner;
+  const update = () => {
+    const weg = !navigator.onLine;
+    banner.classList.toggle('visible', weg || serverFern);
+    if (!weg && serverFern) {
+      text.textContent = window.TVZAI18n?.tOr('app.nurSpeicher',
+        'Dieses Gerät erreicht die Daten gerade nicht — du siehst, was zuletzt gespeichert wurde.')
+        ?? 'Dieses Gerät erreicht die Daten gerade nicht — du siehst, was zuletzt gespeichert wurde.';
+    } else if (weg) {
+      text.textContent = window.TVZAI18n?.tOr('app.offline',
+        'Offline – Daten werden synchronisiert, sobald du wieder online bist')
+        ?? 'Offline – Daten werden synchronisiert, sobald du wieder online bist';
+    }
+  };
   window.addEventListener('online', update);
   window.addEventListener('offline', update);
+  for (const [ereignis, wert] of [['firn-server-fern', true], ['firn-server-da', false]]) {
+    window.addEventListener(ereignis, () => { serverFern = wert; update(); });
+  }
   update();
+}
+
+/* Den Speicher dieses Geräts wegwerfen (v.35.70.7). Der Ausweg, wenn ein
+   Gerät in seinem eigenen Cache feststeckt: Firestore beenden, den
+   Speicher löschen, neu laden. Danach kommt alles frisch vom Server.
+   Nicht geschriebene Änderungen wären damit weg — darum fragt der Aufrufer
+   vorher, und das Trainingsprotokoll liegt ohnehin zusätzlich im Gerät
+   (protokoll-sicherung.js). */
+export async function geraetespeicherLeeren() {
+  const { terminate, clearIndexedDbPersistence } =
+    await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  await terminate(db);
+  await clearIndexedDbPersistence(db);
 }
 
 export function escHtml(str) {

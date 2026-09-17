@@ -15,7 +15,7 @@ import {
   auth, db, requireAuth, wireOfflineBanner, escHtml,
   MODULES, CORE_MODULE_KEYS, allowedModules, enabledModules, getProfile, sharesForEmail,
   projekteReparatur, istTvza, imKreis,
-  sharesByOwner, reportClientError
+  sharesByOwner, reportClientError, geraetespeicherLeeren
 } from '../../firebase-config.js';
 
 /* tOr und nicht t() mit ??: t() gibt bei unbekanntem Schluessel den
@@ -777,6 +777,31 @@ async function gruppenDiagnoseZeigen() {
   }
 }
 
+/* Wenn ein Gerät in seinem Speicher feststeckt, hilft nur wegwerfen.
+   Vorher gefragt: nicht gesendete Änderungen wären damit weg. */
+async function speicherLeeren() {
+  const ja = await frage({
+    titel: t('set.speicherLeeren', 'Daten dieses Geräts neu laden'),
+    text: t('set.speicherLeerenFrage', 'Der Zwischenspeicher dieses Geräts wird weggeworfen und alles neu vom Server geholt. Änderungen, die noch nicht gesendet werden konnten, gehen dabei verloren. Weiter?'),
+    ja: t('set.speicherLeerenJa', 'Neu laden'),
+    gefahr: true,
+  });
+  if (!ja) return;
+  try {
+    await geraetespeicherLeeren();
+  } catch (error) {
+    reportClientError('settings-speicher', error);
+    await meldung({
+      titel: t('set.speicherLeerenFehler', 'Das ging nicht'),
+      text: error?.code === 'failed-precondition'
+        ? t('set.speicherLeerenOffen', 'Firn ist noch in einem anderen Fenster offen. Schliess die anderen Fenster und versuch es nochmal.')
+        : String(error?.code || error?.message || error),
+    });
+    return;
+  }
+  location.reload();
+}
+
 async function renderGruppenEinst() {
   if (!user) return;
   try { gruppenEinst = await meineGruppen(user.uid); }
@@ -786,6 +811,11 @@ async function renderGruppenEinst() {
   if (knopf && !knopf.dataset.bereit) {
     knopf.dataset.bereit = '1';
     knopf.addEventListener('click', gruppenDiagnoseZeigen);
+  }
+  const leeren = document.getElementById('btnSpeicherLeeren');
+  if (leeren && !leeren.dataset.bereit) {
+    leeren.dataset.bereit = '1';
+    leeren.addEventListener('click', speicherLeeren);
   }
 }
 async function folgeSpeichern(folge, fokus = '') {
