@@ -1188,18 +1188,18 @@ service cloud.firestore {
        ausschliesslich gegen eine Regel mit rekursivem Platzhalter
        geprueft.
 
-       Die Klammer sitzt im Platzhalter selbst: {uid} ist die
-       Dokument-ID, und weil in diesem Modell die Dokument-ID die uid
-       IST, laesst diese Regel nur Abfragen durch, deren Ergebnis
-       ausschliesslich aus eigenen Mitgliedsdokumenten besteht. Taucht
-       ein fremdes darin auf, faellt die ganze Abfrage. Der Filter
-       where('uid','==',eigene uid) im Client ist damit erzwungen und
-       nicht bloss Konvention.
+       Firestore-Regeln sind keine Filter: Die Sammelabfrage muss genau
+       das Feld einschraenken, das die Regel prueft. Der Client fragt mit
+       where('uid','==',eigene uid), darum prueft die Regel resource.data.uid
+       und nicht den gleichnamigen Dokument-Platzhalter. Eine Bedingung am
+       Platzhalter koennte Firestore aus dem Feldfilter nicht beweisen und
+       wuerde die ganze Serverabfrage ablehnen; jedes Geraet bliebe dann
+       bei einer anderen, lokal gespeicherten Gruppenliste.
 
        Bewusst nur 'list': Einzelabruf und alles Schreibende laufen
        weiter ueber den Block unten, der an die Gruppe gebunden ist. */
     match /{path=**}/members/{uid} {
-      allow list: if isMember() && uid == request.auth.uid;
+      allow list: if isMember() && resource.data.uid == request.auth.uid;
     }
 
     match /groups/{gid}/members/{uid} {

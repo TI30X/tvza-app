@@ -220,7 +220,12 @@ test('die Sammelgruppen-Regel steht und ist auf list beschränkt', async () => {
   assert.notEqual(start, -1, 'ohne diese Regel scheitert meineGruppen()');
   const block = rules.slice(start, rules.indexOf('}', rules.indexOf('allow', start)) + 1);
 
-  assert.match(block, /allow list: if isMember\(\) && uid == request\.auth\.uid/);
+  /* Die Abfrage schraenkt das Feld `uid` ein. Regeln sind keine Filter:
+     pruefte die Regel stattdessen nur den gleichnamigen Pfad-Platzhalter,
+     koennte Firestore diese Bedingung aus der Abfrage nicht beweisen und
+     wuerde sie ablehnen. */
+  assert.match(block, /allow list: if isMember\(\) && resource\.data\.uid == request\.auth\.uid/);
+  assert.doesNotMatch(block, /&& uid == request\.auth\.uid/);
   // Schreiben und Einzelabruf bleiben beim gruppengebundenen Block.
   for (const verb of ['create', 'update', 'delete', 'write']) {
     assert.doesNotMatch(block, new RegExp(`allow[^:]*\\b${verb}\\b`), `${verb} gehört nicht in die Sammelgruppen-Regel`);
