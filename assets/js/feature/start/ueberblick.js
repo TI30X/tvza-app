@@ -18,9 +18,9 @@
 
 import { db, requireAuth, getProfile, reportClientError } from '../../firebase-config.js';
 import {
-  beobachteMeineGruppen, ladeTermine, ladePlaene, ladeProtokolle, leitet, aktiveGruppeSetzen,
+  beobachteMeineGruppen, ladeTermine, ladePlaene, ladeProtokolle, leitet, aktiveGruppeId, aktiveGruppeSetzen,
 } from '../../groups.js';
-import { wichtigeInfos, zustand, isoVon } from '../../ueberblick.js';
+import { wichtigeInfos, assistentVorschlag, zustand, isoVon } from '../../ueberblick.js';
 import { nachDatum, einheitZiel, plusTage } from '../../wochenplan.js';
 import { gruppenStil, kuerzel } from '../../gruppenwahl.js';
 import { collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -168,21 +168,49 @@ function zeichneGruppen() {
     </div>`;
 }
 
-/* Der Assistent, den man hat — die Pille kennt die Liste. */
+function vorschlagText(v) {
+  const titel = v.eintrag?.titel || '';
+  if (v.art === 'ueberfaellig') {
+    return t('start.kiUeberfaellig', 'Hilf mir, die überfällige Erinnerung «{titel}» zu erledigen.', { titel });
+  }
+  if (v.art === 'heute') {
+    return t('start.kiHeute', 'Hilf mir, «{titel}» heute vorzubereiten.', { titel });
+  }
+  if (v.art === 'naechstes') {
+    return t('start.kiNaechstes', 'Hilf mir, «{titel}» für {wann} vorzubereiten.', {
+      titel, wann: wannText(v.eintrag.datum, v.eintrag.zeit || v.eintrag.slot || ''),
+    });
+  }
+  if (v.art === 'planung') {
+    return t('start.kiPlanung', 'Hilf mir, die nächste Woche für «{gruppe}» zu planen.', { gruppe: v.gruppe?.name || '' });
+  }
+  return v.gruppe
+    ? t('start.kiWocheGruppe', 'Gib mir einen Überblick über die Woche von «{gruppe}».', { gruppe: v.gruppe.name || '' })
+    : t('start.kiWoche', 'Gib mir einen Überblick über meine Woche.');
+}
+
+/* Genau ein lokaler Vorschlag statt einer gleichfoermigen Zeile je
+   Assistent. Die Pille kennt die freigeschaltete Liste; die geladenen
+   Daten entscheiden, welcher davon den Satz sehen darf. */
 function zeichneAssistent() {
   const el = $('startKi');
   if (!el) return;
   const liste = Array.isArray(window.__firnAssistenten) ? window.__firnAssistenten : [];
-  el.hidden = !liste.length;
-  if (!liste.length) { el.innerHTML = ''; return; }
-  el.innerHTML = liste.map(a => `
-    <button class="row start-ki__knopf" type="button" data-ki="${esc(a.wer)}">
+  const info = wichtigeInfos({ jetzt: new Date(), uid, gruppen: gruppen || [], ...stand });
+  const v = assistentVorschlag({
+    jetzt: new Date(), info, gruppen: gruppen || [], aktiveGid: aktiveGruppeId(), assistenten: liste,
+  });
+  el.hidden = !v;
+  if (!v) { el.innerHTML = ''; return; }
+  const text = vorschlagText(v);
+  el.innerHTML = `
+    <button class="row start-ki__knopf" type="button" data-ki="${esc(v.assistent.wer)}" data-ki-text="${esc(text)}">
       <span class="row__icon" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" width="18" height="18"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></span>
       <span class="row__body">
-        <span class="row__title">${esc(t('start.fragen', '{name} fragen', { name: a.name }))}</span>
-        <span class="row__sub">${esc(a.persoenlich ? t('ki.nurDu', 'Nur für dich') : t('ki.vonGruppe', 'Assistent von «{gruppe}»', { gruppe: a.gruppe }))}</span>
+        <span class="row__title">${esc(text)}</span>
+        <span class="row__sub">${esc(t('start.kiMit', 'Mit {name} vorbereiten', { name: v.assistent.name }))}</span>
       </span>
-    </button>`).join('');
+    </button>`;
 }
 
 function zeichne() {
@@ -246,6 +274,7 @@ async function allesLaden() {
   fehler = weg;
   laedt = false;
   zeichneWichtig();
+  zeichneAssistent();
 }
 
 /* ── Start ────────────────────────────────────────────────────────── */
@@ -262,7 +291,9 @@ async function allesLaden() {
     const ki = event.target.closest('[data-ki]');
     if (ki) {
       const oben = (() => { try { return window.top || window; } catch { return window; } })();
-      oben.dispatchEvent(new CustomEvent('firn-ki-oeffnen', { detail: { wer: ki.dataset.ki } }));
+      oben.dispatchEvent(new CustomEvent('firn-ki-oeffnen', {
+        detail: { wer: ki.dataset.ki, text: ki.dataset.kiText || '' },
+      }));
       return;
     }
     /* Eine Gruppe antippen macht sie zur aktiven — wie in der Leiste. */

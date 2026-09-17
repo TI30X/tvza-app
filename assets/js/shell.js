@@ -20,7 +20,7 @@
 import { auth, MODULES, enabledModules, imKreis } from './firebase-config.js';
 import { mountSettingsLayer } from './settings-layer.js';
 import { frage } from './dialog.js';
-import { mountAppRouter, basisTitel, basisTitelWahl, basisTitelFarbe } from './router.js?v=19';
+import { mountAppRouter, basisTitel, basisTitelWahl, basisTitelFarbe } from './router.js?v=20';
 import { zeichen, wort, softwareZeigen, markeSetzen, aktuelleMarke, seiteMarkieren } from './wechsel.js';
 import { mountGlobalReminderOverlay } from './reminders-overlay.js';
 import { WORKER_BASIS } from './worker-config.js';

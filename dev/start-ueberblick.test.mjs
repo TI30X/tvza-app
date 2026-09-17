@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { root } from './gruppe-harness.mjs';
-import { wichtigeInfos, zustand } from '../assets/js/ueberblick.js';
+import { wichtigeInfos, assistentVorschlag, zustand } from '../assets/js/ueberblick.js';
 import { assistenten, werkzeugeFuer, aktionPruefen, kontextBauen } from '../assets/js/ki.js';
 
 const read = p => readFile(join(root, p), 'utf8');
@@ -129,10 +129,60 @@ test('ein Athlet ohne eigenen Assistenten hat den der freigeschalteten Gruppe �
   assert.doesNotMatch(JSON.stringify(k), /Verein|Privat/);
 });
 
+test('Start waehlt genau einen lokalen Assistentenhinweis in der vereinbarten Reihenfolge', () => {
+  const assistenten = [
+    { wer: 'ich', name: 'Dein Assistent', persoenlich: true },
+    { wer: 'g1', name: 'Maxi', gruppe: 'BSV', persoenlich: false },
+    { wer: 'g2', name: 'Bambik', gruppe: 'Familie', persoenlich: false },
+  ];
+  const gruppen = [
+    { id: 'g1', name: 'BSV', meineRolle: 'staff' },
+    { id: 'g2', name: 'Familie', meineRolle: 'mitglied' },
+  ];
+  const alle = [
+    { art: 'erinnerung', titel: 'Lizenz', datum: '2026-08-04', ueberfaellig: true },
+    { art: 'training', titel: 'Kraft', datum: '2026-08-04', gid: 'g1', fortschritt: { fertig: false } },
+    { art: 'termin', titel: 'Ausflug', datum: '2026-08-06', gid: 'g2' },
+  ];
+
+  const basis = { jetzt: um('2026-08-04'), gruppen, aktiveGid: 'g1', assistenten };
+  assert.deepEqual(
+    (({ art, assistent }) => [art, assistent.wer])(assistentVorschlag({ ...basis, info: { alle } })),
+    ['ueberfaellig', 'ich'],
+    'eine ueberfaellige persoenliche Erinnerung gewinnt',
+  );
+  assert.deepEqual(
+    (({ art, assistent }) => [art, assistent.wer])(assistentVorschlag({
+      ...basis, assistenten: assistenten.slice(1), info: { alle },
+    })),
+    ['heute', 'g1'],
+    'ohne persoenlichen Assistenten geht die Erinnerung nicht an eine Gruppe',
+  );
+  assert.deepEqual(
+    (({ art, assistent }) => [art, assistent.wer])(assistentVorschlag({
+      ...basis, info: { alle: [alle[2]] },
+    })),
+    ['naechstes', 'g2'],
+  );
+  assert.equal(assistentVorschlag({ ...basis, info: { alle: [] } }).art, 'planung', 'die Leitung plant die aktive Gruppe');
+  const fallback = assistentVorschlag({
+    ...basis, gruppen: [{ ...gruppen[1] }], aktiveGid: 'g2', assistenten: [assistenten[2]], info: { alle: [alle[0]] },
+  });
+  assert.deepEqual([fallback.art, fallback.assistent.wer], ['woche', 'g2'], 'private Daten landen nicht beim Gruppenassistenten');
+});
+
 test('Start öffnet den Assistenten über die Pille — dieselbe Liste, kein zweiter Zugang', async () => {
   const pille = await read('assets/js/ki-pille.js');
   assert.match(pille, /window\.addEventListener\('firn-ki-oeffnen', event => \{/);
   assert.match(pille, /window\.__firnAssistenten = liste\.map\(/);
+  const handler = pille.slice(pille.indexOf("window.addEventListener('firn-ki-oeffnen'"), pille.indexOf("window.addEventListener('tvza-route'"));
+  assert.match(handler, /feld\.value = text;/);
+  assert.match(handler, /dispatchEvent\(new Event\('input'/);
+  assert.match(handler, /feld\.focus\(\);/);
+  assert.doesNotMatch(handler, /senden\(/, 'der vorbereitete Text wird nicht automatisch gesendet');
   const js = await read('assets/js/feature/start/ueberblick.js');
-  assert.match(js, /new CustomEvent\('firn-ki-oeffnen', \{ detail: \{ wer: ki\.dataset\.ki \} \}\)/);
+  assert.match(js, /detail: \{ wer: ki\.dataset\.ki, text: ki\.dataset\.kiText \|\| '' \}/);
+  assert.match(js, /const v = assistentVorschlag\(/);
+  assert.match(js, /el\.innerHTML = `\s*<button class="row start-ki__knopf"/, 'genau eine Vorschlagszeile');
+  assert.doesNotMatch(js.slice(js.indexOf('function zeichneAssistent'), js.indexOf('function zeichne()')), /liste\.map\(/);
 });

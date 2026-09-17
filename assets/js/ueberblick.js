@@ -45,7 +45,7 @@ function msVon(t) {
  * @param o.protokolle   { gid: { datum: protokoll } }  die eigenen
  * @param o.erinnerungen [{ title, date, time, completed }]
  * @param o.eigene       [{ title, date, time }]  calendarDays
- * @returns {{ stichtag, abend, jetzt: Eintrag[], demnaechst: Eintrag[], nichts: boolean }}
+ * @returns {{ stichtag, abend, jetzt: Eintrag[], demnaechst: Eintrag[], alle: Eintrag[], nichts: boolean }}
  */
 export function wichtigeInfos({
   jetzt = new Date(), uid = '', gruppen = [], termine = [], plaene = [], protokolle = {},
@@ -127,8 +127,60 @@ export function wichtigeInfos({
     jetzt: jetztig.slice(0, 5),
     mehrJetzt: Math.max(0, jetztig.length - 5),
     demnaechst: demnaechst.slice(0, 3),
+    /* Der sichtbare Ueberblick bleibt kompakt. Fuer den EINEN lokalen
+       Assistentenhinweis braucht Start aber die vollstaendige sortierte
+       Auswahl, damit nicht zufaellig der sechste Eintrag gewinnt. */
+    alle: liste,
     nichts: !liste.length,
   };
+}
+
+/**
+ * Der eine Assistentenhinweis auf Start. Rein und ohne KI-Aufruf: Die
+ * vorhandenen Daten bestimmen nur, welcher vorbereitete Satz ins Feld
+ * kommt. Ein Gruppenassistent bekommt ausschliesslich Eintraege seiner
+ * Gruppe; Eigenes und Erinnerungen brauchen den persoenlichen Assistenten.
+ */
+export function assistentVorschlag({
+  jetzt = new Date(), info = {}, gruppen = [], aktiveGid = '', assistenten = [],
+} = {}) {
+  if (!assistenten.length) return null;
+  const persoenlich = assistenten.find(a => a?.persoenlich || a?.wer === 'ich') || null;
+  const fuerGruppe = gid => assistenten.find(a => a?.wer === gid && !a?.persoenlich) || null;
+  const passend = eintrag => (eintrag?.gid ? fuerGruppe(eintrag.gid) : persoenlich);
+  const alle = Array.isArray(info.alle)
+    ? info.alle
+    : [...(info.jetzt || []), ...(info.demnaechst || [])];
+  const heute = isoVon(jetzt);
+  const nimm = (art, prueft) => {
+    const eintrag = alle.find(x => prueft(x) && passend(x));
+    return eintrag ? { art, eintrag, assistent: passend(eintrag) } : null;
+  };
+
+  const ueberfaellig = nimm('ueberfaellig', x => x?.art === 'erinnerung' && x.ueberfaellig);
+  if (ueberfaellig) return ueberfaellig;
+
+  const heuteOffen = nimm('heute', x => x?.datum === heute && x.art !== 'absage'
+    && (x.art === 'termin' || x.art === 'eigen'
+      || (x.art === 'training' && !x.fortschritt?.fertig)));
+  if (heuteOffen) return heuteOffen;
+
+  const naechstes = nimm('naechstes', x => x?.art !== 'absage' && x?.datum >= heute
+    && ['training', 'termin', 'eigen', 'plan', 'erinnerung'].includes(x.art));
+  if (naechstes) return naechstes;
+
+  const aktiv = gruppen.find(g => g?.id === aktiveGid) || gruppen[0] || null;
+  const gruppenAssistent = aktiv ? fuerGruppe(aktiv.id) : null;
+  if (aktiv && gruppenAssistent && ['head', 'staff'].includes(aktiv.meineRolle)) {
+    return { art: 'planung', gruppe: aktiv, assistent: gruppenAssistent };
+  }
+
+  const assistent = persoenlich || gruppenAssistent || assistenten[0];
+  const gruppe = assistent?.persoenlich || assistent?.wer === 'ich'
+    ? null
+    : (gruppen.find(g => g.id === assistent.wer)
+      || { id: assistent.wer, name: assistent.gruppe || '' });
+  return assistent ? { art: 'woche', gruppe, assistent } : null;
 }
 
 /**

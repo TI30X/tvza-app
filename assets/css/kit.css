@@ -2105,6 +2105,11 @@ body.reorder-editing .module-tile::after {
   transform: translateY(-70%) rotate(45deg);
 }
 .appbar__title--wahl:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+/* Am Handy bleibt der Gruppenname der Wechselweg, aber als schlichter
+   Textknopf statt als gerundete iPhone-artige Flaeche. */
+@media (max-width: 899px) {
+  .appbar__title--wahl { border-radius: 0; background: transparent; }
+}
 /* Der Farbpunkt der Gruppe vor dem Namen (v.35.68.0, titelFarbeSetzen). */
 .appbar__title--punkt::before {
   content: "";
@@ -2721,6 +2726,13 @@ html.tvza-content-frame body > main {
     height: 60px;
     padding: 0 var(--kopf-rand, var(--s5));
     display: flex; align-items: center; gap: var(--s2);
+  }
+  /* Auf der Gruppenseite nennt und wechselt die linke Leiste die Gruppe
+     bereits. Punkt, Name und Winkel im Kopf waeren dort derselbe Weg ein
+     zweites Mal; am Handy (ohne Seitenleiste) bleiben sie sichtbar. */
+  .appbar[data-route="gruppe"] .appbar__spacer {
+    visibility: hidden;
+    pointer-events: none;
   }
   .appbar__btn {
     background: transparent;
@@ -3981,6 +3993,12 @@ body.settings-layer-open .ki-pille { display: none; }
    langes Gespräch sie zusammen, die Knöpfe waren halb abgeschnitten und
    die Reihe bekam einen eigenen Scrollbalken (Michels Bildschirm).
    Seitlich wischen bleibt, ohne sichtbaren Balken. */
+.ki-wahlrahmen {
+  --ki-wahl-pfeil: 28px;
+  position: relative;
+  flex: none;
+  border-bottom: 1px solid var(--border);
+}
 .ki-wahl {
   flex: none;
   display: flex;
@@ -3989,9 +4007,10 @@ body.settings-layer-open .ki-pille { display: none; }
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--border);
+  scroll-behavior: smooth;
 }
 .ki-wahl::-webkit-scrollbar { display: none; }
+.ki-wahl__pfeil { display: none; }
 .ki-wahl__knopf {
   display: inline-flex;
   align-items: center;
@@ -4026,6 +4045,52 @@ body.settings-layer-open .ki-pille { display: none; }
 .ki-wahl__zeichen { flex: none; }
 .ki-wahl__knopf > span:last-child { overflow: hidden; text-overflow: ellipsis; }
 .ki-wahl__knopf.is-gruppe .ki-wahl__zeichen { background: var(--tint); color: var(--deep); }
+
+/* Am Laptop war nicht erkennbar, dass rechts weitere Assistenten liegen.
+   Pfeile und Verlauf erscheinen nur bei echtem Ueberlauf; am Handy bleibt
+   die Reihe eine ungestoerte Wischflaeche. */
+@media (min-width: 900px) {
+  .ki-wahlrahmen.hat-ueberlauf .ki-wahl {
+    padding-inline: calc(var(--s4) + var(--ki-wahl-pfeil));
+  }
+  .ki-wahlrahmen.hat-ueberlauf::before,
+  .ki-wahlrahmen.hat-ueberlauf::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    width: calc(var(--ki-wahl-pfeil) + var(--s3));
+    pointer-events: none;
+  }
+  .ki-wahlrahmen.hat-links::before {
+    left: 0;
+    background: linear-gradient(90deg, var(--surface) 58%, transparent);
+  }
+  .ki-wahlrahmen.hat-rechts::after {
+    right: 0;
+    background: linear-gradient(270deg, var(--surface) 58%, transparent);
+  }
+  .ki-wahlrahmen.hat-ueberlauf .ki-wahl__pfeil {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: var(--ki-wahl-pfeil);
+    height: var(--ki-wahl-pfeil);
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--r-icon);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    transform: translateY(-50%);
+  }
+  .ki-wahl__pfeil--links { left: var(--s2); }
+  .ki-wahl__pfeil--rechts { right: var(--s2); }
+  .ki-wahl__pfeil:disabled { opacity: .38; cursor: default; }
+}
 
 /* ── Formatierter Text (v.35.60.0, formatierung.js) ─────────────────
    Antworten des Assistenten und Nachrichten im Chat: Absätze, Listen,

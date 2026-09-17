@@ -360,12 +360,14 @@ export function headerController(runPageAction) {
   let showingStart = initialStart;
 
   const show = (target, label) => {
-    const start = fileOf(target) === 'index.html';
+    const datei = fileOf(target);
+    const start = datei === 'index.html';
     if (showingStart && !start) {
       startHeader.greeting = greeting?.textContent?.trim() || startHeader.greeting;
       startHeader.date = date?.textContent?.trim() || startHeader.date;
     }
     window.tvzaReminderOverlay?.setContext(fileOf(target));
+    if (bar) bar.dataset.route = datei.replace(/\.html$/, '');
     bar?.classList.toggle('appbar--route-view', !start);
     if (title) title.textContent = start ? 'Start' : label;
     const generated = generatedStartHeader(bar);

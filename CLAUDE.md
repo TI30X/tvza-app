@@ -105,7 +105,7 @@ E-Mail-Adresse, keine Anschrift. `fuss.betrieben` bleibt im Katalog,
 wird aber nirgends mehr gesetzt; `dev/marke.test.mjs` lässt „höchstens
 einmal" weiterhin zu und verbietet den Namen ausserhalb.
 
-Version: **v.35.70.8**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.71.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -1344,6 +1344,17 @@ Firestore-Instanz.
   Kopfleiste und machte die Seite höher als den Bildschirm. Im Browser am
   Handyformat gemessen: Kopf bleibt bei 0, Seitenhöhe unverändert.
 
+**37. Ein Vorschlag statt einer Assistentenliste** (v.35.71.0). Auf Start
+stand fuer jeden persoenlichen und jeden Gruppenassistenten dieselbe Zeile
+„… fragen". Jetzt waehlt `assistentVorschlag()` rein aus den bereits
+geladenen Daten genau einen Anlass; ein Tipp setzt den Satz ins Feld, sendet
+ihn aber nicht. Die Assistentenwahl im Gespraech zeigt ihren seitlichen
+Ueberlauf am Laptop mit Pfeilen und Verlaeufen. Auf der Gruppenseite ist
+Punkt, Name und Winkel im Desktop-Kopf weg, weil dieselben Gruppen links in
+der Leiste stehen; am Handy bleibt dieser Wechselweg als flacher Textknopf.
+`dev/start-ueberblick.test.mjs`, `dev/formatierung.test.mjs`,
+`dev/navigation.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -1356,7 +1367,7 @@ git push origin firn:main
 
 ## Mehrsprachigkeit
 
-Sieben Sprachen: de, en, fr, it, pl, nl, es. **1265 Schlüssel** aus dreizehn
+Sieben Sprachen: de, en, fr, it, pl, nl, es. **1274 Schlüssel** aus dreizehn
 Tabellen in `dev/i18n-src/`.
 
 - **Quelle sind die `catalog*.py`-Tabellen.** Schlüssel auf ein Tupel

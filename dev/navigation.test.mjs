@@ -602,3 +602,13 @@ test('vorgeladen wird nur, was nichts tut — nie eine Adresse mit Anweisung', a
   const pille = await read('assets/js/ki-pille.js');
   assert.match(pille, /async function gruppenAuffrischen\(\)/, 'beim Öffnen frisch — sonst fehlt ein eben freigeschalteter Assistent');
 });
+
+test('die Gruppenwahl steht nur am Handy im Kopf', async () => {
+  const [router, css] = await Promise.all([read('assets/js/router.js'), read('assets/css/kit.css')]);
+  assert.match(router, /bar\.dataset\.route = datei\.replace\(\/\\\.html\$\/, ''\);/,
+    'der Kopf muss wissen, welche Route gerade sichtbar ist');
+  assert.match(css, /@media \(min-width: 900px\)[\s\S]*?\.appbar\[data-route="gruppe"\] \.appbar__spacer \{[\s\S]*?visibility: hidden;/,
+    'am Laptop verschwindet Punkt, Name und Winkel der Gruppe vollständig');
+  assert.match(css, /@media \(max-width: 899px\) \{\s*\.appbar__title--wahl \{[^}]*border-radius: 0;[^}]*background: transparent;/,
+    'am Handy bleibt die Wahl als schlichter Textknopf');
+});

@@ -57,3 +57,17 @@ test('die Knöpfe oben im Assistenten werden am Handy nicht zusammengedrückt', 
     assert.match(kit, new RegExp(`\\.${k} \\{\\s*flex: none;`), k);
   }
 });
+
+test('die Assistentenwahl zeigt Ueberlauf am Laptop und bleibt am Handy wischbar', async () => {
+  const [kit, pille] = await Promise.all([read('assets/css/kit.css'), read('assets/js/ki-pille.js')]);
+  assert.match(pille, /class="ki-wahlrahmen" hidden/);
+  assert.match(pille, /data-ki-scroll="-1"/);
+  assert.match(pille, /data-ki-scroll="1"/);
+  assert.match(pille, /wahl\.scrollBy\(\{ left:/);
+  assert.match(pille, /new ResizeObserver\(wahlStand\)/);
+  assert.match(kit, /@media \(min-width: 900px\) \{\s*\.ki-wahlrahmen\.hat-ueberlauf/);
+  assert.match(kit, /\.ki-wahlrahmen\.hat-links::before/);
+  assert.match(kit, /\.ki-wahlrahmen\.hat-rechts::after/);
+  const basis = kit.slice(kit.indexOf('.ki-wahl {'), kit.indexOf('.ki-wahl::-webkit-scrollbar'));
+  assert.match(basis, /overflow-x: auto;/, 'Wischen bleibt die Grundbedienung');
+});

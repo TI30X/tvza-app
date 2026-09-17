@@ -55,6 +55,8 @@ const FUNKE = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-h
 const SENDEN = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>';
 const ZU = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 const MIKRO = '<svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+const LINKS = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>';
+const RECHTS = '<svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
 
 /* ── Diktieren (v.35.59.0) ───────────────────────────────────────────
    Michel: "vielleicht können wir noch eine Diktierfunktion für die
@@ -174,8 +176,10 @@ function wechselZu(a) {
 
 function wahlZeigen(liste, a) {
   const wahl = blatt.querySelector('.ki-wahl');
-  wahl.hidden = liste.length < 2;
-  if (liste.length < 2) { wahl.innerHTML = ''; return; }
+  const rahmen = blatt.querySelector('.ki-wahlrahmen');
+  rahmen.hidden = liste.length < 2;
+  if (liste.length < 2) { wahl.innerHTML = ''; wahlStand(); return; }
+  const vorher = wahl.scrollLeft;
   const stil = gruppenStil(gruppenJetzt());
   wahl.innerHTML = liste.map(x => `
     <button class="ki-wahl__knopf${x.persoenlich ? '' : ' is-gruppe'}" type="button" data-wer="${esc(x.wer)}"
@@ -184,8 +188,32 @@ function wahlZeigen(liste, a) {
       <span class="ki-wahl__zeichen" aria-hidden="true">${x.persoenlich ? FUNKE : esc(kuerzel(x.gruppe))}</span>
       <span>${esc(x.persoenlich || x.eigen ? x.name : x.gruppe)}</span>
     </button>`).join('');
+  wahl.scrollLeft = vorher;
+  requestAnimationFrame(wahlStand);
   /* Ohne eigenen Namen hiesse jeder Knopf "Assistent" — dann steht dort
      die Gruppe (v.35.58.0). */
+}
+
+function wahlStand() {
+  if (!blatt) return;
+  const rahmen = blatt.querySelector('.ki-wahlrahmen');
+  const wahl = blatt.querySelector('.ki-wahl');
+  if (!rahmen || !wahl) return;
+  const ende = Math.max(0, wahl.scrollWidth - wahl.clientWidth);
+  const ueberlauf = !rahmen.hidden && ende > 2;
+  rahmen.classList.toggle('hat-ueberlauf', ueberlauf);
+  rahmen.classList.toggle('hat-links', ueberlauf && wahl.scrollLeft > 2);
+  rahmen.classList.toggle('hat-rechts', ueberlauf && wahl.scrollLeft < ende - 2);
+  const links = rahmen.querySelector('[data-ki-scroll="-1"]');
+  const rechts = rahmen.querySelector('[data-ki-scroll="1"]');
+  if (links) links.disabled = !ueberlauf || wahl.scrollLeft <= 2;
+  if (rechts) rechts.disabled = !ueberlauf || wahl.scrollLeft >= ende - 2;
+}
+
+function wahlScrollen(richtung) {
+  const wahl = blatt?.querySelector('.ki-wahl');
+  if (!wahl) return;
+  wahl.scrollBy({ left: richtung * Math.max(120, Math.round(wahl.clientWidth * 0.72)), behavior: 'smooth' });
 }
 
 /* ── Die Pille ─────────────────────────────────────────────────────── */
@@ -211,9 +239,16 @@ export function pilleZeigen() {
   window.addEventListener('firn-ki-oeffnen', event => {
     if (!pille || pille.hidden) return;
     const wer = event.detail?.wer;
+    const text = String(event.detail?.text || '').trim().slice(0, 1000);
     if (wer && alleAssistenten().some(a => a.wer === wer)) gewaehlt = wer;
     beschriften();
     oeffnen();
+    if (text && blatt) {
+      const feld = blatt.querySelector('.ki-feld');
+      feld.value = text;
+      feld.dispatchEvent(new Event('input', { bubbles: true }));
+      feld.focus();
+    }
   });
   /* Eine neue Seite entscheidet neu, wer antwortet. */
   window.addEventListener('tvza-route', () => { gewaehlt = ''; beschriften(); });
@@ -244,7 +279,13 @@ function blattBauen() {
       </div>
       <button class="ki-blatt__zu" type="button" aria-label="${esc(t('common.schliessen', 'Schliessen'))}">${ZU}</button>
     </header>
-    <div class="ki-wahl" hidden></div>
+    <div class="ki-wahlrahmen" hidden>
+      <button class="ki-wahl__pfeil ki-wahl__pfeil--links" type="button" data-ki-scroll="-1"
+              aria-label="${esc(t('ki.assistentenZurueck', 'Vorherige Assistenten'))}">${LINKS}</button>
+      <div class="ki-wahl"></div>
+      <button class="ki-wahl__pfeil ki-wahl__pfeil--rechts" type="button" data-ki-scroll="1"
+              aria-label="${esc(t('ki.assistentenWeiter', 'Weitere Assistenten'))}">${RECHTS}</button>
+    </div>
     <div class="ki-verlauf" aria-live="polite"></div>
     <div class="ki-vorschlaege"></div>
     <form class="ki-eingabe">
@@ -272,13 +313,21 @@ function blattBauen() {
     const v = e.target.closest('[data-vorschlag]');
     if (v) senden(v.dataset.vorschlag);
   });
-  blatt.querySelector('.ki-wahl').addEventListener('click', e => {
+  const wahl = blatt.querySelector('.ki-wahl');
+  wahl.addEventListener('click', e => {
     const k = e.target.closest('[data-wer]');
     if (!k || arbeitet) return;
     gewaehlt = k.dataset.wer;
     beschriften();
     feld.focus();
   });
+  wahl.addEventListener('scroll', wahlStand, { passive: true });
+  blatt.querySelector('.ki-wahlrahmen').addEventListener('click', e => {
+    const pfeil = e.target.closest('[data-ki-scroll]');
+    if (pfeil && !pfeil.disabled) wahlScrollen(Number(pfeil.dataset.kiScroll));
+  });
+  if (typeof ResizeObserver === 'function') new ResizeObserver(wahlStand).observe(wahl);
+  else window.addEventListener('resize', wahlStand);
   blatt.querySelector('.ki-verlauf').addEventListener('click', kartenKlick);
   stufeZeigen();
   beschriften();
@@ -741,4 +790,3 @@ export async function ausfuehren(pruefung, { uid = auth.currentUser?.uid } = {})
   vorraete.clear();
   try { localStorage.setItem(STAND, String(Date.now())); } catch {}
 }
-
