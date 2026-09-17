@@ -60,7 +60,7 @@ const SHELL = [
   './assets/i18n/pl.json',
   './assets/i18n/nl.json',
   './assets/i18n/es.json',
-  './assets/js/ui-fx.js?v=34',
+  './assets/js/ui-fx.js?v=35',
   './assets/js/welcome.js',
   './manifest.json',
   './assets/js/firebase-config.js',
