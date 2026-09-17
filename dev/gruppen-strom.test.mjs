@@ -124,7 +124,10 @@ test('von aussen anstossen: das Netz ist zurück, die App ist wieder da', async 
 test('groups.js hört mit den Metadaten und nimmt den Strom', async () => {
   const q = await readFile(join(root, 'assets/js/groups.js'), 'utf8');
   // v.35.63.0: EIN Zuhörer in der obersten Seite, die Rahmen hängen sich an.
-  assert.match(q, /const folgen = mitgliedschaftenFolgen\(zuGruppen, melden\);\s*onSnapshot\(eigeneMitgliedschaften\(uid\), \{ includeMetadataChanges: true \}, folgen,/);
+  assert.match(q, /const folgen = mitgliedschaftenFolgen\(zuGruppen, melden\);/);
+  /* Seit v.35.70.8 schaut der Zuhörer auf die Herkunft jeder Meldung,
+     bevor er sie weitergibt. */
+  assert.match(q, /onSnapshot\(eigeneMitgliedschaften\(uid\), \{ includeMetadataChanges: true \}, snap => \{\s*herkunft\(snap\.metadata\?\.fromCache === false\);\s*return folgen\(snap\);/);
   assert.match(q, /if \(quelle\?\.uid === uid\) \{\s*const weg = quelle\.abonnieren\(cb\);/);
   assert.match(q, /if \(oben === window\) window\.__firnGruppenQuelle = quelle;/, 'nur die oberste Seite legt die Quelle ab');
   assert.match(q, /\(\) => \{ if \(!letzte\) melden\(\[\]\); \}\);/, 'ein Fehler leert eine bekannte Liste nicht');
@@ -134,7 +137,17 @@ test('groups.js hört mit den Metadaten und nimmt den Strom', async () => {
   /* Seit v.35.70.7 meldet dieselbe Abfrage auch, ob der Server antwortet
      (firn-server-da / firn-server-fern) — der Banner sagt sonst "online",
      während alles aus dem Speicher kommt. */
-  assert.match(q, /getDocsFromServer\(eigeneMitgliedschaften\(uid\)\)\s*\.then\(s => \{ serverMelden\(true\); return folgen\(s\); \}, \(\) => serverMelden\(false\)\);/);
+  assert.match(q, /getDocsFromServer\(eigeneMitgliedschaften\(uid\)\)\s*\.then\(s => \{ herkunft\(true\); return folgen\(s\); \}, \(\) => \{\}\);/);
+  /* v.35.70.8: eine gescheiterte Abfrage allein heisst nicht "fern" —
+     erst zehn Sekunden ohne jede Antwort des Servers. Und nur die
+     oberste Seite schaltet den Banner, kein Rahmen des Routers. */
+  assert.match(q, /const FERN_NACH_MS = 10000;/, 'ohne Frist meldet schon der Verbindungsaufbau "fern"');
+  /* Und nicht nur melden: eine hängende Verbindung wird neu aufgebaut,
+     höchstens einmal pro Minute (v.35.70.8). */
+  assert.match(q, /await disableNetwork\(db\);\s*await enableNetwork\(db\);/, 'die Verbindung wird nie neu aufgebaut');
+  assert.match(q, /if \(jetzt - zuletztVerbunden < 60000\) return;/, 'ohne Bremse verbindet jeder Fokus neu');
+  assert.match(q, /serverStand\(false\);\s*void neuVerbinden\(\);/, 'wer "fern" meldet, versucht es nicht neu');
+  assert.match(q, /if \(!istOben \|\| serverDa === da\) return;/, 'ein Rahmen darf den Banner der Seite oben nicht schalten');
   assert.ok(q.includes("'firn-server-fern'") && q.includes("'firn-server-da'"), 'niemand erfährt, dass der Server nicht antwortet');
   /* v.35.70.5: fehlt etwas, wird nachgefragt, sobald es wieder gehen
      könnte — sonst bleibt die halbe Liste die ganze Sitzung stehen. */

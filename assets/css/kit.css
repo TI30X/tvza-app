@@ -358,14 +358,23 @@ body.dm-thread.kb-open .app {
 .back-btn:hover { color: var(--ink); }
 .back-btn svg { width: 18px; height: 18px; }
 
-/* ─── Offline banner ─── */
+/* ─── Offline banner ───
+   Er liegt ÜBER der Seite, nicht in ihr (v.35.70.8). Bis dahin stand er
+   sticky im Fluss, vor der Kopfleiste: sobald er sichtbar wurde, schob er
+   die Leiste nach unten, und die Seite wurde höher als der Bildschirm —
+   Michel am Handy: "der obere Bar ist verschwunden oder plötzlich
+   scrollable geworden". Ein Hinweis darf nichts verschieben, und er darf
+   keinen Tipp abfangen. */
 .offline-banner {
-  position: sticky;
+  position: fixed;
   top: calc(60px + env(safe-area-inset-top, 0px) + var(--s2));
+  left: 50%;
+  translate: -50% 0;
   z-index: 90;
-  margin: var(--s2) auto 0;
-  width: fit-content;
-  max-width: calc(var(--max-width) - 32px);
+  margin: 0;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--s4));
+  pointer-events: none;
   background: var(--tint-trip);
   color: var(--trip-deep);
   border: 1px solid color-mix(in oklab, var(--trip) 30%, var(--border));

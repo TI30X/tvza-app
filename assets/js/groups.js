@@ -36,7 +36,7 @@
 import { db, reportClientError } from './firebase-config.js';
 import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
-  getDocFromCache, getDocFromServer, getDocsFromServer,
+  getDocFromCache, getDocFromServer, getDocsFromServer, disableNetwork, enableNetwork,
   onSnapshot, writeBatch, updateDoc, deleteDoc, serverTimestamp, deleteField, addDoc, setDoc, Timestamp,
   runTransaction,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -381,19 +381,70 @@ function gruppenQuelle(uid) {
     }
   };
   const folgen = mitgliedschaftenFolgen(zuGruppen, melden);
-  onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true }, folgen,
-    () => { if (!letzte) melden([]); });
-  /* Ob der Server überhaupt antwortet, weiss sonst niemand: eine
-     Abfrage, die aus dem Speicher beantwortet wird, sieht für die Seite
-     aus wie eine gelungene (v.35.70.7). */
-  const serverMelden = da => {
-    try { obersteSeite().dispatchEvent(new CustomEvent(da ? 'firn-server-da' : 'firn-server-fern')); } catch { /* fremdes Dokument */ }
-    if (window !== obersteSeite()) {
-      try { window.dispatchEvent(new CustomEvent(da ? 'firn-server-da' : 'firn-server-fern')); } catch { /* egal */ }
+
+  /* Ob der Server antwortet (v.35.70.7, genauer seit v.35.70.8). Die
+     erste Fassung meldete "fern", sobald EINE Abfrage beim Server
+     scheiterte — auch in einem Rahmen des Routers, der mit seinem eigenen
+     Firestore neben der Seite oben lief, und auch gleich nach dem Start,
+     solange die Verbindung erst aufgebaut wurde. Michel, im frischen
+     Browser: "es steht: Dieses Gerät erreicht die Daten nicht".
+
+     Jetzt entscheidet der Zuhörer selbst: eine Meldung mit
+     fromCache === false IST eine Antwort des Servers. Kommt zehn
+     Sekunden lang keine, gilt der Server als fern — und die nächste
+     Antwort nimmt das sofort zurück. Nur die oberste Seite meldet. */
+  const istOben = obersteSeite() === window;
+  const FERN_NACH_MS = 10000;
+  let serverDa = null;
+  let fernUhr = null;
+  const serverStand = da => {
+    if (!istOben || serverDa === da) return;
+    serverDa = da;
+    try { window.dispatchEvent(new CustomEvent(da ? 'firn-server-da' : 'firn-server-fern')); } catch { /* egal */ }
+  };
+  /* Nicht nur sagen, sondern neu verbinden (v.35.70.8). Michel: "du
+     musst fixen, dass es wieder synchronisiert". Ein Gerät, das Netz hat
+     und trotzdem zehn Sekunden nichts vom Server hört, hat meist eine
+     hängende Verbindung (ein Mobilfunknetz, ein Browser, der den
+     Datenstrom kappt). Firestore baut sie nach disableNetwork /
+     enableNetwork neu auf — und prüft dabei auch, ob es auf lange
+     Abfragen ausweichen muss. Nichts geht verloren: was noch nicht
+     gesendet ist, bleibt in der Warteschlange. Höchstens einmal pro
+     Minute, und nur die oberste Seite. */
+  let zuletztVerbunden = 0;
+  const neuVerbinden = async () => {
+    if (!istOben || navigator.onLine === false) return;
+    const jetzt = Date.now();
+    if (jetzt - zuletztVerbunden < 60000) return;
+    zuletztVerbunden = jetzt;
+    try {
+      await disableNetwork(db);
+      await enableNetwork(db);
+    } catch (e) { reportClientError('gruppen/neu-verbinden', e); }
+  };
+
+  const herkunft = vomServer => {
+    if (vomServer) {
+      clearTimeout(fernUhr);
+      fernUhr = null;
+      serverStand(true);
+    } else if (!fernUhr && serverDa !== false) {
+      fernUhr = setTimeout(() => {
+        fernUhr = null;
+        serverStand(false);
+        void neuVerbinden();
+      }, FERN_NACH_MS);
     }
   };
+  herkunft(false);
+
+  onSnapshot(eigeneMitgliedschaften(uid), { includeMetadataChanges: true }, snap => {
+    herkunft(snap.metadata?.fromCache === false);
+    return folgen(snap);
+  }, () => { if (!letzte) melden([]); });
+
   getDocsFromServer(eigeneMitgliedschaften(uid))
-    .then(s => { serverMelden(true); return folgen(s); }, () => serverMelden(false));
+    .then(s => { herkunft(true); return folgen(s); }, () => {});
 
   /* Fehlt etwas, wird nachgefragt, sobald es wieder gehen könnte: das
      Netz ist zurück, die App kommt aus dem Hintergrund, das Fenster
@@ -401,6 +452,9 @@ function gruppenQuelle(uid) {
      hier nichts — und öfter als alle 20 Sekunden fragt es nie. */
   let zuletztGefragt = 0;
   const nachfragen = () => {
+    /* Hört das Gerät den Server nicht, zuerst die Verbindung neu —
+       auch wenn die Liste vollständig aussieht: sie kann alt sein. */
+    if (serverDa === false) void neuVerbinden();
     if (letzte && !letzte.unvollstaendig) return;
     const jetzt = Date.now();
     if (jetzt - zuletztGefragt < 20000) return;
@@ -409,7 +463,7 @@ function gruppenQuelle(uid) {
     /* Auch die Mitgliedschaften selbst können aus dem Speicher gekommen
        sein — dann fehlt die Gruppe schon in der Abfrage. */
     getDocsFromServer(eigeneMitgliedschaften(uid))
-      .then(s => { serverMelden(true); return folgen(s); }, () => serverMelden(false));
+      .then(s => { herkunft(true); return folgen(s); }, () => {});
   };
   window.addEventListener('online', nachfragen);
   window.addEventListener('focus', nachfragen);

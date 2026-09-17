@@ -105,7 +105,7 @@ E-Mail-Adresse, keine Anschrift. `fuss.betrieben` bleibt im Katalog,
 wird aber nirgends mehr gesetzt; `dev/marke.test.mjs` lässt „höchstens
 einmal" weiterhin zu und verbietet den Namen ausserhalb.
 
-Version: **v.35.70.7**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.70.8**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -1320,6 +1320,29 @@ und die App sagte nichts, weil der Banner nur `navigator.onLine` kannte.
   `failed-precondition`, und die Meldung sagt, was zu tun ist.
 - Die Attrappe kennt `terminate` und `clearIndexedDbPersistence` (leer);
   `attrappe-vollstaendig.test.mjs` hätte sonst Alarm geschlagen.
+
+**36. Der Banner war ein Fehlalarm — und schob die Leiste weg** (v.35.70.8).
+Michel, im frischen Browser: „es steht: Dieses Gerät erreicht die Daten
+nicht … Ausserdem ist der obere Bar verschwunden oder plötzlich
+scrollable" — und dann: „komisch nur, dass die Trainings schon syncen,
+was hast du falsch gemacht?" Richtig beobachtet: das Handy erreichte den
+Server. v.35.70.7 meldete „fern", sobald EINE Abfrage beim Server
+scheiterte — gleich beim Start, während die Verbindung erst entstand,
+und auch aus einem Rahmen des Routers mit seiner eigenen
+Firestore-Instanz.
+
+- **Das Signal kommt jetzt vom Zuhörer:** eine Meldung mit
+  `fromCache === false` IST eine Antwort des Servers. „Fern" erst nach
+  `FERN_NACH_MS` (10 s) ohne jede solche Antwort, zurückgenommen mit der
+  nächsten. Nur die oberste Seite schaltet den Banner.
+- **Nicht nur melden, neu verbinden:** nach diesen 10 s
+  `disableNetwork` + `enableNetwork` (höchstens einmal pro Minute, nur
+  oben) — eine hängende Verbindung wird neu aufgebaut, nichts geht
+  verloren.
+- **Der Banner liegt über der Seite** (`position: fixed`,
+  `pointer-events: none`). Vorher stand er sticky im Fluss vor der
+  Kopfleiste und machte die Seite höher als den Bildschirm. Im Browser am
+  Handyformat gemessen: Kopf bleibt bei 0, Seitenhöhe unverändert.
 
 ## Ausrollen
 

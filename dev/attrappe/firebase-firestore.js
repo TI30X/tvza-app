@@ -376,3 +376,8 @@ kanal?.addEventListener('message', () => { lesen(); melden(); });
    der Import und mit ihm das ganze Modul (Falle 14). */
 export async function terminate() {}
 export async function clearIndexedDbPersistence() {}
+
+/* Neu verbinden (v.35.70.8): in der Attrappe gibt es keine Verbindung,
+   die hängen könnte. */
+export async function disableNetwork() {}
+export async function enableNetwork() {}
