@@ -68,12 +68,106 @@ const SHELL_STUB = `
   };
 `;
 
+/* Essen (v.35.72.0): was die Gruppenseite an essen.js schickt, landet
+   in globalThis.__aufrufe; gelesen wird aus globalThis.__essen. */
+const ESSEN_STUB = `
+  export const freigabeSetzen = async (gid, uid, an) => {
+    (globalThis.__aufrufe ||= []).push(['freigabeSetzen', gid, uid, an]);
+    if (globalThis.__essenFehler === 'freigabe') throw new Error('Missing or insufficient permissions.');
+    globalThis.__essen = { ...(globalThis.__essen || {}), freigabe: an ? { uid, an: true, fassung: 1 } : { uid, an: false, fassung: 0 } };
+  };
+  export const ladeFreigabe = async () => globalThis.__essen?.freigabe ?? null;
+  export const ladeFreigaben = async () => globalThis.__essen?.freigaben ?? null;
+  export const beobachteFreigabe = (gid, uid, cb) => { setTimeout(() => cb(globalThis.__essen?.freigabe ?? null), 0); return () => {}; };
+  export const ladeTag = async (gid, uid, datum) => {
+    (globalThis.__aufrufe ||= []).push(['ladeTag', gid, uid, datum]);
+    if (globalThis.__essenFehler === 'tag') throw new Error('Missing or insufficient permissions.');
+    return (globalThis.__essen?.tage || []).find(x => x.uid === uid && x.datum === datum) || null;
+  };
+  export const tagSchreiben = async (gid, uid, datum, mahlzeiten) => {
+    (globalThis.__aufrufe ||= []).push(['tagSchreiben', gid, uid, datum, mahlzeiten]);
+    if (globalThis.__essenFehler === 'schreiben') throw new Error('Missing or insufficient permissions.');
+    const { tagPayload } = await import('${datei('assets/js/essen-modell.js')}');
+    const { findFood } = await import('${datei('assets/js/foods.js')}');
+    return tagPayload(uid, datum, mahlzeiten, findFood);
+  };
+  export const tagLoeschen = async (...a) => { (globalThis.__aufrufe ||= []).push(['tagLoeschen', ...a]); };
+  export const verlaufLoeschen = async (...a) => { (globalThis.__aufrufe ||= []).push(['verlaufLoeschen', ...a]); return globalThis.__essen?.tage?.length || 0; };
+  export const lebensmittelVorschlagen = async (o) => { (globalThis.__aufrufe ||= []).push(['lebensmittelVorschlagen', o]); };
+  export const beobachteZeitraum = (gid, von, bis, cb, fehler) => {
+    (globalThis.__aufrufe ||= []).push(['beobachteZeitraum', gid, von, bis]);
+    setTimeout(() => {
+      if (globalThis.__essenFehler === 'zeitraum') fehler?.(new Error('Missing or insufficient permissions.'));
+      else cb((globalThis.__essen?.tage || []).filter(t => t.datum >= von && t.datum <= bis));
+    }, 0);
+    return () => {};
+  };
+  export const ladeZeitraum = async () => globalThis.__essen?.tage || [];
+  export const eigeneTage = async () => globalThis.__essen?.tage || [];
+`;
+
+/* Training teilen (v.35.73.0): was der Bereich Training an
+   training-freigaben.js schickt, landet in globalThis.__aufrufe;
+   gelesen wird aus globalThis.__freigaben. */
+const FREIGABEN_STUB = `
+  export const freigabeAnlegen = async (uid, o) => {
+    (globalThis.__aufrufe ||= []).push(['freigabeAnlegen', uid, o]);
+    if (globalThis.__teilenFehler === 'anlegen') throw new Error('Missing or insufficient permissions.');
+    return { code: 'ABCDEFGHJKMNPQRSTUVWXYZ234567AB', ownerUid: uid, ...o, bis: new Date(Date.now() + 30 * 86400000), erstellt: new Date() };
+  };
+  export const freigabeAuffrischen = async (...a) => { (globalThis.__aufrufe ||= []).push(['freigabeAuffrischen', ...a]); };
+  export const freigabeVerlaengern = async (...a) => { (globalThis.__aufrufe ||= []).push(['freigabeVerlaengern', ...a]); };
+  export const freigabeZurueckziehen = async (...a) => { (globalThis.__aufrufe ||= []).push(['freigabeZurueckziehen', ...a]); };
+  export const meineFreigaben = async uid => {
+    (globalThis.__aufrufe ||= []).push(['meineFreigaben', uid]);
+    return globalThis.__freigaben === undefined ? [] : globalThis.__freigaben;
+  };
+  export const auszugHolen = async () => null;
+`;
+
+/* Eigene Plaene (v.35.74.0): was der Plan-Bauer an eigene-plaene.js
+   schickt, landet in globalThis.__aufrufe; gelesen wird aus
+   globalThis.__eigenePlaene / __eigeneUebungen / __eigeneVorlagen. */
+const EIGEN_STUB = `
+  let zaehler = 0;
+  export const planSpeichern = async (uid, plan, id) => {
+    (globalThis.__aufrufe ||= []).push(['planSpeichern', uid, plan, id]);
+    if (globalThis.__eigenFehler === 'speichern') throw new Error('Missing or insufficient permissions.');
+    return id || ('p' + (++zaehler));
+  };
+  export const planHolen = async () => null;
+  export const meinePlaene = async uid => {
+    (globalThis.__aufrufe ||= []).push(['meinePlaene', uid]);
+    return globalThis.__eigenePlaene === undefined ? [] : globalThis.__eigenePlaene;
+  };
+  export const planWeg = async (...a) => { (globalThis.__aufrufe ||= []).push(['planWeg', ...a]); };
+  export const uebungSpeichern = async (uid, u, id) => {
+    (globalThis.__aufrufe ||= []).push(['uebungSpeichern', uid, u, id]);
+    return id || ('u' + (++zaehler));
+  };
+  export const meineUebungen = async () => globalThis.__eigeneUebungen || [];
+  export const uebungWeg = async (...a) => { (globalThis.__aufrufe ||= []).push(['uebungWeg', ...a]); };
+  export const vorlageSpeichern = async (uid, v) => { (globalThis.__aufrufe ||= []).push(['vorlageSpeichern', uid, v]); return 'v1'; };
+  export const meineVorlagen = async () => globalThis.__eigeneVorlagen || [];
+  export const vorlageWeg = async () => {};
+  export const planTitel = p => String(p?.name || '');
+`;
+
 /* Nur was die Seite wirklich anfasst. Schreibende Aufrufe werden
    mitgeschrieben, statt etwas zu tun. */
 function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
   const merke = name => `async (...a) => { (globalThis.__aufrufe ||= []).push(['${name}', ...a]); return globalThis.__antwort?.['${name}']; }`;
   return `
     export const PLAN_FUER_ALLE = 'alle';
+    /* Der eigene Plan als Quelle (v.35.74.0): EIGEN ist keine Gruppe.
+       globalThis.__eigeneQuelle sind die Plaene, die ladePlaene(EIGEN)
+       liefert — die Seite liest sie wie die einer Gruppe. */
+    export const EIGEN = 'ich';
+    export const istEigen = gid => gid === EIGEN;
+    export const eigenePlaene = async uid => {
+      (globalThis.__aufrufe ||= []).push(['eigenePlaene', uid]);
+      return globalThis.__eigeneQuelle || [];
+    };
     export const leitet = r => r === 'head' || r === 'staff';
     export const fuehrt = r => r === 'head';
     export const wort = (art, was) => was;
@@ -138,6 +232,7 @@ function groupsStub({ gruppen, plaene, protokolle, mitglieder }) {
     export const kontakte = async () => globalThis.__bekannte || [];
     export const assistentSetzen = ${merke('assistentSetzen')};
     export const gruppeAendern = ${merke('gruppeAendern')};
+    export const bereichSchalten = ${merke('bereichSchalten')};
     export const gruppeLoeschen = ${merke('gruppeLoeschen')};
     export const ladeGruppenKalender = async gid => (globalThis.__gruppenKalender?.[gid] || []);
     export const gruppenKalenderAnlegen = async (...a) => { (globalThis.__aufrufe ||= []).push(['gruppenKalenderAnlegen', ...a]); return 'k-neu'; };
@@ -260,6 +355,20 @@ async function lade({
   heute = '2026-08-05',
   termine = [],
   profil = null,
+  /* Essen (v.35.72.0): { freigabe, freigaben, tage } — die Attrappe
+     liest daraus, statt etwas zu speichern. */
+  essen = null,
+  /* Was scheitern soll: freigabe | tag | schreiben | zeitraum. */
+  essenFehler = null,
+  /* Training teilen (v.35.73.0). */
+  freigaben = [],
+  teilenFehler = null,
+  /* Eigene Plaene (v.35.74.0). */
+  eigenePlaene = [],
+  eigeneUebungen = [],
+  eigeneVorlagen = [],
+  /* Was ladePlaene(EIGEN) liefert — wie ein Gruppenplan geformt. */
+  eigeneQuelle = [],
 }) {
   const html = await readFile(join(root, `pages/${seite}.html`), 'utf8');
   const dom = new JSDOM(html.replace(/<script\b[^>]*><\/script>/gi, ''), {
@@ -284,6 +393,15 @@ async function lade({
   globalThis.__privat = null;
   globalThis.__protokollLive = null;
   globalThis.__vorlagen = null;
+  globalThis.__essen = essen;
+  globalThis.__freigaben = freigaben;
+  globalThis.__eigenePlaene = eigenePlaene;
+  globalThis.__eigeneQuelle = eigeneQuelle;
+  globalThis.__eigeneUebungen = eigeneUebungen;
+  globalThis.__eigeneVorlagen = eigeneVorlagen;
+  globalThis.__eigenFehler = null;
+  globalThis.__teilenFehler = teilenFehler;
+  globalThis.__essenFehler = essenFehler;
   globalThis.__protokolleFehler = null;
   globalThis.__termine = termine;
   globalThis.__profil = profil;
@@ -336,11 +454,46 @@ async function lade({
     .replace(`'../../einladung.js'`, `'${datei('assets/js/einladung.js')}'`)
     .replace(`'../../ki.js'`, `'${datei('assets/js/ki.js')}'`)
     .replace(`'../../kalender-quellen.js'`, `'${datei('assets/js/kalender-quellen.js')}'`)
+    .replace(`'../../essen-modell.js'`, `'${datei('assets/js/essen-modell.js')}'`)
+    /* "Training teilen" zeichnet in einer eigenen Datei — wie Essen in
+       der Gruppe. Sie laeuft ECHT; nur ihr Weg nach Firestore ist eine
+       Attrappe. Ihre relativen Importe muessen mit umgebogen werden. */
+    .replace(`'./teilen.js'`, `'${dataUrl((await readFile(join(root, 'assets/js/feature/training/teilen.js'), 'utf8'))
+      .replace(`'../../firebase-config.js'`, `'${dataUrl(FIREBASE_STUB)}'`)
+      .replace(`'../../training-freigaben.js'`, `'${dataUrl(FREIGABEN_STUB)}'`)
+      .replace(`'../../training-teilen.js'`, `'${datei('assets/js/training-teilen.js')}'`)
+      .replace(`'../../einheit.js'`, `'${datei('assets/js/einheit.js')}'`)
+      .replace(`'../../wochenplan.js'`, `'${datei('assets/js/wochenplan.js')}'`)
+      .replace(`'../../dialog.js'`, `'${datei('assets/js/dialog.js')}'`) + `\n// Lauf ${lauf + 1}`)}'`)
+    /* Der Plan-Bauer (v.35.74.0) — dasselbe Muster. */
+    .replace(`'./plan-bauen.js'`, `'${dataUrl((await readFile(join(root, 'assets/js/feature/training/plan-bauen.js'), 'utf8'))
+      .replace(`'../../firebase-config.js'`, `'${dataUrl(FIREBASE_STUB)}'`)
+      .replace(`'../../eigene-plaene.js'`, `'${dataUrl(EIGEN_STUB)}'`)
+      .replace(`'../../plan-bauer.js'`, `'${datei('assets/js/plan-bauer.js')}'`)
+      .replace(`'../../uebungen-bibliothek.js'`, `'${datei('assets/js/uebungen-bibliothek.js')}'`)
+      .replace(`'../../dialog.js'`, `'${datei('assets/js/dialog.js')}'`) + `\n// Lauf ${lauf + 1}`)}'`)
+    /* Essen zeichnet in einer eigenen Datei (v.35.72.0). Sie laeuft
+       hier ECHT — nur ihre Wege nach Firestore sind Attrappen. Ihre
+       eigenen Importe muessen darum genauso umgebogen werden wie die
+       von gruppe.js: ein Modul aus einer data-URL loest './x.js'
+       gegen die data-URL auf, und die gibt es nicht. */
+    .replace(`'./essen.js'`, `'${dataUrl((await readFile(join(root, 'assets/js/feature/gruppe/essen.js'), 'utf8'))
+      .replace(`'../../firebase-config.js'`, `'${dataUrl(FIREBASE_STUB)}'`)
+      .replace(`'../../groups.js'`, `'${dataUrl(groupsStub({ gruppen, plaene, protokolle, mitglieder }))}'`)
+      .replace(`'../../essen.js'`, `'${dataUrl(ESSEN_STUB)}'`)
+      .replace(`'../../essen-modell.js'`, `'${datei('assets/js/essen-modell.js')}'`)
+      .replace(`'../../foods.js'`, `'${datei('assets/js/foods.js')}'`)
+      .replace(`'../../dialog.js'`, `'${datei('assets/js/dialog.js')}'`)
+      .replace(`'../essen/erfassung.js'`, `'${datei('assets/js/feature/essen/erfassung.js')}'`) + `\n// Lauf ${lauf + 1}`)}'`)
     /* Der Chat: gesendet wird nichts, nur mitgeschrieben. */
     .replace(`'../../chat-senden.js'`, `'${dataUrl(`
       export const gespraechspartner = async () => globalThis.__partner || [];
       export const anMehrere = async o => { (globalThis.__aufrufe ||= []).push(['anMehrere', o]); return { gesendet: o.empfaenger.length, fehler: 0 }; };`)}'`);
 
+  /* Auch die Untermodule (feature/gruppe/essen.js, feature/training/
+     teilen.js) bekommen die Laufnummer: sie halten Zustand, und Node
+     liefert zu gleicher data-URL dasselbe schon ausgefuehrte Modul.
+     Ohne das liefe der zweite Test mit dem Zustand des ersten. */
   /* Jeder Lauf bekommt eine eigene Adresse. Gleiche Parameter ergaeben
      sonst dieselbe Data-URL, der Modul-Cache lieferte das schon
      ausgefuehrte gruppe.js zurueck, und die neue Seite bliebe

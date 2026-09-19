@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=38" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=39" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/food.css?v=2" />
   <title>Food Tracker — TVZA</title>
@@ -104,16 +104,7 @@
           </div>
 
           <label class="form-label" data-i18n="fd.zutaten">Zutaten (ungefähres Gewicht)</label>
-          <div id="ingRows"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-            <button class="btn btn-primary" id="scanBtn" style="font-size:13px;padding:7px 14px;display:inline-flex;align-items:center;gap:6px">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-              Scannen
-            </button>
-            <button class="btn btn-secondary" id="addIngBtn" style="font-size:13px;padding:7px 14px"><span class="ui-plus" aria-hidden="true"></span><span data-i18n="fd.zutat">Zutat</span></button>
-          </div>
-
-          <div class="nutri-box" id="nutriBox" style="display:none"></div>
+          <div id="fdErfassung"></div>
 
           <button class="btn btn-primary btn-block" id="saveBtn" data-i18n="fd.speichern">✓ Speichern</button>
           <button class="btn btn-secondary btn-block" id="cancelEditBtn" style="display:none;margin-top:8px" data-i18n="common.abbrechen">Abbrechen</button>
@@ -147,49 +138,6 @@
 
   <div id="toast"></div>
 
-  <!-- Scanner modal -->
-  <div class="modal-backdrop" id="scanModal">
-    <div class="modal">
-      <div class="modal-title" data-i18n="fd.barcode">Barcode scannen</div>
-      <div id="reader" style="width:100%;border-radius:var(--r-row);overflow:hidden;background:#000;min-height:220px"></div>
-      <p id="scanStatus" style="font-size:13px;color:var(--ink-soft);margin:10px 0 6px;text-align:center" data-i18n="fd.kamera">Kamera wird gestartet…</p>
-
-      <!-- Was bisher in dieser Mahlzeit erfasst wurde -->
-      <div class="scan-summary" id="scanSummary" style="display:none"></div>
-
-      <div class="form-group" style="margin-top:6px">
-        <label class="form-label" for="manualCode" data-i18n="fd.codeHand">Oder Code von Hand eingeben</label>
-        <div style="display:flex;gap:8px">
-          <input class="form-input" id="manualCode" type="text" inputmode="numeric" placeholder="z.B. 7610200416014" data-i18n-attr="placeholder:fd.beispielCode" />
-          <button class="btn btn-primary" id="manualCodeBtn" style="padding:9px 14px">OK</button>
-        </div>
-      </div>
-      <button class="btn btn-primary btn-block" id="scanDoneBtn" style="margin-top:12px;display:none">✓ Das war's — speichern</button>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="scanClose" data-i18n="a11y.schliessen">Schliessen</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Amount sheet -->
-  <div class="modal-backdrop" id="amountModal">
-    <div class="modal">
-      <div class="modal-title" id="amountTitle" data-i18n="fd.wieViel">Wie viel?</div>
-      <p id="amountSub" style="font-size:13px;color:var(--ink-soft);margin:-4px 0 14px"></p>
-      <div id="amountBtns" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div class="form-group" style="margin-top:14px">
-        <label class="form-label" for="amountManual" data-i18n="fd.eigeneMenge">Eigene Menge (g)</label>
-        <div style="display:flex;gap:8px">
-          <input class="form-input" id="amountManual" type="number" min="1" placeholder="g" />
-          <button class="btn btn-primary" id="amountManualBtn" style="padding:9px 14px" data-i18n="fd.hinzufuegen">Hinzufügen</button>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="amountCancel" data-i18n="common.abbrechen">Abbrechen</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Request food modal -->
   <div class="modal-backdrop" id="reqModal">
     <div class="modal">
@@ -214,7 +162,15 @@
 
   <script type="module">
     import { db, requireAuth, wireOfflineBanner, escHtml, sharesForEmail, reportClientError } from '../assets/js/firebase-config.js';
-    import { searchFoods, findFood, registerFoods, defaultServing } from '../assets/js/foods.js';
+    import { registerFoods } from '../assets/js/foods.js';
+    /* Die Erfassung ist geteilter Code (v.35.72.0): dieselbe Rechnung,
+       dasselbe Mengenblatt, derselbe Scanner wie im Kader. */
+    import { erfassungMontieren } from '../assets/js/feature/essen/erfassung.js';
+    import { frage, meldung } from '../assets/js/dialog.js';
+
+    /* Falle 5: t() gibt bei unbekanntem Schluessel den Schluessel
+       zurueck, nie undefined — also tOr und nie ??. */
+    const tOrDe = (key, de, vars) => window.TVZAI18n?.tOr(key, de, vars) ?? de;
     import {
       doc, getDoc, setDoc, collection, addDoc, onSnapshot, updateDoc,
       deleteDoc, serverTimestamp, Timestamp, query, where, orderBy, getDocs
@@ -233,7 +189,7 @@
       const s = shares.find(x => x.ownerUid === ownerParam && x.module === 'food');
       if (s) { dataUid = ownerParam; readOnly = s.role !== 'edit'; ownerLabel = s.ownerName || 'geteilt'; }
       else {
-        alert('Kein Zugriff auf diese Freigabe.');
+        await meldung({ titel: tOrDe('fd.keinZugriff', 'Kein Zugriff auf diese Freigabe.') });
         if (!window.tvzaNavigate?.('../index.html')) window.location.href = '../index.html';
       }
     }
@@ -259,6 +215,16 @@
     const ICON_CLOSE = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
     const ICON_FOOD = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>`;
 
+    /* ════ Zutaten erfassen ══════════════════════
+       Seit v.35.72.0 nicht mehr hier: Zutatenzeilen, Vervollstaendigung,
+       Naehrwertrechnung, Mengenblatt und Scanner stehen in
+       feature/essen/erfassung.js — dieselbe Erfassung benutzt die
+       Gruppe (Falle: zwei Rechner waeren zwei Rundungen). */
+    const erfassung = erfassungMontieren(document.getElementById('fdErfassung'), {
+      onVorschlag: (name, extra) => openRequest(name, { barcode: extra?.barcode || '', brand: extra?.marke || '' }),
+      onFertig: () => { void saveCurrentMeal(); },
+    });
+
     /* ════ Profile ═══════════════════════════════ */
     let profile = null;
     try {
@@ -274,111 +240,6 @@
       return Math.round(base / 10) * 10;
     }
 
-    /* ════ Ingredient rows + autocomplete ═══════ */
-    const ingRows = document.getElementById('ingRows');
-    let rowSeq = 0;
-
-    function addIngRow(name = '', grams = '') {
-      const id = ++rowSeq;
-      const row = document.createElement('div');
-      row.className = 'ing-row';
-      row.dataset.row = id;
-      row.innerHTML = `
-        <div class="ac-wrap ing-name">
-          <input class="form-input" data-ing="${id}" type="text" placeholder="z.B. Haferflocken" value="${escHtml(name)}" autocomplete="off" />
-          <div class="ac-list" data-ac="${id}"></div>
-        </div>
-        <input class="form-input ing-grams" data-g="${id}" type="number" min="1" placeholder="g" value="${escHtml(grams)}" />
-        <button class="btn btn-danger" data-rm="${id}">${ICON_CLOSE}</button>`;
-      ingRows.appendChild(row);
-
-      const input = row.querySelector(`[data-ing="${id}"]`);
-      const list  = row.querySelector(`[data-ac="${id}"]`);
-
-      input.addEventListener('input', () => {
-        const q = input.value.trim();
-        const results = searchFoods(input.value);
-        if (!q) { list.classList.remove('visible'); calcNutrition(); return; }
-        let html = results.map(f =>
-          `<div class="ac-item" data-pick="${escHtml(f.name)}">${escHtml(f.name)} <small>${f.kcal} kcal/100g</small></div>`).join('');
-        // Nicht gefunden → Vorschlag anbieten
-        if (q.length >= 2)
-          html += `<div class="ac-item" data-suggest="${escHtml(q)}" style="color:var(--food)">➕ „${escHtml(q)}" vorschlagen <small>nicht in der Liste</small></div>`;
-        list.innerHTML = html;
-        list.classList.add('visible');
-        list.querySelectorAll('.ac-item[data-pick]').forEach(item =>
-          item.addEventListener('mousedown', e => {
-            e.preventDefault();
-            input.value = item.dataset.pick;
-            list.classList.remove('visible');
-            const gEl = row.querySelector(`[data-g="${id}"]`);
-            const f = findFood(item.dataset.pick);
-            if (f && !gEl.value) gEl.value = defaultServing(f).grams; // 1-Tipp-Portion
-            gEl.focus();
-            calcNutrition();
-          }));
-        const sg = list.querySelector('.ac-item[data-suggest]');
-        if (sg) sg.addEventListener('mousedown', e => {
-          e.preventDefault();
-          list.classList.remove('visible');
-          openRequest(sg.dataset.suggest);
-        });
-      });
-      input.addEventListener('blur', () => setTimeout(() => list.classList.remove('visible'), 150));
-
-      row.querySelector(`[data-g="${id}"]`).addEventListener('input', calcNutrition);
-      row.querySelector(`[data-rm="${id}"]`).addEventListener('click', () => { row.remove(); calcNutrition(); });
-    }
-
-    document.getElementById('addIngBtn').addEventListener('click', () => addIngRow());
-    addIngRow(); // start with one row
-
-    /* ════ Nutrition calculation ═════════════════ */
-    function readIngredients() {
-      const out = [];
-      ingRows.querySelectorAll('.ing-row').forEach(row => {
-        const name  = row.querySelector('input[data-ing]').value.trim();
-        const grams = parseFloat(row.querySelector('input[data-g]').value) || 0;
-        if (name && grams > 0) {
-          const food = findFood(name);
-          out.push({ name, grams, food });
-        }
-      });
-      return out;
-    }
-
-    function totalsFor(ings) {
-      const t = { kcal:0, protein:0, carbs:0, fat:0, fibre:0, micros:new Set(), unknown:[] };
-      ings.forEach(({ name, grams, food }) => {
-        if (!food) { t.unknown.push(name); return; }
-        const f = grams / 100;
-        t.kcal    += food.kcal * f;
-        t.protein += food.protein * f;
-        t.carbs   += food.carbs * f;
-        t.fat     += food.fat * f;
-        t.fibre   += food.fibre * f;
-        food.micros.forEach(m => t.micros.add(m));
-      });
-      return t;
-    }
-
-    function calcNutrition() {
-      const ings = readIngredients();
-      const box = document.getElementById('nutriBox');
-      if (!ings.length) { box.style.display = 'none'; return; }
-      const t = totalsFor(ings);
-      box.style.display = '';
-      box.innerHTML = `
-        <span class="nutri-kcal">≈ ${Math.round(t.kcal)} kcal</span>
-        <div class="nutri-row">
-          <span>Protein ${t.protein.toFixed(1)}g</span>
-          <span>KH ${t.carbs.toFixed(1)}g</span>
-          <span>Fett ${t.fat.toFixed(1)}g</span>
-          <span>Ballaststoffe ${t.fibre.toFixed(1)}g</span>
-        </div>
-        ${t.micros.size ? `<div class="nutri-row"><span>💊 ${[...t.micros].join(', ')}</span></div>` : ''}
-        ${t.unknown.length ? `<div class="nutri-row" style="color:var(--trip)"><span>⚠️ Nicht in Datenbank: ${t.unknown.map(escHtml).join(', ')} (zählt 0 kcal)</span></div>` : ''}`;
-    }
 
     /* ════ Day view ═════════════════════════════ */
     let offset = 0;
@@ -482,7 +343,8 @@
       }
       wrap.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', ev => {
         ev.stopPropagation();
-        if (confirm('Eintrag löschen?')) deleteDoc(doc(entriesCol, b.dataset.del));
+        frage({ titel: tOrDe('fd.eintragWeg', 'Eintrag löschen?'), ja: tOrDe('common.loeschen', 'Löschen'), gefahr: true })
+          .then(ja => { if (ja) deleteDoc(doc(entriesCol, b.dataset.del)); });
       }));
     }
 
@@ -526,9 +388,7 @@
 
     function resetForm() {
       editing = null;
-      ingRows.innerHTML = '';
-      addIngRow();
-      document.getElementById('nutriBox').style.display = 'none';
+      erfassung.leeren();
       document.getElementById('formTitle').textContent = 'Mahlzeit erfassen';
       document.getElementById('saveBtn').textContent = '✓ Speichern';
       document.getElementById('cancelEditBtn').style.display = 'none';
@@ -536,34 +396,31 @@
     }
 
     async function saveCurrentMeal() {
-      const ings = readIngredients();
-      if (!ings.length) { alert('Bitte mindestens eine Zutat mit Gewicht eingeben.'); return false; }
-      const t = totalsFor(ings);
+      const ings = erfassung.zutaten();
+      if (!ings.length) { await meldung({ titel: tOrDe('fd.keineZutat', 'Bitte mindestens eine Zutat mit Gewicht eingeben.') }); return false; }
+      const t = erfassung.summe();
       const payload = {
         date: editing ? editing.date : toDateStr(currentDate()),
         meal: document.getElementById('fMeal').value,
-        ingredients: ings.map(i => ({ name: i.name, grams: i.grams })),
+        ingredients: ings.map(i => ({ name: i.name, grams: i.g })),
         kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat, fibre: t.fibre,
         micros: [...t.micros],
       };
       try {
         if (editing) { await updateDoc(doc(entriesCol, editing.id), payload); toast('Aktualisiert ✓'); }
         else { payload.createdAt = Timestamp.now(); await addDoc(entriesCol, payload); toast('Gespeichert ✓'); }
-      } catch (e) { alert('Speichern fehlgeschlagen — bitte nochmal versuchen.'); return false; }
+      } catch (e) { await meldung({ titel: tOrDe('fd.speichernWeg', 'Speichern fehlgeschlagen — bitte nochmal versuchen.') }); return false; }
       resetForm();
       return true;
     }
 
     function startEdit(entry) {
       editing = { id: entry.id, date: entry.date };
-      ingRows.innerHTML = '';
-      (entry.ingredients || []).forEach(i => addIngRow(i.name, i.grams));
-      if (!ingRows.children.length) addIngRow();
+      erfassung.setzen((entry.ingredients || []).map(i => ({ name: i.name, g: i.grams })));
       document.getElementById('fMeal').value = entry.meal || MEALS.snack;
       document.getElementById('formTitle').textContent = 'Mahlzeit bearbeiten';
       document.getElementById('saveBtn').textContent = '✓ Änderungen speichern';
       document.getElementById('cancelEditBtn').style.display = '';
-      calcNutrition();
       document.getElementById('entryCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
@@ -580,215 +437,6 @@
     }
     loadCustomFoods();
 
-    /* ════ Zutat per Tipp einfügen ═══════════════ */
-    function addFoodByAmount(name, grams) {
-      // freie leere Zeile nutzen, sonst neue anlegen
-      let targetId = null;
-      ingRows.querySelectorAll('.ing-row').forEach(r => {
-        const nameEl = r.querySelector('input[data-ing]');
-        if (targetId === null && !nameEl.value.trim()) targetId = r.dataset.row;
-      });
-      if (targetId === null) { addIngRow(name, Math.round(grams)); }
-      else {
-        const r = ingRows.querySelector(`.ing-row[data-row="${targetId}"]`);
-        r.querySelector('input[data-ing]').value = name;
-        r.querySelector('input[data-g]').value = Math.round(grams);
-      }
-      calcNutrition();
-    }
-
-    /* ════ Mengen-Auswahl (Sheet) ════════════════
-       Zeigt grosse Tipp-Buttons: Packung / Portion / 100 g. */
-    const amountModal = document.getElementById('amountModal');
-    function openAmount(food, opts = {}) {
-      // food: {name, kcal, …}  opts: {packGrams, servingGrams, brand}
-      document.getElementById('amountTitle').textContent = food.name;
-      document.getElementById('amountSub').textContent =
-        `${opts.brand ? opts.brand + ' · ' : ''}${food.kcal} kcal / 100 g`;
-
-      const serving = defaultServing(food);
-      const sGrams = opts.servingGrams || serving.grams;
-      const btns = [];
-      if (opts.packGrams) {
-        btns.push({ label: `Ganze Packung`, sub: `${Math.round(opts.packGrams)} g`, g: opts.packGrams });
-        btns.push({ label: `Halbe Packung`, sub: `${Math.round(opts.packGrams/2)} g`, g: opts.packGrams/2 });
-      }
-      btns.push({ label: serving.label === '100 g' ? '1 Portion' : serving.label, sub: `${Math.round(sGrams)} g · ~${Math.round(food.kcal*sGrams/100)} kcal`, g: sGrams });
-      if (Math.abs(sGrams - 100) > 1) btns.push({ label: '100 g', sub: `~${Math.round(food.kcal)} kcal`, g: 100 });
-
-      document.getElementById('amountBtns').innerHTML = btns.map((b,i) =>
-        `<button class="btn ${i===0?'btn-primary':'btn-secondary'} btn-block" data-amt="${b.g}" style="justify-content:space-between;display:flex">
-           <span>${escHtml(b.label)}</span><span style="opacity:.75;font-size:12px">${escHtml(b.sub)}</span>
-         </button>`).join('');
-
-      amountReturnToScan = !!opts.onAdded;
-      const commit = (grams) => {
-        registerFoods(food); // sicherstellen, dass Nährwerte verfügbar sind
-        addFoodByAmount(food.name, grams);
-        amountModal.classList.remove('visible');
-        if (opts.onAdded) opts.onAdded();
-      };
-
-      document.querySelectorAll('#amountBtns [data-amt]').forEach(btn =>
-        btn.addEventListener('click', () => commit(parseFloat(btn.dataset.amt))));
-
-      document.getElementById('amountManual').value = '';
-      document.getElementById('amountManualBtn').onclick = () => {
-        const g = parseFloat(document.getElementById('amountManual').value);
-        if (!g || g <= 0) return;
-        commit(g);
-      };
-      amountModal.classList.add('visible');
-    }
-    let amountReturnToScan = false;
-    function closeAmount() {
-      amountModal.classList.remove('visible');
-      if (amountReturnToScan) reopenScanner();   // zurück zum Scanner, weiter erfassen
-      amountReturnToScan = false;
-    }
-    document.getElementById('amountCancel').addEventListener('click', closeAmount);
-    amountModal.addEventListener('click', e => { if (e.target === amountModal) closeAmount(); });
-
-    /* ════ Barcode-Scanner ═══════════════════════ */
-    const scanModal = document.getElementById('scanModal');
-    let html5Qr = null, scanLibPromise = null;
-
-    function ensureScanLib() {
-      if (window.Html5Qrcode) return Promise.resolve();
-      if (scanLibPromise) return scanLibPromise;
-      scanLibPromise = new Promise((res, rej) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      });
-      return scanLibPromise;
-    }
-
-    function setScanStatus(t) { document.getElementById('scanStatus').textContent = t; }
-
-    async function startCamera() {
-      try {
-        await ensureScanLib();
-      } catch { setScanStatus('Scanner konnte nicht geladen werden — Code von Hand eingeben.'); return; }
-      const fmts = window.Html5QrcodeSupportedFormats ? [
-        Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.QR_CODE,
-      ] : undefined;
-      html5Qr = new Html5Qrcode('reader', { formatsToSupport: fmts, verbose: false });
-      setScanStatus('Halte den Barcode in den Rahmen…');
-      try {
-        await html5Qr.start({ facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 250, height: 160 } },
-          code => { onScanned(code); },
-          () => {});
-      } catch (e) {
-        setScanStatus('Kein Kamerazugriff — Code bitte von Hand eingeben.');
-      }
-    }
-
-    async function stopCamera() {
-      if (html5Qr) { try { await html5Qr.stop(); html5Qr.clear(); } catch {} html5Qr = null; }
-    }
-
-    // Was bisher in dieser Sitzung erfasst wurde
-    function renderScanSummary() {
-      const ings = readIngredients();
-      const sum = document.getElementById('scanSummary');
-      const done = document.getElementById('scanDoneBtn');
-      if (!ings.length) { sum.style.display = 'none'; done.style.display = 'none'; return; }
-      const t = totalsFor(ings);
-      sum.style.display = ''; done.style.display = '';
-      sum.innerHTML = ings.map(i =>
-        `<div class="ss-item"><span>${escHtml(i.name)}</span><small>${Math.round(i.grams)} g</small></div>`).join('')
-        + `<div class="ss-item" style="background:transparent;font-weight:700"><span>${ings.length} Artikel · Total</span><small>≈ ${Math.round(t.kcal)} kcal</small></div>`;
-    }
-
-    function openScanner() {
-      if (readOnly) return;
-      renderScanSummary();
-      scanModal.classList.add('visible');
-      setScanStatus('Kamera wird gestartet…');
-      startCamera();
-    }
-    function reopenScanner() {        // nach dem Hinzufügen: weiter scannen
-      renderScanSummary();
-      scanModal.classList.add('visible');
-      setScanStatus('Nächsten Barcode scannen…');
-      startCamera();
-    }
-    async function closeScanner() { scanModal.classList.remove('visible'); await stopCamera(); }
-
-    document.getElementById('scanBtn').addEventListener('click', openScanner);
-    document.getElementById('scanClose').addEventListener('click', closeScanner);
-    scanModal.addEventListener('click', e => { if (e.target === scanModal) closeScanner(); });
-    document.getElementById('manualCodeBtn').addEventListener('click', () => {
-      const c = document.getElementById('manualCode').value.trim();
-      if (c) { document.getElementById('manualCode').value = ''; onScanned(c); }
-    });
-    // „Das war's" — alles in einem Tipp speichern
-    document.getElementById('scanDoneBtn').addEventListener('click', async () => {
-      await stopCamera();
-      scanModal.classList.remove('visible');
-      const ok = await saveCurrentMeal();
-      if (!ok) reopenScanner();   // bei Fehler: Sitzung offen lassen
-    });
-
-    let lastCode = '';
-    async function onScanned(code) {
-      if (code === lastCode) return;        // Doppelscans ignorieren
-      lastCode = code;
-      setTimeout(() => { lastCode = ''; }, 2500);
-      await stopCamera();
-      setScanStatus('Produkt wird gesucht…');
-      const prod = await lookupBarcode(code);
-      scanModal.classList.remove('visible');
-      const next = () => { toast('Hinzugefügt ✓'); reopenScanner(); };
-      if (!prod) { openRequest('', { barcode: code }); return; }
-      if (prod.knownFood) openAmount(prod.knownFood, { packGrams: prod.packGrams, servingGrams: prod.servingGrams, brand: prod.brand, onAdded: next });
-      else if (prod.kcal != null) openAmount(
-        { name: prod.name, kcal: prod.kcal, protein: prod.protein, carbs: prod.carbs, fat: prod.fat, fibre: prod.fibre, micros: [] },
-        { packGrams: prod.packGrams, servingGrams: prod.servingGrams, brand: prod.brand, onAdded: next });
-      else openRequest(prod.name, { barcode: code, brand: prod.brand });   // keine Nährwerte → Vorschlag
-    }
-
-    // Open Food Facts Lookup
-    async function lookupBarcode(code) {
-      try {
-        const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,product_name_de,generic_name_de,generic_name,brands,quantity,serving_size,nutriments`;
-        const r = await fetch(url);
-        const j = await r.json();
-        if (!j || j.status !== 1 || !j.product) return null;
-        const p = j.product, nut = p.nutriments || {};
-        const name = (p.product_name_de || p.product_name || p.generic_name_de || p.generic_name || '').trim();
-        if (!name) return { name: '', brand: p.brands || '', kcal: null };
-        let kcal = num(nut['energy-kcal_100g']);
-        if (kcal == null && num(nut['energy_100g']) != null) kcal = Math.round(num(nut['energy_100g']) / 4.184);
-        const known = findFood(name);
-        return {
-          name, brand: (p.brands || '').split(',')[0].trim(),
-          knownFood: known || null,
-          kcal: kcal,
-          protein: num(nut['proteins_100g']) || 0,
-          carbs: num(nut['carbohydrates_100g']) || 0,
-          fat: num(nut['fat_100g']) || 0,
-          fibre: num(nut['fiber_100g']) || 0,
-          packGrams: parseAmount(p.quantity),
-          servingGrams: parseAmount(p.serving_size),
-        };
-      } catch (e) { reportClientError('food-search', e); return null; }
-    }
-    const num = v => (v == null || v === '' || isNaN(+v)) ? null : +v;
-    function parseAmount(str) {       // "500 g" / "1 kg" / "250ml" → Gramm
-      if (!str) return null;
-      const m = String(str).replace(',', '.').match(/([\d.]+)\s*(kg|g|l|ml|cl)?/i);
-      if (!m) return null;
-      let v = parseFloat(m[1]); const u = (m[2] || 'g').toLowerCase();
-      if (u === 'kg' || u === 'l') v *= 1000;
-      if (u === 'cl') v *= 10;
-      return (v >= 10 && v <= 5000) ? v : null;
-    }
 
     /* ════ Lebensmittel vorschlagen ══════════════ */
     const reqModal = document.getElementById('reqModal');
@@ -820,8 +468,8 @@
           createdAt: serverTimestamp(),
         });
         reqModal.classList.remove('visible');
-        alert('Danke! Dein Vorschlag wurde gesendet.');
-      } catch (e) { alert('Senden fehlgeschlagen — bitte nochmal versuchen.'); }
+        await meldung({ titel: tOrDe('fd.danke', 'Danke!'), text: tOrDe('fd.vorschlagOk', 'Dein Vorschlag ist unterwegs. Sobald er freigegeben ist, steht er allen zur Verfügung.') });
+      } catch (e) { await meldung({ titel: tOrDe('fd.vorschlagWeg', 'Der Vorschlag liess sich nicht senden.') }); }
       btn.disabled = false; btn.textContent = 'Vorschlag senden';
     });
 

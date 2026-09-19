@@ -22,8 +22,17 @@ import { requireAuth, getProfile, wireOfflineBanner, reportClientError }
 import { mountShell } from '../../shell.js?v=30';
 import {
   beobachteMeineGruppen, beobachteTermine, ladePlaene, ladeProtokolle, leitet, PLAN_FUER_ALLE,
+  ladePrivat, EIGEN, eigenePlaene,
 } from '../../groups.js';
 import { wochenTage, nachDatum } from '../../wochenplan.js';
+/* Training teilen (v.35.73.0) — eine eigene Datei, wie Essen in der
+   Gruppe: diese Seite bleibt die Woche, das Teilen steht daneben. */
+import {
+  teilenInit, teilenVerdrahten, teilenZeigen, teilenSchliessen, teilenOffen,
+} from './teilen.js';
+/* Eigene Plaene (v.35.74.0): Training haengt nicht mehr daran, dass
+   jemand einen Trainer hat. */
+import { bauenInit, bauenVerdrahten, bauenOffen } from './plan-bauen.js';
 import { agendaAnsicht } from '../woche/woche.js';
 
 const $ = id => document.getElementById(id);
@@ -47,10 +56,23 @@ function fuerMich(plan) {
 }
 
 function ohne({ text, knopf }) {
+  teilenZeigen(false);
+  if (teilenOffen()) teilenSchliessen();
   $('ohneText').textContent = text;
   $('lnkGruppe').textContent = knopf;
   zeige('secOhne', true);
   zeige('secWoche', false);
+  /* Auch ohne Gruppe und ohne Plan: der Weg zum eigenen Plan bleibt.
+     Genau das ist der Punkt — Training haengt nicht an einer Gruppe. */
+  zeige('bauenZeile', !bauenOffen());
+}
+
+/* Eine Unteransicht geht auf: alles andere tritt zurueck. */
+function verbergen() {
+  zeige('secWoche', false);
+  zeige('secOhne', false);
+  zeige('bauenZeile', false);
+  teilenZeigen(false);
 }
 
 async function protokolleFuer(gid) {
@@ -60,6 +82,29 @@ async function protokolleFuer(gid) {
   catch (e) { reportClientError('training/protokolle', e); }
   protokolleJe.set(gid, werte);
   return werte;
+}
+
+/* Die privaten Notizen ("Nur für mich", users/{uid}/trainingLogs) —
+   gelesen nur, wenn jemand sie ausdrücklich mitgeben will.
+
+   Sie liegen je Tag und darin je Einheit und Übung. Für den Auszug
+   werden die Übungen einer Einheit zu einem Absatz: die externe
+   Trainerin braucht den Gedanken, nicht die Übungskennung. */
+async function privatNotizen(tage = []) {
+  const raus = {};
+  for (const datum of tage) {
+    let units = {};
+    try { units = await ladePrivat(user.uid, datum); }
+    catch (e) { reportClientError('training/privat', e); continue; }
+    for (const [schluessel, einheit] of Object.entries(units || {})) {
+      const texte = Object.values(einheit?.items || {})
+        .map(i => String(i?.privat || '').trim())
+        .filter(Boolean);
+      if (!texte.length) continue;
+      (raus[datum] ||= {})[schluessel] = texte.join(' · ');
+    }
+  }
+  return raus;
 }
 
 /* Ein Termin gehoert in seine Gruppe: dort sind Zusage, Anhaenge und
@@ -75,9 +120,16 @@ function zeichne() {
   const termine = gruppen.flatMap(g => (termineJe.get(g.id) || [])
     .map(x => ({ ...x, gid: g.id, gruppe: g.name, gruppenart: g.art })));
   const mitPlan = new Set(quellen.map(q => q.gid));
-  $('wocheGruppe').textContent = mitPlan.size === 1 && gruppen.length === 1
-    ? (gruppen[0].name || t('nav.gruppe', 'Gruppe'))
-    : t('tr.ausGruppen', 'Aus deinen Gruppen');
+  /* Kommt alles aus EINER Quelle, steht ihr Name darueber. Sonst
+     "Aus deinen Gruppen" — und nur, wenn ein eigener Plan dabei ist,
+     "Aus deinen Plaenen": sonst waere das Wort Gruppe falsch. */
+  $('wocheGruppe').textContent = mitPlan.size === 1
+    ? (mitPlan.has(EIGEN)
+      ? t('pb.eigenerPlanKurz', 'Eigener Plan')
+      : (gruppen.find(g => mitPlan.has(g.id))?.name || t('nav.gruppe', 'Gruppe')))
+    : (mitPlan.has(EIGEN)
+      ? t('tr.ausQuellen', 'Aus deinen Plänen')
+      : t('tr.ausGruppen', 'Aus deinen Gruppen'));
   woche.setze({
     quellen,
     termine,
@@ -103,21 +155,47 @@ function hoereAufTermine() {
   }
 }
 
+/* Die eigenen Plaene als Quelle — mit der Kennung EIGEN, die keine
+   Gruppe ist (groups.js). Dadurch stehen sie in derselben Woche, im
+   selben Kalender und im selben Player wie ein Plan des Kaders, ohne
+   dass einer dieser drei etwas davon wissen muss.
+
+   Und sie verdraengen nichts: agendaTage() entscheidet je QUELLE,
+   welcher Plan an einem Tag gewinnt. Kader und eigener Plan sind zwei
+   Quellen — wer am Dienstag beides hat, sieht beides. */
+async function eigeneQuellen() {
+  let plaene = [];
+  try { plaene = await eigenePlaene(user.uid); }
+  catch (e) { reportClientError('training/eigene', e); return []; }
+  const raus = [];
+  for (const plan of plaene) {
+    let programm = null;
+    try { programm = JSON.parse(plan.json); }
+    catch (e) { reportClientError('training/eigenLesen', e); }
+    if (programm && wochenTage(programm).length) {
+      raus.push({ gid: EIGEN, gruppe: t('pb.eigenerPlanKurz', 'Eigener Plan'), plan, programm });
+    }
+  }
+  return raus;
+}
+
 async function laden(liste) {
   gruppen = liste;
   hoereAufTermine();
 
-  if (!gruppen.length) {
+  const eigene = await eigeneQuellen();
+
+  if (!gruppen.length && !eigene.length) {
     quellen = [];
     ohne({
-      text: t('tr.ohneGruppe',
-        'Dein Training kommt aus deiner Gruppe. Tritt ihr bei oder lege eine an — dann steht hier die Woche, die dein Trainer veröffentlicht.'),
+      text: t('tr.ohneGruppe2',
+        'Hier steht deine Trainingswoche. Sie kann aus einer Gruppe kommen — oder du baust sie dir selbst, ganz ohne Trainer.'),
       knopf: t('tr.zurGruppe', 'Zur Gruppe'),
     });
     return;
   }
 
-  const gefunden = [];
+  const gefunden = [...eigene];
   for (const gruppe of gruppen) {
     let plaene = [];
     try { plaene = await ladePlaene(gruppe.id, user.uid, leitet(gruppe.meineRolle)); }
@@ -138,15 +216,21 @@ async function laden(liste) {
     ohne({
       text: fuehrtIrgendwo
         ? t('tr.keinPlanLeitung', 'Noch kein Plan veröffentlicht. Lies die Excel des Wochenplans in der Gruppe ein — dann steht er hier und bei deinem Kader.')
-        : t('tr.keinPlan', 'Dein Trainer hat noch keinen Plan veröffentlicht. Sobald er es tut, steht die Woche hier.'),
+        : t('tr.keinPlan2', 'Dein Trainer hat noch keinen Plan veröffentlicht. Du musst nicht warten: unten baust du dir selbst einen.'),
       knopf: fuehrtIrgendwo ? t('grp.planNeu', 'Plan veröffentlichen') : t('tr.zurGruppe', 'Zur Gruppe'),
     });
     return;
   }
 
   for (const gid of new Set(quellen.map(q => q.gid))) await protokolleFuer(gid);
+  /* Steht eine Unteransicht offen, bleibt sie offen: ein neu geladener
+     Plan darf niemanden aus dem Formular werfen, in dem er gerade
+     tippt (Falle 18, dasselbe Muster wie auf der Gruppenseite). */
+  if (bauenOffen() || teilenOffen()) return;
   zeige('secOhne', false);
   zeige('secWoche', true);
+  zeige('bauenZeile', true);
+  teilenZeigen(true);
   zeichne();
 }
 
@@ -172,6 +256,33 @@ async function laden(liste) {
     zurueck: 'training',
     beiTermin: terminOeffnen,
   });
+
+  /* Training teilen (v.35.73.0). Der Auszug wird aus dem gebaut, was
+     diese Seite ohnehin geladen hat — die privaten Notizen holt sie
+     nur dann nach, wenn jemand den Haken wirklich setzt. */
+  teilenInit({
+    nutzer: user,
+    anzeigeName: profile?.displayName || '',
+    datenQuelle: () => ({ quellen, protokolle: protokolleJe }),
+    privatQuelle: privatNotizen,
+    zurueck: () => {
+      zeige('secWoche', !!quellen.length);
+      zeige('secOhne', !quellen.length);
+      teilenZeigen(!!quellen.length);
+    },
+  });
+  teilenVerdrahten();
+  $('btnTeilen')?.addEventListener('click', () => verbergen());
+
+  /* Der Plan-Bauer (v.35.74.0). Nach jeder Änderung wird die Woche neu
+     geladen — sonst stünde der neue Plan erst nach einem Neuladen da. */
+  bauenInit({
+    nutzer: user,
+    zurueck: () => { zeige('bauenZeile', true); void laden(gruppen); },
+    danach: () => { void laden(gruppen); },
+  });
+  bauenVerdrahten();
+  $('btnBauen')?.addEventListener('click', () => verbergen());
 
   beobachteMeineGruppen(user.uid, liste => {
     laden(liste).catch(e => reportClientError('training/laden', e));

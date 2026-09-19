@@ -105,7 +105,7 @@ E-Mail-Adresse, keine Anschrift. `fuss.betrieben` bleibt im Katalog,
 wird aber nirgends mehr gesetzt; `dev/marke.test.mjs` lässt „höchstens
 einmal" weiterhin zu und verbietet den Namen ausserhalb.
 
-Version: **v.35.71.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
+Version: **v.35.75.0**. Remote: `TI30X/tvza-app`. Arbeitszweig: `firn`.
 Ausgerollt wird `main` — siehe Deploy weiter unten.
 
 Die Oberfläche gibt es in sieben Sprachen. **Kommentare und
@@ -133,7 +133,7 @@ npm install                                        # einmalig (jsdom)
 node --experimental-vm-modules --test *.test.mjs
 ```
 
-87 Testdateien, **863 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
+94 Testdateien, **1051 Tests**. Das Flag braucht `html-module-syntax.test.mjs`.
 Alle grün vor jedem Commit.
 
 **Die App durchklicken, ohne Firebase** (Attrappen-Modus, v.35.45.0):
@@ -1355,6 +1355,134 @@ der Leiste stehen; am Handy bleibt dieser Wechselweg als flacher Textknopf.
 `dev/start-ueberblick.test.mjs`, `dev/formatierung.test.mjs`,
 `dev/navigation.test.mjs`.
 
+**38. Essen im Kader — eine zweite Stelle, nicht ein zweiter Tracker**
+(v.35.72.0). Ein Kader will wissen, ob seine Athleten genug essen; eine
+Athletin will das nicht in einem zweiten Programm eintragen — und auch
+nicht, dass ihr persoenlicher Food Tracker ploetzlich einem Verein
+gehoert.
+
+- **Zwei Orte, nie einer.** `groups/{gid}/essen/{uid}__{datum}` und
+  `groups/{gid}/essenFreigabe/{uid}`. NICHT unter `foodlog/{uid}`:
+  dort liegen unter `meta/profile` auch Gewicht und Ziel, und ein
+  Leserecht auf den Ordner waere ein Leserecht darauf. Auf diesem Pfad
+  gibt es nichts Persoenliches zu holen, egal wie eine Abfrage
+  gefiltert ist. Dasselbe Muster wie beim Trainingsprotokoll (Falle
+  26): die Kennung traegt die uid, `get` prueft die Kennung, `list`
+  das Feld, auflisten darf die Leitung.
+- **Die Rechnung gibt es einmal.** Zutatenzeilen, Vervollstaendigung,
+  Naehrwertrechnung, Mengenblatt und Barcode-Scanner standen bis dahin
+  in `pages/foodtracker.html` — jetzt in
+  `assets/js/feature/essen/erfassung.js`, und der Food Tracker
+  benutzt dasselbe Bedienelement. Es baut sein Markup selbst (ein
+  Aufhaenger statt acht Element-Kennungen, Falle 14) und kennt weder
+  Firebase noch die Gruppe.
+- **Die Zusage nennt Namen**, nicht „die Leitung": wer einwilligt,
+  ohne zu wissen wem, hat nicht eingewilligt (`sehendePersonen`,
+  `EINWILLIGUNG`). Aufhoeren ist zweierlei und wird zweimal gefragt:
+  kuenftig nichts mehr — und der Verlauf in DIESER Gruppe weg.
+- **Die Leitung liest und schreibt nicht.** Kein `leadsGroup` im
+  create-, update- oder delete-Zweig. Ein Ernaehrungsprotokoll, das
+  der Trainer aendern kann, ist keine Auskunft mehr; und einen
+  Verlauf, den jemand geteilt hat, raeumt sie nicht weg.
+- **Drei Zustaende, drei Woerter**: `Erfasst` / `Kein Eintrag` /
+  `Teilt nicht`. „Keine Eintraege" ueber jemandem, der nicht teilt,
+  waere eine Behauptung ueber sein Verhalten.
+- Nur `kader` und `organisation` (`essenMoeglich`), und nur mit
+  `bereiche.essen` — eine Familie fuehrt ueber das Essen kein Buch.
+
+`dev/essen.test.mjs`, `dev/essen-gruppe.test.mjs`.
+
+**39. Das eigene Training mit jemandem ausserhalb teilen** (v.35.73.0).
+Eine Athletin im Kader hat daneben eine Privattrainerin. Die soll
+sehen, was sie trainiert — und sonst nichts.
+
+- **Ein Auszug, kein Gastzugang.** Ein Gast, der `groups/{gid}` lesen
+  darf, saehe Kaderliste, Termine, Kontakte und Chat. Stattdessen
+  schreibt die Athletin ein Dokument mit genau dem, was sie ausgewaehlt
+  hat: `trainingShares/{code}`, gebaut aus einer Positivliste, nie
+  durch `...spread` (training-teilen.js). Der Preis ist Ehrlichkeit:
+  ein Auszug ist ein Stand, kein Fenster — aufgefrischt beim Oeffnen
+  des Bereichs Training, und die Empfaengerseite sagt, wie alt er ist.
+- **Der Code IST der Zugang**: 32 Zeichen aus 31 (rund 158 Bit),
+  `crypto.getRandomValues`, nie `Math.random`. `get` verlangt
+  keine Anmeldung — eine Privattrainerin soll keinen Account anlegen
+  muessen —, aber `list` darf NUR die Eigentuemerin, und zwar
+  gefiltert auf ihre uid. Ohne Aufzaehlen ist ein unauffindbarer Code
+  eine Faehigkeit.
+- **`bis` prueft die Regel bei jedem Lesen.** Ein abgelaufener Link
+  hoert von selbst auf zu wirken; Zurueckziehen ist ein Loeschen und
+  gilt sofort.
+- **Die Gruppe merkt nichts.** Kein gid-Feld, kein `leadsGroup`-Zweig,
+  kein `list` ausser auf die eigene uid. Wer sich zusaetzlich Hilfe
+  holt, muss sich dafuer nicht beim Verein abmelden.
+- **„Nur fuer mich" ist aus** und wird vor dem Mitgeben noch einmal
+  gefragt. `pages/geteilt.html` laedt keine Huelle, keinen Router,
+  keine Gruppen und benutzt kein `innerHTML`.
+
+`dev/training-teilen.test.mjs`, `dev/training-teilen-seite.test.mjs`.
+
+**40. Ein eigener Plan ist eine Quelle wie eine Gruppe** (v.35.74.0).
+Bis dahin kam Training nur aus einer Gruppe: wer keinen Trainer hatte,
+hatte keinen Plan.
+
+- **`EIGEN = 'ich'` in groups.js** — eine Kennung, die keine Gruppe
+  ist. Jede Funktion mit einer gid verzweigt an genau EINER Stelle;
+  Woche, Kalender, Uebersicht und Player lesen einen selbst gebauten
+  Plan unveraendert. Warum ein Wort und keine leere Zeichenkette: leer
+  ist der Zustand „noch nichts gewaehlt" und kommt beim Laden vor.
+- **Dieselbe Form wie die Excel.** `plan-bauer.js` erzeugt genau das,
+  was `training-parser.js` aus der Excel macht — dieselben Felder,
+  dieselben sechs Modi. Ein zweites Format haette Player, Woche,
+  Kalender, Uebersicht und Teilen je ein zweites Mal gebraucht.
+- **Sie verdraengen einander nicht.** `agendaTage()` entscheidet je
+  QUELLE, welcher Plan an einem Tag gewinnt. Kader und eigener Plan
+  sind zwei Quellen — wer am Dienstag beides hat, sieht beides.
+- **Dasselbe Protokoll.** `users/{uid}/trainingLogs/{datum}`, dieselbe
+  Transaktion, dasselbe `aenderungenPruefen`, dieselbe Sicherung im
+  Geraet. Ein zweiter, einfacherer Weg fuers eigene Training waere
+  genau der Fehler, den v.35.64.0 behoben hat. Beim eigenen Plan gibt
+  es keine Leitung: eine Notiz statt zweier, und
+  `privatEinheit(EIGEN, u)` ist `u` — ein Gruppenschluessel traegt
+  immer ein `~`.
+- **Die Bibliothek** (`uebungen-bibliothek.js`): mitgeliefert ohne
+  Video (ein Link, fuer den wir geradestehen), eigene unter
+  `users/{uid}/uebungen` (owner-only). Was in einen Plan geht, ist
+  eine KOPIE der Werte — eine spaeter geaenderte Uebung aendert keinen
+  fertigen Plan. Ein umbenanntes Item behaelt seinen `key`: daran
+  haengt das Protokoll.
+
+`dev/plan-bauer.test.mjs`, `dev/plan-bauen-seite.test.mjs`.
+
+**41. Die vierte Terminart gibt es nur bei Freunden** (v.35.75.0).
+termine.js argumentierte bis dahin gegen einen vierten Typ — zu Recht:
+„Elternabend" verhaelt sich wie ein Training und braucht nur ein
+eigenes Wort (`bezeichnung`). Eine **Feier** verdient ihn trotzdem:
+sie hat eine eigene Farbe im Kalender, eine eigene Quelle in der
+Quellenliste und einen eigenen Weg beim Anlegen.
+
+- `ARTEN_JE_GRUPPE.familie` ist `['training','lager','feier']`;
+  `kader` und `organisation` bleiben Wort fuer Wort, wie sie waren.
+  `kenntFeier(art)` entscheidet, nie ein `if` an der Oberflaeche.
+- **Eine Feier ist EIN Tag.** `pruefe()` lehnt ein Bis-Datum ab: wer
+  drei Tage feiert, meint eine Reise.
+- **Kein zweites Modell.** Es ist ein Termin der Gruppe — dieselben
+  Zusagen (`ja/nein/vielleicht`), dieselbe Packliste, derselbe
+  Gastzugang, derselbe Chat, derselbe Kalender. Nur die Woerter
+  wechseln: „Packliste" heisst „Mitbringen", „Programm" heisst
+  „Ablauf" (`freundeWorte()`, mit `data-i18n` mitgesetzt — sonst
+  setzt der Katalog beim naechsten Lauf zurueck, Falle 5).
+- **In einem Zug**: wer bringt was mit (`packlisteAusText`, eine
+  Sache pro Zeile) und ein Gastlink stehen beim ANLEGEN im Formular,
+  nicht erst danach am fertigen Termin. Beim Bearbeiten nicht — zwei
+  Orte fuer dieselbe Liste waeren zwei Wahrheiten.
+- **Im Rundgang gefunden:** `terminAnlegen` hat eine Feldliste, und
+  `gastToken` stand nicht darin. Das Formular setzte ihn, die Regel
+  liess ihn zu, und er fiel still weg. Der jsdom-Test sah nur die
+  Absicht (er haelt groups.js an), nicht den Schreibvorgang — deshalb
+  prueft `feier.test.mjs` jetzt die Feldliste selbst.
+
+`dev/feier.test.mjs`.
+
 ## Ausrollen
 
 `main` ist die Live-Seite. Der Arbeitszweig ist `firn`.
@@ -1530,6 +1658,23 @@ Zwei Dinge, die leicht übersehen werden:
   v.35.70.0 braucht keine neue Regel: Texte, Formulare und drei neue
   Seiten, kein neues Feld und keine neue Sammlung. Das Zurücksetzen des
   Passworts verschickt Firebase Auth selbst.
+  v.35.72.0 (Essen im Kader: `groups/{gid}/essen`,
+  `groups/{gid}/essenFreigabe`) **Regeln VOR dem Code**: ohne sie
+  scheitert jede Zusage und jeder Eintrag. Die neuen Regeln vertragen
+  den alten Code (er kennt die Sammlungen nicht).
+  v.35.73.0 (`trainingShares`) **Regeln VOR dem Code**: ohne sie
+  laesst sich kein Link anlegen und keiner lesen. Achtung, hier steht
+  zum ersten Mal ein `get` ohne `signedIn()` — bewusst: der Code
+  IST der Zugang, `list` bleibt der Eigentuemerin vorbehalten.
+  v.35.74.0 (`users/{uid}/uebungen`) erweitert nur — ohne die Regel
+  laesst sich keine eigene Uebung anlegen, alles andere geht. Die
+  eigenen Plaene und ihr Protokoll liegen unter schon bestehenden
+  Regeln (`trainingPrograms`, `trainingLogs`); es braucht dort
+  keine Aenderung.
+  v.35.75.0 (`art` um `'feier'` erweitert, `artFarbenGueltig` um
+  denselben Schluessel) **Regeln VOR dem Code**: die alte Regel lehnt
+  eine Feier ab, und sie waere im Formular anwaehlbar. Die neue Regel
+  vertraegt den alten Code.
   v.35.68.0 (`users/{uid}/einstellungen/gruppen`, `artFarben` an
   `groups` samt `artFarbenGueltig`) erweitert nur — ohne sie bleibt die
   Reihenfolge im Gerät (mit Hinweis) und die Farbe einer Art lässt sich

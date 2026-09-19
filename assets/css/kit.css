@@ -1532,6 +1532,10 @@ body.reorder-editing .module-tile::after {
 [data-bereich="t-training"] { --tint: var(--tint-weather); --deep: var(--weather-deep); }
 [data-bereich="t-lager"]    { --tint: var(--tint-food);    --deep: var(--food-deep); }
 [data-bereich="t-rennen"]   { --tint: var(--tint-training); --deep: var(--training-deep); }
+/* Eine Feier (v.35.75.0) gibt es nur bei Familie und Freunden. Sie
+   bekommt einen eigenen Ton, weil man sie im Kalender suchen wird —
+   und nicht den der drei Sportarten, die etwas anderes bedeuten. */
+[data-bereich="t-feier"]    { --tint: var(--tint-matura);  --deep: var(--matura-deep); }
 
 /* ── 4.1 Zeile — the one row component ─────────────────────────────
    Replaces .link-row, .item-card, .file-row, .grp-card, .pending-card. */

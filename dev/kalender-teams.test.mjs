@@ -133,7 +133,11 @@ test('der Kalender liest die Teams und gibt ihre Termine in alle Ansichten', asy
      Termine in der halben App. Seit v.35.49.0 zeichnen alle Ansichten
      aus EINER Liste; die Teams gehen in sie hinein. */
   // Seit v.35.59.0 tragen die Teams auch die Einheiten ihrer Pläne mit.
-  assert.match(quelle, /teams:groups\.filter\(item => !versteckteTeams\.has\(item\.id\)\)\s*\.map\(gruppe => \(\{ gruppe, termine:teamTermine\.get\(gruppe\.id\) \|\| \[\], trainings:teamTrainings\.get\(gruppe\.id\) \|\| \[\] \}\)\)/);
+  assert.match(quelle, /groups\.filter\(item => !versteckteTeams\.has\(item\.id\)\)\s*\.map\(gruppe => \(\{ gruppe, termine:teamTermine\.get\(gruppe\.id\) \|\| \[\], trainings:teamTrainings\.get\(gruppe\.id\) \|\| \[\] \}\)\)/);
+  /* Seit v.35.74.0 steht daneben der eigene Plan. Er ist keine Gruppe:
+     keine Termine, keine Gruppenfarbe — und er haengt am Schalter
+     "Persoenlich", weil er persoenlich IST. */
+  assert.match(quelle, /showPersonal && \(teamTrainings\.get\(EIGEN\) \|\| \[\]\)\.length/);
   const zeichnen = quelle.match(/function renderCurrentView\(\) \{[\s\S]*?\n\}/)?.[0] || '';
   assert.match(zeichnen, /const liste = eintraegeJetzt\(\);/);
   for (const ansicht of ['renderListe', 'renderMonat', 'renderZeit']) {

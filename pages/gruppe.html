@@ -13,11 +13,12 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=38" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=39" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
   <link rel="stylesheet" href="../assets/css/feature/gruppe.css?v=14" />
   <link rel="stylesheet" href="../assets/css/feature/programm.css?v=1" />
+  <link rel="stylesheet" href="../assets/css/feature/essen.css?v=2" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=35" defer></script>
   <title data-i18n="grp.seitentitel">Gruppe — Firn</title>
@@ -138,6 +139,98 @@
       </div>
     </section>
 
+    <!-- Essen (v.35.72.0). Zwei Wege in denselben Bereich: erfassen tut
+         jede und jeder für sich, die Übersicht sieht nur die Leitung.
+         Leise als Zeile statt als breiter Knopf — wer nichts damit zu
+         tun hat, soll die Woche nicht dahinter suchen. -->
+    <p class="grp-weitere" id="grpEssenZeile" hidden>
+      <span data-i18n="essen.zeile">Essen:</span>
+      <button class="grp-weitere__link" id="btnEssen" type="button" data-i18n="essen.erfassen">erfassen</button>
+      <span aria-hidden="true">·</span>
+      <button class="grp-weitere__link" id="btnEssenTeam" type="button" hidden data-i18n="essen.uebersicht">Übersicht</button>
+    </p>
+
+    <!-- Erfassen. Ohne ausdrückliche Zusage steht hier nur die Zusage:
+         was erfasst wird, sieht die Leitung, und das muss man gelesen
+         haben, bevor der erste Eintrag entsteht. -->
+    <section class="section" id="secEssen" hidden>
+      <div class="form-card">
+        <button class="backlink" id="btnEssenZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" id="essenGruppe">Essen</div>
+
+        <p class="empty-hint" id="essenLade" data-i18n="common.laden" hidden>Lädt …</p>
+
+        <!-- Die Zusage. Sie nennt Namen, nicht "die Leitung". -->
+        <div class="essen-zusage" id="essenZusage" hidden>
+          <p class="essen-zusage__titel" data-i18n="essen.zusageTitel">Wer sieht, was du erfasst</p>
+          <p class="essen-zusage__wer" id="essenZusageWer"></p>
+          <p class="essen-zusage__text" id="essenZusageText"></p>
+          <button class="b b--primary b--block" id="btnEssenZusagen" type="button" data-i18n="essen.zusageJa">Einverstanden — erfassen</button>
+        </div>
+
+        <div class="essen-teilt" id="essenTeiltKarte" hidden>
+          <p class="essen-teilt__text" id="essenTeiltText"></p>
+          <div class="essen-teilt__knoepfe">
+            <button class="grp-weitere__link" id="btnEssenAufhoeren" type="button" data-i18n="essen.aufhoeren">Nicht mehr teilen</button>
+            <span aria-hidden="true">·</span>
+            <button class="grp-weitere__link" id="btnEssenVerlauf" type="button" data-i18n="essen.verlaufWeg2">Geteiltes löschen</button>
+          </div>
+        </div>
+
+        <div id="essenForm" hidden>
+          <div class="fortschritt-tag">
+            <button class="b b--secondary fortschritt-tag__pfeil" id="essenVor" type="button" aria-label="Tag davor" data-i18n-attr="aria-label:grp.tagDavor"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span class="fortschritt-tag__datum" id="essenDatum">—</span>
+            <button class="b b--secondary fortschritt-tag__pfeil" id="essenNach" type="button" aria-label="Tag danach" data-i18n-attr="aria-label:grp.tagDanach"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="essenMahlzeit" data-i18n="fd.mahlzeit">Mahlzeit</label>
+            <select class="form-select" id="essenMahlzeit"></select>
+          </div>
+
+          <label class="form-label" data-i18n="fd.zutaten">Zutaten (ungefähres Gewicht)</label>
+          <div id="essenErfassung"></div>
+
+          <p class="empty-hint" id="essenFehler" hidden></p>
+          <button class="b b--primary b--block" id="btnEssenSpeichern" type="button" data-i18n="essen.speichern">Mahlzeit speichern</button>
+          <button class="b b--secondary b--block" id="btnEssenAbbrechen" type="button" hidden data-i18n="common.abbrechen">Abbrechen</button>
+
+          <p class="essen-summe" id="essenTagSumme" hidden></p>
+          <div class="rows" id="essenTagListe"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Die Übersicht. Nur lesen: die Leitung korrigiert kein
+         Ernährungsprotokoll (die Regel kennt für sie kein Schreiben). -->
+    <section class="section" id="secEssenTeam" hidden>
+      <div class="form-card">
+        <button class="backlink" id="btnEssenTeamZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" id="essenTeamTitel">Essen</div>
+        <p class="plan-vorschau__hinweis" data-i18n="essen.teamHinweis">Du siehst nur, was jemand ausdrücklich mit der Leitung teilt. „Teilt nicht“ sagt nichts darüber, ob jemand gegessen oder etwas erfasst hat. Ändern kannst du hier nichts.</p>
+
+        <div class="essen-zeitraum">
+          <div class="form-group">
+            <label class="form-label" for="essenVon" data-i18n="essen.von">Von</label>
+            <input class="form-input" id="essenVon" type="date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="essenBis" data-i18n="essen.bis">Bis</label>
+            <input class="form-input" id="essenBis" type="date" />
+          </div>
+        </div>
+        <div class="essen-schnell">
+          <button class="b b--secondary" id="essenHeute" type="button" data-i18n="grp.heute">Heute</button>
+          <button class="b b--secondary" id="essenWoche" type="button" data-i18n="essen.siebenTage">7 Tage</button>
+          <button class="b b--secondary" id="essenMonat" type="button" data-i18n="essen.dreissigTage">30 Tage</button>
+        </div>
+
+        <p class="empty-hint" id="essenTeamHinweis" hidden></p>
+        <div class="rows" id="essenTeamListe"></div>
+      </div>
+    </section>
+
     <!-- Fortschritt der Athleten (v.35.65.0): je Tag, Athlet und Einheit,
          aus denselben Protokollen, die der Athlet im Player sieht. Nur für
          die Leitung (die Regel lässt nur sie die Protokolle auflisten). -->
@@ -242,6 +335,24 @@
         <div class="form-group">
           <label class="form-label" for="fNotiz" data-i18n="prog.bemerkung">Bemerkung</label>
           <textarea class="form-textarea" id="fNotiz" rows="2" maxlength="2000"></textarea>
+        </div>
+
+        <!-- Planen mit Freunden (v.35.75.0). Bei Familie und Freunden
+             stehen die zwei Dinge, die man beim Einladen sofort braucht,
+             gleich im Formular statt erst danach im Termin: wer was
+             mitbringt (packliste) und ein Link für Leute ohne Konto
+             (gastToken). Bei Kader und Verein bleibt alles, wie es war —
+             dort kommen beide weiterhin erst am fertigen Termin dazu. -->
+        <div id="grpFeier" hidden>
+          <div class="form-group">
+            <label class="form-label" for="fMitbringen" data-i18n="fe.mitbringen">Wer bringt was mit?</label>
+            <textarea class="form-textarea" id="fMitbringen" rows="3" maxlength="1000" placeholder="Salat&#10;Getränke&#10;Musikbox" data-i18n-attr="placeholder:fe.mitbringenPh"></textarea>
+            <p class="form-hint" data-i18n="fe.mitbringenHinweis">Eine Sache pro Zeile. Jede und jeder hakt für sich ab, was sie mitbringt.</p>
+          </div>
+          <label class="check-zeile" for="fGastlink">
+            <input type="checkbox" id="fGastlink" />
+            <span data-i18n="fe.gastlink">Link für Leute ohne Firn-Konto erstellen</span>
+          </label>
         </div>
 
         <!-- Die Seite zum Termin: eine Programm- oder Reiseseite als HTML
@@ -379,7 +490,7 @@
              nach Tagen, und jeder in der Gruppe hakt ab. -->
         <div class="termin-teil" id="grpProgramm" hidden>
           <div class="marke marke--reihe">
-            <span data-i18n="prog.programm">Programm</span>
+            <span id="programmWort" data-i18n="prog.programm">Programm</span>
             <button class="b b--secondary" id="btnProgrammOeffnen" type="button" data-i18n="kal.programmOeffnen">Programm öffnen</button>
           </div>
           <div id="listProgramm"></div>
@@ -422,7 +533,7 @@
              schreibt. -->
         <div class="termin-teil" id="grpPackliste" hidden>
           <div class="marke marke--reihe">
-            <span data-i18n="prog.packliste">Packliste</span>
+            <span id="packWort" data-i18n="prog.packliste">Packliste</span>
             <span id="packStand"></span>
           </div>
           <div class="rows" id="listPackliste"></div>
@@ -708,6 +819,20 @@
         </div>
         <p class="empty-hint" id="gruppeKalenderFehler" hidden></p>
       </div>
+      <!-- Essen (v.35.72.0). Ein Bereich der Gruppe wie Termine oder
+           Training: die Leitung schaltet ihn ein, und erst dann gibt es
+           ihn hier. Nur für Kader und Verein — eine Familie führt über
+           das Essen kein Protokoll. -->
+      <div class="einladung" id="essenEinst" hidden>
+        <p class="einladung__titel" data-i18n="essen.bereich">Essen</p>
+        <p class="einladung__meta" data-i18n="essen.bereichText">Athletinnen und Athleten können ihr Essen erfassen und ausdrücklich mit euch teilen. Jede Person entscheidet selbst; ihr seht nur, was jemand freigibt, und ändern könnt ihr nichts.</p>
+        <label class="check-zeile" for="essenAn">
+          <input type="checkbox" id="essenAn" />
+          <span data-i18n="essen.bereichAn">Essen in dieser Gruppe anbieten</span>
+        </label>
+        <p class="empty-hint" id="essenEinstFehler" hidden></p>
+      </div>
+
       <!-- Der eigene Assistent der Gruppe (v.35.53.0): ein Name, und was
            er beachten soll. Alle in der Gruppe sehen ihn in der Pille. -->
       <div class="einladung assistent-einst" id="assistentEinst" hidden>
@@ -745,6 +870,6 @@
 
   </main>
 
-  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=40"></script>
+  <script type="module" src="../assets/js/feature/gruppe/gruppe.js?v=43"></script>
 </body>
 </html>

@@ -111,7 +111,18 @@ test('der Bereich Training liest die Plaene der Gruppen, keinen eigenen Speicher
   assert.match(js, /from '\.\.\/\.\.\/groups\.js'/);
   assert.match(js, /ladePlaene\(/);
   assert.match(js, /agendaAnsicht\(\{[\s\S]*zurueck: 'training'/);
-  assert.doesNotMatch(js, /trainingLogs|trainingPrograms|training-sync/);
+  /* Ohne Kommentare gemessen: dort stehen die alten Namen als
+     Begruendung, und eine Begruendung ist kein Speicher. */
+  const code = js.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  assert.doesNotMatch(code, /trainingPrograms|training-sync/);
+  /* Seit v.35.73.0 LIEST die Seite die privaten Notizen aus
+     users/{uid}/trainingLogs — aber nur fuer "Training teilen", nur mit
+     ladePrivat und nur, wenn jemand den Haken gesetzt hat. Geschrieben
+     wird dort weiterhin nichts: das tut der Player. */
+  assert.doesNotMatch(code, /privatSetzen|setDoc|addDoc|updateDoc/);
+  for (const treffer of code.match(/trainingLogs/g) || []) {
+    assert.fail(`die Seite fasst trainingLogs direkt an: ${treffer}`);
+  }
   /* Eingelesen wird in der Gruppe, nicht hier. */
   assert.doesNotMatch(js, /gridFromFile|training-import/);
   /* Die Leitung liest ungefiltert; hier zaehlt nur, was fuer einen

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B1B2A" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/firn.svg" />
+  <link rel="apple-touch-icon" href="../assets/icons/firn-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
+  <script src="../assets/js/theme.js"></script>
+  <script src="../assets/js/i18n.js?v=1"></script>
+  <link rel="stylesheet" href="../assets/css/kit.css?v=39" />
+  <link rel="stylesheet" href="../assets/css/feature/geteilt.css?v=3" />
+  <title data-i18n="tg.seitentitel">Geteiltes Training — Firn</title>
+  <!-- Die Seite, die eine externe Trainerin sieht.
+
+       Sie hat kein Konto, keine Leiste, keinen Tab und keinen Weg in
+       die App: hier steht ein Auszug und sonst nichts. Genau darum
+       laedt sie auch nur, was sie braucht — kein shell.js, kein
+       Router, keine Gruppen.
+
+       Kein style-Block, kein Inline-Modul, kein style-Attribut, keine
+       Hex-Farbe ausser theme-color: die Seiten-Invariante. -->
+</head>
+<body class="app tg">
+
+  <header class="tg__kopf">
+    <span class="firn tg__marke">Fir<b>n</b></span>
+    <span class="tg__nur-lesen" data-i18n="tg.nurLesen">Nur zum Ansehen</span>
+  </header>
+
+  <main class="main tg__inhalt" id="main">
+
+    <p class="tg__laden" id="tgLaden" data-i18n="common.laden">Lädt …</p>
+
+    <!-- Kein Auszug: abgelaufen, zurueckgezogen oder nie da gewesen.
+         Welches davon, sagt die Seite nicht — sonst waere die Antwort
+         eine Auskunft darueber, welche Links es einmal gab. -->
+    <section class="tg__leer" id="tgLeer" hidden>
+      <h1 class="tg__titel" data-i18n="tg.wegTitel">Dieser Link gilt nicht mehr</h1>
+      <p class="tg__text" data-i18n="tg.wegText">Er ist abgelaufen oder wurde zurückgezogen. Frag die Person, die ihn dir geschickt hat, nach einem neuen.</p>
+    </section>
+
+    <section id="tgAuszug" hidden>
+      <h1 class="tg__titel" id="tgName">Training</h1>
+      <p class="tg__meta" id="tgMeta"></p>
+      <p class="tg__hinweis" id="tgStand"></p>
+
+      <div class="tg__tage" id="tgTage"></div>
+
+      <p class="tg__fuss" data-i18n="tg.fuss">Dieser Auszug wurde ausdrücklich geteilt. Er zeigt nur, was dafür ausgewählt wurde — keine Gruppe, keine anderen Personen und keine Nachrichten.</p>
+    </section>
+
+  </main>
+
+  <script type="module" src="../assets/js/feature/geteilt/geteilt.js?v=1"></script>
+</body>
+</html>

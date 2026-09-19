@@ -273,11 +273,14 @@ test('Termine schreibt die Leitung, lesen alle Mitglieder', async () => {
   assert.doesNotMatch(allowClause(block, 'create'), /request\.auth\.uid == uid/);
 });
 
-test('nur die drei Arten, und die Art bleibt nach dem Anlegen stehen', async () => {
+test('nur die bekannten Arten, und die Art bleibt nach dem Anlegen stehen', async () => {
   const block = matchBlock(await readRules(), '/groups/{gid}/events/{eid}');
 
+  /* Seit v.35.75.0 vier: 'feier' gibt es nur bei Familie und Freunden,
+     und WELCHE eine Gruppe anbietet, entscheidet ARTEN_JE_GRUPPE. Die
+     Regel zaehlt nur auf, was ueberhaupt ein Wort hat. */
   assert.match(allowClause(block, 'create'),
-    /request\.resource\.data\.art in \['training', 'lager', 'rennen'\]/);
+    /request\.resource\.data\.art in \['training', 'lager', 'rennen', 'feier'\]/);
 
   // Aus einem Rennen ein Training zu machen liesse Startnummer und
   // Ergebnis sinnlos daneben stehen — dieselbe Überlegung wie bei der

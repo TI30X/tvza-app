@@ -108,7 +108,10 @@ test('all production add actions use the same two-pixel plus', async () => {
     /* Seit v.35.49.0 stehen die Knöpfe des Kalenders in planner.css. */
     read('assets/css/feature/planner.css'),
     read('index.html'),
-    read('pages/foodtracker.html'),
+    /* Seit v.35.72.0 baut das geteilte Bedienelement die Zutatenzeilen
+       des Food Trackers — samt seinem Plus (feature/essen/erfassung.js).
+       Die Seite selbst hat darum keines mehr. */
+    read('assets/js/feature/essen/erfassung.js'),
     read('pages/skitracker.html'),
     read('pages/watchlist.html'),
     read('pages/planner.html'),

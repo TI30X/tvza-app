@@ -45,7 +45,7 @@ import {
    und stehen bis dahin als Quelle mit ihren Reisen daneben. */
 import {
   beobachteMeineGruppen, beobachteTermine, aktiveGruppeSetzen, aktiveGruppeId, VORGABE_BEREICHE, leitet, wort,
-  eineReiseUebernehmen, ladePlaene, ladeGruppenKalender,
+  eineReiseUebernehmen, ladePlaene, ladeGruppenKalender, EIGEN,
 } from '../../groups.js';
 import {
   quelleVon, sichtbar, quellenBaum, ausGemerkt, kalenderName, naechsteFarbe, KALENDER_NAME_MAX, KALENDER_MAX,
@@ -147,6 +147,10 @@ async function init() {
   wireUI();
   watchReminders();
   watchTeams();
+  /* Die eigenen Plaene (v.35.74.0) — einmal beim Oeffnen, wie die der
+     Gruppen. EIGEN ist keine Gruppe: es gibt dafuer keinen Zuhoerer
+     auf Termine und keine Gruppenfarbe. */
+  trainingsLaden({ id: EIGEN, name: '' });
   await resolveGroups();
   const requestedAction = new URLSearchParams(location.search).get('open');
   if (requestedAction === 'reminder-new') {
@@ -220,8 +224,14 @@ function closeCalendarSetup() {
    Eine Farbe je Gruppe, aus teamFarben: dieselbe wie im Wechsler und
    fuer Reisen und Termine derselben Gruppe, und zwei Gruppen einer
    Person nie gleich. Gerechnet wird in vereinige(), nicht je Eintrag. */
-const groupColor = id => gruppenFarben.get(id) || GROUP_COLORS[0];
-const groupName = id => groups.find(item => item.id === id)?.name || tt('nav.gruppe','Gruppe');
+/* Ein eigener Plan (v.35.74.0) ist keine Gruppe: er gehoert zum
+   Persoenlichen und traegt dessen Farbe. */
+const groupColor = id => (id === EIGEN
+  ? personalCalendarColor()
+  : (gruppenFarben.get(id) || GROUP_COLORS[0]));
+const groupName = id => (id === EIGEN
+  ? tt('pb.eigenerPlanKurz', 'Eigener Plan')
+  : (groups.find(item => item.id === id)?.name || tt('nav.gruppe','Gruppe')));
 const personalCalendarColor = () => normalizeCalendarColor(calendarPreference.personalColor || DEFAULT_CALENDAR_COLOR);
 
 /* Die alten Einladungslinks (?invite=&token=) trugen in eine
@@ -305,12 +315,17 @@ function watchTeams() {
    einmal beim Öffnen; eine neue Excel kommt mit dem nächsten Laden. */
 async function trainingsLaden(gruppe) {
   if (!gruppe) return;
+  /* Ein eigener Plan (v.35.74.0) ist eine Quelle wie eine Gruppe: EIGEN
+     ist keine Gruppenkennung, und ladePlaene verzweigt darauf. Damit
+     steht er hier ohne eine zweite Ladefunktion. */
+  const eigen = gruppe.id === EIGEN;
   try {
     const plaene = await ladePlaene(gruppe.id, user.uid, false);
     const quellen = plaene.map(plan => {
       let programm = null;
       try { programm = JSON.parse(plan.json); } catch { /* kaputter Plan: weglassen */ }
-      return programm ? { gid:gruppe.id, gruppe:gruppe.name || '', plan:{ ...plan, json:undefined }, programm } : null;
+      const name = eigen ? (window.TVZAI18n?.tOr('pb.eigenerPlanKurz', 'Eigener Plan') ?? 'Eigener Plan') : (gruppe.name || '');
+      return programm ? { gid:gruppe.id, gruppe:name, plan:{ ...plan, json:undefined }, programm } : null;
     }).filter(Boolean);
     teamTrainings.set(gruppe.id, planEinheiten(quellen, isoTag()));
     renderCurrentView();
@@ -884,8 +899,16 @@ function sammelnRoh() {
     tage:days,
     erinnerungen:reminders,
     reisen:sichtbareReisen(),
-    teams:groups.filter(item => !versteckteTeams.has(item.id))
-      .map(gruppe => ({ gruppe, termine:teamTermine.get(gruppe.id) || [], trainings:teamTrainings.get(gruppe.id) || [] })),
+    teams:[
+      ...groups.filter(item => !versteckteTeams.has(item.id))
+        .map(gruppe => ({ gruppe, termine:teamTermine.get(gruppe.id) || [], trainings:teamTrainings.get(gruppe.id) || [] })),
+      /* Die eigenen Plaene haengen am Schalter Persoenlich: sie SIND
+         persoenlich, und ein zweiter Schalter daneben waere eine Quelle,
+         die niemand sucht. */
+      ...(showPersonal && (teamTrainings.get(EIGEN) || []).length
+        ? [{ gruppe:{ id:EIGEN, name:groupName(EIGEN) }, termine:[], trainings:teamTrainings.get(EIGEN) }]
+        : []),
+    ],
     persoenlich:showPersonal,
     farbePersoenlich:personalCalendarColor(),
     farbeVon:groupColor,

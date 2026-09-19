@@ -138,13 +138,28 @@ test('die Art eines Termins waehlt man aus Knoepfen, "Eigene" inklusive', async 
   } finally { zurueck(); }
 });
 
-test('eine Familie bekommt kein Rennen angeboten, aber "Eigene"', async () => {
+test('eine Familie bekommt kein Rennen angeboten, dafuer eine Feier', async () => {
   const { doc, zurueck } = await starteGruppe(leitung('familie'));
   try {
     klick(doc.getElementById('btnTermin'));
     const arten = [...doc.querySelectorAll('#fArtWahl [data-art-wahl]')].map(k => k.dataset.artWahl);
-    assert.deepEqual(arten, ['training', 'lager', 'eigene']);
+    assert.deepEqual(arten, ['training', 'lager', 'feier', 'eigene']);
+    /* Und die zwei Dinge, die man beim Einladen sofort braucht. */
+    assert.equal(doc.getElementById('grpFeier').hidden, false);
   } finally { zurueck(); }
+});
+
+test('ein Kader bekommt keine Feier — der Sport bleibt, wie er war', async () => {
+  for (const art of ['kader', 'organisation']) {
+    const { doc, zurueck } = await starteGruppe(leitung(art));
+    try {
+      klick(doc.getElementById('btnTermin'));
+      const arten = [...doc.querySelectorAll('#fArtWahl [data-art-wahl]')].map(k => k.dataset.artWahl);
+      assert.deepEqual(arten, ['training', 'lager', 'rennen', 'eigene'], art);
+      /* Und die zwei Felder fuers Planen mit Freunden auch nicht. */
+      assert.equal(doc.getElementById('grpFeier').hidden, true, art);
+    } finally { zurueck(); }
+  }
 });
 
 test('"Eigene" verlangt ein Wort und speichert es als Bezeichnung', async () => {

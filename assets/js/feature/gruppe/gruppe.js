@@ -35,12 +35,12 @@ import {
   terminAendern, programmSetzen, beobachteGepackt, gepacktSetzen,
   gastTokenSetzen, ladeGaeste, gastEntfernen, reisenDerGruppeUebernehmen,
   gruppeAendern, gruppeLoeschen, ladeGruppenKalender, gruppenKalenderAnlegen, gruppenKalenderLoeschen,
-  beobachteProtokolleAm, ladeVorlagen, vorlageSpeichern,
+  beobachteProtokolleAm, ladeVorlagen, vorlageSpeichern, bereichSchalten,
 } from '../../groups.js';
 import { kalenderName, naechsteFarbe, KALENDER_MAX } from '../../kalender-quellen.js';
 import {
   seiteLesen, programmMitSeite, neuerPunkt, punktSetzen, punkteHtml, jetztFuer,
-  abfahrtVon, abfahrtenSauber, packlisteFuer, neuerPackpunkt, haeufigste,
+  abfahrtVon, abfahrtenSauber, packlisteFuer, packlisteAusText, neuerPackpunkt, haeufigste,
   programmZeigen, programmNeuZeichnen, sichereAdresse, SEITE_MAX, PACKLISTE_MAX,
 } from '../../programm.js';
 import {
@@ -58,7 +58,7 @@ import {
 } from '../../kontakte.js';
 import {
   zeitraum, artWort, artName, BEREICH_DER_ART, pruefe, isoTag,
-  artenFuer, kenntDisziplinen, istAbgesagt, alsIcsEintrag,
+  artenFuer, kenntDisziplinen, istAbgesagt, alsIcsEintrag, kenntFeier,
 } from '../../termine.js';
 import { buildCalendarIcs } from '../../calendar-interop.js';
 import { gewichtsVerlauf, einheitStatus, satzFortschritt, fortschritt } from '../../einheit.js';
@@ -67,6 +67,16 @@ import {
 } from '../../fispunkte.js';
 import { WORKER_BASIS, KALENDER_ABO } from '../../worker-config.js';
 import { passendesMitglied } from '../../zuordnung.js';
+/* Essen (v.35.72.0) — eigene Datei, weil diese hier schon lang genug
+   ist. Sie zeichnet ihre zwei Abschnitte selbst; hier steht nur, wann
+   sie auf- und zugehen. */
+import {
+  essenInit, essenSetzen, essenOeffnen, essenSchliessen, essenOffen, essenTeamOffen,
+  essenTeamOeffnen, essenTeamSchliessen, essenZeitraumSetzen, essenTeamUmschalten,
+  essenTagSetzen, essenTagJetzt, essenZusagen, essenAufhoeren, essenVerlaufLoeschen,
+  essenSpeichern, essenBearbeiten, essenAbbrechen, essenMahlzeitLoeschen, essenLoslassen,
+} from './essen.js';
+import { essenMoeglich, essenAn } from '../../essen-modell.js';
 
 const $ = id => document.getElementById(id);
 /* Ohne i18n.js fehlte hier das Einsetzen der Platzhalter: aus
@@ -203,6 +213,9 @@ async function zeichneMitglieder() {
     meta.hidden = false;
     /* Die Personenwahl der Woche nennt Namen — sie kommen erst jetzt. */
     if (plaene.length) zeichnePersonWahl();
+    /* Die Zusage beim Essen nennt die Trainer mit Namen; ohne die Liste
+       stünde dort "die Leitung" und damit niemand Bestimmtes. */
+    essenSetzen(user, aktiv, mitglieder);
   } catch (e) {
     reportClientError('gruppe/mitglieder', e);
     /* Der häufigste Grund ist ein fehlender Index oder eine Regel, die
@@ -1007,8 +1020,12 @@ function zeichne() {
   if (!darfFuehren && $('secFortschritt')?.hidden === false) fortschrittSchliessen();
   const bereit = hat && $('secBereit')?.hidden === false;
   if (!hat) zeige('secBereit', false);
+  /* Essen hat zwei Unteransichten; sie zählen wie die Einstellungen —
+     solange eine offen ist, bleibt die Hauptseite darunter weg. */
+  if (!hat && (essenOffen() || essenTeamOffen())) { essenSchliessen(); essenTeamSchliessen(); }
   const inEinst = bereit
-    || (hat && ($('secGruppeEinst')?.hidden === false || $('secFortschritt')?.hidden === false));
+    || (hat && ($('secGruppeEinst')?.hidden === false || $('secFortschritt')?.hidden === false
+      || essenOffen() || essenTeamOffen()));
   if (!hat) zeige('secGruppeEinst', false);
   if (inEinst && $('secFortschritt')?.hidden === false) fortschrittHoeren();
 
@@ -1017,6 +1034,7 @@ function zeichne() {
   zeige('secWoche', hat && !inEinst);
   zeige('secMitglieder', hat && !inEinst);
   zeige('secAktionen', darfFuehren && !inEinst);
+  zeige('grpEssenZeile', hat && !inEinst && essenAn(aktiv));
   zeige('secWeitere', hat && !inEinst);
   zeichneWechsel();
 
@@ -1051,6 +1069,7 @@ function zeichne() {
   zeichnePlaene();
   zeichneAssistent();
   zeichneFarbwahl();
+  zeichneEssenSchalter();
 }
 
 /* ── Fortschritt der Athleten (v.35.65.0) ──────────────────────────
@@ -1081,12 +1100,7 @@ function fortschrittSchliessen() {
   fortschrittAbo = null;
   fortschrittFuer = '';
   zeige('secFortschritt', false);
-  const darf = !!aktiv && leitet(aktiv.meineRolle);
-  zeige('secWoche', !!aktiv);
-  zeige('secMitglieder', !!aktiv);
-  zeige('secAktionen', darf);
-  zeige('grpEinstZeile', darf);
-  zeige('secWeitere', !!aktiv);
+  hauptteileZeigen();
 }
 
 function fortschrittHoeren() {
@@ -1210,7 +1224,7 @@ function zeichneFortschritt() {
    Farbe, Kalender, Assistent, Abo, Löschen — eine eigene Ansicht statt
    offen unter der Kaderliste (Michel: "nicht so öffentlich … man kommt
    sehr schnell durcheinander"). */
-const HAUPTTEILE = ['secWoche', 'secMitglieder', 'secAktionen', 'grpEinstZeile', 'secWeitere'];
+const HAUPTTEILE = ['secWoche', 'secMitglieder', 'secAktionen', 'grpEinstZeile', 'grpEssenZeile', 'secWeitere'];
 function einstOeffnen() {
   if (!aktiv || !leitet(aktiv.meineRolle)) return;
   for (const id of HAUPTTEILE) zeige(id, false);
@@ -1218,18 +1232,61 @@ function einstOeffnen() {
   zeichneFarbwahl();
   zeichneAssistent();
   zeichneKalenderDerGruppe();
+  zeichneEssenSchalter();
   zeige('secGruppeEinst', true);
   window.scrollTo?.(0, 0);
 }
 function einstSchliessen() {
   if ($('secGruppeEinst')?.hidden !== false) return;
   zeige('secGruppeEinst', false);
+  hauptteileZeigen();
+}
+
+/* Aus einer Unteransicht zurück: dieselben Teile wieder her. Bis
+   v.35.72.0 stand diese Liste dreimal im Modul, und die vierte
+   Ansicht hätte sie ein viertes Mal bekommen. */
+function hauptteileZeigen() {
   const darf = !!aktiv && leitet(aktiv.meineRolle);
   zeige('secWoche', !!aktiv);
   zeige('secMitglieder', !!aktiv);
   zeige('secAktionen', darf);
   zeige('grpEinstZeile', darf);
+  zeige('grpEssenZeile', !!aktiv && essenAn(aktiv));
   zeige('secWeitere', !!aktiv);
+}
+
+/* ── Essen als Bereich der Gruppe (v.35.72.0) ──────────────────────
+   bereiche.essen, wie termine und training. Die Regel kannte 'bereiche'
+   als Karte immer — es braucht keine neue Regel, nur einen Schalter.
+   Und nur, wo er einen Sinn hat: Kader und Verein. */
+function zeichneEssenSchalter() {
+  const karte = $('essenEinst');
+  if (!karte) return;
+  const moeglich = !!aktiv && essenMoeglich(aktiv.art) && leitet(aktiv.meineRolle);
+  karte.hidden = !moeglich;
+  if (!moeglich) return;
+  $('essenAn').checked = essenAn(aktiv);
+  $('essenEinstFehler').hidden = true;
+}
+
+async function essenSchalten(an) {
+  if (!aktiv || !leitet(aktiv.meineRolle)) return;
+  const gid = aktiv.id;
+  try {
+    await bereichSchalten(gid, 'essen', an);
+    /* Der Strom meldet die Änderung ohnehin gleich — aber erst, wenn der
+       Server geantwortet hat. Bis dahin stünde der Schalter auf "an" und
+       die Zeile wäre noch weg. */
+    if (aktiv?.id === gid) aktiv.bereiche = { ...(aktiv.bereiche || {}), essen: !!an };
+    essenSetzen(user, aktiv, mitglieder);
+    gruppeGeaendert(gid, { bereiche: { ...(aktiv?.bereiche || {}) } });
+  } catch (e) {
+    reportClientError('gruppe/essen-schalter', e);
+    $('essenAn').checked = essenAn(aktiv);
+    const feld = $('essenEinstFehler');
+    feld.hidden = false;
+    feld.textContent = t('essen.bereichWeg', 'Der Bereich liess sich nicht umschalten.');
+  }
 }
 
 /* Die Kalender der Gruppe (v.35.60.0, kalender-quellen.js). */
@@ -1651,6 +1708,32 @@ async function zeichneZusagen() {
    die Gäste laden —, hängt an offenId. */
 let offenId = null;
 
+/* Dieselben Felder, andere Wörter (v.35.75.0).
+   Eine "Packliste" packt man für ein Lager; zu einer Feier bringt man
+   etwas mit. Ein "Programm" hat ein Wettkampf; eine Feier hat einen
+   Ablauf. Das Modell dahinter ist dasselbe — nur das Wort wechselt,
+   wie schon bei den Terminarten (artWort).
+
+   data-i18n muss dabei weg: sonst setzt der Katalog beim nächsten Lauf
+   "Packliste" zurück, und die Ansicht stünde in einem Zustand mit der
+   Beschriftung des anderen (Falle 5). */
+function freundeWorte() {
+  const freunde = kenntFeier(aktiv?.art);
+  for (const [id, frei, sport] of [
+    ['packWort', ['fe.mitbringenKurz', 'Mitbringen'], ['prog.packliste', 'Packliste']],
+    ['programmWort', ['fe.ablauf', 'Ablauf'], ['prog.programm', 'Programm']],
+    ['btnPacklisteNeu', ['fe.mitbringenNeu', 'Mitbringliste anlegen'], ['prog.packlisteNeu', 'Packliste anlegen']],
+    ['btnProgrammNeu', ['fe.ablaufNeu', 'Ablauf anlegen'], ['prog.programmNeu', 'Programm anlegen']],
+    ['btnProgrammOeffnen', ['fe.ablaufOeffnen', 'Ablauf öffnen'], ['kal.programmOeffnen', 'Programm öffnen']],
+  ]) {
+    const el = $(id);
+    if (!el) continue;
+    const [schluessel, wort] = freunde ? frei : sport;
+    el.textContent = t(schluessel, wort);
+    el.setAttribute('data-i18n', schluessel);
+  }
+}
+
 function detailOeffnen(eid) {
   offen = termine.find(t => t.id === eid) || null;
   if (!offen) return;
@@ -1675,6 +1758,7 @@ function detailOeffnen(eid) {
   $('dTitel').textContent = offen.titel;
   $('dMeta').textContent = teile.filter(Boolean).join(' · ');
   $('dMeta').hidden = false;
+  freundeWorte();
   const notiz = String(offen.notiz || '').trim();
   $('dNotiz').textContent = notiz;
   $('dNotiz').hidden = !notiz;
@@ -2414,6 +2498,11 @@ function formAnpassen() {
      Hyrox-Wettkampf im Gym hat ein Ergebnis, aber keinen FIS-Faktor —
      das Feld stünde dort sinnlos da. */
   zeige('grpDisziplin', art === 'rennen' && kenntDisziplinen(aktiv?.art));
+  /* Bei Familie und Freunden stehen "wer bringt was mit" und der
+     Gastlink gleich im Formular (v.35.75.0) — beim ANLEGEN. Beim
+     Bearbeiten gehoeren sie an den Termin selbst, wo sie schon sind;
+     zwei Orte fuer dieselbe Liste waeren zwei Wahrheiten. */
+  zeige('grpFeier', kenntFeier(aktiv?.art) && !bearbeitet);
 }
 
 /* Welche Art gewaehlt ist: eine der drei, oder 'eigene'. Die eigene
@@ -2534,6 +2623,9 @@ function formOeffnen(datum, termin = null) {
   $('fNotiz').value = x.notiz || '';
   kalenderWahl(x.kalender || '');
 
+  $('fMitbringen').value = '';
+  $('fGastlink').checked = false;
+
   seiteDateiHtml = '';
   $('fSeiteDatei').value = '';
   $('fSeiteDateiName').textContent = t('prog.dateiWaehlen', 'HTML-Datei wählen');
@@ -2621,6 +2713,16 @@ async function terminSpeichern() {
   const seiteNeu = seite.planHtml && seite.planHtml !== (bearbeitet?.planHtml || '');
   const programm = seiteNeu ? programmMitSeite(vorher, seite.planHtml, entwurf.von) : vorher;
   const daten = { ...entwurf, ...seite, programm };
+
+  /* Planen mit Freunden (v.35.75.0): was mitgebracht wird und der
+     Gastlink gehen beim Anlegen gleich mit. Dieselben Felder wie am
+     fertigen Termin (packliste, gastToken) — nur einen Schritt frueher,
+     weil man beides beim Einladen schon weiss. */
+  if (!bearbeitet && kenntFeier(aktiv?.art)) {
+    const mitbringen = packlisteAusText($('fMitbringen').value);
+    if (mitbringen.length) daten.packliste = mitbringen;
+    if ($('fGastlink').checked) daten.gastToken = neuesToken();
+  }
 
   const btn = $('btnSpeichern');
   btn.disabled = true;
@@ -3719,6 +3821,43 @@ async function einladungZurueckziehen() {
   $('planVorlageMontag')?.addEventListener('change', vorlageGewaehlt);
   $('btnFortschritt')?.addEventListener('click', fortschrittOeffnen);
   $('btnFortschrittZurueck')?.addEventListener('click', fortschrittSchliessen);
+
+  /* ── Essen (v.35.72.0) ── */
+  essenInit({ zurueck: hauptteileZeigen });
+  $('btnEssen')?.addEventListener('click', () => {
+    for (const id of HAUPTTEILE) zeige(id, false);
+    void essenOeffnen();
+  });
+  $('btnEssenZurueck')?.addEventListener('click', () => { essenSchliessen(); hauptteileZeigen(); });
+  $('btnEssenTeam')?.addEventListener('click', () => {
+    for (const id of HAUPTTEILE) zeige(id, false);
+    void essenTeamOeffnen();
+  });
+  $('btnEssenTeamZurueck')?.addEventListener('click', () => { essenTeamSchliessen(); hauptteileZeigen(); });
+  $('btnEssenZusagen')?.addEventListener('click', () => void essenZusagen());
+  $('btnEssenAufhoeren')?.addEventListener('click', () => void essenAufhoeren());
+  $('btnEssenVerlauf')?.addEventListener('click', () => void essenVerlaufLoeschen());
+  $('btnEssenSpeichern')?.addEventListener('click', () => void essenSpeichern());
+  $('btnEssenAbbrechen')?.addEventListener('click', essenAbbrechen);
+  $('essenVor')?.addEventListener('click', () => essenTagSetzen(plusTage(essenTagJetzt(), -1)));
+  $('essenNach')?.addEventListener('click', () => essenTagSetzen(plusTage(essenTagJetzt(), 1)));
+  $('essenTagListe')?.addEventListener('click', event => {
+    const auf = event.target.closest('[data-essen-bearbeiten]');
+    if (auf) { essenBearbeiten(auf.dataset.essenBearbeiten); return; }
+    const weg = event.target.closest('[data-essen-weg]');
+    if (weg) void essenMahlzeitLoeschen(weg.dataset.essenWeg);
+  });
+  $('essenTeamListe')?.addEventListener('click', event => {
+    const auf = event.target.closest('[data-essen-auf]');
+    if (auf) essenTeamUmschalten(auf.dataset.essenAuf);
+  });
+  for (const id of ['essenVon', 'essenBis']) {
+    $(id)?.addEventListener('change', () => essenZeitraumSetzen($('essenVon').value, $('essenBis').value));
+  }
+  $('essenHeute')?.addEventListener('click', () => essenZeitraumSetzen(isoTag(), isoTag()));
+  $('essenWoche')?.addEventListener('click', () => essenZeitraumSetzen(plusTage(isoTag(), -6), isoTag()));
+  $('essenMonat')?.addEventListener('click', () => essenZeitraumSetzen(plusTage(isoTag(), -29), isoTag()));
+  $('essenAn')?.addEventListener('change', event => void essenSchalten(event.target.checked));
   $('fortschrittVor')?.addEventListener('click', () => fortschrittTagSetzen(plusTage(fortschrittTag, -1)));
   $('fortschrittNach')?.addEventListener('click', () => fortschrittTagSetzen(plusTage(fortschrittTag, 1)));
   $('fortschrittHeute')?.addEventListener('click', () => fortschrittTagSetzen(isoTag()));
@@ -3775,6 +3914,12 @@ async function einladungZurueckziehen() {
    Gruppe stünden dann auf der richtigen Seite. */
 function hoereAufTermine() {
   detailSchliessen();
+  /* Essen gehört zur alten Gruppe: der offene Tag, die Zusage und die
+     Übersicht. Bleiben sie stehen, zeigt die neue Gruppe die Zahlen der
+     alten — und schriebe beim Speichern in die falsche. */
+  if (essenOffen()) { essenSchliessen(); hauptteileZeigen(); }
+  if (essenTeamOffen()) { essenTeamSchliessen(); hauptteileZeigen(); }
+  essenLoslassen();
   terminAbo?.();
   terminAbo = null;
   termine = [];

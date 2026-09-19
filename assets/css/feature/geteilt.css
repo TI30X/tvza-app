@@ -1,0 +1,211 @@
+/* ══════════════════════════════════════════════════════════════════
+   Die Seite, die eine externe Trainerin sieht — und die Karte, mit der
+   eine Athletin ihr Training teilt (im Bereich Training).
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Die Empfängerseite ────────────────────────────────────────────*/
+.tg { min-height: 100dvh; background: var(--bg); }
+.tg__kopf {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  padding-top: max(var(--s3), env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--border);
+}
+.tg__marke { font-size: 18px; font-weight: 800; }
+.tg__nur-lesen {
+  padding: var(--s1) var(--s3); border-radius: var(--r-pill);
+  background: var(--surface-2); color: var(--ink-soft);
+  font-size: 12px; font-weight: 600;
+}
+.tg__inhalt {
+  max-width: 44rem; margin: 0 auto;
+  padding: var(--s4); padding-bottom: var(--s7);
+}
+.tg__titel { margin: 0 0 var(--s2); font-size: 22px; font-weight: 800; }
+.tg__meta { margin: 0 0 var(--s1); font-size: 14px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.tg__hinweis { margin: 0 0 var(--s5); font-size: 13px; color: var(--ink-soft); }
+.tg__text { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-soft); }
+.tg__laden { margin: var(--s6) 0; text-align: center; color: var(--ink-soft); }
+.tg__leer { padding: var(--s6) 0; text-align: center; }
+.tg__fuss {
+  margin: var(--s6) 0 0; padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+  font-size: 12px; line-height: 1.6; color: var(--ink-soft);
+}
+
+.tg__tage { display: flex; flex-direction: column; gap: var(--s5); }
+.tg-tag__kopf { margin: 0 0 var(--s2); font-size: 15px; font-weight: 800; }
+
+.tg-einheit {
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: var(--s3); margin-bottom: var(--s2);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface);
+}
+.tg-einheit__kopf {
+  margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s3);
+}
+.tg-einheit__titel { font-weight: 700; font-size: 15px; }
+.tg-einheit__wann { font-size: 13px; color: var(--ink-soft); }
+.tg-einheit__stand { margin-inline-start: auto; font-size: 12px; color: var(--ink-soft); }
+.tg-einheit__notiz {
+  margin: 0; padding: var(--s2) var(--s3);
+  border-radius: var(--r-icon); background: var(--surface-2);
+  font-size: 13px; line-height: 1.5;
+}
+
+.tg-uebung {
+  display: flex; flex-direction: column; gap: var(--s1);
+  padding: var(--s2) var(--s3);
+  border-top: 1px solid var(--border);
+}
+.tg-uebung__kopf { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2); }
+.tg-uebung__name { font-weight: 600; font-size: 14px; }
+.tg-uebung__ok { font-size: 12px; font-weight: 600; color: var(--ok); }
+.tg-uebung__text { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+.tg-uebung__notiz { margin: 0; font-size: 13px; line-height: 1.5; }
+.tg-uebung__video { font-size: 13px; }
+
+.tg-satz {
+  margin: 0; display: grid; grid-template-columns: 4.5em 1fr auto; gap: var(--s2);
+  font-size: 13px;
+}
+.tg-satz__nr { color: var(--ink-soft); }
+.tg-satz__plan { color: var(--ink-soft); }
+.tg-satz__wert { font-weight: 600; }
+.tg-satz__wert.ist-ok { color: var(--ok); }
+
+/* ── Teilen, im Bereich Training ───────────────────────────────────*/
+.teilen-zeile { margin: var(--s4) 0 0; font-size: 13px; color: var(--ink-soft); text-align: center; }
+.teilen-link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: inherit; color: var(--akzent-link, var(--ink)); text-decoration: underline;
+}
+
+.teilen-karte {
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: var(--s3); margin-bottom: var(--s2);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface);
+}
+.teilen-karte__kopf { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2); }
+.teilen-karte__wer { font-weight: 700; font-size: 14px; overflow-wrap: anywhere; }
+.teilen-karte__bis { margin-inline-start: auto; font-size: 12px; color: var(--ink-soft); }
+.teilen-karte.ist-abgelaufen .teilen-karte__bis { color: var(--warn); font-weight: 600; }
+.teilen-karte__umfang { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.teilen-karte__adresse {
+  margin: 0; padding: var(--s2);
+  border-radius: var(--r-icon); background: var(--surface-2);
+  font-size: 12px; overflow-wrap: anywhere;
+}
+.teilen-karte__knoepfe { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.teilen-karte__knoepfe .b { font-size: 13px; }
+
+.teilen-umfang { display: flex; flex-direction: column; gap: var(--s1); margin-bottom: var(--s3); }
+.teilen-umfang .check-zeile { padding: var(--s1) 0; }
+.teilen-umfang__warnung {
+  margin: var(--s1) 0 0; padding: var(--s2) var(--s3);
+  border-radius: var(--r-icon); background: var(--surface-2);
+  font-size: 12px; line-height: 1.5; color: var(--warn);
+}
+
+@media (max-width: 599px) {
+  .tg-satz { grid-template-columns: 4em 1fr; }
+  .tg-satz__wert { grid-column: 2; text-align: end; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Der Plan-Bauer (v.35.74.0) — im Bereich Training.
+   ══════════════════════════════════════════════════════════════════ */
+
+.pb-knoepfe { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s3) 0; }
+.pb-knoepfe .b { font-size: 13px; }
+
+.pb-woche { display: flex; flex-direction: column; gap: var(--s2); }
+
+.pb-tag {
+  padding: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface);
+}
+.pb-tag__kopf {
+  margin: 0 0 var(--s2); display: flex; align-items: center; gap: var(--s2);
+}
+.pb-tag__name { font-weight: 700; font-size: 14px; }
+.pb-tag__datum { font-size: 13px; color: var(--ink-soft); }
+.pb-tag__plus { margin-inline-start: auto; padding: var(--s1) var(--s2); }
+.pb-tag__leer { margin: 0; font-size: 13px; color: var(--ink-soft); }
+
+.pb-einheit {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2);
+  padding: var(--s2); margin-bottom: var(--s1);
+  border: 1px solid var(--border); border-radius: var(--r-icon);
+  background: var(--surface-2);
+}
+.pb-einheit__auf {
+  flex: 1 1 12rem; min-width: 0;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s2);
+  border: 0; background: none; padding: 0; text-align: start;
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.pb-einheit__titel { font-weight: 600; font-size: 14px; }
+.pb-einheit__wann, .pb-einheit__zahl { font-size: 12px; color: var(--ink-soft); }
+.pb-einheit__knoepfe { display: flex; flex-wrap: wrap; gap: var(--s1); }
+.pb-einheit__knoepfe .b { padding: var(--s1) var(--s2); font-size: 12px; }
+
+/* ── Die offene Einheit ────────────────────────────────────────────*/
+.pb-blatt {
+  margin-top: var(--s5); padding-top: var(--s4);
+  border-top: 1px solid var(--border);
+}
+.pb-blatt__kopf {
+  margin: 0 0 var(--s3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2);
+}
+.pb-blatt__titel { flex: 1 1 8rem; font-weight: 800; font-size: 16px; }
+.pb-blatt__kopf .b { font-size: 13px; }
+
+.pb-uebung {
+  display: flex; flex-direction: column; gap: var(--s1);
+  padding: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface);
+}
+.pb-uebung__kopf { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2); }
+.pb-uebung__name { font-weight: 600; font-size: 14px; }
+.pb-uebung__modus {
+  padding: 0 var(--s2); border-radius: var(--r-pill);
+  background: var(--surface-2); color: var(--ink-soft); font-size: 12px;
+}
+.pb-uebung__text, .pb-uebung__werte { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.pb-uebung__knoepfe { display: flex; flex-wrap: wrap; gap: var(--s1); }
+.pb-uebung__knoepfe .b { padding: var(--s1) var(--s2); font-size: 12px; }
+
+/* ── Die Bibliothek ───────────────────────────────────────────────*/
+.pb-bibliothek {
+  display: flex; flex-direction: column; gap: var(--s1);
+  max-height: 20rem; overflow-y: auto;
+  margin-bottom: var(--s3);
+}
+.pb-bib {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-icon);
+  background: var(--surface); text-align: start;
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.pb-bib:hover, .pb-bib:focus-visible { background: var(--surface-2); }
+.pb-bib__name { font-weight: 600; font-size: 14px; }
+.pb-bib__sub { font-size: 12px; color: var(--ink-soft); }
+.pb-bib__eigen {
+  margin-inline-start: auto; padding: 0 var(--s2);
+  border-radius: var(--r-pill); background: var(--surface-2);
+  font-size: 11px; color: var(--ink-soft);
+}
+
+.pb-uebung-form {
+  margin-top: var(--s3); padding: var(--s4);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+.pb-felder { display: flex; flex-wrap: wrap; gap: var(--s3); }
+.pb-felder .form-group { flex: 1 1 8rem; margin-bottom: 0; }

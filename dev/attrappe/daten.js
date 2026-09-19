@@ -10,7 +10,7 @@
    beim nächsten Laden auf diese Startdaten zurück. Von Hand:
    attrappeZuruecksetzen() in der Konsole. */
 
-export const VERSION = 8;
+export const VERSION = 11;
 
 export const KONTEN = {
   michel: { email: 'michel@firn.test', name: 'Michel van Zanten' },
@@ -69,8 +69,10 @@ export async function startDaten() {
     }),
     'users/anna': profil('anna', {
       isTimo: false, kreis: true,
-      allowedModules: { food: true, watch: true, weather: true, training: false, ski: false, matura: false, maturatracker: false, projects: false },
-      modules: { food: true, watch: true },
+      /* Training ist fuer Anna frei und an (v.35.74.0): sie ist in
+         KEINER Gruppe und baut sich ihre Woche selbst. */
+      allowedModules: { food: true, watch: true, weather: true, training: true, ski: false, matura: false, maturatracker: false, projects: false },
+      modules: { food: true, watch: true, training: true },
     }),
     'kreis/michel': { seit: zeit(-90) },
     'kreis/timo': { seit: zeit(-90) },
@@ -78,7 +80,10 @@ export async function startDaten() {
 
     'groups/g1': {
       name: 'BSV Perspektivkader', art: 'kader', headUid: 'michel',
-      bereiche: { termine: true, training: true, video: false, chat: true },
+      /* Essen ist im Kader eingeschaltet (v.35.72.0) — Timothy teilt,
+         Lea nicht. Genau daran sieht man den Unterschied zwischen
+         "kein Eintrag" und "teilt nicht". */
+      bereiche: { termine: true, training: true, video: false, chat: true, essen: true },
       inviteToken: 'attrappe', createdAt: zeit(-60),
       /* Der Assistent der Gruppe ist freigeschaltet (v.35.55.0) und hat
          einen Namen — Lea (nicht im Kreis) sieht nur ihn. */
@@ -104,6 +109,30 @@ export async function startDaten() {
     },
     'groups/g1/events/t3': { art: 'rennen', titel: 'FIS RS Pitztal', von: tag(18), zeit: '09:30', disziplin: 'RS', erstelltVon: 'michel', createdAt: zeit(-3) },
 
+    /* Essen im Kader: Timothy hat zugesagt und zwei Tage erfasst,
+       Lea hat nicht zugesagt. Michel sieht als Kopf beides — und von
+       Lea nur, DASS sie nicht teilt. */
+    'groups/g1/essenFreigabe/timo': { uid: 'timo', an: true, fassung: 1, seit: zeit(-14) },
+    'groups/g1/essenFreigabe/lea': { uid: 'lea', an: false, fassung: 0, seit: zeit(-14) },
+    [`groups/g1/essen/timo__${tag(0)}`]: {
+      uid: 'timo', datum: tag(0), stand: Date.now(),
+      kcal: 1075, protein: 55.4, carbs: 148.3, fat: 29.2, fibre: 14.6,
+      mahlzeiten: [
+        { id: 'e1', mahlzeit: 'fruehstueck', zutaten: [{ name: 'Haferflocken', g: 80 }, { name: 'Vollmilch', g: 250 }],
+          kcal: 460, protein: 19, carbs: 59, fat: 14.6, fibre: 8 },
+        { id: 'e2', mahlzeit: 'mittag', zutaten: [{ name: 'Pasta / Teigwaren (gekocht)', g: 300 }, { name: 'Pouletbrust', g: 150 }],
+          kcal: 630, protein: 51, carbs: 90, fat: 6, fibre: 6 },
+      ],
+    },
+    [`groups/g1/essen/timo__${tag(-1)}`]: {
+      uid: 'timo', datum: tag(-1), stand: Date.now() - 864e5,
+      kcal: 745, protein: 30, carbs: 96, fat: 25, fibre: 9,
+      mahlzeiten: [
+        { id: 'e3', mahlzeit: 'abend', zutaten: [{ name: 'Reis (gekocht)', g: 250 }, { name: 'Lachs', g: 150 }],
+          kcal: 745, protein: 30, carbs: 96, fat: 25, fibre: 9 },
+      ],
+    },
+
     'groups/g1/plaene/p1': { titel: 'KW 31 · TW 12', fuer: 'timo', json: JSON.stringify(kw31), erstelltVon: 'michel', erstelltAm: zeit(-10) },
     'groups/g1/plaene/p2': { titel: 'Diese Woche', fuer: 'alle', json: JSON.stringify(jetzt), erstelltVon: 'michel', erstelltAm: zeit(-1) },
     'groups/g1/events/t4': { art: 'training', titel: 'Techniktraining Gletscher', von: tag(2), zeit: '07:30', ort: 'Hintertux', erstelltVon: 'michel', createdAt: zeit(-2) },
@@ -119,6 +148,19 @@ export async function startDaten() {
     'groups/g2/members/timo': { uid: 'timo', rolle: 'mitglied', seit: zeit(-200) },
     'groups/g2/members/anna': { uid: 'anna', rolle: 'mitglied', seit: zeit(-200) },
     'groups/g2/events/f1': { art: 'training', bezeichnung: 'Geburtstag', titel: 'Grosis Geburtstag', von: tag(3), zeit: '12:00', ort: 'Vaduz', erstelltVon: 'michel', createdAt: zeit(-5) },
+    /* Eine Feier (v.35.75.0) — die vierte Terminart, die es nur bei
+       Familie und Freunden gibt: mit Mitbringliste und Gastlink, sonst
+       ein Termin der Gruppe wie jeder andere. */
+    'groups/g2/events/f2': {
+      art: 'feier', titel: 'Grillabend bei Anna', von: tag(5), zeit: '18:30', ort: 'Garten bei Anna',
+      notiz: 'Wir grillen auch bei Regen — es gibt ein Vordach.',
+      createdBy: 'michel', createdAt: zeit(-2),
+      packliste: [{ id: 'm1', name: 'Salat' }, { id: 'm2', name: 'Getränke' }, { id: 'm3', name: 'Musikbox' }],
+      gastToken: 'feier-token',
+    },
+    'groups/g2/events/f2/zusagen/timo': { uid: 'timo', antwort: 'ja', am: zeit(-1) },
+    'groups/g2/events/f2/zusagen/anna': { uid: 'anna', antwort: 'vielleicht', am: zeit(-1) },
+    'groups/g2/events/f2/gepackt/timo': { uid: 'timo', erledigt: { m2: true }, eigene: [], am: zeit(-1) },
     'trips/r1': {
       name: 'Herbstferien Toskana', familyId: 'g2', destination: 'Castiglione', startDate: tag(24), endDate: tag(30),
       notes: 'Ferienhaus ab 15 Uhr.', createdBy: 'michel', createdAt: zeit(-20), guestToken: 'reise-token',
@@ -131,6 +173,50 @@ export async function startDaten() {
 
     /* Eine Aufgabe an der Reise — die Leitung übernimmt beides beim Öffnen. */
     'activities/a1': { tripId: 'r1', name: 'Vignette kaufen', done: false },
+
+    /* Annas eigener Plan (v.35.74.0) — sie ist in keiner Gruppe und
+       hat trotzdem eine Trainingswoche. Genau das ist der Punkt. */
+    'users/anna/trainingPrograms/ap1': {
+      schema: 1, id: 'ap1', updatedAt: zeit(-2),
+      json: JSON.stringify({
+        schema: 1, eigen: true, name: 'Meine Woche',
+        dateRange: { raw: '', start: montag(), end: verschieben(montag(), 6) },
+        days: ['mo', 'di', 'mi', 'do', 'fr', 'sa', 'so'].map((key, i) => ({
+          key,
+          name: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][i],
+          date: verschieben(montag(), i),
+          slots: [
+            { key: 'vormittag', name: 'Vormittag', items: [] },
+            { key: 'nachmittag', name: 'Nachmittag', items: [] },
+            {
+              key: 'abend', name: 'Abend',
+              items: i === 1 || i === 3 ? [{ title: 'Kraft zuhause', unit: 'uAnna' + i, time: '19:00' }] : [],
+            },
+          ],
+        })),
+        units: {
+          uAnna1: {
+            id: 'uAnna1', title: 'Kraft zuhause', kind: 'strength',
+            items: [
+              { key: 'uAnna1-1-kniebeuge', slug: '1-kniebeuge', no: '1', name: 'Kniebeuge', alt: 'Füsse schulterbreit, Rücken gerade.', video: '', mode: 'sets', sets: [{ label: '1. Satz', reps: '8', weight: '' }, { label: '2. Satz', reps: '8', weight: '' }, { label: '3. Satz', reps: '8', weight: '' }], params: [{ label: 'Gerät', value: 'Langhantel' }], lines: [], pause: '120-180 Sec', tut: '', history: [] },
+              { key: 'uAnna1-2-unterarmstuetz', slug: '2-unterarmstuetz', no: '2', name: 'Unterarmstütz', alt: 'Gerade Linie von Kopf bis Ferse.', video: '', mode: 'timed', sets: [], params: [{ label: 'Dauer', value: '45 Sec' }, { label: 'Runden', value: '3' }], lines: [], pause: '', tut: '', history: [] },
+            ],
+          },
+          uAnna3: {
+            id: 'uAnna3', title: 'Kraft zuhause', kind: 'strength',
+            items: [
+              { key: 'uAnna3-1-ausfallschritt', slug: '1-ausfallschritt', no: '1', name: 'Ausfallschritt', alt: 'Grosser Schritt, hinteres Knie tief.', video: '', mode: 'sets', sets: [{ label: '1. Satz', reps: '10/Seite', weight: '' }, { label: '2. Satz', reps: '10/Seite', weight: '' }], params: [], lines: [], pause: '90 Sec', tut: '', history: [] },
+            ],
+          },
+        },
+      }),
+    },
+    /* Und eine eigene Uebung in ihrer Bibliothek. */
+    'users/anna/uebungen/au1': {
+      id: 'au1', name: 'Nordic Curl', kategorie: 'kraft', anweisung: 'Langsam ablassen, mit den Händen abfangen.',
+      geraet: 'Partner oder Bank', modus: 'sets', saetze: 3, reps: '6', dauer: '', pause: '120 Sec',
+      video: '', updatedAt: zeit(-2),
+    },
 
     /* Timothys eigene Termine und Erinnerungen — zwei überschneiden sich. */
     'calendarDays/c1': { ownerUid: 'timo', title: 'Zahnarzt', date: tag(2), startTime: '10:00', endTime: '11:00', location: 'Schaan' },

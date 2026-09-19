@@ -13,9 +13,10 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" />
   <script src="../assets/js/theme.js"></script>
   <script src="../assets/js/i18n.js?v=1"></script>
-  <link rel="stylesheet" href="../assets/css/kit.css?v=38" />
+  <link rel="stylesheet" href="../assets/css/kit.css?v=39" />
   <link rel="stylesheet" href="../assets/css/legacy.css?v=1" />
   <link rel="stylesheet" href="../assets/css/feature/woche.css?v=3" />
+  <link rel="stylesheet" href="../assets/css/feature/geteilt.css?v=3" />
   <link rel="stylesheet" href="../assets/css/ui-fx.css?v=15" />
   <script src="../assets/js/ui-fx.js?v=35" defer></script>
   <title data-i18n="tr.seitentitel">Training — Firn</title>
@@ -57,10 +58,185 @@
       <div class="agenda" id="agenda">
         <div class="spinner" data-fx-rows="3" data-i18n="common.laden">Lade…</div>
       </div>
+
+      <!-- Training teilen (v.35.73.0): leise, unter der Woche. Wer eine
+           Privattrainerin hat, findet es; wer keine hat, wird nicht
+           gefragt. -->
+      <p class="teilen-zeile" id="teilenZeile" hidden>
+        <button class="teilen-link" id="btnTeilen" type="button" data-i18n="tg.teilen">Training teilen</button>
+      </p>
+    </section>
+
+    <!-- Eigene Pläne (v.35.74.0): der Weg hinein steht IMMER da, auch
+         ohne Gruppe und ohne Plan — Training darf nicht davon abhängen,
+         dass jemand einen Trainer hat. -->
+    <p class="teilen-zeile" id="bauenZeile">
+      <button class="teilen-link" id="btnBauen" type="button" data-i18n="pb.eigenerPlan">Eigenen Plan erstellen</button>
+    </p>
+
+    <!-- Die eigenen Freigaben. Sie gehören der Athletin allein: die
+         Leitung der Gruppe sieht weder, DASS geteilt wird, noch mit wem
+         (firestore.rules, trainingShares). -->
+    <section class="section" id="secTeilen" hidden>
+      <div class="form-card">
+        <button class="backlink" id="btnTeilenZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" data-i18n="tg.teilenTitel">Training teilen</div>
+        <p class="form-hint" data-i18n="tg.teilenText">Gib einer Person ausserhalb deiner Gruppe — einer Privattrainerin, einem Physio, deinen Eltern — einen Link auf dein Training. Sie sieht nur, was du unten auswählst, und kann nichts ändern. Deine Gruppe erfährt davon nichts.</p>
+
+        <div class="rows" id="teilenListe"></div>
+
+        <button class="b b--secondary b--block" id="btnTeilenNeu" type="button" data-i18n="tg.neu">Neuen Link erstellen</button>
+
+        <div id="teilenForm" hidden>
+          <div class="form-group">
+            <label class="form-label" for="teilenLabel" data-i18n="tg.wer">Für wen ist der Link?</label>
+            <input class="form-input" id="teilenLabel" type="text" maxlength="60" autocomplete="off" placeholder="z.B. Privattrainerin" data-i18n-attr="placeholder:tg.werPh" />
+            <p class="form-hint" data-i18n="tg.werHinweis">Nur damit du deine Links auseinanderhältst. Die Person sieht diesen Namen ebenfalls.</p>
+          </div>
+
+          <div class="form-label" data-i18n="tg.umfang">Was soll sie sehen?</div>
+          <div class="teilen-umfang" id="teilenUmfang">
+            <label class="check-zeile" for="umfUebungen">
+              <input type="checkbox" id="umfUebungen" checked />
+              <span data-i18n="tg.umfUebungen">Übungen und Anweisungen</span>
+            </label>
+            <label class="check-zeile" for="umfFortschritt">
+              <input type="checkbox" id="umfFortschritt" checked />
+              <span data-i18n="tg.umfFortschritt">Was du erledigt hast</span>
+            </label>
+            <label class="check-zeile" for="umfWerte">
+              <input type="checkbox" id="umfWerte" />
+              <span data-i18n="tg.umfWerte">Eingetragene Sätze, Wiederholungen, Gewichte, Zeiten</span>
+            </label>
+            <label class="check-zeile" for="umfNotizen">
+              <input type="checkbox" id="umfNotizen" />
+              <span data-i18n="tg.umfNotizen">Deine Notizen für die Leitung</span>
+            </label>
+            <label class="check-zeile" for="umfPrivat">
+              <input type="checkbox" id="umfPrivat" />
+              <span data-i18n="tg.umfPrivat">Auch deine privaten Notizen („Nur für mich“)</span>
+            </label>
+            <p class="teilen-umfang__warnung" id="umfPrivatWarnung" hidden data-i18n="tg.privatWarnung">„Nur für mich“ ist sonst wirklich nur für dich — auch deine Trainerin in der Gruppe sieht das nie. Mit diesem Haken geht es an die Person, für die dieser Link ist.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="teilenTage" data-i18n="tg.gueltig">Wie lange gilt der Link?</label>
+            <select class="form-select" id="teilenTage">
+              <option value="7" data-i18n="tg.tage7">7 Tage</option>
+              <option value="30" selected data-i18n="tg.tage30">30 Tage</option>
+              <option value="90" data-i18n="tg.tage90">90 Tage</option>
+            </select>
+          </div>
+
+          <p class="empty-hint" id="teilenFehler" hidden></p>
+          <button class="b b--primary b--block" id="btnTeilenErstellen" type="button" data-i18n="tg.erstellen">Link erstellen</button>
+          <button class="b b--secondary b--block" id="btnTeilenAbbrechen" type="button" data-i18n="common.abbrechen">Abbrechen</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Der Plan-Bauer. Drei Ebenen in einem Abschnitt: die Woche, die
+         offene Einheit, das Formular für eine eigene Übung. Jede ist
+         für sich zu, wenn sie nicht gebraucht wird — das Kit hält
+         [hidden] mit !important. -->
+    <section class="section" id="secBauen" hidden>
+      <div class="form-card">
+        <button class="backlink" id="btnBauenZurueck" type="button"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span data-i18n="a11y.zurueck">Zurück</span></button>
+        <div class="form-title" id="bauenTitel" data-i18n="pb.titel">Eigener Plan</div>
+        <p class="form-hint" id="bauenSpanne"></p>
+
+        <p class="empty-hint" id="bauenLeer" hidden data-i18n="pb.leer">Du hast noch keinen eigenen Plan. Leg einen an — du brauchst dafür weder eine Gruppe noch einen Trainer.</p>
+
+        <div class="form-group">
+          <label class="form-label" for="bauenPlanWahl" data-i18n="pb.welcherPlan">Welcher Plan?</label>
+          <select class="form-select" id="bauenPlanWahl" hidden></select>
+        </div>
+
+        <div class="pb-knoepfe">
+          <button class="b b--primary" id="btnPlanNeuEigen" type="button" data-i18n="pb.neu">Neuer Wochenplan</button>
+          <button class="b b--secondary" id="btnWocheKopieren" type="button" data-i18n="pb.kopieren">Woche kopieren</button>
+          <button class="b b--danger" id="btnPlanWegEigen" type="button" data-i18n="pb.weg">Plan löschen</button>
+        </div>
+
+        <div class="pb-woche" id="bauenWoche"></div>
+
+        <!-- Die offene Einheit. -->
+        <div class="pb-blatt" id="bauenEinheit" hidden>
+          <p class="pb-blatt__kopf">
+            <span class="pb-blatt__titel" id="bauenEinheitTitel"></span>
+            <button class="b b--secondary" id="btnEinheitUmbenennen" type="button" data-i18n="pb.umbenennen">Umbenennen</button>
+            <button class="b b--secondary" id="btnEinheitVorlage" type="button" data-i18n="pb.alsVorlage">Als Vorlage</button>
+            <button class="b b--secondary" id="btnEinheitZu" type="button" data-i18n="a11y.schliessen">Schliessen</button>
+          </p>
+
+          <div class="rows" id="bauenUebungen"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="bauenSuche" data-i18n="pb.uebungSuchen">Übung suchen</label>
+            <input class="form-input" id="bauenSuche" type="search" autocomplete="off" placeholder="z.B. Kniebeuge" data-i18n-attr="placeholder:pb.suchePh" />
+          </div>
+          <div class="pb-bibliothek" id="bauenBibliothek"></div>
+          <button class="b b--secondary b--block" id="btnUebungNeu" type="button" data-i18n="pb.uebungNeu">Eigene Übung anlegen</button>
+
+          <!-- Eine eigene Übung. Sie gehört dem Konto allein
+               (users/{uid}/uebungen, owner-only). -->
+          <div class="pb-uebung-form" id="bauenUebungForm" hidden>
+            <div class="form-group">
+              <label class="form-label" for="ubName" data-i18n="common.name">Name</label>
+              <input class="form-input" id="ubName" type="text" maxlength="80" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ubKategorie" data-i18n="pb.kategorie">Kategorie</label>
+              <select class="form-select" id="ubKategorie"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ubAnweisung" data-i18n="pb.anweisung">Anweisung</label>
+              <textarea class="form-input" id="ubAnweisung" rows="2" maxlength="400"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ubGeraet" data-i18n="pb.geraet">Gerät</label>
+              <input class="form-input" id="ubGeraet" type="text" maxlength="60" autocomplete="off" placeholder="z.B. Langhantel" data-i18n-attr="placeholder:pb.geraetPh" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ubModus" data-i18n="pb.modus">Wie wird trainiert?</label>
+              <select class="form-select" id="ubModus"></select>
+              <p class="form-hint" data-i18n="pb.modusHinweis">Nur bei „Sätze" trägst du später Wiederholungen und Gewichte ein.</p>
+            </div>
+            <div class="pb-felder">
+              <div class="form-group">
+                <label class="form-label" for="ubSaetze" data-i18n="pb.saetze">Sätze / Runden</label>
+                <input class="form-input" id="ubSaetze" type="number" min="0" max="12" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ubReps" data-i18n="pb.reps">Wiederholungen</label>
+                <input class="form-input" id="ubReps" type="text" maxlength="20" placeholder="z.B. 8/Seite" data-i18n-attr="placeholder:pb.repsPh" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ubDauer" data-i18n="pb.dauer">Dauer</label>
+                <input class="form-input" id="ubDauer" type="text" maxlength="20" placeholder="z.B. 45 Sec" data-i18n-attr="placeholder:pb.dauerPh" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ubPause" data-i18n="pb.pauseLabel">Pause</label>
+                <input class="form-input" id="ubPause" type="text" maxlength="40" placeholder="z.B. 120-180 Sec" data-i18n-attr="placeholder:pb.pausePh" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="ubVideo" data-i18n="pb.video">Videolink</label>
+              <input class="form-input" id="ubVideo" type="url" maxlength="500" placeholder="https://…" />
+            </div>
+            <p class="empty-hint" id="ubFehler" hidden></p>
+            <div class="pb-knoepfe">
+              <button class="b b--primary" id="btnUbSpeichern" type="button" data-i18n="pb.uebungSpeichern">Übung speichern</button>
+              <button class="b b--secondary" id="btnUbAbbrechen" type="button" data-i18n="common.abbrechen">Abbrechen</button>
+              <button class="b b--danger" id="btnUbWeg" type="button" data-i18n="common.loeschen">Löschen</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
   </main>
 
-  <script type="module" src="../assets/js/feature/training/training.js?v=21"></script>
+  <script type="module" src="../assets/js/feature/training/training.js?v=23"></script>
 </body>
 </html>

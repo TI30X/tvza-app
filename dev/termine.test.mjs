@@ -18,10 +18,13 @@ const training = { art: 'training', titel: 'Kraft Beine', von: '2026-09-08', zei
 const lager = { art: 'lager', titel: 'Schneelager Saas-Fee', von: '2026-10-03', bis: '2026-10-10' };
 const rennen = { art: 'rennen', titel: 'FIS RS Lenzerheide', von: '2026-12-14', bis: '2026-12-15', disziplin: 'RS' };
 
-test('drei Arten, drei Farben, keine Überschneidung', () => {
-  assert.deepEqual([...ARTEN], ['training', 'lager', 'rennen']);
+test('vier Arten, vier Farben, keine Überschneidung', () => {
+  /* Die vierte (v.35.75.0) ist die Feier — und sie gibt es nur bei
+     Familie und Freunden (artenFuer). Fuer den Sport aendert sich
+     nichts: dort stehen weiterhin genau drei zur Wahl. */
+  assert.deepEqual([...ARTEN], ['training', 'lager', 'rennen', 'feier']);
   const bereiche = ARTEN.map(a => BEREICH_DER_ART[a]);
-  assert.equal(new Set(bereiche).size, 3, 'jede Art braucht ihre eigene Farbe');
+  assert.equal(new Set(bereiche).size, 4, 'jede Art braucht ihre eigene Farbe');
   assert.ok(bereiche.every(Boolean), 'jede Art braucht überhaupt eine Farbe');
 });
 
@@ -44,8 +47,8 @@ test('jede Terminart hat eine Farbe, die es in kit.css wirklich gibt', async () 
   }
 });
 
-test('dieselben drei Arten, andere Wörter je Gruppenart', async () => {
-  const { artWort, artenFuer, kenntDisziplinen } = await import('../assets/js/termine.js');
+test('dieselben Arten, andere Wörter je Gruppenart', async () => {
+  const { artWort, artenFuer, kenntDisziplinen, kenntFeier, pruefe } = await import('../assets/js/termine.js');
 
   // Ein Gym hat Kurse und Workshops, eine Familie Termine und Reisen.
   // Strukturell ist das dasselbe: etwas Kurzes, etwas Mehrtägiges,
@@ -62,9 +65,18 @@ test('dieselben drei Arten, andere Wörter je Gruppenart', async () => {
 
   // Eine Familie braucht keinen Wettkampf-Eintrag: ein Auswahlfeld mit
   // einer Möglichkeit, die niemand nutzt, ist eine Möglichkeit zu viel.
-  assert.deepEqual([...artenFuer('familie')], ['training', 'lager']);
+  /* Und eine Feier braucht kein Kader: die drei Sportarten bleiben
+     Wort fuer Wort, wie sie waren (v.35.75.0). */
+  assert.deepEqual([...artenFuer('familie')], ['training', 'lager', 'feier']);
   assert.deepEqual([...artenFuer('kader')], ['training', 'lager', 'rennen']);
   assert.deepEqual([...artenFuer('organisation')], ['training', 'lager', 'rennen']);
+  assert.equal(kenntFeier('familie'), true);
+  assert.equal(kenntFeier('kader'), false);
+  assert.equal(kenntFeier('organisation'), false);
+  assert.equal(artWort('feier', 'familie'), 'Feier');
+  /* Eine Feier ist EIN Tag — wer drei Tage feiert, meint eine Reise. */
+  assert.deepEqual(pruefe({ art: 'feier', titel: 'Grillabend', von: '2026-07-04', zeit: '18:00' }), []);
+  assert.match(pruefe({ art: 'feier', titel: 'Grillabend', von: '2026-07-04', bis: '2026-07-06' })[0], /Reise/);
 
   // Aber FIS-Punkte gehören dem alpinen Skirennsport. Ein Hyrox im Gym
   // hat ein Ergebnis, aber keinen Disziplinfaktor — darum hängt der

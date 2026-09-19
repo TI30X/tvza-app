@@ -1,0 +1,184 @@
+/* ══════════════════════════════════════════════════════════════════
+   Essen — das Bedienelement (erfassung.js) und die zwei Ansichten auf
+   der Gruppenseite. Jeder Abstand aus der Skala (--s1…--s7, Falle 8).
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Zutaten erfassen ──────────────────────────────────────────────*/
+.erfassung { display: flex; flex-direction: column; gap: var(--s2); }
+.erfassung__zeilen { display: flex; flex-direction: column; gap: var(--s2); }
+
+.erfassung__zeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5em auto;
+  gap: var(--s2);
+  align-items: start;
+}
+.erfassung__feld { position: relative; min-width: 0; }
+.erfassung__gramm { text-align: right; }
+.erfassung__weg {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: var(--s2);
+}
+
+/* Die Vervollständigung. Sie liegt über allem, was darunter kommt —
+   sonst schiebt sie das Formular bei jedem Tastendruck auseinander. */
+.erfassung__vorschlaege {
+  position: absolute; inset-inline: 0; top: calc(100% + 2px); z-index: 30;
+  display: flex; flex-direction: column;
+  max-height: 15em; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--ink-soft);
+  border-radius: var(--r-row);
+}
+.erfassung__vorschlag {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 0; background: none; text-align: start; cursor: pointer;
+  font: inherit; color: var(--ink);
+}
+.erfassung__vorschlag + .erfassung__vorschlag { border-top: 1px solid var(--border); }
+.erfassung__vorschlag:hover, .erfassung__vorschlag:focus-visible { background: var(--surface-2); }
+.erfassung__vorschlag small { color: var(--ink-soft); font-size: 12px; white-space: nowrap; }
+.erfassung__vorschlag--neu { color: var(--food); font-weight: 600; }
+
+.erfassung__knoepfe { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.erfassung__scan { display: inline-flex; align-items: center; gap: var(--s1); }
+
+.erfassung__nutri {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s3);
+  padding: var(--s3);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-row);
+  font-size: 13px; color: var(--ink-soft);
+}
+.erfassung__kcal { font-size: 16px; font-weight: 800; color: var(--ink); }
+.erfassung__offen { flex-basis: 100%; color: var(--warn); }
+
+/* ── Mengenblatt und Scanner ───────────────────────────────────────
+   Beide legt das Bedienelement an den Körper der Seite — sie müssen
+   über der Leiste und über dem Rahmen des Routers liegen. Unten
+   bleibt Platz für die Tastatur (Falle 31). */
+.erfassung-blatt, .erfassung-scan {
+  position: fixed; inset: 0; z-index: 900;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: var(--s3);
+  padding-bottom: max(var(--s3), var(--tastatur, 0px));
+  background: rgb(0 0 0 / .45);
+  overflow-y: auto;
+}
+.erfassung-blatt__karte, .erfassung-scan__karte {
+  width: 100%; max-width: 30rem;
+  display: flex; flex-direction: column; gap: var(--s3);
+  padding: var(--s4);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+}
+@media (min-width: 640px) {
+  .erfassung-blatt, .erfassung-scan { align-items: center; }
+}
+.erfassung-blatt__titel, .erfassung-scan__titel { margin: 0; font-size: 17px; font-weight: 800; }
+.erfassung-blatt__sub { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.erfassung-blatt__wahl { display: flex; flex-direction: column; gap: var(--s2); }
+.erfassung-blatt__knopf { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2); }
+.erfassung-blatt__knopf small { opacity: .8; font-size: 12px; }
+.erfassung-blatt__eigen { display: flex; gap: var(--s2); }
+.erfassung-blatt__eigen .form-input { flex: 1 1 auto; min-width: 0; }
+
+.erfassung-scan__leser { width: 100%; min-height: 13rem; border-radius: var(--r-row); overflow: hidden; background: #000; }
+.erfassung-scan__stand { margin: 0; font-size: 13px; color: var(--ink-soft); text-align: center; }
+.erfassung-scan__bisher { display: flex; flex-direction: column; gap: var(--s1); }
+.erfassung-scan__zeile {
+  display: flex; justify-content: space-between; gap: var(--s2);
+  padding: var(--s1) var(--s3); font-size: 13px;
+  background: var(--surface-2); border-radius: var(--r-icon);
+}
+.erfassung-scan__zeile--summe { background: transparent; font-weight: 700; }
+.erfassung-scan__zeile small { color: var(--ink-soft); }
+
+/* ── Die Zusage ────────────────────────────────────────────────────
+   Sie steht vor dem ersten geteilten Eintrag, nicht daneben: wer sie
+   überliest, hat nicht zugestimmt. */
+.essen-zusage {
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: var(--s4); margin-bottom: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface-2);
+}
+.essen-zusage__titel { margin: 0; font-size: 15px; font-weight: 800; }
+.essen-zusage__wer { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.essen-zusage__text { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+
+.essen-teilt {
+  display: flex; flex-direction: column; gap: var(--s1);
+  padding: var(--s3); margin-bottom: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+}
+.essen-teilt__text { margin: 0; font-size: 13px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.essen-teilt__knoepfe { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s2); font-size: 13px; }
+
+.essen-summe {
+  margin: var(--s4) 0 var(--s2); font-size: 14px; font-weight: 700;
+}
+
+/* ── Die Mahlzeiten eines Tages ────────────────────────────────────*/
+.essen-zeile {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface);
+}
+.essen-zeile__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.essen-zeile__titel { font-weight: 700; font-size: 14px; }
+.essen-zeile__sub { font-size: 13px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.essen-zeile__werte { font-size: 12px; color: var(--ink-soft); }
+.essen-zeile__knoepfe { display: flex; gap: var(--s1); flex: none; }
+.essen-zeile__knoepfe .b { padding: var(--s1) var(--s2); font-size: 12px; }
+
+/* ── Die Übersicht der Leitung ─────────────────────────────────────*/
+.essen-zeitraum { display: flex; flex-wrap: wrap; gap: var(--s3); }
+.essen-zeitraum .form-group { flex: 1 1 9rem; margin-bottom: 0; }
+.essen-schnell { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s3) 0; }
+
+.essen-athlet {
+  border: 1px solid var(--border); border-radius: var(--r-row);
+  background: var(--surface); overflow: hidden;
+}
+/* Wer nicht teilt, steht leiser da — aber er steht da. Ihn wegzulassen
+   hiesse, die Leitung suchte ihn dann bei sich im Kopf. */
+.essen-athlet.ist-nichtGeteilt { background: var(--surface-2); }
+.essen-athlet__kopf {
+  width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) var(--s3);
+  padding: var(--s3); border: 0; background: none; text-align: start;
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.essen-athlet__kopf[disabled] { cursor: default; }
+.essen-athlet__name { font-weight: 700; font-size: 14px; }
+.essen-athlet__stand { font-size: 12px; color: var(--ink-soft); }
+.essen-athlet.ist-geteilt .essen-athlet__stand { color: var(--ok); font-weight: 600; }
+.essen-athlet__werte { margin-inline-start: auto; font-size: 13px; color: var(--ink-soft); }
+.essen-athlet__tage {
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: 0 var(--s3) var(--s3);
+}
+.essen-tag {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border); border-radius: var(--r-icon);
+  background: var(--surface-2);
+}
+.essen-tag__kopf {
+  margin: 0 0 var(--s1); display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s2);
+  font-size: 13px; font-weight: 700;
+}
+.essen-tag__kopf small { font-weight: 500; color: var(--ink-soft); }
+.essen-tag__mahlzeit {
+  margin: 0; display: grid; grid-template-columns: 6.5em minmax(0, 1fr) auto; gap: var(--s2);
+  font-size: 13px; line-height: 1.5;
+}
+.essen-tag__wort { font-weight: 600; }
+.essen-tag__zutaten { color: var(--ink-soft); overflow-wrap: anywhere; }
+.essen-tag__mahlzeit small { color: var(--ink-soft); white-space: nowrap; }
+
+@media (max-width: 599px) {
+  .essen-zeile { flex-direction: column; align-items: stretch; }
+  .essen-zeile__knoepfe { justify-content: flex-end; }
+  .essen-tag__mahlzeit { grid-template-columns: minmax(0, 1fr) auto; }
+  .essen-tag__wort { grid-column: 1 / -1; }
+}

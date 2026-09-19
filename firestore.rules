@@ -672,6 +672,44 @@ service cloud.firestore {
                             && request.resource.data.units.size() <= 20;
     }
 
+    /* Die eigene Uebungsbibliothek (v.35.74.0, uebungen-bibliothek.js).
+       Wer keinen Trainer hat, baut seinen Plan selbst — aus den
+       mitgelieferten Uebungen und aus eigenen. Eine eigene Uebung
+       gehoert dem Konto allein: sie wird mit keiner Gruppe geteilt,
+       auch nicht mit der, in der sie benutzt wird. Was in einen Plan
+       geht, ist eine KOPIE der Werte, keine Verknuepfung.
+
+       Die Grenzen sind dieselben wie in uebungen-bibliothek.js —
+       keine Erziehung, sondern eine Schranke gegen ein Dokument, das
+       unbegrenzt waechst. */
+    match /users/{uid}/uebungen/{uebungId} {
+      allow read, delete: if isMember() && request.auth.uid == uid;
+      allow create, update: if isMember()
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly([
+                              'id', 'name', 'kategorie', 'anweisung', 'geraet',
+                              'modus', 'saetze', 'reps', 'dauer', 'pause', 'video', 'updatedAt'
+                            ])
+                            && request.resource.data.name is string
+                            && request.resource.data.name.size() > 0
+                            && request.resource.data.name.size() <= 80
+                            && request.resource.data.kategorie in [
+                              'kraft', 'sprung', 'rumpf', 'ausdauer', 'mobi', 'sonst'
+                            ]
+                            && request.resource.data.modus in [
+                              'sets', 'rounds', 'timed', 'block', 'video', 'note'
+                            ]
+                            && request.resource.data.anweisung is string
+                            && request.resource.data.anweisung.size() <= 400
+                            && request.resource.data.geraet is string
+                            && request.resource.data.geraet.size() <= 60
+                            && request.resource.data.saetze is int
+                            && request.resource.data.saetze >= 0
+                            && request.resource.data.saetze <= 12
+                            && request.resource.data.video is string
+                            && request.resource.data.video.size() <= 500;
+    }
+
     match /users/{uid}/maturaProgress/{progressId} {
       allow read, delete: if isMember()
                            && request.auth.uid == uid;
@@ -970,6 +1008,83 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    /* ── Das eigene Training mit jemandem ausserhalb teilen ─────────
+       (v.35.73.0, training-teilen.js)
+
+       Eine Athletin im Kader hat daneben eine Privattrainerin. Die
+       soll sehen, was die Athletin trainiert — und sonst nichts: kein
+       Kader, keine Termine, keine Kontakte, kein Chat, nicht einmal,
+       welcher Gruppe das Training entstammt.
+
+       Darum ist dieses Dokument ein AUSZUG, den die Athletin selbst
+       schreibt, und keine Sicht auf groups/{gid}. Es gibt hier keinen
+       Weg zurueck in die Gruppe, egal wie jemand die Abfrage baut.
+
+       ── Der Code ist der Zugang ───────────────────────────────────
+       32 Zeichen aus einem Alphabet von 31, aus crypto.getRandomValues
+       — rund 158 Bit. Wer ihn hat, darf genau dieses eine Dokument
+       lesen. Aufzaehlen darf NIEMAND ausser der Eigentuemerin, und
+       zwar mit einer Abfrage, die auf ihre eigene uid filtert. Ohne
+       'list' fuer andere ist ein unauffindbarer Code das, was eine
+       Fähigkeit ist: raten kann man ihn nicht.
+
+       'get' verlangt bewusst KEINE Anmeldung. Eine Privattrainerin
+       oder ein Elternteil ausserhalb der App soll einen Link oeffnen
+       und lesen koennen, ohne ein Konto anzulegen; ein Konto waere
+       hier mehr gespeicherte Personendaten, nicht weniger. Der
+       Zugriff bleibt trotzdem eng: genau ein Dokument, nur lesend,
+       nur solange es gilt.
+
+       ── Abgelaufen und zurueckgezogen ─────────────────────────────
+       'bis' prueft die Regel bei JEDEM Lesen. Ein abgelaufener Link
+       hoert damit von selbst auf zu wirken, auch wenn niemand
+       aufraeumt. Zurueckziehen ist ein Loeschen — es gibt danach
+       nichts mehr zu lesen, und zwar sofort.
+
+       ── Was die Leitung davon sieht ───────────────────────────────
+       Nichts. Kein gid-Feld, kein Zweig fuer leadsGroup, kein 'list'
+       ausser auf die eigene uid. Dass eine Athletin sich zusaetzlich
+       Hilfe holt, ist ihre Sache. */
+    match /trainingShares/{code} {
+      function eigene() {
+        return isMember() && resource.data.ownerUid == request.auth.uid;
+      }
+      function auszugGueltig(d) {
+        return d.ownerUid == request.auth.uid
+          && d.label is string
+          && d.label.size() <= 60
+          && d.daten is string
+          && d.daten.size() <= 700000
+          && d.umfang is map
+          && d.umfang.keys().hasOnly([
+            'einheiten', 'uebungen', 'fortschritt', 'werte', 'notizen', 'privat'
+          ])
+          && d.bis is timestamp
+          /* Ein Link ohne Ablauf waere ein Link fuer immer. Ein Jahr
+             ist die Obergrenze, nicht die Vorgabe (30 Tage). */
+          && d.bis > request.time
+          && d.bis < request.time + duration.value(366, 'd')
+          && d.stand is number
+          && d.keys().hasOnly([
+            'ownerUid', 'label', 'umfang', 'daten', 'bis', 'erstellt', 'stand'
+          ]);
+      }
+
+      allow get: if eigene()
+                 || (resource.data.bis is timestamp && resource.data.bis > request.time);
+      /* Nur die eigenen — die Abfrage MUSS auf ownerUid filtern, sonst
+         lehnt Firestore sie ganz ab (Regeln sind keine Filter). */
+      allow list: if isMember() && resource.data.ownerUid == request.auth.uid;
+
+      allow create: if isMember()
+                    && auszugGueltig(request.resource.data)
+                    && code.size() == 32;
+      allow update: if eigene()
+                    && auszugGueltig(request.resource.data)
+                    && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if eigene();
+    }
+
     // ── Calendar groups ──────────────────────────────────────────
     // The group document holds the member list and the invite token, so only
     // its own members may read it. Searching for a group by name goes through
@@ -1136,10 +1251,11 @@ service cloud.firestore {
       function artFarbenGueltig(d) {
         return !('artFarben' in d)
           || (d.artFarben is map
-              && d.artFarben.keys().hasOnly(['training', 'lager', 'rennen'])
+              && d.artFarben.keys().hasOnly(['training', 'lager', 'rennen', 'feier'])
               && artFarbe(d.artFarben, 'training')
               && artFarbe(d.artFarben, 'lager')
-              && artFarbe(d.artFarben, 'rennen'));
+              && artFarbe(d.artFarben, 'rennen')
+              && artFarbe(d.artFarben, 'feier'));
       }
 
       allow update: if
@@ -1361,6 +1477,83 @@ service cloud.firestore {
       allow delete: if leadsGroup(gid);
     }
 
+    /* ── Essen in der Gruppe (v.35.72.0) ────────────────────────────
+       Ein Kader will wissen, ob seine Athleten genug essen. Eine
+       Athletin will das nicht in einem zweiten Programm eintragen —
+       und sie will auch nicht, dass ihr persoenlicher Food Tracker
+       ploetzlich einem Verein gehoert.
+
+       Darum liegt das Geteilte HIER und nicht unter foodlog/{uid}.
+       Der persoenliche Ordner traegt mehr als Mahlzeiten (Gewicht und
+       Ziel unter meta/profile); ein Leserecht darauf waere ein
+       Leserecht darauf. Auf diesem Pfad gibt es nichts Persoenliches
+       zu holen, egal wie eine Abfrage gefiltert ist.
+
+       Das Muster ist das des Trainingsprotokolls (Falle 26): die
+       Kennung traegt die uid, get prueft die Kennung (auch wenn es das
+       Dokument noch gar nicht gibt), list prueft das Feld.
+
+       Zwei Dinge, die hier bewusst NICHT stehen:
+         · Die Leitung darf nicht schreiben. Ein Ernaehrungsprotokoll,
+           das der Trainer aendern kann, ist keine Auskunft mehr.
+         · Die Leitung darf nicht loeschen. Sie soll einen Verlauf
+           nicht wegraeumen koennen, den jemand geteilt hat; wer
+           aufhoert, loescht selbst. */
+    match /groups/{gid}/essenFreigabe/{uid} {
+      allow get: if inGroup(gid) && (request.auth.uid == uid || leadsGroup(gid));
+      /* Auflisten nur die Leitung: sie muss "teilt nicht" von "hat
+         nichts erfasst" unterscheiden koennen, und das steht hier. */
+      allow list: if leadsGroup(gid);
+
+      allow create, update: if inGroup(gid)
+                            && request.auth.uid == uid
+                            && request.resource.data.uid == uid
+                            && request.resource.data.an is bool
+                            && request.resource.data.fassung is int
+                            && request.resource.data.fassung >= 0
+                            && request.resource.data.fassung <= 100
+                            && request.resource.data.keys().hasOnly(['uid', 'an', 'fassung', 'seit']);
+
+      allow delete: if inGroup(gid) && request.auth.uid == uid;
+    }
+
+    match /groups/{gid}/essen/{id} {
+      function essenGueltig(d) {
+        return d.uid == request.auth.uid
+          && d.datum is string
+          && d.datum.matches('\\d{4}-\\d{2}-\\d{2}')
+          && id == request.auth.uid + '__' + d.datum
+          && d.mahlzeiten is list
+          && d.mahlzeiten.size() <= 40
+          && d.kcal is number
+          && d.stand is number
+          && d.keys().hasOnly([
+            'uid', 'datum', 'mahlzeiten',
+            'kcal', 'protein', 'carbs', 'fat', 'fibre',
+            'stand', 'aktualisiert'
+          ]);
+      }
+
+      /* Geschrieben wird nur, solange die Freigabe steht. Ohne diese
+         Klammer koennte jemand die Freigabe abschalten und trotzdem
+         weiter in die Gruppe schreiben — das waere kein Widerruf. */
+      function teiltMit() {
+        return exists(/databases/$(database)/documents/groups/$(gid)/essenFreigabe/$(request.auth.uid))
+          && get(/databases/$(database)/documents/groups/$(gid)/essenFreigabe/$(request.auth.uid)).data.an == true;
+      }
+
+      allow get: if inGroup(gid)
+                 && (id.split('__')[0] == request.auth.uid || leadsGroup(gid));
+      allow list: if inGroup(gid)
+                  && (resource.data.get('uid', '') == request.auth.uid || leadsGroup(gid));
+
+      allow create, update: if inGroup(gid)
+                            && teiltMit()
+                            && essenGueltig(request.resource.data);
+
+      allow delete: if inGroup(gid) && resource.data.get('uid', '') == request.auth.uid;
+    }
+
     match /groups/{gid}/kontakte/{uid} {
       function eigene() {
         return inGroup(gid) && request.auth.uid == uid;
@@ -1471,7 +1664,14 @@ service cloud.firestore {
       allow list: if inGroup(gid);
 
       allow create: if leadsGroup(gid)
-                    && request.resource.data.art in ['training', 'lager', 'rennen']
+                    /* 'feier' (v.35.75.0) gibt es nur bei Familie und
+                       Freunden; welche Arten eine Gruppe anbietet,
+                       entscheidet die Oberflaeche (ARTEN_JE_GRUPPE).
+                       Die Regel laesst alle vier zu, weil eine Gruppe
+                       ihre Art nicht wechselt und ein vierter
+                       Regelzweig nichts schuetzen wuerde, was die Art
+                       nicht schon schuetzt. */
+                    && request.resource.data.art in ['training', 'lager', 'rennen', 'feier']
                     && request.resource.data.titel is string
                     && request.resource.data.titel.size() > 0
                     && request.resource.data.titel.size() <= 120

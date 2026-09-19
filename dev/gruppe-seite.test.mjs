@@ -21,7 +21,12 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = name => readFile(join(root, name), 'utf8');
 const seite = () => read('pages/gruppe.html');
-const skript = () => read('assets/js/feature/gruppe/gruppe.js');
+/* Die Gruppenseite ist nicht mehr EINE Datei: Essen zeichnet seit
+   v.35.72.0 in feature/gruppe/essen.js, in dieselben Abschnitte. Fuer
+   diese Tests zaehlt beides zusammen — sonst waere jede Element-Suche
+   dort ungeprueft, und genau das ist Falle 14. */
+const skript = async () => (await read('assets/js/feature/gruppe/gruppe.js'))
+  + await read('assets/js/feature/gruppe/essen.js');
 
 function idsImMarkup(html) {
   return new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));

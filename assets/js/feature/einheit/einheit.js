@@ -40,7 +40,7 @@ import { requireAuth, escHtml, wireOfflineBanner, reportClientError }
   from '../../firebase-config.js';
 import { mountShell, setShellTitle, setShellMeta } from '../../shell.js?v=30';
 import {
-  ladeGruppe, ladePlan, ladeProtokoll, ladeProtokolle, ladeMitglieder, PLAN_FUER_ALLE,
+  ladeGruppe, ladePlan, ladeProtokoll, ladeProtokolle, ladeMitglieder, PLAN_FUER_ALLE, istEigen,
   protokollAbgleichen, beobachteProtokoll, ladePrivat, privatSetzen, privatEinheit,
 } from '../../groups.js';
 import {
@@ -524,7 +524,21 @@ function zeichnePlayer() {
 
   $('uebNotiz').value = e.note;
   $('uebNotiz').readOnly = ansicht;
-  zeige('grpPrivat', !ansicht);
+  /* Bei einem eigenen Plan (v.35.74.0) gibt es keine Leitung, die
+     mitliest — und damit auch keinen Unterschied zwischen zwei
+     Notizen. Eine bleibt, und sie heisst einfach "Notiz". */
+  const eigenerPlan = istEigen(gid);
+  const notizLabel = document.querySelector('label[for="uebNotiz"]');
+  if (notizLabel) {
+    notizLabel.textContent = eigenerPlan
+      ? t('eh.notiz', 'Notiz')
+      : t('eh.notizLeitung', 'Notiz für die Leitung');
+    /* Sonst setzt der Katalog beim naechsten Lauf "Notiz fuer die
+       Leitung" zurueck (Falle 5). */
+    if (eigenerPlan) notizLabel.removeAttribute('data-i18n');
+    else notizLabel.setAttribute('data-i18n', 'eh.notizLeitung');
+  }
+  zeige('grpPrivat', !ansicht && !eigenerPlan);
   if (!ansicht) $('uebPrivat').value = privatText(item.key);
   $('btnErledigt').hidden = ansicht;
 

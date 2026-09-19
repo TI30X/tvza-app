@@ -136,6 +136,25 @@ export function packlisteFuer(termin, gepackt) {
   return [...gemeinsam, ...eigene];
 }
 
+/* Mehrere Punkte auf einmal — eine Sache pro Zeile (v.35.75.0).
+   Beim Planen mit Freunden tippt man "Salat / Getraenke / Musikbox"
+   in einem Zug; drei Mal auf "+" zu tippen waere dafuer der falsche
+   Weg. Leere Zeilen und Dubletten fallen weg. */
+const ZEILEN = /\r?\n/;
+export function packlisteAusText(text, max = PACKLISTE_MAX) {
+  const gesehen = new Set();
+  const raus = [];
+  for (const zeile of String(text ?? '').split(ZEILEN)) {
+    const name = zeile.trim().slice(0, 120);
+    const schluessel = name.toLowerCase();
+    if (!name || gesehen.has(schluessel)) continue;
+    gesehen.add(schluessel);
+    raus.push(neuerPackpunkt(name));
+    if (raus.length >= max) break;
+  }
+  return raus;
+}
+
 export function neuerPackpunkt(name) {
   return { id: neueId(), name: String(name ?? '').trim().slice(0, 120) };
 }

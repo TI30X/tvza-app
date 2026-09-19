@@ -149,11 +149,22 @@ test('das Gerät hält, was noch aussteht — und gibt es erst nach der Bestäti
 
 test('groups.js schreibt je Übung in einer Transaktion, der Player hört live', async () => {
   const g = await read('assets/js/groups.js');
-  assert.match(g, /export function protokollAbgleichen\(gid, uid, datum, aenderungen, planId = ''\) \{[\s\S]*?runTransaction\(db, async tx => \{[\s\S]*?await tx\.get\(ref\)[\s\S]*?aenderungenPruefen\(server, aenderungen\)[\s\S]*?tx\.set\(ref, \{ uid, datum, units: daten, updatedAt: serverTimestamp\(\) \}, \{ merge: true \}\)/);
+  assert.match(g, /export function protokollAbgleichen\(gid, uid, datum, aenderungen, planId = ''\) \{[\s\S]*?runTransaction\(db, async tx => \{[\s\S]*?await tx\.get\(ref\)[\s\S]*?aenderungenPruefen\(server, aenderungen\)/);
+  /* Der eigene Plan (v.35.74.0) schreibt an einen anderen Ort — aber
+     mit DERSELBEN Transaktion und demselben aenderungenPruefen. Ein
+     zweiter, einfacherer Weg fuer das eigene Training waere genau der
+     Fehler, den v.35.64.0 behoben hat. */
+  assert.match(g, /\{ uid, datum, units: daten, updatedAt: serverTimestamp\(\) \}, \{ merge: true \}\)/);
+  assert.match(g, /\{ schema: 1, units: daten, updatedAt: serverTimestamp\(\) \}/);
+  assert.match(g, /const eigen = istEigen\(gid\);\s*const ref = eigen \? eigenProtokollRef\(uid, datum\) : protokollRef\(gid, uid, datum\);/);
   assert.doesNotMatch(g, /export function protokollSpeichern/, 'das ganze Dokument zu schreiben war der Fehler');
-  assert.match(g, /export function beobachteProtokoll\(gid, uid, datum, cb, fehler\) \{\s*return onSnapshot\(protokollRef\(gid, uid, datum\)/);
+  assert.match(g, /export function beobachteProtokoll\(gid, uid, datum, cb, fehler\) \{\s*const ref = istEigen\(gid\) \? eigenProtokollRef\(uid, datum\) : protokollRef\(gid, uid, datum\);\s*return onSnapshot\(ref/);
   /* Private Notizen: nur die Person selbst (trainingLogs, Regel seit jeher). */
   assert.match(g, /const privatRef = \(uid, datum\) => doc\(db, 'users', uid, 'trainingLogs', datum\);/);
+  /* Beim eigenen Plan gibt es keine Gruppe: die private Notiz haengt
+     an derselben unitId wie die Saetze. Ein Gruppenschluessel traegt
+     immer ein '~' — beide koennen sich nie in die Quere kommen. */
+  assert.match(g, /export const privatEinheit = \(gid, unitId\) => \(istEigen\(gid\) \? String\(unitId\) : /);
   assert.match(g, /schema: 1,\s*units: \{ \[privatEinheit\(gid, unitId\)\]: \{ items: \{ \[key\]: \{ privat:/);
   const regeln = await read('firestore.rules');
   assert.match(regeln, /match \/users\/\{uid\}\/trainingLogs\/\{trainingDate\} \{\s*allow read, delete: if isMember\(\)\s*&& request\.auth\.uid == uid;/);

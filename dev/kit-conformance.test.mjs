@@ -19,6 +19,9 @@ const MIGRIERT = [
   'pages/guest.html',
   'public.html',
   'pages/planner.html',
+  /* Die Empfaengerseite fuer ein geteiltes Training (v.35.73.0) — neu
+     und damit von Anfang an nach der Seiten-Invariante gebaut. */
+  'pages/geteilt.html',
 ];
 
 // U+2605/2606 (★/☆) excluded deliberately: they predate emoji, render as

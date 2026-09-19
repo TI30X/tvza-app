@@ -19,6 +19,7 @@
 import { db, requireAuth, getProfile, reportClientError } from '../../firebase-config.js';
 import {
   beobachteMeineGruppen, ladeTermine, ladePlaene, ladeProtokolle, leitet, aktiveGruppeId, aktiveGruppeSetzen,
+  EIGEN,
 } from '../../groups.js';
 import { wichtigeInfos, assistentVorschlag, zustand, isoVon } from '../../ueberblick.js';
 import { nachDatum, einheitZiel, plusTage } from '../../wochenplan.js';
@@ -248,6 +249,13 @@ async function allesLaden() {
     return { g, termine, plaene, protokolle };
   }));
   const eigenes = await eigenesLaden();
+  /* Die eigenen Plaene (v.35.74.0): eine Quelle wie eine Gruppe, mit
+     der Kennung EIGEN. ladePlaene verzweigt darauf — hier braucht es
+     keinen zweiten Weg. */
+  const eigenePlan = await Promise.allSettled([
+    ladePlaene(EIGEN, uid, false),
+    ladeProtokolle(EIGEN, uid),
+  ]);
   if (geladenFuer !== schluessel) return;   // inzwischen neue Gruppen: das Neuere zeichnet
 
   const neu = { termine: [], plaene: [], protokolle: {}, erinnerungen: eigenes.erinnerungen || [], eigene: eigenes.eigene || [] };
@@ -269,6 +277,20 @@ async function allesLaden() {
     if (protokolle.status === 'fulfilled') neu.protokolle[g.id] = nachDatum(protokolle.value);
     else weg += 1;   // Beiwerk: ohne Protokolle fehlt nur der Fortschritt
   }
+  /* Der eigene Plan zaehlt als zwei weitere Quellen: ohne ihn stuende
+     bei jemandem ohne Gruppe "nichts geplant", obwohl er sich gerade
+     eine Woche gebaut hat. */
+  n += 2;
+  if (eigenePlan[0].status === 'fulfilled') {
+    for (const plan of eigenePlan[0].value) {
+      let programm = null;
+      try { programm = JSON.parse(plan.json); } catch { /* ein kaputter Plan faellt weg */ }
+      if (programm) neu.plaene.push({ gid: EIGEN, plan, programm });
+    }
+  } else { weg += 1; reportClientError('start/eigene-plaene', eigenePlan[0].reason); }
+  if (eigenePlan[1].status === 'fulfilled') neu.protokolle[EIGEN] = nachDatum(eigenePlan[1].value);
+  else weg += 1;
+
   stand = neu;
   quellen = n;
   fehler = weg;

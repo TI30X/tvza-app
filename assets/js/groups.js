@@ -33,7 +33,7 @@
    members greift für Sammelgruppen-Abfragen NICHT.
    ══════════════════════════════════════════════════════════════════ */
 
-import { db, reportClientError } from './firebase-config.js';
+import { auth, db, reportClientError } from './firebase-config.js';
 import {
   collection, collectionGroup, doc, getDoc, getDocs, query, where,
   getDocFromCache, getDocFromServer, getDocsFromServer, disableNetwork, enableNetwork,
@@ -152,6 +152,7 @@ export function assistentSetzen(gid, assistent) {
    fragt ein solches "gibt es nicht" den Server; antwortet der nicht,
    ist die Gruppe unbekannt (undefined), nicht gelöscht. */
 export async function ladeGruppe(gid) {
+  if (istEigen(gid)) return { id: EIGEN, name: '', art: 'eigen', eigen: true };
   let snap;
   try { snap = await getDoc(gruppeRef(gid)); }
   catch (fehler) {
@@ -180,6 +181,7 @@ export async function ladeGruppe(gid) {
    Ein Kader hat acht bis zwanzig Leute; das ist ein Lesezugriff pro
    Person und Seite, nicht pro Bildaufbau. */
 export async function ladeMitglieder(gid) {
+  if (istEigen(gid)) return [];
   const snap = await getDocs(collection(db, 'groups', gid, 'members'));
   const roh = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
   return Promise.all(roh.map(async m => ({ ...m, name: await nameVon(m.uid) })));
@@ -884,6 +886,12 @@ export async function terminAnlegen(gid, uid, termin) {
       planHtml: termin.planHtml,
       planUrl: termin.planUrl,
       packliste: Array.isArray(termin.packliste) && termin.packliste.length ? termin.packliste : null,
+      /* Der Gastlink schon beim Anlegen (v.35.75.0, Planen mit
+         Freunden): wer einlädt, weiss beim Tippen, dass jemand ohne
+         Konto dabei ist. Bis dahin stand er nur in dieser Liste nicht
+         — die Regel liess ihn beim create immer zu, und er fiel darum
+         still weg. */
+      gastToken: termin.gastToken,
       abfahrten: termin.abfahrten && Object.keys(termin.abfahrten).length ? termin.abfahrten : null,
       /* Ein Kalender der Gruppe (v.35.60.0) — ohne steht der Termin unter
          seiner Art. */
@@ -1061,6 +1069,29 @@ export async function abonnementErneuern(gid) {
 
 export const PLAN_FUER_ALLE = 'alle';
 
+/* ── Der eigene Plan ist eine Quelle wie eine Gruppe (v.35.74.0) ───
+   Bis dahin kam Training nur aus einer Gruppe: wer keinen Trainer
+   hatte, hatte keinen Plan. Ein eigener Plan liegt unter
+   users/{uid}/trainingPrograms — dort, wo schon die eingelesenen
+   Wochen lagen, mit derselben owner-only-Regel.
+
+   Damit Woche, Kalender, Player und Uebersicht ihn ohne Aenderung
+   zeigen, traegt er eine Kennung, die KEINE Gruppe ist: EIGEN. Jede
+   Funktion hier, die eine gid bekommt, verzweigt an genau einer
+   Stelle — statt dass fuenf Aufrufer je eine zweite Fassung brauchen.
+
+   Warum 'ich' und keine leere Zeichenkette: eine leere gid ist der
+   Zustand "noch nichts gewaehlt" und kommt beim Laden ohnehin vor. Ein
+   Wort, das es sonst nirgends gibt, laesst sich davon unterscheiden.
+
+   Das Protokoll eines eigenen Plans liegt unter
+   users/{uid}/trainingLogs/{datum} — derselbe Ort, an dem schon die
+   privaten Notizen liegen, mit derselben Regel und ohne eine neue. */
+export const EIGEN = 'ich';
+export const istEigen = gid => gid === EIGEN;
+const eigenProtokollRef = (uid, datum) => doc(db, 'users', uid, 'trainingLogs', datum);
+const programmRef = (uid, id) => doc(db, 'users', uid, 'trainingPrograms', id);
+
 export function planRef(gid, planId) {
   return doc(db, 'groups', gid, 'plaene', planId);
 }
@@ -1074,6 +1105,7 @@ export function planRef(gid, planId) {
  * fragt deshalb ungefiltert.
  */
 export async function ladePlaene(gid, uid, alsLeitung = false) {
+  if (istEigen(gid)) return eigenePlaene(uid);
   const sammlung = collection(db, 'groups', gid, 'plaene');
   const abfrage = alsLeitung
     ? sammlung
@@ -1089,8 +1121,48 @@ export async function ladePlaene(gid, uid, alsLeitung = false) {
    eines Athleten — auch für die Leitung, die den Plan eines Athleten
    öffnete und ihn darum nie fand. */
 export async function ladePlan(gid, planId) {
+  if (istEigen(gid)) {
+    const snap = await getDoc(programmRef(auth.currentUser?.uid || '', planId));
+    return snap.exists() ? alsPlan(snap.id, snap.data()) : null;
+  }
   const snap = await getDoc(planRef(gid, planId));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+/* Ein eigenes Programm sieht nach aussen aus wie ein Gruppenplan:
+   { id, titel, json, fuer, erstelltAm }. So liest der Player es
+   unveraendert — er fragt nie, woher es kommt. */
+function alsPlan(id, daten) {
+  return {
+    id,
+    titel: String(daten?.titel || planName(daten?.json) || 'Meine Woche'),
+    json: daten?.json || '',
+    fuer: auth.currentUser?.uid || PLAN_FUER_ALLE,
+    eigen: true,
+    erstelltAm: daten?.updatedAt || null,
+  };
+}
+
+function planName(json) {
+  try { return JSON.parse(json || '{}').name || ''; } catch { return ''; }
+}
+
+/* Die eigenen Plaene — nur die selbst gebauten. Unter
+   trainingPrograms liegen auch die Excel-Wochen, die ein Trainer
+   frueher eingelesen hat; die sind seine Arbeitsvorlage und gehoeren
+   nicht in die Woche eines Athleten. Das Merkmal ist `eigen: true` im
+   Plan selbst (plan-bauer.js), nicht der Ort. */
+export async function eigenePlaene(uid) {
+  const snap = await getDocs(collection(db, 'users', uid, 'trainingPrograms'));
+  return snap.docs
+    .map(d => alsPlan(d.id, d.data()))
+    .filter(p => {
+      try {
+        const roh = JSON.parse(p.json || '{}');
+        /* Eine Vorlage hat keine Tage und gehoert nicht in die Woche. */
+        return roh.eigen === true && roh.vorlage !== true;
+      } catch { return false; }
+    });
 }
 
 export async function planVeroeffentlichen(gid, uid, { titel, json, fuer, notiz } = {}) {
@@ -1153,12 +1225,23 @@ export function protokollRef(gid, uid, datum) {
 }
 
 export async function ladeProtokoll(gid, uid, datum) {
+  if (istEigen(gid)) {
+    const snap = await getDoc(eigenProtokollRef(uid, datum));
+    return { uid, datum, units: snap.exists() ? (snap.data().units || {}) : {} };
+  }
   const snap = await getDoc(protokollRef(gid, uid, datum));
   return snap.exists() ? snap.data() : { uid, datum, units: {} };
 }
 
 /** Alle Tage eines Athleten — für die Trainerübersicht. */
 export async function ladeProtokolle(gid, uid) {
+  if (istEigen(gid)) {
+    /* Die eigenen Tage liegen je Datum als eigenes Dokument; die
+       Kennung IST das Datum. Eine Abfrage mit where('uid',…) gibt es
+       hier nicht — es ist ohnehin alles von einem selbst. */
+    const snap = await getDocs(collection(db, 'users', uid, 'trainingLogs'));
+    return snap.docs.map(d => ({ id: d.id, uid, datum: d.id, units: d.data().units || {} }));
+  }
   const snap = await getDocs(
     query(collection(db, 'groups', gid, 'protokoll'), where('uid', '==', uid)));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1172,7 +1255,17 @@ export async function ladeProtokolle(gid, uid) {
    Eingetragene bleibt dann im Gerät (protokoll-sicherung.js) und geht
    hinaus, sobald wieder Netz ist. */
 export function protokollAbgleichen(gid, uid, datum, aenderungen, planId = '') {
-  const ref = protokollRef(gid, uid, datum);
+  /* Der eigene Plan schreibt an einen anderen Ort, aber mit derselben
+     Rechnung: dieselbe Transaktion, dasselbe aenderungenPruefen, und
+     was noch nicht hinaus ist, liegt genauso im Geraet
+     (protokoll-sicherung.js). Ein zweiter, einfacherer Weg fuer das
+     eigene Training waere derselbe Fehler, den v.35.64.0 behoben hat.
+
+     Anderes Feldpaar, weil die Regel fuer trainingLogs
+     hasOnly(['schema','units','updatedAt']) verlangt — uid und datum
+     stehen dort in der Kennung. */
+  const eigen = istEigen(gid);
+  const ref = eigen ? eigenProtokollRef(uid, datum) : protokollRef(gid, uid, datum);
   return runTransaction(db, async tx => {
     const snap = await tx.get(ref);
     const server = snap.exists() ? snap.data() : null;
@@ -1182,7 +1275,9 @@ export function protokollAbgleichen(gid, uid, datum, aenderungen, planId = '') {
       for (const [unitId, u] of Object.entries(units)) {
         daten[unitId] = { ...(planId ? { plan: planId } : {}), items: u.items };
       }
-      tx.set(ref, { uid, datum, units: daten, updatedAt: serverTimestamp() }, { merge: true });
+      tx.set(ref, eigen
+        ? { schema: 1, units: daten, updatedAt: serverTimestamp() }
+        : { uid, datum, units: daten, updatedAt: serverTimestamp() }, { merge: true });
     }
     return { server, geschrieben, verworfen };
   });
@@ -1221,7 +1316,8 @@ export function vorlageLoeschen(gid, id) {
 
 /* Live: was ein anderes Gerät einträgt, erscheint hier (v.35.64.0). */
 export function beobachteProtokoll(gid, uid, datum, cb, fehler) {
-  return onSnapshot(protokollRef(gid, uid, datum), { includeMetadataChanges: true },
+  const ref = istEigen(gid) ? eigenProtokollRef(uid, datum) : protokollRef(gid, uid, datum);
+  return onSnapshot(ref, { includeMetadataChanges: true },
     snap => cb({ daten: snap.exists() ? snap.data() : null, ausSpeicher: snap.metadata.fromCache }),
     fehler);
 }
@@ -1232,7 +1328,12 @@ export function beobachteProtokoll(gid, uid, datum, cb, fehler) {
    users/{uid}/trainingLogs/{datum} (nur die Person, Regel seit jeher,
    schema 1), je Gruppe und Einheit: units["gid~unitId"].items[key].privat. */
 const privatRef = (uid, datum) => doc(db, 'users', uid, 'trainingLogs', datum);
-export const privatEinheit = (gid, unitId) => `${gid}~${unitId}`;
+/* Beim eigenen Plan gibt es keine Gruppe, und das Protokoll liegt
+   ohnehin in DIESEM Dokument: die private Notiz gehoert damit an
+   denselben Schluessel wie die Saetze, naemlich an die unitId allein.
+   Ein Gruppenschluessel traegt immer ein '~' — beide koennen sich
+   darum nie in die Quere kommen. */
+export const privatEinheit = (gid, unitId) => (istEigen(gid) ? String(unitId) : `${gid}~${unitId}`);
 
 export async function ladePrivat(uid, datum) {
   const snap = await getDoc(privatRef(uid, datum));

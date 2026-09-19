@@ -28,7 +28,7 @@
    — Reihenfolge, Zeiträume, was heute läuft — echt testbar.
    ══════════════════════════════════════════════════════════════════ */
 
-export const ARTEN = Object.freeze(['training', 'lager', 'rennen']);
+export const ARTEN = Object.freeze(['training', 'lager', 'rennen', 'feier']);
 
 /* Die Disziplinen des alpinen Skirennsports, in der üblichen
    Reihenfolge von der kürzesten zur längsten Fahrt. */
@@ -40,6 +40,7 @@ export const BEREICH_DER_ART = Object.freeze({
   training: 't-training',
   lager: 't-lager',
   rennen: 't-rennen',
+  feier: 't-feier',
 });
 
 /* ── Dieselben drei Arten, andere Wörter ───────────────────────────
@@ -58,13 +59,13 @@ export const BEREICH_DER_ART = Object.freeze({
 
 const WORTE_JE_GRUPPE = Object.freeze({
   kader: Object.freeze({
-    training: 'Training', lager: 'Trainingslager', rennen: 'Rennen',
+    training: 'Training', lager: 'Trainingslager', rennen: 'Rennen', feier: 'Feier',
   }),
   organisation: Object.freeze({
-    training: 'Kurs', lager: 'Workshop', rennen: 'Wettkampf',
+    training: 'Kurs', lager: 'Workshop', rennen: 'Wettkampf', feier: 'Feier',
   }),
   familie: Object.freeze({
-    training: 'Termin', lager: 'Reise', rennen: 'Anlass',
+    training: 'Termin', lager: 'Reise', rennen: 'Anlass', feier: 'Feier',
   }),
 });
 
@@ -72,10 +73,17 @@ const WORTE_JE_GRUPPE = Object.freeze({
    keinen Wettkampf-Eintrag — ein Auswahlfeld mit einer Möglichkeit,
    die niemand nutzt, ist eine Möglichkeit zu viel. */
 export const ARTEN_JE_GRUPPE = Object.freeze({
+  /* Sportgruppen bleiben, wie sie waren — Wort fuer Wort. Eine Feier
+     steht ihnen nicht zur Wahl: ein Kader, der eine Weihnachtsfeier
+     plant, nennt sie 'Termin' mit eigenem Wort, wie bisher. */
   kader: Object.freeze(['training', 'lager', 'rennen']),
   organisation: Object.freeze(['training', 'lager', 'rennen']),
-  familie: Object.freeze(['training', 'lager']),
+  familie: Object.freeze(['training', 'lager', 'feier']),
 });
+
+/* Eine Feier ist nur bei Familie und Freunden zu haben. */
+export const istFeier = art => art === 'feier';
+export const kenntFeier = gruppenart => artenFuer(gruppenart).includes('feier');
 
 export function artenFuer(gruppenart) {
   return ARTEN_JE_GRUPPE[gruppenart] || ARTEN_JE_GRUPPE.kader;
@@ -333,6 +341,12 @@ export function pruefe(termin) {
   /* Eine Disziplin an einem Krafttraining wäre nur verwirrend. */
   if (termin?.disziplin && termin.art !== 'rennen') {
     fehler.push('Eine Disziplin gehört zu einem Rennen.');
+  }
+  /* Eine Feier ist ein Tag mit einer Uhrzeit, kein Lager. Ein
+     Bis-Datum daran waere ein mehrtaegiger Balken im Kalender — wer
+     drei Tage feiert, meint eine Reise. */
+  if (istFeier(termin?.art) && termin?.bis) {
+    fehler.push('Eine Feier ist ein Tag. Mehrere Tage sind eine Reise.');
   }
   return fehler;
 }
